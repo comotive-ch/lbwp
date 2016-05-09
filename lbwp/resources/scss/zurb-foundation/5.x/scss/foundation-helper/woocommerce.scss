@@ -1,0 +1,113 @@
+@mixin product-list() {
+	@include block-grid(1);
+	@media #{$medium-up} {
+		@include block-grid(3);
+	}
+	li.product {
+		margin: 0;
+		a.button { display: none; }
+		h3 {
+			font-size: rem-calc(18);
+			padding: 0;
+		}
+		.price {
+			color: $colorMain;
+			del { font-size: $paragraph-font-size; }
+		}
+		a img {
+			box-shadow: none;
+			margin: 0;
+		}
+	}
+}
+
+// elemente ausblenden
+p.woocommerce-result-count,
+form.woocommerce-ordering,
+#billing_state_field,
+#shipping_state_field {
+	display: none;
+}
+
+// übersicht (mit shortcode im inhalt)
+section.container div.woocommerce {
+	ul.products {
+		//@include product-list();
+	}
+}
+
+body.woocommerce-page #sidebar {
+	@include lbwp-row(true);
+}
+
+body.woocommerce-page #container {
+
+	@include lbwp-row(true);
+	
+	ul.products {
+		@include product-list();
+	}
+
+	div.related.products {
+		ul.products {
+			@media #{$medium-up} {
+				@include block-grid(4);
+			}
+		}
+	}
+
+
+	.woocommerce-message:before, .woocommerce-error:before, .woocommerce-info:before {
+		padding-top: 0;
+	}
+
+	// detailansicht
+	div.product {
+		input.input-text.qty { margin: 0; }
+		div.product_meta { font-size: $paragraph-font-size; }
+		
+		@media #{$small-only} {
+			div.images, div.summary {
+				width: 100%;
+			}
+		}
+		div.images {
+			img.wp-post-image { box-shadow: none; }
+		}
+	}
+
+	// tabs
+	.woocommerce-tabs {
+		ul.tabs {
+			margin-bottom:0;
+		}
+		div.panel {
+			background: #fff;
+			padding: 1rem;
+			h2 {
+				font-size: $paragraph-font-size;
+			}
+		}
+	}
+}
+
+// checkout
+body.woocommerce-checkout {
+	// rg/versand-adresse
+	.checkout #shiptobilling label {
+		font-size: $paragraph-font-size;
+	}
+	// agb
+	&.woocommerce-page #payment .terms {
+		text-align: left;
+		width: 80%;
+	}
+	#order_comments {
+		height: 6em !important;
+	}
+
+	p#billing_email_field, p#billing_phone_field {
+		float: none;
+		width: auto;
+	}
+}

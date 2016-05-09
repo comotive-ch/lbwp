@@ -1,0 +1,202 @@
+// settings
+$lbwpFormBreakpointMediumUp: "only screen and (min-width: 641px)";
+$lbwpFormValidationColorError: null !default;
+$lbwpFormValidationColorWarning: null !default;
+$lbwpFormValidationColorSuccess: null !default;
+// settings for styled radio- and checkbox-buttons
+$lbwpFormUseStyledInputs: false !default;
+$lbwpFormRadioColor: #00A1FF !default;
+
+$lbwpFormInputFields: "select, input[type=text], input[type=email], input[type=number], input[type=phone], input[type=password], input[type=number],textarea";
+// mixins
+
+// input fields (not buttons)
+@mixin lbwpFormInputFieldStyles() {
+	.lbwp-form {
+		#{$lbwpFormInputFields} {
+			@content;
+		}
+	}
+}
+
+// error state for input fields (validation)
+@mixin lbwpFormInputFieldErrorStyles() {
+	.lbwp-form .lbwp-form-error {
+		#{$lbwpFormInputFields} {
+			@content;
+		}
+	}
+}
+
+// warning state for input fields (validation)
+@mixin lbwpFormInputFieldWarningStyles() {
+	.lbwp-form .lbwp-form-warning {
+		#{$lbwpFormInputFields} {
+			@content;
+		}
+	}
+}
+
+// success state for input fields (validation)
+@mixin lbwpFormInputFieldSuccessStyles() {
+	.lbwp-form .lbwp-form-success {
+		#{$lbwpFormInputFields} {
+			@content;
+		}
+	}
+}
+
+// styles for button(s)
+@mixin lbwpFormButtonStyles() {
+	.lbwp-form .send-button .default-container {
+		@content;
+	}
+}
+
+// LBWP forms are displayed with a table layout, except on small screens (mobile).
+// You can use this mixin to overwrite/reset the table layout (reset=true)
+// -> param reset: reset the table layout
+// -> use it in a media query!
+@mixin lbwpFormTableLayout($reset:false) {
+
+	$tableLayout: not($reset);
+
+	.lbwp-form {
+		@if $tableLayout {
+			display: table;
+			width: 100%;
+		} @else {
+			display: block;
+			width: auto;
+		}
+
+		// "cols"
+		.forms-item {
+			@if $tableLayout {
+				display:table-row;
+			} @else {
+				display: block;
+			}
+		}
+
+		// 1st col/cell (labels)
+		.default-label {
+			@if $tableLayout {
+				display: table-cell;
+				margin: 0;
+				vertical-align: middle;
+				padding: 10px 5px 10px 0;
+				width: 30%;
+			} @else {
+				display: block;
+				margin: 10px 0 5px;
+				vertical-align: baseline;
+				padding: 0;
+				width: auto;
+			}
+		}
+
+		// labels for multi-line fields
+		.default-label[for^="textarea"],
+		.default-label[for^="comment"],
+		.checkbox-field .default-label,
+		.radio-field .default-label,
+		.number-field .default-label {
+			@if $tableLayout {
+				vertical-align: top;
+			} @else {
+				vertical-align: baseline;
+			}
+		}
+
+		// 2nd col/cell (fields)
+		.default-container {
+			@if $tableLayout {
+				display: table-cell;
+				padding: 10px 0 10px 5px;
+				width: inherit;
+			} @else {
+				display: block;
+				padding: 0;
+				width: inherit;
+			}
+		}
+
+		// reset row for button
+		.send-button .default-container {
+			@if $tableLayout {
+				margin: 0;
+			} @else {
+				margin: 20px 0 0;
+			}
+		}
+
+		// spam-check-field
+		.number-field input {
+			@if $tableLayout {
+				width:20%;
+				display: block;
+			} @else {
+				width: 100%;
+			}
+		}
+
+	}
+
+}
+
+// validation
+.lbwp-form {
+	.validate-message.lbwp-form-warning label {
+		color: $lbwpFormValidationColorWarning;
+	}
+	.validate-message.lbwp-form-error label {
+		color: $lbwpFormValidationColorError;
+	}
+}
+
+@if $lbwpFormUseStyledInputs {
+
+	.lbwp-form .forms-item.radio-field .default-container label{
+		position: relative;
+		& input{opacity: 0;}
+		& .beside-checkbox{margin-left: 10px;}
+		& .beside-checkbox:before{
+			content: "."; font-size: 0; line-height: 0;
+			height: 20px; width: 20px; position: absolute; left: 0; top: 0;
+			background: white; box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.1); border: 1px solid #ccc; border-radius: 50%;
+		}
+
+		& input:checked + .beside-checkbox:after{
+			content: "."; font-size: 0; line-height: 0;
+			height: 10px; width: 10px; position: absolute; left: 5px; top: 5px;
+			background: $lbwpFormRadioColor;  border-radius: 50%;
+		}
+	}
+
+	.lbwp-form .forms-item.radio-field.lbwp-form-error .default-container label{
+		& .beside-checkbox:before{border-color: red;box-shadow: inset 0 1px 2px rgba(255, 0, 0, 0.1);}
+	}
+
+
+	.lbwp-form .forms-item.checkbox-field.lbwp-form-error .default-container label{
+		& .beside-checkbox:before{border-color: red;box-shadow: inset 0 1px 2px rgba(255, 0, 0, 0.1);}
+	}
+
+	.lbwp-form .forms-item.checkbox-field .default-container label{
+		position: relative;
+		& input{opacity: 0;}
+		& .beside-checkbox{margin-left: 10px;}
+		& .beside-checkbox:before{
+			content: "."; font-size: 0; line-height: 0;
+			height: 20px; width: 20px; position: absolute; left: 0; top: 0;
+			background: white; box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.1); border: 1px solid #ccc;
+		}
+
+		& input:checked + .beside-checkbox:after{
+			content: "."; font-size: 0; line-height: 0;
+			height: 10px; width: 10px; position: absolute; left: 5px; top: 5px;
+			background: $lbwpFormRadioColor;
+		}
+	}
+}

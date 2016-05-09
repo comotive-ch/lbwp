@@ -1,0 +1,16 @@
+.media-uploader { float: left; width: 100%; border: 1px #9D9D9C dashed; padding: 10px; margin-bottom: 1em; box-sizing: border-box; -moz-box-sizing: border-box; -webkit-box-sizing: border-box; }
+.media-uploader-links { clear: left; }
+.media-container { margin: 5px; }
+.image-media-container { padding: 0px; position: relative;}
+.image-media-container img { max-width: 100%; position: absolute; top: 0; }
+.application-media-container p { padding: 0 10px; float: left; }
+
+.media-uploader input[type="button"] { margin-top: 10px; float: none; width: auto; }
+.hide { display: none; }
+
+.media-uploader-attachments { margin: 0; }
+.media-uploader-attachment { position: relative; float: left; }
+
+.media-uploader-attachment .remove-attachment { display:none; opacity: 0; position: absolute;top: -2px;right: -8px;z-index: 1;text-decoration: none;font-size: 2em; outline: none;}
+.media-uploader-attachment:hover .remove-attachment {display:block; opacity: 1;}
+.media-uploader-attachment .remove-attachment:before { font-family: dashicons; content: "\f153"; text-shadow: 0px 0px 20px rgba(255, 255, 255, 1);}

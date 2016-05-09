@@ -1,0 +1,111 @@
+// default variables
+$lbwpTinyMceImageBreakpointMediumUp: "only screen and (min-width:40.063em)" !default; // greater than a mobile device (> 641px)
+
+// image alignment sizes
+$lbwpTinyMceImageSizeFull: null !default;
+$lbwpTinyMceImageSizeMedium: null !default;
+$lbwpTinyMceImageSizeThumbnail: null !default;
+
+// image alignment settings
+$lbwpTinyMceImageAlignment: false !default; // set to true to use the basic styles for image alignment
+$lbwpTinyMceImageLayoutLineHeight: null !default;
+$lbwpTinyMceImageLayoutFontsize: null !default;
+$lbwpTinyMceImageMarginH: 1em !default;
+$lbwpTinyMceImageMarginBottom: 1em !default;
+$lbwpTinyMceImageMarginBottomMobile: null !default;
+// margin-bottom for mobile with desktop-fallback
+@if $lbwpTinyMceImageMarginBottomMobile == null {
+	$lbwpTinyMceImageMarginBottomMobile: $lbwpTinyMceImageMarginBottom;
+}
+
+// image captions settings
+$lbwpTinyMceImageCaptionColor: null !default;
+$lbwpTinyMceImageCaptionFontWeight: null !default;
+$lbwpTinyMceImageCaptionMargin: null !default;
+
+// calc margin top for floating images (with line-height and font-size, if given)
+$lbwpTinyMceImageMarginTop: 0 !default;
+@if ($lbwpTinyMceImageLayoutLineHeight != null) and ($lbwpTinyMceImageLayoutFontsize != null)  {
+	$lbwpTinyMceImageMarginTop: ($lbwpTinyMceImageLayoutLineHeight - $lbwpTinyMceImageLayoutFontsize) / 2;
+}
+
+@mixin lbwpTinyMceImageCaption() {
+	.wp-caption {
+		.wp-caption-text {
+			@content;
+		}
+	}
+}
+
+@if $lbwpTinyMceImageAlignment {
+	.alignleft {
+		float: none;
+		display: block;
+		// mobile: margin bottom
+		margin: 0 0 $lbwpTinyMceImageMarginBottomMobile;
+		@media #{$lbwpTinyMceImageBreakpointMediumUp} {
+			float: left;
+			display: inline;
+			margin: $lbwpTinyMceImageMarginTop $lbwpTinyMceImageMarginH/2 $lbwpTinyMceImageMarginBottom 0;
+			padding: 0 $lbwpTinyMceImageMarginH/2 0 0;
+		}
+	}
+
+	.alignright {
+		float: none;
+		display: block;
+		// mobile: margin bottom
+		margin: 0 0 $lbwpTinyMceImageMarginBottomMobile;
+		@media #{$lbwpTinyMceImageBreakpointMediumUp} {
+			float: right;
+			display: inline;
+			margin: $lbwpTinyMceImageMarginTop 0 $lbwpTinyMceImageMarginBottom $lbwpTinyMceImageMarginH/2;
+			padding: 0 0 0 $lbwpTinyMceImageMarginH/2;
+		}
+	}
+
+	// center without caption
+	.aligncenter {
+		float: none;
+		display: block;
+		margin: 0 auto $lbwpTinyMceImageMarginBottomMobile;
+		@media #{$lbwpTinyMceImageBreakpointMediumUp} {
+			margin: 0 auto $lbwpTinyMceImageMarginBottom;
+		}
+	}
+
+	// center with caption
+	.aligncenter.wp-caption {
+		margin: 0 0 $lbwpTinyMceImageMarginBottomMobile;
+		@media #{$lbwpTinyMceImageBreakpointMediumUp} {
+			margin: 0 0 $lbwpTinyMceImageMarginBottom;
+		}
+		img {
+			display: block;
+			margin: 0 auto;
+		}
+		p {
+			text-align: center;
+		}
+	}
+}
+
+@media #{$lbwpTinyMceImageBreakpointMediumUp} {
+	.alignleft, .alignright {
+		&.size-full {
+			width: $lbwpTinyMceImageSizeFull;
+		}
+		&.size-medium {
+			width: $lbwpTinyMceImageSizeMedium;
+		}
+		&.size-thumbnail {
+			width: $lbwpTinyMceImageSizeThumbnail;
+		}
+	}
+}
+
+@include lbwpTinyMceImageCaption() {
+	color: $lbwpTinyMceImageCaptionColor;
+	font-weight: $lbwpTinyMceImageCaptionFontWeight;
+	margin: $lbwpTinyMceImageCaptionMargin;
+}

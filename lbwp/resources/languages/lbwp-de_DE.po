@@ -1,0 +1,511 @@
+msgid ""
+msgstr ""
+"Project-Id-Version: LBWP\n"
+"POT-Creation-Date: 2015-08-03 11:05+0100\n"
+"PO-Revision-Date: 2016-04-25 08:55+0100\n"
+"Last-Translator: \n"
+"Language-Team: comotive <info@comotive.ch>\n"
+"Language: de_DE\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"X-Generator: Poedit 1.5.4\n"
+"X-Poedit-KeywordsList: __;_e;__ngettext:1,2;_n:1,2;__ngettext_noop:1,2;"
+"_n_noop:1,2;_c;_nc:4c,1,2;_x:1,2c;_nx:4c,1,2;_nx_noop:4c,1,2;_ex:1,2c;"
+"esc_attr__;esc_attr_e;esc_attr_x:1,2c;esc_html__;esc_html_e;esc_html_x:1,2c\n"
+"X-Poedit-Basepath: .\n"
+"X-Poedit-SourceCharset: UTF-8\n"
+"X-Poedit-SearchPath-0: /var/www/lbwp/wp-content/plugins/lbwp\n"
+
+#: /var/www/lbwp/wp-content/plugins/lbwp/LBWP/Theme/Feature/ListingTemplate.php:55
+msgid "Liste von Inhalten (Text und Bild)"
+msgstr ""
+
+#: /var/www/lbwp/wp-content/plugins/lbwp/LBWP/Theme/Feature/ListingTemplate.php:62
+msgid "Titel"
+msgstr ""
+
+#: /var/www/lbwp/wp-content/plugins/lbwp/LBWP/Theme/Feature/ListingTemplate.php:63
+msgid "Inhalt"
+msgstr ""
+
+#: /var/www/lbwp/wp-content/plugins/lbwp/LBWP/Theme/Feature/ListingTemplate.php:64
+#: /var/www/lbwp/wp-content/plugins/lbwp/LBWP/Theme/Feature/ListingTemplate.php:107
+msgid "Bild"
+msgstr ""
+
+#: /var/www/lbwp/wp-content/plugins/lbwp/LBWP/Theme/Feature/ListingTemplate.php:65
+msgid "Bild-Position"
+msgstr ""
+
+#: /var/www/lbwp/wp-content/plugins/lbwp/LBWP/Theme/Feature/ListingTemplate.php:69
+msgid "Links"
+msgstr ""
+
+#: /var/www/lbwp/wp-content/plugins/lbwp/LBWP/Theme/Feature/ListingTemplate.php:70
+msgid "Rechts"
+msgstr ""
+
+#: /var/www/lbwp/wp-content/plugins/lbwp/LBWP/Theme/Feature/ListingTemplate.php:73
+#: /var/www/lbwp/wp-content/plugins/lbwp/LBWP/Theme/Feature/ListingTemplate.php:136
+msgid "Ziel-Link"
+msgstr ""
+
+#: /var/www/lbwp/wp-content/plugins/lbwp/LBWP/Theme/Feature/ListingTemplate.php:74
+#: /var/www/lbwp/wp-content/plugins/lbwp/LBWP/Theme/Feature/ListingTemplate.php:137
+msgid "Link-Text"
+msgstr ""
+
+#: /var/www/lbwp/wp-content/plugins/lbwp/LBWP/Theme/Feature/ListingTemplate.php:94
+msgid "Personen-Auflistung"
+msgstr ""
+
+#: /var/www/lbwp/wp-content/plugins/lbwp/LBWP/Theme/Feature/ListingTemplate.php:101
+msgid "Vorname"
+msgstr ""
+
+#: /var/www/lbwp/wp-content/plugins/lbwp/LBWP/Theme/Feature/ListingTemplate.php:102
+msgid "Nachname"
+msgstr ""
+
+#: /var/www/lbwp/wp-content/plugins/lbwp/LBWP/Theme/Feature/ListingTemplate.php:103
+msgid "Anrede"
+msgstr ""
+
+#: /var/www/lbwp/wp-content/plugins/lbwp/LBWP/Theme/Feature/ListingTemplate.php:104
+msgid "Funktion/Rolle"
+msgstr ""
+
+#: /var/www/lbwp/wp-content/plugins/lbwp/LBWP/Theme/Feature/ListingTemplate.php:105
+#: /var/www/lbwp/wp-content/plugins/lbwp/LBWP/Theme/Feature/CommentForm.php:98
+msgid "E-Mail-Adresse"
+msgstr ""
+
+#: /var/www/lbwp/wp-content/plugins/lbwp/LBWP/Theme/Feature/ListingTemplate.php:106
+msgid "Beschreibung"
+msgstr ""
+
+#: /var/www/lbwp/wp-content/plugins/lbwp/LBWP/Theme/Feature/ListingTemplate.php:127
+msgid "Logo- oder Link-Auflistung"
+msgstr ""
+
+#: /var/www/lbwp/wp-content/plugins/lbwp/LBWP/Theme/Feature/ListingTemplate.php:134
+msgid "Logo Titel"
+msgstr ""
+
+#: /var/www/lbwp/wp-content/plugins/lbwp/LBWP/Theme/Feature/ListingTemplate.php:135
+msgid "Logo Bild"
+msgstr ""
+
+#: /var/www/lbwp/wp-content/plugins/lbwp/LBWP/Theme/Feature/ListingTemplate.php:138
+msgid "Link öffnen in"
+msgstr ""
+
+#: /var/www/lbwp/wp-content/plugins/lbwp/LBWP/Theme/Feature/ListingTemplate.php:142
+msgid "Im selben Tab/Fenster"
+msgstr ""
+
+#: /var/www/lbwp/wp-content/plugins/lbwp/LBWP/Theme/Feature/ListingTemplate.php:143
+msgid "In neuem Tab/Fenster"
+msgstr ""
+
+#: /var/www/lbwp/wp-content/plugins/lbwp/LBWP/Theme/Feature/Search.php:109
+msgid "Suche nach"
+msgstr ""
+
+#: /var/www/lbwp/wp-content/plugins/lbwp/LBWP/Theme/Feature/Search.php:109
+msgid "auf"
+msgstr ""
+
+#: /var/www/lbwp/wp-content/plugins/lbwp/LBWP/Theme/Feature/CommentForm.php:97
+msgid "Name"
+msgstr ""
+
+#: /var/www/lbwp/wp-content/plugins/lbwp/LBWP/Theme/Feature/CommentForm.php:99
+msgid "Website"
+msgstr ""
+
+#: /var/www/lbwp/wp-content/plugins/lbwp/LBWP/Theme/Feature/CommentForm.php:100
+msgid "Kommentar"
+msgstr ""
+
+#: /var/www/lbwp/wp-content/plugins/lbwp/LBWP/Theme/Feature/TransientStickyPost.php:74
+msgid "Beitrag oben halten"
+msgstr ""
+
+#: /var/www/lbwp/wp-content/plugins/lbwp/LBWP/Theme/Feature/TransientStickyPost.php:106
+msgid "Diesen Beitrag oben halten"
+msgstr ""
+
+#: /var/www/lbwp/wp-content/plugins/lbwp/LBWP/Theme/Feature/TransientStickyPost.php:113
+msgid "Nie"
+msgstr ""
+
+#: /var/www/lbwp/wp-content/plugins/lbwp/LBWP/Theme/Feature/TransientStickyPost.php:117
+msgid "Automatisch Zurücksetzen:"
+msgstr ""
+
+#: /var/www/lbwp/wp-content/plugins/lbwp/LBWP/Theme/Feature/ResponsiveWidgets.php:74
+msgid "Responsive Einstellungen:"
+msgstr ""
+
+#: /var/www/lbwp/wp-content/plugins/lbwp/LBWP/Theme/Widget/LatestArticles.php:22
+msgid "Zeigt die neusten Artikel in der Sidebar"
+msgstr ""
+
+#: /var/www/lbwp/wp-content/plugins/lbwp/LBWP/Theme/Widget/LatestArticles.php:79
+msgid "&raquo; weiterlesen"
+msgstr ""
+
+#: /var/www/lbwp/wp-content/plugins/lbwp/LBWP/Theme/Widget/LatestArticles.php:94
+msgid "mehr"
+msgstr ""
+
+#: /var/www/lbwp/wp-content/plugins/lbwp/LBWP/Helper/Metabox.php:264
+msgid "Zusammengeführte Felder"
+msgstr ""
+
+#: /var/www/lbwp/wp-content/plugins/lbwp/LBWP/Helper/Metabox.php:266
+msgid "Es wurden gleichnamige Felder aus folgenden Dialogen zusammengeführt: "
+msgstr ""
+
+#: /var/www/lbwp/wp-content/plugins/lbwp/LBWP/Helper/Metabox.php:677
+msgid "Datei wählen"
+msgstr ""
+
+#: /var/www/lbwp/wp-content/plugins/lbwp/LBWP/Helper/Metabox.php:680
+msgid "Datei entfernen"
+msgstr ""
+
+#: /var/www/lbwp/wp-content/plugins/lbwp/LBWP/Newsletter/Component/Settings.php:109
+msgid "Einstellungen wurden gespeichert."
+msgstr ""
+
+#: /var/www/lbwp/wp-content/plugins/lbwp/LBWP/Newsletter/Service/Mailchimp/Implementation.php:208
+msgid "Konnte keine Listen laden. Bitte erstellen sie eine Liste in MailChimp."
+msgstr ""
+
+#: /var/www/lbwp/wp-content/plugins/lbwp/LBWP/Module/Forms/Widget.php:23
+msgid "Erlaubt es ein zuvor erstelltes Formular in der Sidebar darzustellen"
+msgstr ""
+
+#: /var/www/lbwp/wp-content/plugins/lbwp/LBWP/Module/Forms/Widget.php:26
+msgid "Formular Widget"
+msgstr ""
+
+#: /var/www/lbwp/wp-content/plugins/lbwp/LBWP/Module/Forms/Component/FormHandler.php:140
+msgid "Fehler beim Absenden des Formulars"
+msgstr ""
+
+#: /var/www/lbwp/wp-content/plugins/lbwp/LBWP/Module/Forms/Item/Base.php:101
+#, php-format
+msgid "Bitte füllen Sie das Feld \"%s\" korrekt aus."
+msgstr ""
+
+#: /var/www/lbwp/wp-content/plugins/lbwp/LBWP/Module/Forms/Item/Base.php:102
+#, php-format
+msgid "Bitte füllen Sie das Feld \"%s\" aus."
+msgstr ""
+
+#: /var/www/lbwp/wp-content/plugins/lbwp/LBWP/Module/Forms/Item/Calculation.php:37
+msgid "Tragen Sie das Ergebnis folgender Rechnung ein:"
+msgstr ""
+
+#: /var/www/lbwp/wp-content/plugins/lbwp/LBWP/Module/Forms/Item/Calculation.php:45
+msgid "Spamschutz: "
+msgstr ""
+
+#: /var/www/lbwp/wp-content/plugins/lbwp/LBWP/Module/Forms/Action/SendMail.php:79
+msgid "Nicht ausgefüllt"
+msgstr ""
+
+#: /var/www/lbwp/wp-content/plugins/lbwp/LBWP/Module/Forms/Action/SendMail.php:94
+msgid "Ein Formular auf Ihrer Webseite wurde ausgefüllt"
+msgstr ""
+
+#: /var/www/lbwp/wp-content/plugins/lbwp/LBWP/Module/Forms/Action/SendMail.php:97
+msgid "Diese E-Mail wurde generiert am"
+msgstr ""
+
+#: /var/www/lbwp/wp-content/plugins/lbwp/LBWP/Module/Forms/Action/SendMail.php:105
+msgid ""
+"Zum Beantworten dieser E-Mail nutzen sie bitte die Weiterleiten Funktion und "
+"kopieren die E-Mail Adresse aus den Formulardaten, sofern der Besucher eine "
+"E-Mail Adresse angegeben hat."
+msgstr ""
+
+#: /var/www/lbwp/wp-content/plugins/lbwp/LBWP/Module/Listings/Widget.php:22
+msgid "Widget welches Erlaubt eine Auflistung in der Sidebar darzustellen"
+msgstr ""
+
+#: /var/www/lbwp/wp-content/plugins/lbwp/LBWP/Module/Listings/Widget.php:25
+msgid "Auflistungs-Widget"
+msgstr ""
+
+#: /var/www/lbwp/wp-content/plugins/lbwp/LBWP/Module/Listings/Component/ListFilter.php:41
+msgid "Einträge aller Listen"
+msgstr ""
+
+#: /var/www/lbwp/wp-content/plugins/lbwp/LBWP/Module/Listings/Component/ListFilter.php:55
+#, php-format
+msgid "Liste &laquo;%s&raquo;"
+msgstr ""
+
+#: /var/www/lbwp/wp-content/plugins/lbwp/LBWP/Module/Listings/Component/Posttype.php:75
+msgid "Einstellungen"
+msgstr ""
+
+#: /var/www/lbwp/wp-content/plugins/lbwp/LBWP/Module/Listings/Component/Posttype.php:79
+msgid "Design der Liste"
+msgstr ""
+
+#: /var/www/lbwp/wp-content/plugins/lbwp/LBWP/Module/Listings/Component/Posttype.php:86
+msgid "Einträge"
+msgstr ""
+
+#: /var/www/lbwp/wp-content/plugins/lbwp/LBWP/Module/Listings/Component/Posttype.php:96
+msgid "Zugewiesene Liste(n)"
+msgstr ""
+
+#: /var/www/lbwp/wp-content/plugins/lbwp/LBWP/Module/Listings/Component/Posttype.php:100
+msgid "Listen"
+msgstr ""
+
+#: /var/www/lbwp/wp-content/plugins/lbwp/LBWP/Module/General/CleanUp.php:391
+#: /var/www/lbwp/wp-content/plugins/lbwp/LBWP/Module/General/CleanUp.php:392
+msgid "Soziale Netzwerke"
+msgstr ""
+
+#: /var/www/lbwp/wp-content/plugins/lbwp/LBWP/Module/General/CleanUp.php:453
+#, php-format
+msgid "Autor: %s"
+msgstr ""
+
+#: /var/www/lbwp/wp-content/plugins/lbwp/LBWP/Module/General/CleanUp.php:454
+#, php-format
+msgid "E-Mail: %s"
+msgstr ""
+
+#: /var/www/lbwp/wp-content/plugins/lbwp/LBWP/Module/General/CleanUp.php:456
+msgid ""
+"Hinweis: Der Kommentar könnte Spam enthalten, daher zeigen wir hier nur ein "
+"paar Worte davon an."
+msgstr ""
+
+#: /var/www/lbwp/wp-content/plugins/lbwp/LBWP/Module/General/CleanUp.php:469
+msgid "Alle noch nicht genehmigten Kommentare anzeigen:"
+msgstr ""
+
+#: /var/www/lbwp/wp-content/plugins/lbwp/LBWP/Module/General/AuthorHelper.php:78
+msgid "Angaben zum Autor"
+msgstr ""
+
+#: /var/www/lbwp/wp-content/plugins/lbwp/LBWP/Module/General/AuthorHelper.php:81
+msgid "Autorenbild"
+msgstr ""
+
+#: /var/www/lbwp/wp-content/plugins/lbwp/LBWP/Module/General/AuthorHelper.php:84
+msgid "Bild hochladen"
+msgstr ""
+
+#: /var/www/lbwp/wp-content/plugins/lbwp/LBWP/Module/General/AuthorHelper.php:85
+msgid "Bild entfernen"
+msgstr ""
+
+#: /var/www/lbwp/wp-content/plugins/lbwp/LBWP/Module/General/AuthorHelper.php:89
+msgid "Das Bild wird nur genutzt, wenn das Theme dies auch unterstützt."
+msgstr ""
+
+#: /var/www/lbwp/wp-content/plugins/lbwp/LBWP/Module/General/AuthorHelper.php:94
+msgid "Kurzbeschreibung"
+msgstr ""
+
+#: /var/www/lbwp/wp-content/plugins/lbwp/LBWP/Util/WordPress.php:110
+msgid "Erstellen"
+msgstr ""
+
+#: /var/www/lbwp/wp-content/plugins/lbwp/LBWP/Util/String.php:618
+msgid "Ihr Passwort muss mindestens "
+msgstr ""
+
+#: /var/www/lbwp/wp-content/plugins/lbwp/LBWP/Util/String.php:621
+msgid "Die Passwörter stimmen nicht überein"
+msgstr ""
+
+#: /var/www/lbwp/wp-content/plugins/lbwp/LBWP/Util/String.php:625
+msgid "Sie haben kein Passwort eingegeben"
+msgstr ""
+
+#: /var/www/lbwp/wp-content/plugins/lbwp/LBWP/Util/Date.php:339
+msgid "Uhr"
+msgstr ""
+
+#: general
+msgid "Zurück zu allen Artikeln"
+msgstr ""
+
+#: general
+msgid "Zurück zur Startseite"
+msgstr ""
+
+#: general
+msgid "Zum Inhalt wechseln"
+msgstr ""
+
+#: general
+msgid "Direkt zur Hauptnavigation"
+msgstr ""
+
+#: general
+msgid "Personenfoto von"
+msgstr ""
+
+#: general
+msgid "Alle Artikel von %s"
+msgstr ""
+
+#: general
+msgid "Alle Artikel aus der Kategorie %s"
+msgstr ""
+
+#: general, count of blog comments (no word wrap)
+msgid "0&nbsp;Kommentare"
+msgstr ""
+
+#: general, count of blog comments (no word wrap)
+msgid "1&nbsp;Kommentar"
+msgstr ""
+
+#: general, count of blog comments (no word wrap)
+msgid "%&nbsp;Kommentare"
+msgstr ""
+
+#: general, blog comment form
+msgid "Bitte füllen Sie alle mit * gekennzeichneten Felder aus."
+msgstr ""
+
+#: general, blog comment form
+msgid "Kommentare sind geschlossen."
+msgstr ""
+
+#: general, blog comment form
+msgid "Schreiben Sie einen Kommentar"
+msgstr ""
+
+#: general, search
+msgid "Suchen"
+msgstr ""
+
+#: general, search
+msgid "Suche"
+msgstr ""
+
+#: general
+msgid "Vorherige Seite"
+msgstr ""
+
+#: general
+msgid "Nächste Seite"
+msgstr ""
+
+#: general, image gallery
+msgid "Bild {index} von {total}"
+msgstr ""
+
+#: general, display date and time
+msgid "%s um %s Uhr"
+msgstr ""
+
+#: general
+msgid "Kategorie"
+msgstr ""
+
+#: general
+msgid "Kategorien"
+msgstr ""
+
+#: general
+msgid "Autor"
+msgstr ""
+
+#: general
+msgid "Übersicht"
+msgstr ""
+
+#: general
+msgid "Schlagworte"
+msgstr ""
+
+#: general, events
+msgid "Anmeldung"
+msgstr ""
+
+#: events
+msgid "Anmeldung: %s / %s"
+msgstr ""
+
+#: events
+msgid "Veranstaltung"
+msgstr ""
+
+#: general
+msgid "Ort"
+msgstr ""
+
+#: events
+msgid "Datum/Zeit"
+msgstr ""
+
+#: events
+msgid "Von %s bis %s"
+msgstr ""
+
+#: general
+msgid "Datum"
+msgstr ""
+
+#: general
+msgid "Uhrzeit"
+msgstr ""
+
+#: general
+msgid "Beginn"
+msgstr ""
+
+#: general
+msgid "Ende"
+msgstr ""
+
+#: general
+msgid "Anmeldung bis"
+msgstr ""
+
+#: general
+msgid "Alle anzeigen"
+msgstr ""
+
+#: general
+msgid "Es wurden keine Veranstaltungen gefunden"
+msgstr ""
+
+#: general
+msgid "Vergangene Veranstaltungen anzeigen"
+msgstr ""
+
+#: general
+msgid "Bitte auswählen"
+msgstr ""
+
+msgid "Ihre Suche ergab keine Ergebnisse."
+msgstr ""
+
+msgid ""
+"Sie sind für einen geschützen Bereich angemeldet. <a href=\"%s\">Abmelden</"
+"a>."
+msgstr ""
+
+msgid "Home"
+msgstr ""
+
+msgid "Seite"
+msgstr ""

@@ -1,0 +1,97 @@
+// default variables
+$lbwpSlickSliderMargin: null !default;
+$lbwpSlickDotsBottomPosition: null !default;
+$lbwpSlickDotsLeftPosition: null !default;
+$lbwpSlickDotsSize: null !default;
+$lbwpSlickDotsColor: null !default;
+$lbwpSlickDotsOpacity: null !default;
+$lbwpSlickDotsHoverColor: null !default; // hover and focus state
+$lbwpSlickDotsHoverOpacity: null !default; // hover and focus state
+$lbwpSlickDotsActiveColor: $lbwpSlickDotsColor !default;
+$lbwpSlickDotsActiveOpacity: null !default;
+$lbwpSlickDotsChar: null !default;
+$lbwpSlickDotsCharSquare: false !default;
+$lbwpSlickArrowHide: false !default;
+$lbwpSlickArrowButtonSize: null !default;
+$lbwpSlickArrowButtonColor: null !default;
+$lbwpSlickArrowButtonColorHover: null !default;
+$lbwpSlickArrowButtonOpacity: null !default;
+$lbwpSlickArrowButtonPrevPosition: null !default;
+$lbwpSlickArrowButtonNextPosition: null !default;
+
+.slick-slider {
+	margin: $lbwpSlickSliderMargin;
+}
+
+// slider dots
+ul.slick-dots {
+	margin: 0;
+	bottom: $lbwpSlickDotsBottomPosition;
+	left: $lbwpSlickDotsLeftPosition;
+	@if $lbwpSlickDotsLeftPosition != null {
+		text-align: initial;
+	}
+	li {
+		button {
+			&:before {
+				font-size: $lbwpSlickDotsSize;
+				color: $lbwpSlickDotsColor;
+				@if $lbwpSlickDotsOpacity != null {
+					@include opacity($lbwpSlickDotsOpacity);
+				}
+				content: $lbwpSlickDotsChar;
+				@if $lbwpSlickDotsCharSquare {
+					content: '\25A0';
+				}
+			}
+			&:hover,&:focus {
+				&:before {
+					color: $lbwpSlickDotsHoverColor;
+					@if $lbwpSlickDotsHoverOpacity != null {
+						@include opacity($lbwpSlickDotsHoverOpacity);
+					}
+				}
+			}
+		}
+		&.slick-active {
+			button {
+				&:before {
+					color: $lbwpSlickDotsActiveColor;
+					@if $lbwpSlickDotsActiveOpacity != null {
+						@include opacity($lbwpSlickDotsActiveOpacity);
+					}
+				}
+			}
+		}
+	}
+}
+
+// slider arrows
+button.slick-arrow {
+	@if $lbwpSlickArrowHide {
+		display: none !important;
+	}
+	width: $lbwpSlickArrowButtonSize;
+	height: $lbwpSlickArrowButtonSize;
+	&:before {
+		font-size: $lbwpSlickArrowButtonSize;
+		color: $lbwpSlickArrowButtonColor;
+		@if $lbwpSlickArrowButtonOpacity != null {
+			@include opacity($lbwpSlickArrowButtonOpacity);
+		}
+	}
+	&:hover,&:focus {
+		&:before {
+			color: $lbwpSlickArrowButtonColorHover;
+		}
+	}
+	&.slick-prev {
+		left: $lbwpSlickArrowButtonPrevPosition;
+		@if $lbwpSlickArrowButtonPrevPosition != null {
+			z-index: 1;
+		}
+	}
+	&.slick-next {
+		right: $lbwpSlickArrowButtonNextPosition;
+	}
+}

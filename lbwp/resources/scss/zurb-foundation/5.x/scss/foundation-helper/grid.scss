@@ -1,0 +1,26 @@
+@mixin lbwp-row($defaultgrid:true,$bp:$medium-up) {
+	@include grid-row();
+
+	@if $defaultgrid == true {
+		& > div {
+			@include grid-column($total-columns);
+		}
+	}
+
+	&.lbwp-cols-1-1 {
+		& > div {
+			@include grid-column($total-columns);
+			@media #{$bp} {
+				@include grid-column($total-columns/2);
+			}
+		}
+	}
+}
+
+.lbwp-row {
+	@include lbwp-row(false);
+}
+
+.lbwp-content {
+	@include lbwp-row(true);
+}

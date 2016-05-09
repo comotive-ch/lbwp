@@ -1,0 +1,81 @@
+ul.wp-submenu li a img { display:none; }
+
+/* fix chrom 45 rendering bug in menu */
+#adminmenu { transform: translateZ(0); }
+
+/* page settings helper */
+.lbwp-settings-page { max-width:1000px; }
+.lbwp-settings-page .cfg-head { width:950px; }
+.lbwp-settings-page .cfg-item { width: 950px; border-bottom:1px solid #eee; list-style: none; overflow: auto; margin-bottom:10px; padding:0px 0px 5px 0px; }
+
+.cfg-item, .cfg-head { float:left; }
+.cfg-item .cfg-title { width:250px; float:left; margin-top:4px; font-weight:bold; }
+.cfg-item .cfg-field { width:690px; float:left; }
+
+.cfg-field .cfg-description { width:100%; padding:5px 5px 0px 2px; font-size:11px; }
+.cfg-field .cfg-field-number { width:150px; background-color:#f8f8f8; }
+.cfg-field .cfg-field-text { width:680px; background-color:#f8f8f8; }
+.cfg-field .cfg-field-textarea { width:680px; height:150px; background-color:#f8f8f8; }
+
+.cfg-field .cfg-checkbox { margin-left:2px; }
+.cfg-field .cfg-text-rightof-input { width:300px; margin-left:7px; display:inline; }
+
+#lbwp-news ul li { border-bottom:1px solid #e4e4e4; margin-bottom:15px; }
+#lbwp-news ul li:last-child { border-bottom:0px none; }
+#slugdiv { display:none; }
+.dashicon-big { padding:2px 6px 0px 0px !important; margin:0px !important; }
+.dashicon-big:before { font-size:24px; padding:0px 4px 0px 4px; }
+.dashicon-snippets:before { font-size:21px; }
+.generic-sortable li { cursor:move; }
+.simple-table-list { border:1px solid #e1e1e1; border-radius:5px; width:50%; }
+.simple-table-list li { margin:0px; padding:10px; }
+.simple-table-list li:nth-child(even) { background-color:#FFFFFF; }
+.simple-table-list li:nth-child(odd) { background-color:#F9f9f9; }
+
+/* fix some general wordpress bugs */
+.wrap h2 .add-new-h2.primary {
+	cursor:pointer;
+	margin-left:15px;
+	background: #2ea2cc;
+  border-color: #0074a2;
+	color:#ffffff;
+}
+#poststuff h2.nav-tab-wrapper { padding:0px; margin:15px 0px 0px 0px; }
+#poststuff h2.nav-tab-wrapper a { cursor:pointer; }
+
+#dashboard-widgets .new-item {
+	padding:2px 8px 2px 8px;
+	float:right;
+	border-radius:5px;
+	background-color:#0074a2;
+	color:#fff;
+	font-weight:bold;
+	text-transform: uppercase;
+	font-size:0.8em;
+}
+
+/* Disable all custom sidebars pro feature ads */
+.csb-pro-layer, .wpmui-tabs a[href="#tab-aut"], .cs-action.btn-export { display:none; }
+/* Disable Yoast and other plugins crappy messages */
+.wpseo_content_cell #sidebar, .wpseo_content_cell #i18n_promo_box { display:none; }
+.yoast-ga-banners, .yoast-ga-content #i18n_promo_box, #onpage-tab, #wpseo-dismiss-about,
+.yoast-ga-content #customdimensions-tab, #wpseo-dismiss-recalculate, #wpseo-dismiss-gsc,
+.yoast-ga-content #debugmode-tab, #nav-tab-lingotek, .wpseo-tab-add-keyword,
+.post-type-lbwp-snippet #wpseo_meta, .post-type-lbwp-form #wpseo_meta,
+.post-type-lbwp-list #wpseo_meta, .post-type-lbwp-listitem #wpseo_meta,
+.vc_license-activation-notice, #wpseo-dashboard-overview .onpage, .submitbox #wpseo-score {
+	display:none !important;
+}
+/* Disable and fix nextscripts crap */
+ul.nsx_tabs { margin-top:20px !important; }
+
+/* menu manager */
+.parent_page { font-weight: 700; }
+.parent_page select { width: 100%; margin-top: 5px; font-weight: 100; }
+.show_in_menu { padding: 10px 0; }
+.sibling_list { -moz-border-radius: 5px; -webkit-border-radius: 5px; border-radius: 5px; border: 1px solid #DFDFDF; padding: 0 5px 5px 5px; position: relative; }
+.sibling_list ul.menu { padding: 0 !important; }
+.sibling_list .menu-item-handle { width: auto !important; }
+.sibling_list .menu-item-settings { width: auto !important; padding: 6px 6px 8px 10px !important; }
+.sibling_list p.description-thin { width: 100% !important; margin: 0 !important; }
+.sibling_list .menu-item-handle .item-title { margin-right: 75px !important; }

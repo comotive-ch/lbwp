@@ -1,0 +1,26 @@
+.lbwp-config { max-width:1000px; }
+.lbwp-config .cfg-head { width:950px; }
+.lbwp-config .cfg-item { width: 950px; border-bottom:1px solid #eee; list-style: none; overflow: auto; margin-bottom:10px; padding:0px 0px 5px 0px; }
+
+.cfg-item, .cfg-head { float:left; }
+.cfg-item .cfg-title { width:250px; float:left; margin-top:4px; font-weight:bold; }
+.cfg-item .cfg-field { width:690px; float:left; }
+
+.cfg-field .cfg-description { width:100%; padding:5px 5px 0px 2px; font-size:11px; }
+.cfg-field .cfg-field-number { width:150px; background-color:#f8f8f8; }
+.cfg-field .cfg-field-text { width:680px; background-color:#f8f8f8; }
+.cfg-field .cfg-field-textarea { width:680px; height:150px; background-color:#f8f8f8; }
+
+.cfg-field .cfg-checkbox { display:inline; margin-left:2px; }
+.cfg-field .cfg-text-rightof-input { width:300px; margin-left:7px; display:inline; }
+
+.cfg-field .cfg-field-check { display:block; margin-bottom:10px; }
+.cfg-field .cfg-field-check input { float:left; margin:1px 10px 0px 0px; }
+.cfg-field .cfg-field-check .cfg-text-rightof-input { float:left; }
+
+.cfg-field .image-upload-small { overflow:auto; }
+.cfg-field .image-upload-small input { float:left; margin-right:20px; }
+.cfg-field .image-upload-small img { float:left; }
+
+/* Newsletter specific */
+.service-config { list-style:disc; margin-left:20px; }

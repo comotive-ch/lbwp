@@ -1,0 +1,466 @@
+<?php
+
+namespace LBWP\Module\General;
+
+use LBWP\Core;
+use LBWP\Helper\Cronjob;
+use LBWP\Module\Backend\MemcachedAdmin;
+use LBWP\Module\General\Multilang\OptionBridge;
+use LBWP\Core as LbwpCore;
+use LBWP\Util\ArrayManipulation;
+use LBWP\Util\File;
+use LBWP\Util\Multilang;
+use LBWP\Util\String;
+use LBWP\Util\WordPress;
+
+/**
+ * This module holds serveral backend/frontend CMS features
+ * @author Michael Sebel <michael@comotive.ch>
+ */
+class CmsFeatures extends \LBWP\Module\Base
+{
+  /**
+   * @var string the last from email from global phpmailer filter
+   */
+  protected static $lastFromEmail = '';
+  /**
+   * call parent constructor and initialize the module
+   */
+  public function __construct()
+  {
+    parent::__construct();
+  }
+
+  /**
+   * Registers all the actions and filters and removes some.
+   */
+  public function initialize()
+  {
+    if (is_admin()) {
+      // Backend features
+      add_action('wp_dashboard_setup', array($this, 'addWidgets'), 20);
+      add_filter('upload_mimes', array($this, 'filterUploadableFileTypes'));
+      add_filter('lbwp_settings_various_maintenancemode', array($this, 'flushFrontendCache'), 1);
+      add_filter('wp_link_query_args', array($this, 'removeUnlinkablePosttypes'));
+      add_filter('wp_link_query', array($this, 'filterAssetLinks'));
+      add_action('admin_menu', array($this, 'removeAdminMetaboxes'));
+      add_action('transition_post_status', array($this, 'addGuaranteedPublication'), 200, 3);
+      add_action('media_view_settings', array($this, 'overrideGallerySettings'));
+      // Sub module singletons (calling getInstance runs them at the specified filter)
+      add_action('sidebar_admin_setup', array('LBWP\Module\General\Cms\WidgetEditor', 'getInstance'));
+    } else {
+      // Frontend features
+      $url = File::getResourceUri() . '';
+      wp_enqueue_style('lbwp-frontend', $url . '/css/lbwp-frontend.css', array(), LbwpCore::REVISION);
+      // Add global rss filter to add media images
+      add_action('rss2_item', array($this, 'addRssMediaItems'));
+      add_action('rss2_ns', array($this, 'addRssNamespace'));
+      // Print acme challenge for ssl domain validation, if given
+      if (is_array(get_option('letsEncryptAcmeChallenge')) && stristr($_SERVER['REQUEST_URI'], '/acme-challenge/') !== false) {
+        $this->printAcmeChallenge();
+      }
+    }
+
+    // Features that are run only in logged in password protection mode of posts
+    if (isset($_COOKIE['wp-postpass_' . COOKIEHASH])) {
+      $this->validatePasswordProtectionCookie();
+      add_filter('the_content', array($this, 'addPasswordProtectionLogoutLink'));
+    }
+
+    // Multilang features
+    if (Multilang::isActive()) {
+      // Add translation files of lbwp textdomain in frontend / backend
+      load_plugin_textdomain('lbwp', false, 'lbwp/resources/languages');
+      // Option bridge, to have multilang capable options
+      OptionBridge::getInstance()->addDefaultOptions();
+    }
+
+    // General features
+    $this->registerLibraries();
+    $this->initGlobalFeatures();
+  }
+
+  /**
+   * Checks for global features (Switched on) and launches them
+   */
+  protected function initGlobalFeatures()
+  {
+    if ($this->config['Various:MaintenanceMode'] == 1) {
+      MaintenanceMode::init();
+    }
+
+    // Globally used widgets
+    add_action('widgets_init', array($this, 'registerGlobalWidgets'));
+    add_filter('wp_mail_from', array($this, 'replaceEmailFrom'), 50);
+    add_action('phpmailer_init', array($this, 'addReplyToEmail'), 50);
+  }
+
+  /**
+   * Mostly all outgoing mail needs to be sent from our domain. A later
+   * filter will add the "last email from" as reply to address, if none is given
+   */
+  public function replaceEmailFrom($email)
+  {
+    self::$lastFromEmail = $email;
+    // Honestly, if starting with wordpress@, it's bullshit. Then use admin_email
+    if (String::startsWith($email, 'wordpress@')) {
+      self::$lastFromEmail = get_option('admin_email');
+    }
+
+    return SERVER_EMAIL;
+  }
+
+  /**
+   * @param \PHPMailer $phpMailer the mailer object
+   */
+  public function addReplyToEmail(&$phpMailer)
+  {
+    // If it has no reply to yet, add the last found from email from above function
+    if (count($phpMailer->getReplyToAddresses()) == 0) {
+      $phpMailer->addReplyTo(self::$lastFromEmail);
+    }
+  }
+
+  /**
+   * Registering global libraries that can be used by themes
+   */
+  protected function registerLibraries()
+  {
+    $url = File::getResourceUri() . '';
+    wp_register_script('jquery-mobile-events', $url . '/js/jquery-mobile-events.min.js', array('jquery'), LbwpCore::REVISION, true);
+    wp_register_script('jquery-cookie', $url . '/js/jquery.cookie.js', array('jquery'), LbwpCore::REVISION, true);
+    wp_register_script('lbwp-gallery-inline-fix', $url . '/js/lbwp-gallery-inline-fix.js', array('jquery'), LbwpCore::REVISION, true);
+    wp_register_style('jquery-ui-theme-lbwp', $url . '/css/jquery.ui.theme.min.css', array(), LbwpCore::REVISION);
+    wp_register_script('chosen-js', $url . '/js/chosen/chosen.jquery.min.js', array('jquery'), LbwpCore::REVISION);
+    wp_register_script('chosen-sortable-js', $url . '/js/chosen/chosen.sortable.jquery.js', array('chosen-js'), LbwpCore::REVISION);
+    wp_register_style('chosen-css', $url . '/js/chosen/chosen.min.css', array(), LbwpCore::REVISION);
+  }
+
+  /**
+   * @param mixed $value the settings value
+   * @return mixed the unchanged value
+   */
+  public function flushFrontendCache($value)
+  {
+    $module = LbwpCore::getModule('MemcachedAdmin');
+    if ($module instanceof MemcachedAdmin) {
+      $module->flushFrontendCache(true);
+    }
+
+    // Return value to be saved
+    return $value;
+  }
+
+  /**
+   * @param array $results link search results
+   * @return array cleaned up array from images and with better info
+   */
+  public function filterAssetLinks($results)
+  {
+    // Save results in $files, other handling for polylang
+    $query = $_POST['search'];
+    // Initialize util arrays
+    $additionalResults = array();
+    $removedTypes = array('image/jpeg', 'image/png', 'image/gif');
+    $results = ArrayManipulation::forceArray($results);
+
+    // If there is polylang there are no file results possible, search directly
+    if (strlen($query) > 0) {
+      // Do a direct database query, since media are not translated and not found
+      $db = WordPress::getDb();
+      $sql = '
+        SELECT ID,post_mime_type,post_type,guid FROM {sql:postTable}
+        WHERE (post_title LIKE {escape:queryText} OR guid LIKE {escape:queryText})
+        AND post_type = "attachment" ORDER BY post_date DESC
+      ';
+
+      // To the same query as if to load the post data used below
+      $additionalResults = $db->get_results(String::prepareSql($sql, array(
+        'postTable' => $db->posts,
+        'queryText' => '%' . str_replace('*', '%', $query) . '%'
+      )));
+    }
+
+    // Filter existing results from images
+    foreach ($results as $key => $result) {
+      $item = get_post($result['ID']);
+      if ($item->post_type == 'attachment') {
+        if (in_array($item->post_mime_type, $removedTypes)) {
+          // Remove from results if image
+          unset($results[$key]);
+        } else {
+          // Add better info, if asset
+          $results[$key]['permalink'] = $item->guid;
+          $results[$key]['title'] = File::getFileOnly($item->guid);
+          $results[$key]['info'] = substr(strtoupper(File::getExtension($item->guid)), 1);
+        }
+      }
+    }
+
+    // Filter results of images and only add "real" assets
+    foreach ($additionalResults as $item) {
+      if (!in_array($item->post_mime_type, $removedTypes)) {
+        $results[] = array(
+          'permalink' => $item->guid,
+          'title' => File::getFileOnly($item->guid),
+          'info' => substr(strtoupper(File::getExtension($item->guid)), 1)
+        );
+      }
+    }
+
+    // Return false if no files, for the editor to not go crazy
+    if (!is_array($results) || count($results) == 0) {
+      return false;
+    } else {
+      return $results;
+    }
+  }
+
+  /**
+   * Print challenge data for ssl domain validation
+   */
+  protected function printAcmeChallenge()
+  {
+    // Test for a specified path for the host
+    foreach (get_option('letsEncryptAcmeChallenge') as $challenge) {
+      if ($_SERVER['REQUEST_URI'] == $challenge['path']) {
+        echo $challenge['content'];
+        header('HTTP/1.1 200 OK');
+        header('Content-Type:text/plain');
+        exit;
+      }
+    }
+  }
+
+  /**
+   * @param array $query query arguments
+   * @return array cleaned arguments
+   */
+  public function removeUnlinkablePosttypes($query)
+  {
+    $postTypes = array();
+    $forbiddenTypes = array('lbwp-form', 'lbwp-snippet', 'lbwp-list', 'lbwp-listitem');
+    // Rebuild array (fastest way to do this, actually)
+    foreach ($query['post_type'] as $type) {
+      if (!in_array($type, $forbiddenTypes)) {
+        $postTypes[] = $type;
+      }
+    }
+
+    $query['post_type'] = $postTypes;
+    return $query;
+  }
+
+  /**
+   * Removes unused or unsenseful metaboxes
+   */
+  public function removeAdminMetaboxes()
+  {
+    remove_meta_box('commentsdiv', 'post', 'normal'); // Comments Metabox
+    remove_meta_box('postcustom', 'post', 'normal'); // Custom Fields Metabox
+    remove_meta_box('trackbacksdiv', 'post', 'normal'); // Trackback Metabox
+    remove_meta_box('postcustom', 'post', 'normal');
+    remove_meta_box('postcustom', 'page', 'normal');
+  }
+
+  /**
+   * Blindly verride the gallery settings, if given
+   * -> Sets "link to" dropdown to media item, instead of attachment link
+   */
+  public function overrideGallerySettings($settings)
+  {
+    $settings['galleryDefaults']['link'] = 'file';
+    return $settings;
+  }
+
+  /**
+   * Register widgets that are globally useable by customers
+   */
+  public function registerGlobalWidgets()
+  {
+    register_widget('\LBWP\Theme\Widget\ClonedContent');
+  }
+
+  /**
+   * Adds some lbwp widgets
+   */
+  public function addWidgets()
+  {
+    // Disable the widgets, if needed
+    if (defined('LBWP_DISABLE_DASHBOARD_WIDGETS')) {
+      return;
+    }
+
+    // LBWP news widget
+    wp_add_dashboard_widget(
+      'lbwp-news',
+      'LBWP News',
+      array(
+        '\LBWP\Module\General\Cms\AdminDashboard',
+        'getNewsFeed'
+      )
+    );
+
+    // Usage statistics dashboard
+    wp_add_dashboard_widget(
+      'lbwp-usage',
+      'Infrastruktur-Nutzung',
+      array(
+        '\LBWP\Module\General\Cms\AdminDashboard',
+        'getUsageStatistics'
+      )
+    );
+  }
+
+  /**
+   * Adds or removes support for certain file types
+   * @param array $types wordpress types array
+   * @return array same array, possibly expaneded
+   */
+  public function filterUploadableFileTypes($types)
+  {
+    if (!isset($types['vcf'])) {
+      $types['vcf'] = 'text/vcard';
+    }
+    if (!isset($types['svg'])) {
+      $types['svg'] = 'image/svg+xml';
+    }
+
+    return $types;
+  }
+
+  /**
+   * @param string $new new status (only do something if future)
+   * @param string $old old status (ignored)
+   * @param \WP_Post $post the post object beeing transitioned
+   */
+  public function addGuaranteedPublication($new, $old, $post)
+  {
+    // If the article is in future and is allowed
+    if ($new == 'future') {
+      // Get the publication timestamp
+      $timestamp = strtotime($post->post_date);
+      // Add to jobs slightly later than the actual publication
+      Cronjob::register(array(
+        ($timestamp + 90) => 'flush_html_cache'
+      ));
+    }
+  }
+
+  /**
+   * Allows administrator to add users even if a same email for a user already exists
+   */
+  public static function allowIndistinctAuthorEmail()
+  {
+    add_action(
+      'user_profile_update_errors',
+      array('\LBWP\Module\General\CmsFeatures', 'removeEmailExistsError')
+    );
+  }
+
+  /**
+   * @param \WP_Error $errors the error array on saving users
+   */
+  public static function removeEmailExistsError($errors)
+  {
+    $codes = $errors->get_error_codes();
+    if (in_array('email_exists', $codes) && count($codes) == 1) {
+      $errors->remove('email_exists');
+      // Set a constant, that it also skips the check in insert_user
+      define('WP_IMPORTING', true);
+    }
+  }
+
+  /**
+   * Called filter at every rss item, providing the additional feed thumbnails tags
+   */
+  public function addRssMediaItems()
+  {
+    global $post;
+
+    // Get url of the attachment item
+    $imageSize = apply_filters('feed_rss_media_type', 'thumbnail');
+    $id = get_post_thumbnail_id($post->ID);
+    list($url) = wp_get_attachment_image_src($id, $imageSize, false);
+
+    if ($url != '') {
+      $attachment = get_post($id);
+      $metaData = get_post_meta($id, '_wp_attachment_metadata', true);
+
+      if (isset($metaData['sizes'][$imageSize]) && !isset($metaData['sizes'][$imageSize]['filesize'])) {
+        if (stristr($url, Core::getCdnName()) !== false) {
+          $fileName = str_replace(Core::getCdnProtocol() . '://' . Core::getCdnName() . '/', '', $url);
+        } else {
+          $fileName = $url;
+        }
+
+        // Get s3 item size
+        $metaData['sizes'][$imageSize]['filesize'] = Core::getModule('S3Upload')->getFileSize($fileName);
+
+        if ($metaData['sizes'][$imageSize]['filesize'] > 0) {
+          update_post_meta($id, '_wp_attachment_metadata', $metaData);
+        }
+      }
+
+      echo '<enclosure url="' . $url . '" type="' . $attachment->post_mime_type . '" length="' . $metaData['filesize'] . '" />' . "\n";
+      echo '<media:content url="' . $url . '" type="' . $attachment->post_mime_type . '" expression="sample" />' . "\n";
+    }
+  }
+
+  /**
+   * Validates the password protection cookie or unsets it if needed
+   */
+  protected function validatePasswordProtectionCookie()
+  {
+    if (isset($_GET['wp-pwpt']) && $_GET['wp-pwpt'] == 'logout') {
+      setcookie('wp-postpass_' . COOKIEHASH, NULL, time() - 86400, '/');
+      header('Location: ' . String::getUrlWithoutParameters());
+      exit;
+    }
+  }
+
+  /**
+   * @param string $html the post content
+   * @return string same content with logout message and link on top of it
+   */
+  public function addPasswordProtectionLogoutLink($html)
+  {
+    global $post;
+    $hint = '';
+
+    // Only show this hint on a password protected page
+    if (strlen($post->post_password) > 0 && !post_password_required()) {
+      $hint = '
+        <p class="lbwp-password-protected-hint">
+          ' . sprintf(__('Sie sind für einen geschützen Bereich angemeldet. <a href="%s">Abmelden</a>.', 'lbwp'), $this->getPasswordProtectionLogoutLink($post)) . '
+        </p>
+      ';
+    }
+
+    return $hint . $html;
+  }
+
+  /**
+   * @param \WP_Post $post the post object
+   * @return string get password protection logout link
+   */
+  public function getPasswordProtectionLogoutLink($post)
+  {
+    $link = get_permalink($post);
+    if (stristr($link, '?') === false) {
+      $link .= '?wp-pwpt=logout';
+    } else {
+      $link .= '&wp-pwpt=logout';
+    }
+
+    return $link;
+  }
+
+  /**
+   * Called at the rss_ns filter to print an additional media-rss namespace
+   */
+  public function addRssNamespace()
+  {
+    echo 'xmlns:media="http://search.yahoo.com/mrss/" ';
+  }
+}

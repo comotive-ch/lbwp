@@ -1,0 +1,127 @@
+@import "compass/css3";
+$lbwpFormValidationColorError: red;
+$lbwpFormValidationColorWarning: orange;
+$lbwpFormValidationColorSuccess: #7ed312;
+@import "lbwp/lbwp-forms";
+
+.lbwp-form {
+	// honey pot
+	.field_email_to {
+		background-color: transparent;
+		border:0px none;
+		box-shadow: none;
+	}
+
+	// labels: default for mobile (full-width)
+	.default-label {
+		display: block;
+		margin: 20px 0 5px;
+	}
+
+	.send-button .default-container {
+		margin: 20px 0 0;
+	}
+
+	// checkboxes and radios
+	.label-checkbox {
+		display: block;
+		margin: 0 0 5px 0;
+		&:last-child {
+			margin: 0;
+		}
+		input, .beside-checkbox {
+			margin: 0;
+			display: inline-block;
+			vertical-align: middle;
+		}
+		.beside-checkbox {
+			padding: 0 0 0 5px;
+		}
+	}
+
+	// zip and city input
+	.zipcity-field {
+		.default-container {
+			position: relative;
+		}
+		.zip-field-part {
+			width:20%;
+		}
+		//todo remove this element from template
+		.zip-field-spacer { display: none; }
+		.city-field-part {
+			position: absolute;
+			top: 0;
+			left: 25%;
+			width: 75%;
+			@media only screen and (min-width: 641px) {
+				top: 10px;
+			}
+		}
+//		.default-container {
+//			overflow: auto;
+//		}
+//		.zip-field-part { float:left; width:20%; }
+//		.zip-field-spacer { float:left; width:3%; content:' '; height:1px; }
+//		.city-field-part { float:left; width:77%; }
+	}
+
+}
+
+// input fields
+@include lbwpFormInputFieldStyles() {
+	width: 100%;
+}
+
+// larger than mobile: show forms in table-layout
+@media only screen and (min-width: 641px) {
+	@include lbwpFormTableLayout();
+}
+
+// overwrite table-layout for forms in widgets
+@media only screen {
+	.lbwp-form-widget {
+		@include lbwpFormTableLayout($reset:true);
+	}
+}
+
+// validation
+.lbwp-form {
+	// error message "row"
+	.validate-message {
+		// default label is empty for validate-message-rows, reset margin (for mobile)
+		.default-label {
+			margin: 0;
+		}
+		.default-container{
+			padding-top: 0;
+		}
+	}
+
+	.lbwp-form-error {
+		.default-container {
+			padding-bottom: 5px;
+		}
+	}
+
+}
+
+@include lbwpFormInputFieldErrorStyles() {
+	border-color: $lbwpFormValidationColorError;
+}
+
+@include lbwpFormInputFieldWarningStyles() {
+	border-color: $lbwpFormValidationColorWarning;
+}
+
+@include lbwpFormInputFieldSuccessStyles() {
+	border-color: $lbwpFormValidationColorSuccess;
+}
+
+// TODO move to highwind theme?
+/* Fix for the highwind theme that uses EM for paddings */
+.outer-wrap .content-wrapper .lbwp-form-override input[type="text"],
+.outer-wrap .content-wrapper .lbwp-form-override input[type="password"],
+.outer-wrap .content-wrapper .lbwp-form-override input[type="email"],
+.outer-wrap .content-wrapper .lbwp-form-override input[type="search"],
+.outer-wrap .content-wrapper .lbwp-form-override textarea { padding:6px 10px 6px 10px !important; }
