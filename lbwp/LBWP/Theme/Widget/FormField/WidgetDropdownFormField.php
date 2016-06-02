@@ -3,6 +3,7 @@
 namespace LBWP\Theme\Widget\FormField;
 
 use LBWP\Helper\Metabox;
+use LBWP\Helper\MetaItem\ChosenDropdown;
 
 /**
  * Class WidgetDropdownField
@@ -63,7 +64,6 @@ class WidgetDropdownFormField extends AbstractFormField
     }
 
     if (strpos($name, '__i__') === false) {
-      $mbh = Metabox::get('post');
       $dropdownArguments = array(
         'name' => $name,
         'key' => str_replace(array('[', ']'), array('_', ''), $name),
@@ -76,7 +76,7 @@ class WidgetDropdownFormField extends AbstractFormField
       $html = '
         <p>
           <label for="' . $this->getWidget()->get_field_id($this->getSlug()) . '">' . $this->getLabel() . '</label>
-          ' . $mbh->displayDropdown($dropdownArguments) . '
+          ' . ChosenDropdown::displayDropdown($dropdownArguments) . '
         </p>
       ';
     }

@@ -167,19 +167,24 @@ class CleanUp extends \LBWP\Module\Base
   {
     global $current_screen;
 
+    // Remove the global jquery ui dialog if enhanced media library
+    if ($this->features['Plugins']['EnhancedMediaLibrary'] == 1) {
+      wp_dequeue_style('wp-jquery-ui-dialog');
+    }
+
     switch ($current_screen->post_type) {
       case ListingTypes::TYPE_ITEM:
       case ListingTypes::TYPE_LIST:
       case FormTypes::FORM_SLUG:
       case Snippets::TYPE_SNIPPET:
         wp_dequeue_style('wp-seo-metabox');
-      wp_dequeue_style('wp-seo-scoring');
-      wp_dequeue_style('wp-seo-snippet');
-      wp_dequeue_style('yoast-seo');
-      // Remove all friggin yoast js
-      wp_dequeue_script('yoast-seo');
-      wp_dequeue_script('wp-seo-metabox');
-      wp_dequeue_script('wpseo-admin-media');
+        wp_dequeue_style('wp-seo-scoring');
+        wp_dequeue_style('wp-seo-snippet');
+        wp_dequeue_style('yoast-seo');
+        // Remove all friggin yoast js
+        wp_dequeue_script('yoast-seo');
+        wp_dequeue_script('wp-seo-metabox');
+        wp_dequeue_script('wpseo-admin-media');
     }
   }
 
@@ -435,10 +440,15 @@ class CleanUp extends \LBWP\Module\Base
       unset($submenu['themes.php'][14]);
     }
 
-    foreach ($submenu['options-general.php'] as $key => $item) {
-      if ($item[2] == 'NextScripts_SNAP.php') {
-        $submenu['options-general.php'][$key][0] = __('Soziale Netzwerke', 'lbwp');
-        $submenu['options-general.php'][$key][3] = __('Soziale Netzwerke', 'lbwp');
+    if (isset($submenu['options-general.php'])) {
+      foreach ($submenu['options-general.php'] as $key => $item) {
+        if ($item[2] == 'eml-settings') {
+          unset($submenu['options-general.php'][$key]);
+        }
+        if ($item[2] == 'NextScripts_SNAP.php') {
+          $submenu['options-general.php'][$key][0] = __('Soziale Netzwerke', 'lbwp');
+          $submenu['options-general.php'][$key][3] = __('Soziale Netzwerke', 'lbwp');
+        }
       }
     }
 

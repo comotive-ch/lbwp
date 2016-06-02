@@ -117,11 +117,21 @@ class Implementation extends Base implements Definition
     // If the API key is set, display the lists dropdown
     if (strlen($this->getSetting('apiKey')) > 0) {
       // Create input and description
-      $input = '<select name="listId">' . $this->getListOptions() . '</select>';
+      $input = '<select name="listId">' . $this->getListOptions('', 'listId') . '</select>';
       $description = 'Diese Liste wird für An-/Abmeldungen und den Versand verwendet.';
 
       // Create the form field from template
       $fields .= str_replace('{title}', 'Empfängerliste', $template);
+      $fields = str_replace('{input}', $input, $fields);
+      $fields = str_replace('{description}', $description, $fields);
+      $fields = str_replace('{fieldId}', 'listId', $fields);
+
+      // Create input and description
+      $input = '<select name="testId">' . $this->getListOptions('', 'testId') . '</select>';
+      $description = 'Diese Versandliste wird für den Testversand verwendet.';
+
+      // Create the form field from template
+      $fields .= str_replace('{title}', 'Testliste', $template);
       $fields = str_replace('{input}', $input, $fields);
       $fields = str_replace('{description}', $description, $fields);
       $fields = str_replace('{fieldId}', 'listId', $fields);
@@ -157,6 +167,13 @@ class Implementation extends Base implements Definition
         $this->updateSetting('listName', $listData[1]);
       }
 
+      // Test list data
+      if (strlen($_POST['testId']) > 0) {
+        $listData = explode('$$', $_POST['testId']);
+        $this->updateSetting('testId', $listData[0]);
+        $this->updateSetting('testName', $listData[1]);
+      }
+
       // Try to call the API and save the api key if it doesn't throw an error
       $response = $api->get('', array());
 
@@ -176,12 +193,12 @@ class Implementation extends Base implements Definition
    * @param string $selectedKey
    * @return array list of options to use in a dropdown
    */
-  public function getListOptions($selectedKey = '')
+  public function getListOptions($selectedKey = '', $fieldKey = 'listId')
   {
     // Grab lists from API
-    $html = '';
+    $html = '<option value="">Bitte wählen Sie eine Liste aus</option>';
     $lists = $this->getLists();
-    $currentListId = $this->getSetting('listId');
+    $currentListId = $this->getSetting($fieldKey);
 
     // Display a list if possible
     if (is_array($lists['lists']) && count($lists['lists']) > 0) {
@@ -201,7 +218,7 @@ class Implementation extends Base implements Definition
         ';
       }
     } else {
-      $html .= '<option value="">' . __('Konnte keine Listen laden. Bitte erstellen sie eine Liste in MailChimp.', 'lbwp') . '</option>';
+      $html = '<option value="">' . __('Konnte keine Listen laden. Bitte erstellen sie eine Liste in MailChimp.', 'lbwp') . '</option>';
     }
 
     return $html;

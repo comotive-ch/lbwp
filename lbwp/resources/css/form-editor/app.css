@@ -403,25 +403,26 @@ div.drag-target {
 
 @media only screen and (min-width: 1079px) {
   /* line 368, ../scss/form-editor/app.scss */
-  .lbwp-form-preview .forms-item input:not([type=checkbox]):not([type=radio]):not([type=submit]):not([type=button]), .lbwp-form-preview .forms-item select, .lbwp-form-preview .forms-item textarea {
+  .lbwp-form-preview .forms-item input:not([type=checkbox]):not([type=radio]):not([type=submit]):not([type=button]):not(.zip-field-part):not(.city-field-part),
+  .lbwp-form-preview .forms-item select, .lbwp-form-preview .forms-item textarea {
     width: calc(100% - 70px);
   }
 }
 @media only screen and (max-width: 1078px) {
-  /* line 374, ../scss/form-editor/app.scss */
+  /* line 375, ../scss/form-editor/app.scss */
   .lbwp-form-preview .forms-item {
     padding: 5px 10px 10px;
   }
 }
-/* line 380, ../scss/form-editor/app.scss */
+/* line 381, ../scss/form-editor/app.scss */
 .lbwp-form-preview .forms-item:not(.send-button) label {
   cursor: move;
 }
-/* line 382, ../scss/form-editor/app.scss */
+/* line 383, ../scss/form-editor/app.scss */
 .lbwp-form-preview .forms-item:not(.send-button) label:active {
   cursor: none;
 }
-/* line 387, ../scss/form-editor/app.scss */
+/* line 388, ../scss/form-editor/app.scss */
 .lbwp-form-preview .forms-item:not(.send-button):hover {
   background: #dfdfdf;
 }
@@ -444,13 +445,13 @@ div.drag-target {
   }
 }
 @media only screen and (max-width: 1078px) {
-  /* line 387, ../scss/form-editor/app.scss */
+  /* line 388, ../scss/form-editor/app.scss */
   .lbwp-form-preview .forms-item:not(.send-button):hover {
     border: 0 solid #0074a2;
     border-radius: 5px;
   }
 }
-/* line 392, ../scss/form-editor/app.scss */
+/* line 393, ../scss/form-editor/app.scss */
 .lbwp-form-preview .forms-item:not(.send-button).selected, .lbwp-form-preview .forms-item:not(.send-button).selected:hover {
   background: #2ea2cc;
   color: white;
@@ -474,17 +475,21 @@ div.drag-target {
   }
 }
 @media only screen and (max-width: 1078px) {
-  /* line 392, ../scss/form-editor/app.scss */
+  /* line 393, ../scss/form-editor/app.scss */
   .lbwp-form-preview .forms-item:not(.send-button).selected, .lbwp-form-preview .forms-item:not(.send-button).selected:hover {
     border: 1px solid #0074a2;
     border-radius: 5px;
   }
 }
-/* line 399, ../scss/form-editor/app.scss */
+/* line 400, ../scss/form-editor/app.scss */
+.lbwp-form-preview .forms-item:not(.send-button) .default-label {
+  padding-left: 5px;
+}
+/* line 404, ../scss/form-editor/app.scss */
 .lbwp-form-preview .forms-item:not(.send-button) .default-container {
   position: relative;
 }
-/* line 406, ../scss/form-editor/app.scss */
+/* line 411, ../scss/form-editor/app.scss */
 .lbwp-form-preview .forms-item:not(.send-button):hover .default-container:after {
   width: 25px;
   height: 25px;
@@ -505,12 +510,12 @@ div.drag-target {
   font-size: 20px;
 }
 @media only screen and (max-width: 1078px) {
-  /* line 406, ../scss/form-editor/app.scss */
+  /* line 411, ../scss/form-editor/app.scss */
   .lbwp-form-preview .forms-item:not(.send-button):hover .default-container:after {
     top: -30px;
   }
 }
-/* line 425, ../scss/form-editor/app.scss */
+/* line 430, ../scss/form-editor/app.scss */
 .lbwp-form-preview .forms-item:not(.send-button) .delete {
   margin: 0;
   top: 12px;
@@ -527,36 +532,37 @@ div.drag-target {
   font-size: 20px;
 }
 @media only screen and (max-width: 1078px) {
-  /* line 425, ../scss/form-editor/app.scss */
+  /* line 430, ../scss/form-editor/app.scss */
   .lbwp-form-preview .forms-item:not(.send-button) .delete {
     top: -30px;
   }
 }
-/* line 442, ../scss/form-editor/app.scss */
+/* line 447, ../scss/form-editor/app.scss */
 .lbwp-form-preview .forms-item:not(.send-button).selected:hover .default-container:after, .lbwp-form-preview .forms-item:not(.send-button).selected .delete {
   background: white;
   color: #2ea2cc;
 }
-/* line 449, ../scss/form-editor/app.scss */
+/* line 454, ../scss/form-editor/app.scss */
 .lbwp-form-preview .forms-item:not(.send-button).ui-sortable-helper:after {
   display: none;
 }
-/* line 452, ../scss/form-editor/app.scss */
+/* line 457, ../scss/form-editor/app.scss */
 .lbwp-form-preview .forms-item:not(.send-button).ui-sortable-helper .delete {
   display: none;
 }
 @media only screen and (min-width: 1079px) {
-  /* line 459, ../scss/form-editor/app.scss */
-  .lbwp-form-preview .forms-item:not(.send-button).zipcity-field .zip-field-part {
-    width: 20% !important;
+  /* line 466, ../scss/form-editor/app.scss */
+  .lbwp-form-preview .forms-item:not(.send-button).radio-field .default-container, .lbwp-form-preview .forms-item:not(.send-button).checkbox-field .default-container {
+    padding-right: 70px;
   }
-  /* line 462, ../scss/form-editor/app.scss */
-  .lbwp-form-preview .forms-item:not(.send-button).zipcity-field .city-field-part {
-    width: calc(77% - 70px) !important;
+  /* line 472, ../scss/form-editor/app.scss */
+  .lbwp-form-preview .forms-item:not(.send-button) .city-field-part {
+    width: calc(77% - 70px);
+    float: none;
   }
 }
 
-/* line 472, ../scss/form-editor/app.scss */
+/* line 482, ../scss/form-editor/app.scss */
 .available-fields > div {
   margin-bottom: 10px;
   border: 1px solid #dfdfdf;
@@ -567,54 +573,54 @@ div.drag-target {
   box-shadow: 0 1px 1px rgba(0, 0, 0, 0.04);
   cursor: move;
 }
-/* line 479, ../scss/form-editor/app.scss */
+/* line 489, ../scss/form-editor/app.scss */
 .available-fields > div:hover {
   border-color: #999;
 }
-/* line 482, ../scss/form-editor/app.scss */
+/* line 492, ../scss/form-editor/app.scss */
 .available-fields > div:last-child {
   margin-bottom: 0;
 }
 
-/* line 489, ../scss/form-editor/app.scss */
+/* line 499, ../scss/form-editor/app.scss */
 .lbwp-editField {
   display: block;
   margin-bottom: 20px;
   width: 100%;
   position: relative;
 }
-/* line 494, ../scss/form-editor/app.scss */
+/* line 504, ../scss/form-editor/app.scss */
 .lbwp-editField label {
   font-weight: bold;
   display: block;
   margin-bottom: 5px;
   padding-right: 25px;
 }
-/* line 499, ../scss/form-editor/app.scss */
+/* line 509, ../scss/form-editor/app.scss */
 .lbwp-editField label.radio {
   display: inline-block;
   padding-right: 15px;
 }
-/* line 504, ../scss/form-editor/app.scss */
+/* line 514, ../scss/form-editor/app.scss */
 .lbwp-editField input[type="text"], .lbwp-editField textarea {
   width: 100%;
 }
-/* line 507, ../scss/form-editor/app.scss */
+/* line 517, ../scss/form-editor/app.scss */
 .lbwp-editField textarea {
   min-height: 100px;
   max-height: 300px;
 }
-/* line 511, ../scss/form-editor/app.scss */
+/* line 521, ../scss/form-editor/app.scss */
 .lbwp-editField .textfieldArray {
   position: relative;
   margin-bottom: 5px;
 }
-/* line 514, ../scss/form-editor/app.scss */
+/* line 524, ../scss/form-editor/app.scss */
 .lbwp-editField .textfieldArray .delete {
   right: 25px;
   margin-top: -10px !important;
 }
-/* line 518, ../scss/form-editor/app.scss */
+/* line 528, ../scss/form-editor/app.scss */
 .lbwp-editField .textfieldArray .drag {
   width: 20px;
   height: 20px;
@@ -625,19 +631,19 @@ div.drag-target {
   margin-top: -10px;
   right: 0px;
 }
-/* line 528, ../scss/form-editor/app.scss */
+/* line 538, ../scss/form-editor/app.scss */
 .lbwp-editField .textfieldArray .drag:active {
   cursor: none;
 }
-/* line 531, ../scss/form-editor/app.scss */
+/* line 541, ../scss/form-editor/app.scss */
 .lbwp-editField .textfieldArray input[type="text"] {
   width: calc(100% - 50px);
 }
-/* line 535, ../scss/form-editor/app.scss */
+/* line 545, ../scss/form-editor/app.scss */
 .lbwp-editField .textfieldArray .dashicons:hover {
   color: #0074a2;
 }
-/* line 541, ../scss/form-editor/app.scss */
+/* line 551, ../scss/form-editor/app.scss */
 .lbwp-editField.action-property input {
   padding-right: 30px;
 }

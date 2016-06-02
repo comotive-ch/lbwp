@@ -53,6 +53,7 @@ $this->features = array(
     '2ClickSmButtons' => 0, //@deprecated
     'Polylang' => 0,
     'CustomSidebars' => 0,
+    'EnhancedMediaLibrary' => 0,
     'wpSeoYoast' => 0,
     'analyticsYoast' => 0,
     'wpSeo' => 0,

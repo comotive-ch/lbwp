@@ -126,9 +126,6 @@ abstract class CoreV2
     // make the get_footer function compatible for plugins with own templates
     add_filter('get_footer', array($this, 'renderFooter'), 15, 2);
 
-    // disable theme compat mode (deprecated since 3.0, custom filter put in place for relevant sections)
-    add_filter('use_theme_compat_templates', '__return_false');
-
     add_action('wp_enqueue_scripts', array($this, 'assets'));
     add_action('wp_enqueue_scripts', array($this, 'lateAssets'), 50);
 
@@ -457,7 +454,6 @@ abstract class CoreV2
   public function renderView($slug, $arguments = null)
   {
     $viewFile = $this->getViewFileBySlug($slug);
-
     if ($viewFile) {
       if (is_array($arguments)) {
         extract($arguments, EXTR_SKIP);

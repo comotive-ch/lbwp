@@ -36,34 +36,26 @@ $lbwpFormValidationColorSuccess: #7ed312;
 		}
 		.beside-checkbox {
 			padding: 0 0 0 5px;
+			width: 90%;
+			// don't work for < IE11
+			//width: calc(100% - 25px);
 		}
 	}
 
 	// zip and city input
-	.zipcity-field {
-		.default-container {
-			position: relative;
-		}
-		.zip-field-part {
-			width:20%;
-		}
-		//todo remove this element from template
-		.zip-field-spacer { display: none; }
-		.city-field-part {
-			position: absolute;
-			top: 0;
-			left: 25%;
-			width: 75%;
-			@media only screen and (min-width: 641px) {
-				top: 10px;
-			}
-		}
-//		.default-container {
-//			overflow: auto;
-//		}
-//		.zip-field-part { float:left; width:20%; }
-//		.zip-field-spacer { float:left; width:3%; content:' '; height:1px; }
-//		.city-field-part { float:left; width:77%; }
+
+	//todo remove this element from template
+	.zip-field-spacer { display: none; }
+
+	input[type="text"].zip-field-part {
+		display: inline-block;
+		width:22%;
+	}
+
+	input[type="text"].city-field-part {
+		display: inline-block;
+		width: 75%;
+		float: right;
 	}
 
 }

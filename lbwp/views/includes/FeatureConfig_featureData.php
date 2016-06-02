@@ -177,6 +177,23 @@ $this->featureData['Plugins']['sub']['CustomSidebars'] = array(
   )
 );
 
+$this->featureData['Plugins']['sub']['EnhancedMediaLibrary'] = array(
+  'name' => 'Kategorisierung von Medien',
+  'state' => 'editable',
+  'description' => '
+    Dieses Plugin erlaubt es Medien in Kategorien- und Unterkategorien einzuteilen und
+    die Medien im Editor zu filtern.
+  ',
+  'install' => array(
+    'callback' => array($this,'installPlugin'),
+    'params' => array('files' => 'enhanced-media-library/enhanced-media-library.php')
+  ),
+  'uninstall' => array(
+    'callback' => array($this,'uninstallPlugin'),
+    'params' => array('files' => 'enhanced-media-library/enhanced-media-library.php')
+  )
+);
+
 $this->featureData['Plugins']['sub']['Polylang'] = array(
   'name' => 'Mehrsprachigkeit',
   'state' => 'editable',

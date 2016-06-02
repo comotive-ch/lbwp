@@ -214,6 +214,7 @@ class FormEditor extends Base
   }
 
   /**
+   * Provides default templates for newly created forms
    * @param string $shortcode without items
    * @return string the shortcode with an integrated form items template
    */
@@ -228,11 +229,12 @@ class FormEditor extends Base
       ';
     }
 
-    // templateId is not yet handled, it's just a function to be completes with actual templates
+    // templateId is not yet handled, it's just a function to be completed with actual templates
     switch ($_REQUEST['templateId']) {
       default:
         $template = '
           [lbwp:formItem key="textfield" pflichtfeld="ja" feldname="Beispiel-Feld" type="text"]
+          [lbwp:formItem key="calculation" feldname="Spamschutz" pflichtfeld="ja" ]
         ';
     }
 

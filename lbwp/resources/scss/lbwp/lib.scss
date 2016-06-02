@@ -1,3 +1,25 @@
+// Helper for content elements (images, iframes) with a fix ratio
+// options
+// $image (bool, optional): Centered and croped image
+// $ratioInPercent (percent): Display ratio
+@mixin lbwpRatioContainer($image:false,$ratioInPercent:56.25%) {
+	position: relative;
+	overflow: hidden;
+	width: 100%;
+	height: auto;
+	@if ($image) {
+		padding-bottom: $ratioInPercent;
+		& > img {
+			position: absolute;
+			top: 0;
+			right: 0;
+			bottom: 0;
+			left: 0;
+			margin: auto;
+		}
+	}
+}
+
 // fix for positioning the admin bar on small screens
 @mixin lbwpFixMobileWpAdminBar($fixedForMobile:false) {
 	@media screen and (max-width: 600px) {

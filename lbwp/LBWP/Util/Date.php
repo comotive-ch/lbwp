@@ -207,19 +207,27 @@ class Date
 
   /**
    * @param string $language the iso language code, not used yet
+   * @param array $options additional options
    * @return string json string representing json datepicker config
    */
-  public static function getDatePickerJson($language = 'de')
+  public static function getDatePickerJson($language = 'de', $options = array())
   {
-    return '{
-      dateFormat : "dd.mm.yy",
-      dayNames : ["Sonntag", "Montag", "Dienstag", "Mittwoch", "Donnerstag", "Freitag", "Samstag"],
-      dayNamesMin : ["So", "Mo", "Di", "Mi", "Do", "Fr", "Sa"],
-      dayNamesShort : ["So", "Mo", "Di", "Mi", "Do", "Fr", "Sa"],
-      monthNames : ["Januar", "Februar", "März", "April", "Mai", "Juni", "Juli", "August", "September", "Oktober", "November", "Dezember"],
-      monthNamesShort : ["Jan", "Feb", "Mär", "Apr", "Mai", "Jun", "Jul", "Aug", "Sep", "Okt", "Nov", "Dez"],
-      firstDay : 1
-    }';
+    $config = array(
+      'dateFormat' => 'dd.mm.yy',
+      'dayNames' => array('Sonntag', 'Montag', 'Dienstag', 'Mittwoch', 'Donnerstag', 'Freitag', 'Samstag'),
+      'dayNamesMin' => array('So', 'Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa'),
+      'dayNamesShort' => array('So', 'Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa'),
+      'monthNames' => array('Januar', 'Februar', 'März', 'April', 'Mai', 'Juni', 'Juli', 'August', 'September', 'Oktober', 'November', 'Dezember'),
+      'monthNamesShort' => array('Jan', 'Feb', 'Mär', 'Apr', 'Mai', 'Jun', 'Jul', 'Aug', 'Sep', 'Okt', 'Nov', 'Dez'),
+      'firstDay' => 1
+    );
+
+    // Merge, if needed
+    if (count($options) > 0) {
+      $config = array_merge($config, $options);
+    }
+
+    return json_encode($config);
   }
 
 	/**

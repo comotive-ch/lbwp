@@ -365,7 +365,8 @@ div.drag-target {
 .lbwp-form-preview {
 
 	@media #{$tableFormLayout} {
-		.forms-item input:not([type=checkbox]):not([type=radio]):not([type=submit]):not([type=button]), .forms-item select, .forms-item textarea {
+		.forms-item input:not([type=checkbox]):not([type=radio]):not([type=submit]):not([type=button]):not(.zip-field-part):not(.city-field-part),
+		.forms-item select, .forms-item textarea {
 			width: calc(100% - 70px);
 		}
 	}
@@ -394,6 +395,10 @@ div.drag-target {
 				color: white;
 				@include formItemBorder();
 			}
+		}
+
+		.default-label {
+			padding-left: 5px;
 		}
 
 		.default-container {
@@ -455,13 +460,18 @@ div.drag-target {
 		}
 
 		@media #{$tableFormLayout} {
-			&.zipcity-field {
-				.zip-field-part {
-					width: 20% !important;
+
+			&.radio-field, &.checkbox-field {
+				// "Placeholder" for icons
+				.default-container {
+					padding-right: 70px;
 				}
-				.city-field-part {
-					width: calc(77% - 70px) !important;
-				}
+			}
+
+			// Fix for zip/city fieldtype
+			.city-field-part {
+				width: calc(77% - 70px);
+				float: none;
 			}
 		}
 	}

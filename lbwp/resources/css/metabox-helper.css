@@ -1,6 +1,6 @@
 .mbh-item-normal, .mbh-item-full {
   width: 100%;
-  padding: 7px 0px 7px 0px;
+  padding: 3px 0px 2px 0px;
   box-sizing: border-box;
 }
 
@@ -211,4 +211,70 @@
 
 #lbwp-nl__newsletter-items #newAssignedItem {
 	width: 78% !important;
+}
+
+#metaboxHelperContainer {
+	position:fixed;
+	top: 0;
+	right: 0;
+	left: 0;
+	bottom: -10000px;
+	width:80%;
+	height:800px;
+	margin: auto;
+	z-index:10010;
+	/* styling of the box */
+	border:1px solid #333;
+	padding:0px;
+	background-color:#F1F1F1;
+}
+
+#metaboxHelperContainer .dashicons-no-alt {
+	position: absolute;
+	right: -40px;
+	top: 0;
+	background: white;
+	font-size: 30px;
+	height: 30px;
+	width: 30px;
+	line-height: 1;
+	padding: 0;
+
+}
+
+.media-modal-backdrop-mbh {
+	position: fixed;
+	top: 0;
+	left: 0;
+	right: 0;
+	bottom: 0;
+	min-height: 360px;
+	background: #000;
+	opacity: .7;
+	z-index: 10000;
+}
+
+.add-new-dropdown-item {
+	border:1px solid #DFDFDF;
+	border-radius: 3px;
+	background-image: none;
+	margin-top:10px;
+	margin-bottom:10px;
+	padding:5px 14px;
+}
+
+.add-new-dropdown-item label {
+	display: inline-block;
+	margin: -3px 10px 0px 0px;
+	padding-top: 0px;
+	font-style: italic;
+}
+
+.add-new-dropdown-item input {
+	min-width: 200px;
+}
+
+.add-new-dropdown-item input.error {
+	border-color:#cc0000;
+	background-color:rgba(150,80,80,0.1)
 }

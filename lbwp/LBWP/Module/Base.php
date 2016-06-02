@@ -43,6 +43,9 @@ abstract class Base
     // Reload multilang config as soon as available
     if (Multilang::isActive()) {
       add_action('init', array($this, 'reloadConfig'));
+      if (defined('LBWP_LATE_CONFIG_RELOAD')) {
+        add_action('wp', array($this, 'reloadConfig'));
+      }
     }
 	}
 

@@ -2,7 +2,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: LBWP\n"
 "POT-Creation-Date: 2015-08-03 11:05+0100\n"
-"PO-Revision-Date: 2016-04-25 08:55+0100\n"
+"PO-Revision-Date: 2016-05-13 13:38+0100\n"
 "Last-Translator: \n"
 "Language-Team: comotive <info@comotive.ch>\n"
 "Language: fr_FR\n"
@@ -209,7 +209,7 @@ msgstr "Veuillez remplir la case \"%s\" s'il vous plaît"
 
 #: /var/www/lbwp/wp-content/plugins/lbwp/LBWP/Module/Forms/Item/Calculation.php:37
 msgid "Tragen Sie das Ergebnis folgender Rechnung ein:"
-msgstr "Veuillez insérer dans la case le resultat de la calculation suivante:"
+msgstr "Veuillez insérer dans la case le résultat de la calculation suivante:"
 
 #: /var/www/lbwp/wp-content/plugins/lbwp/LBWP/Module/Forms/Item/Calculation.php:45
 msgid "Spamschutz: "

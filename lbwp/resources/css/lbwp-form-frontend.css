@@ -40,31 +40,22 @@
 /* line 37, scss/lbwp-form-frontend.scss */
 .lbwp-form .label-checkbox .beside-checkbox {
   padding: 0 0 0 5px;
+  width: 90%;
 }
-/* line 44, scss/lbwp-form-frontend.scss */
-.lbwp-form .zipcity-field .default-container {
-  position: relative;
-}
-/* line 47, scss/lbwp-form-frontend.scss */
-.lbwp-form .zipcity-field .zip-field-part {
-  width: 20%;
-}
-/* line 51, scss/lbwp-form-frontend.scss */
-.lbwp-form .zipcity-field .zip-field-spacer {
+/* line 48, scss/lbwp-form-frontend.scss */
+.lbwp-form .zip-field-spacer {
   display: none;
 }
-/* line 52, scss/lbwp-form-frontend.scss */
-.lbwp-form .zipcity-field .city-field-part {
-  position: absolute;
-  top: 0;
-  left: 25%;
-  width: 75%;
+/* line 50, scss/lbwp-form-frontend.scss */
+.lbwp-form input[type="text"].zip-field-part {
+  display: inline-block;
+  width: 22%;
 }
-@media only screen and (min-width: 641px) {
-  /* line 52, scss/lbwp-form-frontend.scss */
-  .lbwp-form .zipcity-field .city-field-part {
-    top: 10px;
-  }
+/* line 55, scss/lbwp-form-frontend.scss */
+.lbwp-form input[type="text"].city-field-part {
+  display: inline-block;
+  width: 75%;
+  float: right;
 }
 
 /* line 16, ../scss/lbwp/_lbwp-forms.scss */
@@ -155,15 +146,15 @@
     width: 100%;
   }
 }
-/* line 93, scss/lbwp-form-frontend.scss */
+/* line 85, scss/lbwp-form-frontend.scss */
 .lbwp-form .validate-message .default-label {
   margin: 0;
 }
-/* line 96, scss/lbwp-form-frontend.scss */
+/* line 88, scss/lbwp-form-frontend.scss */
 .lbwp-form .validate-message .default-container {
   padding-top: 0;
 }
-/* line 102, scss/lbwp-form-frontend.scss */
+/* line 94, scss/lbwp-form-frontend.scss */
 .lbwp-form .lbwp-form-error .default-container {
   padding-bottom: 5px;
 }
@@ -184,7 +175,7 @@
 }
 
 /* Fix for the highwind theme that uses EM for paddings */
-/* line 123, scss/lbwp-form-frontend.scss */
+/* line 115, scss/lbwp-form-frontend.scss */
 .outer-wrap .content-wrapper .lbwp-form-override input[type="text"],
 .outer-wrap .content-wrapper .lbwp-form-override input[type="password"],
 .outer-wrap .content-wrapper .lbwp-form-override input[type="email"],

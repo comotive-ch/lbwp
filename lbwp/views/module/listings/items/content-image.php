@@ -16,7 +16,7 @@ if (strlen($imageUrl)) {
 
 // content-col
 $content = '<h2>' . get_post_meta($item->ID, 'content-title', true) . '</h2>';
-$content .= wpautop(get_post_meta($item->ID, 'content-text', true));
+$content .= do_shortcode(wpautop(get_post_meta($item->ID, 'content-text', true)));
 
 // check for link
 $itemLink = get_post_meta($item->ID, 'content-link', true);

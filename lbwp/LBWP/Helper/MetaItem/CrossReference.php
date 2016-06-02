@@ -51,7 +51,13 @@ class CrossReference
     ));
 
     foreach ($posts as $item) {
-      $dropdown['items'][$item->ID] = $item->post_title;
+      $dropdown['items'][$item->ID] = array(
+        'title' => PostTypeDropdown::getPostElementName($item),
+        'data' => array(
+          'url' => admin_url('post.php?post=' . $item->ID . '&action=edit&ui=show-as-modal'),
+          'is-modal' => 1
+        )
+      );
     }
 
     return $dropdown;

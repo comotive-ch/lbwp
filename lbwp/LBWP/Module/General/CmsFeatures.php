@@ -48,6 +48,7 @@ class CmsFeatures extends \LBWP\Module\Base
       add_action('media_view_settings', array($this, 'overrideGallerySettings'));
       // Sub module singletons (calling getInstance runs them at the specified filter)
       add_action('sidebar_admin_setup', array('LBWP\Module\General\Cms\WidgetEditor', 'getInstance'));
+      add_filter('admin_body_class', array($this, 'addAdminBodyClasses'));
     } else {
       // Frontend features
       $url = File::getResourceUri() . '';
@@ -55,6 +56,7 @@ class CmsFeatures extends \LBWP\Module\Base
       // Add global rss filter to add media images
       add_action('rss2_item', array($this, 'addRssMediaItems'));
       add_action('rss2_ns', array($this, 'addRssNamespace'));
+      add_filter('the_excerpt_rss', array($this, 'fixFeedExcerpt'));
       // Print acme challenge for ssl domain validation, if given
       if (is_array(get_option('letsEncryptAcmeChallenge')) && stristr($_SERVER['REQUEST_URI'], '/acme-challenge/') !== false) {
         $this->printAcmeChallenge();
@@ -71,6 +73,8 @@ class CmsFeatures extends \LBWP\Module\Base
     if (Multilang::isActive()) {
       // Add translation files of lbwp textdomain in frontend / backend
       load_plugin_textdomain('lbwp', false, 'lbwp/resources/languages');
+      // Feed fix filters
+      add_filter('wp_title_rss', array($this, 'fixMultilangFeedTitle')); //[&#8230;]
       // Option bridge, to have multilang capable options
       OptionBridge::getInstance()->addDefaultOptions();
     }
@@ -78,6 +82,28 @@ class CmsFeatures extends \LBWP\Module\Base
     // General features
     $this->registerLibraries();
     $this->initGlobalFeatures();
+  }
+
+  /**
+   * @param string $excerpt the excerpt
+   * @return string the slighly changed excerpt
+   */
+  public function fixFeedExcerpt($excerpt)
+  {
+    if (String::endsWith($excerpt, ' [&#8230;]')) {
+      return str_replace(' [&#8230;]', '...', $excerpt);
+    }
+
+    return $excerpt;
+  }
+
+  /**
+   * @param string $title original feed title
+   * @return string the fixed title
+   */
+  public function fixMultilangFeedTitle($title)
+  {
+    return str_replace(' &#187; Languages', '', $title);
   }
 
   /**
@@ -108,6 +134,31 @@ class CmsFeatures extends \LBWP\Module\Base
     }
 
     return SERVER_EMAIL;
+  }
+
+  /**
+   * @param string $classes
+   * @return string
+   */
+  public function addAdminBodyClasses($classes)
+  {
+    if ($_GET['ui'] == 'show-as-modal') {
+      $classes .= 'modal-backend';
+      // Allow to open it in modal once again after saving
+      $_SESSION['open-modal-' . $_GET['post']] = true;
+    }
+
+    if ($_SERVER['REQUEST_METHOD'] == 'GET' && isset($_GET['post']) && !isset($_GET['ui'])) {
+      if (isset($_SESSION['open-modal-' . $_GET['post']]) && isset($_GET['message'])) {
+        $classes .= 'modal-backend';
+        // Allow to open it in modal once again after saving
+        $_SESSION['open-modal-' . $_GET['post']] = true;
+      } else {
+        unset($_SESSION['open-modal-' . $_GET['post']]);
+      }
+    }
+
+    return $classes;
   }
 
   /**

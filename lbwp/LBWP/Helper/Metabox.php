@@ -2,18 +2,24 @@
 
 namespace LBWP\Helper;
 
-use LBWP\Util\ArrayManipulation;
-use LBWP\Util\File;
+// Basic framework dependencies
 use wpdb;
 use LBWP\Util\String;
 use LBWP\Util\Date;
+use LBWP\Helper\MetaItem\SimpleField;
+use LBWP\Helper\MetaItem\Templates;
+// Various sub items for complex helpers
 use LBWP\Helper\MetaItem\CrossReference;
+use LBWP\Helper\MetaItem\PostTypeDropdown;
+use LBWP\Helper\MetaItem\AddressLocation;
+use LBWP\Helper\MetaItem\ChosenDropdown;
 
 /**
  * This helper can be instantiated to add one or more metaboxes to a posttype,
  * adding fields of different types to it, and it handels saving for these
  * field automatically. Displaying is handled globally by a CSS singleton.
- * @author Michael Sebel <michael.sebel@blogwerk.com>
+ * @author Michael Sebel <michael@comotive.ch>
+ * @author Tom Forrer <tom.forrer@gmail.com>
  */
 class Metabox
 {
@@ -50,10 +56,6 @@ class Metabox
    */
   protected static $instances = array();
   /**
-   * @var array the templates fille in templates.php (constructor)
-   */
-  protected $templates = array();
-  /**
    * @var int the version of this class
    */
   const VERSION = 10;
@@ -72,7 +74,7 @@ class Metabox
     $this->posttype = $posttype;
     $this->wpdb = $wpdb;
 
-    $this->setTemplates();
+    Templates::setTemplates();
 
     // If this is the first instance, register js/css files for enqueuement
     if (count(self::$instances) == 0) {
@@ -87,78 +89,113 @@ class Metabox
     add_action('add_meta_boxes_' . $posttype, array($this, 'filterMetaboxes'), 50);
     add_action('add_meta_boxes_' . $posttype, array($this, 'mergeSections'), 100);
     add_action('add_meta_boxes_' . $posttype, array($this, 'addMetaboxes'), 150);
+    // Generic ajax actions and listeners (just in case it is used)
+    add_action('wp_ajax_newPostTypeItem', array('\LBWP\Helper\MetaItem\PostTypeDropdown', 'addNewPostTypeItem'));
   }
 
   /**
-   * Set the default tempaltes
+   * @param string $id the id of the metabox (must be unique within the helper)
+   * @param string $title the title of the metabox
+   * @param string $context the context (normal, advanced (default))
+   * @param string $priority the priority (default, high, core)
    */
-  protected function setTemplates()
+  public function addMetabox($id, $title, $context = 'normal', $priority = 'default')
   {
-    $this->templates['description'] = '
-      <div class="mbh-item-normal">
-        <div class="mbh-title"><label for="{fieldId}">{title}</label></div>
-        <div class="mbh-field {fieldClass}">
-          <div class="mbh-input">{input}</div>
-          <div class="mbh-description"><label for="{fieldId}">{description}</label></div>
-        </div>
-      </div>
-    ';
+    $this->metaboxes[$id] = array(
+      'title' => $title,
+      'context' => $context,
+      'priority' => $priority
+    );
+  }
 
-    $this->templates['description_full'] = '
-      <div class="mbh-item-full">
-        <div class="mbh-title"><label for="{fieldId}">{title}</label></div>
-        <div class="mbh-field {fieldClass}">
-          <div class="mbh-input">{input}</div>
-          <div class="mbh-description"><label for="{fieldId}">{description}</label></div>
-        </div>
-      </div>
-    ';
+  /**
+   * Actually add the registered metaboxes
+   */
+  public function addMetaboxes()
+  {
+    foreach ($this->metaboxes as $id => $config) {
+      add_meta_box(
+        $this->posttype . '__' . $id,
+        $config['title'],
+        array($this, 'displayBox'),
+        $this->posttype,
+        $config['context'],
+        $config['priority'],
+        $id);
+    }
+  }
 
-    $this->templates['short'] = '
-      <div class="mbh-item-normal">
-        <div class="mbh-title"><label for="{fieldId}">{title}</label></div>
-        <div class="mbh-field {fieldClass}">
-          <div class="mbh-input">{input}</div>
-        </div>
-      </div>
-    ';
+  /**
+   * Callback used internally to display a metabox with a certain boxId
+   * @param \WP_Post $post the post object on which the metabox is placed
+   * @param string $id the boxId used at addMetabox
+   */
+  public function displayBox($post, $id)
+  {
+    $html = '';
 
-    $this->templates['short_full'] = '
-      <div class="mbh-item-full">
-        <div class="mbh-title"><label for="{fieldId}">{title}</label></div>
-        <div class="mbh-field {fieldClass}">
-          <div class="mbh-input">{input}</div>
-        </div>
-      </div>
-    ';
+    // Error messages?
+    if (is_array($_SESSION['metabox_errors_' . $this->posttype][$id['args']])) {
+      $html .= '<ul class="mbh-error-list">';
+      foreach ($_SESSION['metabox_errors_' . $this->posttype][$id['args']] as $message) {
+        $html .= '<li>' . $message . '</li>';
+        unset($_SESSION['metabox_errors_' . $this->posttype][$id['args']]);
+      }
+      $html .= '</ul>';
+    }
 
-    $this->templates['short_input_list'] = '
-      <div class="mbh-item-normal list">
-        <div class="mbh-title"><label for="{fieldId}">{title}</label></div>
-        <div class="mbh-field {fieldClass}">
-          <div class="mbh-input" style="{fieldStyle}">{input}</div>
-        </div>
-      </div>
-    ';
+    // Display the fields
+    if (is_array($this->fields[$id['args']])) {
+      foreach ($this->fields[$id['args']] as $field) {
+        $field['args']['post'] = $post;
+        $html .= call_user_func($field['display'], $field['args']);
+      }
+    } else {
+      // Don't show a metabox that doesn't have fields
+      $html .= '<p>Dieser Metabox sind noch keine Felder zugewiesen.</p>';
+    }
 
-    $this->templates['empty'] = '
-      <div class="mbh-item-normal">{html}</div>
-    ';
+    echo $html;
+  }
 
-    $this->templates['emptyFull'] = '
-      <div class="mbh-item-full">{html}</div>
-    ';
+  /**
+   * Save all registered fields
+   * @param int $postId the post it that's being saved
+   */
+  public function saveMetabox($postId)
+  {
+    // First, have a look if we're able to save
+    if (
+      // Don't save on auto save as there is not data sent
+      defined('DOING_AUTOSAVE') && DOING_AUTOSAVE ||
+      // Also, don't save on bulk edit, no data as well
+      isset($_REQUEST['bulk_edit']) ||
+      (
+        // Don't save on inline, trashing or untrashing, there's no meta data
+        isset($_REQUEST['action']) && (
+          $_REQUEST['action'] == 'inline-save' ||
+          $_REQUEST['action'] == 'trash' ||
+          $_REQUEST['action'] == 'untrash'
+        )
+      )
+    ) {
+      return;
+    }
 
-    $this->templates['media'] = '
-      <div class="mbh-item-normal">
-        <div class="mbh-title"><label for="{fieldId}">{title}</label></div>
-        <div class="mbh-field {fieldClass}">
-          {media}
-          <div class="mbh-description"><label for="{fieldId}">{description}</label></div>
-        </div>
-      </div>
-    ';
+    // If we save a revision, change the revision post id to the original, to make the preview work
+    if ($origPostId = wp_is_post_revision($postId)) {
+      $postId = $origPostId;
+    }
 
+    foreach ($this->fields as $box => $fields) {
+      foreach ($fields as $field) {
+        callUserFunctionWithSafeArguments($field['save'], array($postId, $field, $box));
+      }
+    }
+
+    if (count($this->errors) > 0) {
+      $_SESSION['metabox_errors_' . $this->posttype] = $this->errors;
+    }
   }
 
   /**
@@ -202,7 +239,45 @@ class Metabox
           wp_enqueue_style('jquery-ui-theme-lbwp');
         }
       });
+
+      // Allow to use modals
+      add_action('admin_footer', array($this, 'allowCoreModalIframe'));
     }
+  }
+
+  /**
+   * @param string $key the item to find
+   * @param string $boxId the box id
+   * @param array $field field configuration
+   * @return bool true/false if it worked to replace the field
+   */
+  public function replaceField($key, $boxId, $field)
+  {
+    foreach ($this->fields[$boxId] as $index => $current) {
+      if ($current['key'] == $key) {
+        $this->fields[$boxId][$index] = $field;
+        return true;
+      }
+    }
+
+    return false;
+  }
+
+  /**
+   * @param string $key the item to remove
+   * @param string $boxId the box id
+   * @return bool true, if removed
+   */
+  public function removeField($key, $boxId)
+  {
+    foreach ($this->fields[$boxId] as $index => $current) {
+      if ($current['key'] == $key) {
+        unset($this->fields[$boxId][$index]);
+        return true;
+      }
+    }
+
+    return false;
   }
 
   /**
@@ -286,109 +361,100 @@ class Metabox
   }
 
   /**
-   * @param string $id the id of the metabox (must be unique within the helper)
-   * @param string $title the title of the metabox
-   * @param string $context the context (normal, advanced (default))
-   * @param string $priority the priority (default, high, core)
+   * Search for a field in a box an return it
+   * @param string $key the item to find
+   * @param string $boxId the box id
+   * @return bool|array field configuration
    */
-  public function addMetabox($id, $title, $context = 'normal', $priority = 'default')
+  public function getField($key, $boxId)
   {
-    $this->metaboxes[$id] = array(
-      'title' => $title,
-      'context' => $context,
-      'priority' => $priority
-    );
-  }
-
-  /**
-   * Actually add the registered metaboxes
-   */
-  public function addMetaboxes()
-  {
-    foreach ($this->metaboxes as $id => $config) {
-      add_meta_box(
-        $this->posttype . '__' . $id,
-        $config['title'],
-        array($this, 'displayBox'),
-        $this->posttype,
-        $config['context'],
-        $config['priority'],
-        $id)
-      ;
-    }
-  }
-
-  /**
-   * Callback used internally to display a metabox with a certain boxId
-   * @param \WP_Post $post the post object on which the metabox is placed
-   * @param string $id the boxId used at addMetabox
-   */
-  public function displayBox($post, $id)
-  {
-    $html = '';
-
-    // Error messages?
-    if (is_array($_SESSION['metabox_errors_' . $this->posttype][$id['args']])) {
-      $html .= '<ul class="mbh-error-list">';
-      foreach ($_SESSION['metabox_errors_' . $this->posttype][$id['args']] as $message) {
-        $html .= '<li>' . $message . '</li>';
-        unset($_SESSION['metabox_errors_' . $this->posttype][$id['args']]);
-      }
-      $html .= '</ul>';
-    }
-
-    // Display the fields
-    if (is_array($this->fields[$id['args']])) {
-      foreach ($this->fields[$id['args']] as $field) {
-        $field['args']['post'] = $post;
-        $html .= call_user_func($field['display'], $field['args']);
-      }
-    } else {
-      // Don't show a metabox that doesn't have fields
-      $html .= '<p>Dieser Metabox sind noch keine Felder zugewiesen.</p>';
-    }
-
-    echo $html;
-  }
-
-  /**
-   * Save all registered fields
-   * @param int $postId the post it that's being saved
-   */
-  public function saveMetabox($postId)
-  {
-    // First, have a look if we're able to save
-    if (
-      // Don't save on auto save as there is not data sent
-      defined('DOING_AUTOSAVE') && DOING_AUTOSAVE ||
-      // Also, don't save on bulk edit, no data as well
-      isset($_REQUEST['bulk_edit']) ||
-      (
-        // Don't save on inline, trashing or untrashing, there's no meta data
-        isset($_REQUEST['action']) && (
-          $_REQUEST['action'] == 'inline-save' ||
-          $_REQUEST['action'] == 'trash' ||
-          $_REQUEST['action'] == 'untrash'
-        )
-      )
-    ) {
-      return;
-    }
-
-    // If we save a revision, change the revision post id to the original, to make the preview work
-    if ($origPostId = wp_is_post_revision($postId)) {
-      $postId = $origPostId;
-    }
-
-    foreach ($this->fields as $box => $fields) {
-      foreach ($fields as $field) {
-        callUserFunctionWithSafeArguments($field['save'], array($postId, $field, $box));
+    foreach ($this->fields[$boxId] as $field) {
+      if ($field['key'] == $key) {
+        return $field;
       }
     }
 
-    if (count($this->errors) > 0) {
-      $_SESSION['metabox_errors_' . $this->posttype] = $this->errors;
+    return false;
+  }
+
+  /**
+   * @param string $boxId the box id
+   * @return array full list of registered fields of a metabox
+   */
+  public function getBoxFields($boxId)
+  {
+    return $this->fields[$boxId];
+  }
+
+  /**
+   * @return array of all fields / metabox combos
+   */
+  public function getFields()
+  {
+    return $this->fields;
+  }
+
+  /**
+   * @return array of all metaboxes
+   */
+  public function getMetaboxes()
+  {
+    return $this->metaboxes;
+  }
+
+  /**
+   * @param string $postType the id of the metabox helper to get
+   * @return Metabox the instance of the helper
+   */
+  public static function get($postType)
+  {
+    if (!isset(self::$instances[$postType])) {
+      self::$instances[$postType] = new self($postType);
     }
+    return self::$instances[$postType];
+  }
+
+  /**
+   * @return string html code to hide editor but keep upload intact
+   */
+  protected static function getHideEditorCss()
+  {
+    return '
+      <style type="text/css">
+        #postdivrich { display:none; }
+      </style>
+    ';
+  }
+
+  /**
+   * @param array $args field arguments
+   * @return string the value, if given
+   */
+  protected function getTextFieldValue($args)
+  {
+    return SimpleField::getTextFieldValue($args, $this->knownPostFields);
+  }
+
+  /**
+   * Returns the width for the field using (and fixing) the width parameter
+   * @param string $args the arguments of the displayed fields
+   * @return string the width string in percent or px
+   */
+  public function getWidth($args)
+  {
+    return SimpleField::getWidth($args);
+  }
+
+  /**
+   * Gets the template based on argument configuration
+   * @param array $args the arguments given the display function
+   * @param string $key the key to identify the post
+   * @param string $template a template if a specific is wanted
+   * @return string HTML code
+   */
+  public function getTemplate($args, $key, $template = '')
+  {
+    return Templates::get($args, $key, $template);
   }
 
   /**
@@ -435,83 +501,6 @@ class Metabox
   public function addFieldObject($field, $boxId)
   {
     $this->fields[$boxId][] = $field;
-  }
-
-  /**
-   * Search for a field in a box an return it
-   * @param string $key the item to find
-   * @param string $boxId the box id
-   * @return bool|array field configuration
-   */
-  public function getField($key, $boxId)
-  {
-    foreach ($this->fields[$boxId] as $field) {
-      if ($field['key'] == $key) {
-        return $field;
-      }
-    }
-
-    return false;
-  }
-
-  /**
-   * @param string $boxId the box id
-   * @return array full list of registered fields of a metabox
-   */
-  public function getBoxFields($boxId)
-  {
-    return $this->fields[$boxId];
-  }
-
-  /**
-   * @return array of all fields / metabox combos
-   */
-  public function getFields()
-  {
-    return $this->fields;
-  }
-
-  /**
-   * @return array of all metaboxes
-   */
-  public function getMetaboxes()
-  {
-    return $this->metaboxes;
-  }
-
-  /**
-   * @param string $key the item to find
-   * @param string $boxId the box id
-   * @param array $field field configuration
-   * @return bool true/false if it worked to replace the field
-   */
-  public function replaceField($key, $boxId, $field)
-  {
-    foreach ($this->fields[$boxId] as $index => $current) {
-      if ($current['key'] == $key) {
-        $this->fields[$boxId][$index] = $field;
-        return true;
-      }
-    }
-
-    return false;
-  }
-
-  /**
-   * @param string $key the item to remove
-   * @param string $boxId the box id
-   * @return bool true, if removed
-   */
-  public function removeField($key, $boxId)
-  {
-    foreach ($this->fields[$boxId] as $index => $current) {
-      if ($current['key'] == $key) {
-        unset($this->fields[$boxId][$index]);
-        return true;
-      }
-    }
-
-    return false;
   }
 
   /**
@@ -570,6 +559,25 @@ class Metabox
       $key, $boxId, $args,
       array($this, 'displayInputText'),
       array($this, 'saveTextField')
+    );
+  }
+
+  /**
+   * Helper for adding an input text field (one liner)
+   * @param string $key the key to store the metadata in
+   * @param string $boxId the metabox to display the field
+   * @param array $args additional arguments: description, width
+   */
+  public function addAddressLocation($key, $boxId, $args = array())
+  {
+    // Add the title as an argument
+    $args['title'] = '{title}';
+    $args['template'] = $this->getTemplate($args, '{fieldId}');
+    // Add the field
+    $this->addField(
+      $key, $boxId, $args,
+      array('LBWP\Helper\MetaItem\AddressLocation', 'displayFormFields'),
+      array('LBWP\Helper\MetaItem\AddressLocation', 'saveFormFields')
     );
   }
 
@@ -652,9 +660,7 @@ class Metabox
   {
     // Add the title as an argument
     $args['title'] = $title;
-
     $key = 'taxonomy_' . $taxonomy;
-
     $args['taxonomy'] = $taxonomy;
 
     $args = wp_parse_args($args, array(
@@ -717,10 +723,10 @@ class Metabox
     if (!isset($args['mediaContainerCallback']) || !is_callable($args['mediaContainerCallback'])) {
       $args['mediaContainerCallback'] = array($this, 'mediaContainerCallback');
     }
-    if(isset($args['multiple'])){
+    if (isset($args['multiple'])) {
       $args['uploader']['multiple'] = $args['multiple'];
     }
-    if(isset($args['uploader']['multiple'])){
+    if (isset($args['uploader']['multiple'])) {
       $args['multiple'] = $args['uploader']['multiple'];
     }
 
@@ -728,7 +734,7 @@ class Metabox
     $this->addField(
       $key, $boxId, $args,
       array($this, 'displayMediaUploadField'),
-      array($this, 'saveDropdown')
+      array('\LBWP\Helper\MetaItem\ChosenDropdown', 'saveDropdown')
     );
   }
 
@@ -757,7 +763,7 @@ class Metabox
       $args['sortable'] = true;
     }
 
-    $saveCallback = array($this, 'saveDropdown');
+    $saveCallback = array('\LBWP\Helper\MetaItem\ChosenDropdown', 'saveDropdown');
     if (isset($args['saveCallback']) && is_callable($args['saveCallback'])) {
       $saveCallback = $args['saveCallback'];
     }
@@ -765,7 +771,7 @@ class Metabox
     // Add the field
     $this->addField(
       $key, $boxId, $args,
-      array($this, 'displayDropdown'),
+      array('\LBWP\Helper\MetaItem\ChosenDropdown', 'displayDropdown'),
       $saveCallback
     );
   }
@@ -780,37 +786,7 @@ class Metabox
    */
   public function addPostTypeDropdown($key, $boxId, $title, $postType, $args = array())
   {
-    // Make sure to have a fillable array but don't override
-    if (!is_array($args['items'])) {
-      $args['items'] = array();
-    }
-
-    // Get all items of a posttype and order alphabetically
-    $postItems = get_posts(array(
-      'post_type' => $postType,
-      'posts_per_page' => -1,
-      'orderby' => 'title',
-	    'order' => 'ASC',
-    ));
-
-    // Make a mapping of the actual post type names, if more than one
-    $postTypeMap = array();
-    if (is_array($postType) && count($postType) > 1) {
-      foreach ($postType as $type) {
-        $typeObject = get_post_type_object($type);
-        $postTypeMap[$type] = $typeObject->labels->singular_name;
-      }
-    }
-
-    foreach ($postItems as $postItem) {
-      $itemTitle = $postItem->post_title;
-      if (isset($postTypeMap[$postItem->post_type])) {
-        $itemTitle .= ' (' . $postTypeMap[$postItem->post_type] . ')';
-      }
-      $args['items'][$postItem->ID] = $itemTitle;
-    }
-
-    // Now display a dropdown with it
+    $args = PostTypeDropdown::createDropdownArguments($postType, $args);
     $this->addDropdown($key, $boxId, $title, $args);
   }
 
@@ -871,6 +847,36 @@ class Metabox
   }
 
   /**
+   * Helper for adding a wysiwyg editor
+   * @param string $key the key to store the metadata in
+   * @param string $boxId the metabox to display the field
+   * @param string $title the title of the field besides the input
+   * @param int $rows number of rows, at least 5, recommended 10
+   * @param array $args additional arguments: description, width (Default 100%)
+   */
+  public function addEditor($key, $boxId, $title, $rows, $args = array())
+  {
+    // Validate number of rows
+    if ($rows < 5) {
+      $rows = 5;
+    }
+
+    // Add the title as an argument
+    $args['title'] = $title;
+    $args['rows'] = $rows;
+
+    // add a identifying (non-unique) css class
+    $args['class'] .= ' editor ';
+
+    // Add the field
+    $this->addField(
+      $key, $boxId, $args,
+      array($this, 'displayEditor'),
+      array($this, 'saveTextField')
+    );
+  }
+
+  /**
    * Display table callback: display the rows from the arguments or from the output from rowsCallback
    *
    * @param array $args
@@ -915,278 +921,6 @@ class Metabox
   }
 
   /**
-   * Helper for adding a wysiwyg editor
-   * @param string $key the key to store the metadata in
-   * @param string $boxId the metabox to display the field
-   * @param string $title the title of the field besides the input
-   * @param int $rows number of rows, at least 5, recommended 10
-   * @param array $args additional arguments: description, width (Default 100%)
-   */
-  public function addEditor($key, $boxId, $title, $rows, $args = array())
-  {
-    // Validate number of rows
-    if ($rows < 5) {
-      $rows = 5;
-    }
-
-    // Add the title as an argument
-    $args['title'] = $title;
-    $args['rows'] = $rows;
-
-    // add a identifying (non-unique) css class
-    $args['class'] .= ' editor ';
-
-    // Add the field
-    $this->addField(
-      $key, $boxId, $args,
-      array($this, 'displayEditor'),
-      array($this, 'saveTextField')
-    );
-  }
-
-  /**
-   * Cleanly save or delete an empty string value
-   * @param int $id the post id
-   * @param string $key the meta key
-   * @param string $value the string value
-   */
-  protected function updateStringOption($id, $key, $value)
-  {
-    if (empty($value) || strlen($value) == 0 || $value === false) {
-      delete_post_meta($id, $key);
-    } else {
-      update_post_meta($id, $key, $value);
-    }
-  }
-
-  /**
-   * Inline callback to save a normal textfield
-   * @param int $postId the id of the post to save to
-   * @param array $field all the fields information
-   * @param string $boxId the metabox id
-   */
-  public function saveTextField($postId, $field, $boxId)
-  {
-    // Validate and save the field
-    $value = $_POST[$postId . '_' . $field['key']];
-    $value = stripslashes(trim($value));
-
-    // Check if the field is required
-    if (isset($field['args']['required']) && $field['args']['required'] && strlen($value) == 0) {
-      $this->addError($boxId, 'Bitte füllen Sie das Feld "' . $field['args']['title'] . '" aus.');
-      return;
-    }
-
-    // Save the meta data to the database (Directly in post for known fields
-    if (in_array($field['key'], $this->knownPostFields)) {
-      global $wpdb;
-      $this->wpdb->update(
-        $this->wpdb->posts,
-        array($field['key'] => $value),
-        array('ID' => $postId,)
-      );
-    } else {
-      $this->updateStringOption($postId, $field['key'], $value);
-    }
-  }
-
-  /**
-   * save the taxonomy terms (or delete them)
-   * @param int $postId
-   * @param array $field
-   * @param string $boxId
-   */
-  public function saveTaxonomy($postId, $field, $boxId)
-  {
-    $taxonomy = $field['args']['taxonomy'];
-    if (isset($_POST['taxonomies'][$taxonomy]) && is_array($_POST['taxonomies'][$taxonomy])) {
-      $terms = $_POST['taxonomies'][$taxonomy];
-      $terms = array_map('intval', $terms);
-      wp_set_object_terms($postId, $terms, $taxonomy);
-    }elseif (isset($_POST['taxonomies'][$taxonomy]) && is_numeric($_POST['taxonomies'][$taxonomy])){
-      $termId = intval($_POST['taxonomies'][$taxonomy]);
-      $terms = array();
-      if($termId>0){
-        $terms = array($termId);
-      }
-
-      wp_set_object_terms($postId, $terms, $taxonomy);
-    }else{
-      // delete the terms, if no $_POST data was found (but the metabox taxonomy field was configured)
-      wp_set_object_terms($postId, array(), $taxonomy);
-    }
-  }
-
-  /**
-   * Save the dropdown values, accepts arrays (if multiple was specified) and
-   * stores them in order with add_post_meta $unique=false.
-   * @param $postId
-   * @param $field
-   * @param $boxId
-   * @return array|string
-   */
-  public function saveDropdown($postId, $field, $boxId)
-  {
-    // Validate and save the field
-    $value = $_POST[$postId . '_' . $field['key']];
-
-    if (isset($field['args']['multiple']) && $field['args']['multiple'] && is_array($value)) {
-      $value = array_map('stripslashes', $value);
-    } else {
-      $value = stripslashes(trim($value));
-    }
-
-    // Check if the field is required
-    if (isset($field['args']['required']) && $field['args']['required'] && empty($value)) {
-      $this->addError($boxId, 'Bitte füllen Sie das Feld "' . $field['args']['title'] . '" aus.');
-      return;
-    }
-
-    if (is_array($value)) {
-      delete_post_meta($postId, $field['key']);
-      foreach ($value as $item) {
-        add_post_meta($postId, $field['key'], $item, false);
-      }
-    } else {
-      // Save the meta data to the database
-      update_post_meta($postId, $field['key'], $value);
-    }
-    return $value;
-  }
-
-  /**
-   * Inline callback to save a normal textfield
-   * @param int $postId the id of the post to save to
-   * @param array $field all the fields information
-   * @param string $boxId the metabox id
-   */
-  public function saveDateField($postId, $field, $boxId)
-  {
-    // Validate and save the field
-    $value = $_POST[$postId . '_' . $field['key']];
-    $value = stripslashes(trim($value));
-
-    // Validate the input with EU_FORMAT_DATE
-    if (!String::checkDate($value, Date::EU_FORMAT_DATE)) {
-      $value = ''; // Make the error pop up
-    }
-
-    // Check if the field is required
-    if (isset($field['args']['required']) && $field['args']['required'] && strlen($value) == 0) {
-      $this->addError($boxId, 'Bitte füllen Sie das Feld "' . $field['args']['title'] . '" aus.');
-    } else {
-      // If everything OK, convert to the desired format
-      if (strlen($value) > 0) {
-        $value = Date::convertDate(
-          Date::EU_DATE,
-          $field['args']['format'],
-          $value
-        );
-      }
-    }
-
-    // Save the meta data to the database
-    update_post_meta($postId, $field['key'], $value);
-  }
-
-  /**
-   * Inline callback to save a normal textfield
-   * @param int $postId the id of the post to save to
-   * @param array $field all the fields information
-   * @param string $boxId the metabox id
-   */
-  public function saveDateTimeField($postId, $field, $boxId)
-  {
-    // Validate and save the field
-    $timestamp = 0;
-    $date = $_POST[$postId . '_' . $field['key']];
-    $time = $_POST[$postId . '_' . $field['key'] . '-time'];
-
-    // If time is empty, assume 00:00 for validation
-    if (strlen($time) == 0) {
-      $time = '00:00';
-    }
-
-    // Syntactically, first char needs to be 0,1,2, if not, set 0
-    if (!in_array($time[0], array('0','1','2'))) {
-      $time = '0' . $time;
-    }
-
-    // Validate the input with EU_FORMAT_DATE
-    if (
-      !String::checkDate($date, Date::EU_FORMAT_DATE) ||
-      (!String::checkDate($time, DATE::EU_FORMAT_CLOCK) && !String::checkDate($time, Date::EU_FORMAT_TIME))
-    ) {
-      // No saving, since not valid
-      return false;
-    }
-
-    // Set a timestamp from the time
-    $timestamp = strtotime($date . ' ' . $time);
-
-    // Check if the field is required
-    if (isset($field['args']['required']) && $field['args']['required'] && $timestamp == 0) {
-      $this->addError($boxId, 'Bitte füllen Sie das Feld "' . $field['args']['title'] . '" aus.');
-    } else {
-      update_post_meta($postId, $field['key'], $timestamp);
-    }
-  }
-
-  /**
-   * Inline callback to save a  checkbox value
-   * @param int $postId the id of the post to save to
-   * @param array $field all the fields information
-   * @param string $boxId the metabox id
-   */
-  public function saveCheckboxField($postId, $field, $boxId)
-  {
-    // Validate and save the field
-    $key = $postId . '_' . $field['key'];
-    $value = isset($_POST[$key]) && $_POST[$key] == 'on' ? 'on' : false;
-
-    // Check if the field is required
-    if (isset($field['args']['required']) && $field['args']['required'] && strlen($value) == 0) {
-      $this->addError($boxId, 'Bitte füllen Sie das Feld "' . $field['args']['title'] . '" aus.');
-      return;
-    }
-
-    // Save the meta data to the database
-    $this->updateStringOption($postId, $field['key'], $value);
-  }
-
-  /**
-   * Inline callback to save nothing
-   * @param int $postId the id of the post to save to
-   * @param array $field all the fields information
-   * @param string $boxId the metabox id
-   */
-  public function saveVoid($postId, $field, $boxId) { }
-
-  /**
-   * Inline callback to save nothing
-   * @param int $postId the id of the post to save to
-   * @param array $field all the fields information
-   * @param string $boxId the metabox id
-   */
-  public function saveVoidNonMergeable($postId, $field, $boxId) { }
-
-  /**
-   * Saves the assigned posts
-   * @param int $postId the post that is saved
-   * @param array $field the field data
-   * @param string $boxId the metabox id
-   */
-  public function saveAssignPostsField($postId, $field, $boxId)
-  {
-    $posts = $_POST['assignedPostsId'];
-    if (!is_array($posts)) {
-      $posts = array();
-    }
-
-    update_post_meta($postId, $field['key'], $posts);
-  }
-
-  /**
    * Inline callback to display a normal textfield
    * @param array $args the arguments to display the input textfield
    * @return string HTML code to display the field
@@ -1194,31 +928,8 @@ class Metabox
   public function displayInputText($args)
   {
     $key = $args['post']->ID . '_' . $args['key'];
-    $html = $this->getTemplate($args, $key);
-
-    // Get the current value
-    $value = $this->getTextFieldValue($args);
-    if (strlen($value) == 0 && isset($args['default'])) {
-      $value = $args['default'];
-    }
-
-    // Default width
-    $width = $this->getWidth($args);
-    if ($width == 'none') {
-      $width = '75%;';
-    }
-
-    $attr = ' style="width:' . $width . ';"';
-    if (isset($args['required']) && $args['required']) {
-      $attr .= ' required="required"';
-    }
-
-    // Replace in the input field
-    $input = '
-      <input type="text" id="' . $key . '" name="' . $key . '" value="' . esc_attr($value) . '"' . $attr . ' />
-    ';
-    $html = str_replace('{input}', $input, $html);
-    return $html;
+    $template = $this->getTemplate($args, $key);
+    return SimpleField::displayInputText($args, $key, $template, $this->knownPostFields);
   }
 
   /**
@@ -1230,6 +941,7 @@ class Metabox
    */
   public function displayDateField($args, $addTimeField = false, $useIntegerConversion = false)
   {
+    $datepickerConfig = array();
     $key = $args['post']->ID . '_' . $args['key'];
     $html = $this->getTemplate($args, $key);
     wp_enqueue_script('jquery-ui-datepicker');
@@ -1257,6 +969,11 @@ class Metabox
       }
     }
 
+    // If there is a maximum of days to be selectable, add this as an option
+    if (intval($args['max_days_in_future']) > 0) {
+      $datepickerConfig['maxDate'] = '+' . $args['max_days_in_future'] . 'd';
+    }
+
     // Need of a time field?
     $timeField = '';
     if ($addTimeField) {
@@ -1269,7 +986,7 @@ class Metabox
       ' . $timeField . '
       <script type="text/javascript">
         jQuery(function() {
-          jQuery("#' . $key . '").datepicker(' . Date::getDatePickerJson() . ');
+          jQuery("#' . $key . '").datepicker(' . Date::getDatePickerJson('de', $datepickerConfig) . ');
         });
       </script>
     ';
@@ -1289,9 +1006,8 @@ class Metabox
   }
 
   /**
-   * Displays a "field" (or rather an admin) to assign posts via ajax
-   * autocomplete and lets the user sort them by drag and drop.
-   * This will register a few needed javascript libraries.
+   * Displays a "field" (or rather an admin) to assign posts via ajax autocomplete and lets the user sort them by
+   * drag and drop. This will register a few needed javascript libraries.
    * Warning: Only once useable per post type, doesn't work with multiple use.
    * @param array $args the arguments
    * @return string html code to display the fields
@@ -1349,44 +1065,7 @@ class Metabox
     ';
 
     // Display everything in an empty full item
-    return str_replace('{html}', $html, $this->templates['empty']);
-  }
-
-  /**
-   * Ajax callback for assign posts auto complete
-   */
-  public static function ajaxAssignPostsData($types)
-  {
-    $results = array();
-
-    if (strlen($_GET['term']) > 0) {
-      // Go directly to the database
-      $sql = '
-        SELECT ID, post_title FROM {sql:postTable}
-        WHERE (ID = {postId} OR post_title LIKE {postTitle})
-        AND post_type IN({sql:postTypes})
-      ';
-
-      global $wpdb;
-      $posts = $wpdb->get_results(String::prepareSql($sql, array(
-        'postTable' => $wpdb->posts,
-        'postId' => intval($_GET['term']),
-        'postTitle' => '%' . $_GET['term'] . '%',
-        'postTypes' => '"' . implode('","', $types) . '"'
-      )));
-
-      foreach ($posts as $post) {
-        $results[] = array(
-          'id' => $post->ID,
-          'value' => $post->post_title,
-          'label' => $post->post_title,
-        );
-      }
-    }
-
-    header('Content-Type: application/json');
-    echo json_encode($results);
-    exit;
+    return str_replace('{html}', $html, Templates::getById('empty'));
   }
 
   /**
@@ -1500,7 +1179,6 @@ class Metabox
    * displayed as radio buttons.
    * The display callback automatically  sets a inline style height, depending on the
    * $args['numberOfVisibleTerms'] argument.
-   *
    * @param array $args
    * @return string
    */
@@ -1521,15 +1199,12 @@ class Metabox
         'value' => $term->term_id,
         'selected' => has_term(intval($term->term_id), $term->taxonomy, $args['post']),
         'description' => $term->name,
-        'width' => 'none' // quick-fix for new wp3.8 styles, is in effect invalid css
+        'width' => 'none'
       ));
       if ($args['display'] == 'chosen') {
         $optionItems[$term->term_id] = array(
           'title' => $term->name,
-          'data' => array(
-            'url' => admin_url('edit-tags.php?action=edit&taxonomy=' . $taxonomy . '&tag_ID=' . $term->term_id
-            )
-          )
+          'data' => array('url' => admin_url('edit-tags.php?action=edit&taxonomy=' . $taxonomy . '&tag_ID=' . $term->term_id))
         );
         if (has_term(intval($term->term_id), $term->taxonomy, $args['post'])) {
           $optionValues[] = $term->term_id;
@@ -1545,7 +1220,11 @@ class Metabox
 
     }
     if ($args['display'] == 'chosen') {
-      $html = $this->displayDropdown(array_merge($args, array('items' => $optionItems, 'value' => $optionValues, 'name' => 'taxonomies[' . $taxonomy . ']')));
+      $html = ChosenDropdown::displayDropdown(array_merge($args, array(
+        'items' => $optionItems,
+        'value' => $optionValues,
+        'name' => 'taxonomies[' . $taxonomy . ']'
+      )));
     } else {
       $fieldStyle = 'height:' . 22 * $args['numberOfVisibleTerms'] . 'px;';
 
@@ -1568,7 +1247,7 @@ class Metabox
 
     // filter out empty values
     $attachmentIds = array_filter(get_post_meta($postId, $args['key'], false));
-    $attachments = array_map(function($attachmentId){
+    $attachments = array_map(function ($attachmentId) {
       return get_post(intval($attachmentId));
     }, $attachmentIds);
 
@@ -1578,12 +1257,12 @@ class Metabox
     }
     $fieldName = $key;
     $sortableCommand = '';
-    if($args['multiple']){
+    if ($args['multiple']) {
       $fieldName = $key . '[]';
-      $sortableCommand = '$("#media-uploader-' . $key .' .media-uploader-attachments").sortable();';
+      $sortableCommand = '$("#media-uploader-' . $key . ' .media-uploader-attachments").sortable();';
     }
 
-    $attachmentsHtml = array_reduce($attachments, function($html, $attachment) use($args, $fieldName, $postId) {
+    $attachmentsHtml = array_reduce($attachments, function ($html, $attachment) use ($args, $fieldName, $postId) {
       $mediaContainer = callUserFunctionWithSafeArguments($args['mediaContainerCallback'], array($attachment->ID, $postId, $attachment, $args));
       return $html . sprintf('
       <li class="media-uploader-attachment">
@@ -1594,8 +1273,8 @@ class Metabox
       ', $mediaContainer, $fieldName, $attachment->ID);
     }, '');
 
-
-    $input = sprintf('
+    // Make senseless concat, to not have a fatal error in code editor at percents
+    $input = sprintf('' . '
       <div class="media-uploader" id="media-uploader-%s">
         <ul class="media-uploader-attachments clearfix">
           %s
@@ -1619,13 +1298,310 @@ class Metabox
   }
 
   /**
+   * Inline callback to display a textarea
+   * @param array $args the arguments to display the input textfield
+   * @return string HTML code to display the field
+   */
+  public function displayTextarea($args)
+  {
+    $key = $args['post']->ID . '_' . $args['key'];
+    $template = $this->getTemplate($args, $key);
+    return SimpleField::displayTextArea($args, $key, $template, $this->knownPostFields);
+  }
+
+  /**
+   * Inline callback to display an editor
+   * @param array $args the arguments to display the input textfield
+   * @return string HTML code to display the field
+   */
+  public function displayEditor($args)
+  {
+    $key = $args['post']->ID . '_' . $args['key'];
+    $html = $this->getTemplate($args, $key);
+
+    // Get the current value
+    $value = $this->getTextFieldValue($args);
+    if (strlen($value) == 0 && isset($args['default'])) {
+      $value = $args['default'];
+    }
+
+    // Replace in the input field
+    $input = String::getWpEditor($value, $key, array(
+      'textarea_rows' => $args['rows']
+    ));
+    $html = str_replace('{input}', $input, $html);
+    return $html;
+  }
+
+  /**
+   * @param array $args the arguments given
+   * @return string HTML Code that should be displayed
+   */
+  public function displayHtml($args)
+  {
+    $key = $args['post']->ID . '_' . $args['key'];
+    $html = $this->getTemplate($args, $key, 'empty');
+    $html = str_replace('{html}', $args['html'], $html);
+
+    return $html;
+  }
+
+  /**
+   * Inline callback to save a normal textfield
+   * @param int $postId the id of the post to save to
+   * @param array $field all the fields information
+   * @param string $boxId the metabox id
+   */
+  public function saveTextField($postId, $field, $boxId)
+  {
+    // Validate and save the field
+    $value = $_POST[$postId . '_' . $field['key']];
+    $value = stripslashes(trim($value));
+
+    // Check if the field is required
+    if (isset($field['args']['required']) && $field['args']['required'] && strlen($value) == 0) {
+      $this->addError($boxId, 'Bitte füllen Sie das Feld "' . $field['args']['title'] . '" aus.');
+      return;
+    }
+
+    // Save the meta data to the database (Directly in post for known fields
+    if (in_array($field['key'], $this->knownPostFields)) {
+      global $wpdb;
+      $this->wpdb->update(
+        $this->wpdb->posts,
+        array($field['key'] => $value),
+        array('ID' => $postId,)
+      );
+    } else {
+      $this->updateStringOption($postId, $field['key'], $value);
+    }
+  }
+
+  /**
+   * save the taxonomy terms (or delete them)
+   * @param int $postId
+   * @param array $field
+   * @param string $boxId
+   */
+  public function saveTaxonomy($postId, $field, $boxId)
+  {
+    $taxonomy = $field['args']['taxonomy'];
+    if (isset($_POST['taxonomies'][$taxonomy]) && is_array($_POST['taxonomies'][$taxonomy])) {
+      $terms = $_POST['taxonomies'][$taxonomy];
+      $terms = array_map('intval', $terms);
+      wp_set_object_terms($postId, $terms, $taxonomy);
+    } elseif (isset($_POST['taxonomies'][$taxonomy]) && is_numeric($_POST['taxonomies'][$taxonomy])) {
+      $termId = intval($_POST['taxonomies'][$taxonomy]);
+      $terms = array();
+      if ($termId > 0) {
+        $terms = array($termId);
+      }
+      wp_set_object_terms($postId, $terms, $taxonomy);
+    } else {
+      // delete the terms, if no $_POST data was found (but the metabox taxonomy field was configured)
+      wp_set_object_terms($postId, array(), $taxonomy);
+    }
+  }
+
+  /**
+   * Inline callback to save a normal textfield
+   * @param int $postId the id of the post to save to
+   * @param array $field all the fields information
+   * @param string $boxId the metabox id
+   */
+  public function saveDateField($postId, $field, $boxId)
+  {
+    // Validate and save the field
+    $value = $_POST[$postId . '_' . $field['key']];
+    $value = stripslashes(trim($value));
+
+    // Validate the input with EU_FORMAT_DATE
+    if (!String::checkDate($value, Date::EU_FORMAT_DATE)) {
+      $value = ''; // Make the error pop up
+    }
+
+    // Check if the field is required
+    if (isset($field['args']['required']) && $field['args']['required'] && strlen($value) == 0) {
+      $this->addError($boxId, 'Bitte füllen Sie das Feld "' . $field['args']['title'] . '" aus.');
+    } else {
+      // If everything OK, convert to the desired format
+      if (strlen($value) > 0) {
+        $value = Date::convertDate(
+          Date::EU_DATE,
+          $field['args']['format'],
+          $value
+        );
+      }
+    }
+
+    // Save the meta data to the database
+    update_post_meta($postId, $field['key'], $value);
+  }
+
+  /**
+   * Inline callback to save a normal textfield
+   * @param int $postId the id of the post to save to
+   * @param array $field all the fields information
+   * @param string $boxId the metabox id
+   * @return bool true/false if saved or not
+   */
+  public function saveDateTimeField($postId, $field, $boxId)
+  {
+    // Validate and save the field
+    $timestamp = 0;
+    $date = $_POST[$postId . '_' . $field['key']];
+    $time = $_POST[$postId . '_' . $field['key'] . '-time'];
+
+    // If time is empty, assume 00:00 for validation
+    if (strlen($time) == 0) {
+      $time = '00:00';
+    }
+
+    // Syntactically, first char needs to be 0,1,2, if not, set 0
+    if (!in_array($time[0], array('0', '1', '2'))) {
+      $time = '0' . $time;
+    }
+
+    // Validate the input with EU_FORMAT_DATE
+    if (
+      !String::checkDate($date, Date::EU_FORMAT_DATE) ||
+      (!String::checkDate($time, DATE::EU_FORMAT_CLOCK) && !String::checkDate($time, Date::EU_FORMAT_TIME))
+    ) {
+      // No saving, since not valid
+      return false;
+    }
+
+    // Set a timestamp from the time
+    $timestamp = strtotime($date . ' ' . $time);
+
+    // Check if the field is required
+    if (isset($field['args']['required']) && $field['args']['required'] && $timestamp == 0) {
+      $this->addError($boxId, 'Bitte füllen Sie das Feld "' . $field['args']['title'] . '" aus.');
+    } else {
+      update_post_meta($postId, $field['key'], $timestamp);
+    }
+  }
+
+  /**
+   * Inline callback to save a  checkbox value
+   * @param int $postId the id of the post to save to
+   * @param array $field all the fields information
+   * @param string $boxId the metabox id
+   */
+  public function saveCheckboxField($postId, $field, $boxId)
+  {
+    // Validate and save the field
+    $key = $postId . '_' . $field['key'];
+    $value = isset($_POST[$key]) && $_POST[$key] == 'on' ? 'on' : false;
+
+    // Check if the field is required
+    if (isset($field['args']['required']) && $field['args']['required'] && strlen($value) == 0) {
+      $this->addError($boxId, 'Bitte füllen Sie das Feld "' . $field['args']['title'] . '" aus.');
+      return;
+    }
+
+    // Save the meta data to the database
+    $this->updateStringOption($postId, $field['key'], $value);
+  }
+
+  /**
+   * Saves the assigned posts
+   * @param int $postId the post that is saved
+   * @param array $field the field data
+   * @param string $boxId the metabox id
+   */
+  public function saveAssignPostsField($postId, $field, $boxId)
+  {
+    $posts = $_POST['assignedPostsId'];
+    if (!is_array($posts)) {
+      $posts = array();
+    }
+
+    update_post_meta($postId, $field['key'], $posts);
+  }
+
+  /**
+   * Inline callback to save nothing
+   * @param int $postId the id of the post to save to
+   * @param array $field all the fields information
+   * @param string $boxId the metabox id
+   */
+  public function saveVoid($postId, $field, $boxId) { }
+
+  /**
+   * Inline callback to save nothing
+   * @param int $postId the id of the post to save to
+   * @param array $field all the fields information
+   * @param string $boxId the metabox id
+   */
+  public function saveVoidNonMergeable($postId, $field, $boxId) { }
+
+  /**
+   * Hides the editor. Needed if the editor isn't used, but media upload is
+   * @param string $boxId needed to print html somewhere
+   */
+  public function hideEditor($boxId)
+  {
+    $this->addHtml('remove-editor', $boxId, Metabox::getHideEditorCss());
+  }
+
+  /**
+   * Inserts a backdrop for the metabox helper scripts to use
+   */
+  public function allowCoreModalIframe()
+  {
+    echo '
+      <div class="media-modal-backdrop-mbh" style="display:none;"></div>
+      <div id="metaboxHelperContainer">
+        <iframe id="metaboxHelper_frame" src="" width="100%" height="800" frameborder="0"></iframe>
+        <a class="dashicons dashicons-no-alt button mbh-close-modal"></a>
+      </div>
+    ';
+  }
+
+  /**
+   * Ajax callback for assign posts auto complete
+   */
+  public static function ajaxAssignPostsData($types)
+  {
+    $results = array();
+
+    if (strlen($_GET['term']) > 0) {
+      // Go directly to the database
+      $sql = '
+        SELECT ID, post_title FROM {sql:postTable}
+        WHERE (ID = {postId} OR post_title LIKE {postTitle})
+        AND post_type IN({sql:postTypes})
+      ';
+
+      global $wpdb;
+      $posts = $wpdb->get_results(String::prepareSql($sql, array(
+        'postTable' => $wpdb->posts,
+        'postId' => intval($_GET['term']),
+        'postTitle' => '%' . $_GET['term'] . '%',
+        'postTypes' => '"' . implode('","', $types) . '"'
+      )));
+
+      foreach ($posts as $post) {
+        $results[] = array(
+          'id' => $post->ID,
+          'value' => $post->post_title,
+          'label' => $post->post_title,
+        );
+      }
+    }
+
+    header('Content-Type: application/json');
+    echo json_encode($results);
+    exit;
+  }
+
+  /**
    * Provide the HTML content of the media uploader field.
    * it is overridable with the 'mediaContainerCallback' argument. for the removeMedia to work it has to have
-   * a 'wrapper' class somewhere...
-   *
    * @param int $attachmentId
    * @param int $postId
-   * @param WP_Post|null $attachment
+   * @param \WP_Post|null $attachment
    * @param array $args
    * @return string
    */
@@ -1657,379 +1633,17 @@ class Metabox
   }
 
   /**
-   * Display Dropdown callback: displays a harvesthq.github.io/chosen/ dropdown.
-   * special arguments:
-   *
-   * - bool required
-   * - bool multiple
-   * - array | string value
-   * - array items | callable itemsCallback
-   * @param $args
-   * @return mixed|string
+   * Cleanly save or delete an empty string value
+   * @param int $id the post id
+   * @param string $key the meta key
+   * @param string $value the string value
    */
-  public function displayDropdown($args)
+  protected function updateStringOption($id, $key, $value)
   {
-    $key = $args['post']->ID . '_' . $args['key'];
-    $html = $this->getTemplate($args, $key);
-    $isCrossReference = String::startsWith($key, $args['post']->ID . '_' . CrossReference::PREFIX);
-
-    if (isset($args['name'])) {
-      $name = $args['name'];
+    if (empty($value) || strlen($value) == 0 || $value === false) {
+      delete_post_meta($id, $key);
     } else {
-      // Get the current value
-      $name = $key;
+      update_post_meta($id, $key, $value);
     }
-
-    $attr = '';
-    if (isset($args['required'])) {
-      $attr .= __checked_selected_helper($args['required'], true, false, 'required');
-    }
-
-    $singleValue = true;
-    if (isset($args['multiple']) && $args['multiple']) {
-      $attr .= ' multiple';
-
-      $arrayNotation = '[]';
-      if (substr($name, -strlen($arrayNotation)) !== $arrayNotation) {
-        $name .= $arrayNotation;
-      }
-      $singleValue = false;
-    }
-
-    if (isset($args['value']) && $singleValue && !is_array($args['value']) && !is_object($args['value'])) {
-      $value = $args['value'];
-    } else if (isset($args['value']) && (!$singleValue || is_string($args['value']))) {
-      $value = $args['value'];
-    } else if (isset($args['value'][0]) && $singleValue) {
-      $value = $args['value'][0];
-    } else {
-      // Get the current value
-      $value = get_post_meta($args['post']->ID, $args['key'], $singleValue);
-      if(!$singleValue){
-        $value = array_filter($value);
-      }
-    }
-
-    // Reset single value on cross references after loading
-    if ($isCrossReference) {
-      $singleValue = false;
-      $value = $value[0];
-    }
-
-    $items = $args['items'];
-    if (isset($args['itemsCallback']) && is_callable($args['itemsCallback'])) {
-      $items = callUserFunctionWithSafeArguments($args['itemsCallback'], array($args));
-    }
-
-    if (isset($args['allow_single_deselect']) && $args['allow_single_deselect'] == true) {
-      $items = array(0=>array('title' => '')) + $items;
-    }
-
-    $options = self::convertDropdownItemsToOptions($items, $value, $singleValue);
-
-    $select = '<select name="' . $name . '" id="' . $key . '" ' . $attr . '>' . implode('', $options) . '</select>';
-
-    $chosenArguments = array_merge(array(
-      'width' => '100%', // sets the width of the chosen container
-      'search_contains' => true,
-    ), $args);
-
-    $chosenKey = str_replace('-', '_', $key) . '_chosen';
-
-
-    // convert array to object recursively
-    $chosenArgumentsObject = json_decode(json_encode($chosenArguments), FALSE);
-    $chosenArgumentsJson = json_encode($chosenArgumentsObject);
-    $select .= '
-      <script>
-        (function ($) {
-          $(document).ready(function(){
-
-            $("#' . $key . '").on("chosen:ready change", function(evt, params) {
-              $("#' . $chosenKey . ' .search-choice").each(function(){
-
-                // compare label to option text
-                var label = $(this).text().trim();
-                var options = $("#' . $key . '").find("option").filter(function(){
-                  return $(this).text().trim() == label;
-                });
-                if(options.length > 0){
-                  var option = options[0];
-                  if($(option).data("url")){
-                    if(!$(this).hasClass("has-link-action")){
-                      $(".search-choice-close", this).before("<a class=\"search-choice-link\" href=\"" + $(option).data("url") + "\" ></a>");
-                      $(this).addClass("has-link-action");
-                    }
-                  }
-                  if($(option).data("image")){
-                    if(!$(this).hasClass("has-image")){
-                      $("span", this).before("<img class=\"search-choice-image\" src=\"" + $(option).data("image") + "\" />");
-                      $(this).addClass("has-image");
-                    }
-                  }
-                }
-              });
-
-              $("#' . $chosenKey . ' .search-choice-link").click(function(e){
-                // chosen is registered on parent, stop the propagation, but don\'t prevent the default action (i.e. browswer link)
-                e.stopPropagation();
-              });
-            });
-
-            jQuery("#' . $key . '").chosen(' . $chosenArgumentsJson . ');
-          });
-        }(jQuery));
-      </script>
-    ';
-
-    // only call the sortable method if it was requested
-    if ($chosenArguments['sortable'] != false) {
-      $select .= '
-        <script type="text/javascript">
-          jQuery(function() {
-            jQuery("#' . $key . '").chosenSortable();
-          });
-        </script>
-      ';
-    }
-
-    $html = str_replace('{input}', $select, $html);
-    return $html;
-  }
-
-  /**
-   * helper function for converting the supplied dropdown items to option tags for the chosen plugin
-   *
-   * @param $items
-   * @param $value
-   * @param bool $singleValue
-   * @return array
-   */
-  public static function convertDropdownItemsToOptions($items, $value, $singleValue=false){
-    $options = array();
-
-    if (!$singleValue) {
-      foreach ($value as $selectedValue) {
-        $title = $items[$selectedValue];
-        if (isset($items[$selectedValue]['title'])) {
-          $title = $items[$selectedValue]['title'];
-        }
-        $dataAttributes = '';
-        if (isset($items[$selectedValue]['data'])) {
-          $data = $items[$selectedValue]['data'];
-          foreach ($data as $dataKey => $dataValue) {
-            $dataAttributes .= ' data-' . $dataKey . '="' . $dataValue . '"';
-          }
-        }
-        $options[] = '<option value="' . $selectedValue . '" selected="selected" ' . $dataAttributes . '>' . $title . '</option>';
-      }
-    }
-
-    foreach ($items as $itemValue => $item) {
-
-      $dataAttributes = '';
-      if (isset($item['data'])) {
-        $data = $item['data'];
-        foreach ($data as $dataKey => $dataValue) {
-          $dataAttributes .= ' data-' . $dataKey . '="' . $dataValue . '"';
-        }
-      }
-
-      $title = $item;
-      if (isset($item['title'])) {
-        $title = $item['title'];
-      }
-      if ($singleValue) {
-        $selected = selected($itemValue, $value, false);
-        $options[] = '<option value="' . $itemValue . '" ' . $selected . ' ' . $dataAttributes . '>' . $title . '</option>';
-      } else {
-        if (in_array($itemValue, $value)) {
-          continue;
-        } else {
-          $options[] = '<option value="' . $itemValue . '" ' . $dataAttributes . '>' . $title . '</option>';
-        }
-      }
-    }
-    return $options;
-  }
-
-  /**
-   * Inline callback to display a textarea
-   * @param array $args the arguments to display the input textfield
-   * @return string HTML code to display the field
-   */
-  public function displayTextarea($args)
-  {
-    $key = $args['post']->ID . '_' . $args['key'];
-    $html = $this->getTemplate($args, $key);
-
-    // Get the current value
-    $value = $this->getTextFieldValue($args);
-    if (strlen($value) == 0 && isset($args['default'])) {
-      $value = $args['default'];
-    }
-
-    // Default width
-    $width = $this->getWidth($args);
-    if ($width == 'none') {
-      $width = '75%;';
-    }
-
-    $attr = ' style="width:' . $width . ';height:' . $args['height'] . 'px"';
-    if (isset($args['required']) && $args['required']) {
-      $attr .= ' required="required"';
-    }
-
-    // Replace in the input field
-    $input = '
-      <textarea id="' . $key . '" name="' . $key . '"' . $attr . '>' . $value . '</textarea>
-    ';
-    $html = str_replace('{input}', $input, $html);
-    return $html;
-  }
-
-  /**
-   * Inline callback to display an editor
-   * @param array $args the arguments to display the input textfield
-   * @return string HTML code to display the field
-   */
-  public function displayEditor($args)
-  {
-    $key = $args['post']->ID . '_' . $args['key'];
-    $html = $this->getTemplate($args, $key);
-
-    // Get the current value
-    $value = $this->getTextFieldValue($args);
-    if (strlen($value) == 0 && isset($args['default'])) {
-      $value = $args['default'];
-    }
-
-    // Replace in the input field
-    $input = String::getWpEditor($value, $key, array(
-      'textarea_rows' => $args['rows']
-    ));
-    $html = str_replace('{input}', $input, $html);
-    return $html;
-  }
-
-  /**
-   * @param array $args field arguments
-   * @return the value, if given
-   */
-  protected function getTextFieldValue($args)
-  {
-    if (in_array($args['key'], $this->knownPostFields)) {
-      return $args['post']->{$args['key']};
-    } else {
-      return get_post_meta($args['post']->ID, $args['key'], true);
-    }
-  }
-
-  /**
-   * @param array $args the arguments given
-   * @return string HTML Code that should be displayed
-   */
-  public function displayHtml($args)
-  {
-    $key = $args['post']->ID . '_' . $args['key'];
-    $html = $this->getTemplate($args, $key, 'empty');
-    $html = str_replace('{html}', $args['html'], $html);
-
-    return $html;
-  }
-
-  /**
-   * Returns the width for the field using (and fixing) the width parameter
-   * @param string $args the arguments of the displayed fields
-   * @return string the width string in percent or px
-   */
-  public function getWidth($args)
-  {
-    $width = 'none'; // quick fix for the wp3.8 admin style
-    if (isset($args['width'])) {
-      $width = $args['width'];
-      if (strstr($width, '%') === false && stristr($width, 'px') === false) {
-        $width .= 'px';
-      }
-    }
-    return $width;
-  }
-
-  /**
-   * Gets the template based on argument configuration
-   * @param array $args the arguments given the display function
-   * @param string $key the key to identify the post
-   * @param string $template a template if a specific is wanted
-   * @return string HTML code
-   */
-  public function getTemplate($args, $key, $template = '')
-  {
-    if (strlen($template) > 0 && isset($this->templates[$template])) {
-      $html = $this->templates[$template];
-    } else {
-      // Find the template by argument magic
-      if (isset($args['full']) && $args['full']) {
-        if (isset($args['description'])) {
-          $html = $this->templates['description_full'];
-          $html = str_replace('{description}', $args['description'], $html);
-        } else {
-          $html = $this->templates['short_full'];
-        }
-      } else {
-        if (isset($args['description'])) {
-          $html = $this->templates['description'];
-          $html = str_replace('{description}', $args['description'], $html);
-        } else {
-          $html = $this->templates['short'];
-        }
-      }
-    }
-
-    // Put a required flag on the label
-    if (isset($args['required']) && $args['required']) {
-      $args['title'] .= ' <span class="required">*</span>';
-    }
-    // provide a css class defaulted to the key argument (non-unique)
-    $args['class'] .= ' ' . $args['key'];
-
-
-    // Put in the title
-    $html = str_replace('{title}', $args['title'], $html);
-    $html = str_replace('{fieldId}', $key, $html);
-    $html = str_replace('{fieldClass}', $args['class'], $html);
-    return $html;
-  }
-
-  /**
-   * Hides the editor. Needed if the editor isn't used, but media upload is
-   * @param string $boxId needed to print html somewhere
-   */
-  public function hideEditor($boxId)
-  {
-    $this->addHtml('remove-editor', $boxId, Metabox::getHideEditorCss());
-  }
-
-  /**
-   * @param string $postType the id of the metabox helper to get
-   * @return Metabox the instance of the helper
-   */
-  public static function get($postType)
-  {
-    if (!isset(self::$instances[$postType])) {
-      self::$instances[$postType] = new self($postType);
-    }
-    return self::$instances[$postType];
-  }
-
-  /**
-   * @return string html code to hide editor but keep upload intact
-   */
-  protected static function getHideEditorCss()
-  {
-    return '
-      <style type="text/css">
-        #postdivrich { display:none; }
-      </style>
-    ';
   }
 }
