@@ -3,7 +3,7 @@
 namespace LBWP\Helper\MetaItem;
 
 use LBWP\Helper\MetaItem\Templates;
-use LBWP\Util\String;
+use LBWP\Util\Strings;
 
 /**
  * Helper object to provide chosen dropdowns
@@ -26,7 +26,7 @@ class ChosenDropdown
   {
     $key = $args['post']->ID . '_' . $args['key'];
     $html = Templates::get($args, $key);
-    $isCrossReference = String::startsWith($key, $args['post']->ID . '_' . CrossReference::PREFIX);
+    $isCrossReference = Strings::startsWith($key, $args['post']->ID . '_' . CrossReference::PREFIX);
 
     if (isset($args['name'])) {
       $name = $args['name'];

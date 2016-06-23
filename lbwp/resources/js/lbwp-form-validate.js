@@ -9,7 +9,7 @@
 		var form = this;
 		var val = {};
 		var edits = typeof edits == "object" ? edits : {}; // checks if edits is set as an object else generates an empty object
-		var correctAll = "date, email, number, range, tel, time, url"; // all form input types
+		var correctAll = "date, email, number, range, tel, time, url, text"; // all form input types
 		var settings = { // Set default settings
 			defaultText: "Füllen Sie bitte das Feld korrekt aus",
 			elem: { // Different form elements
@@ -126,6 +126,9 @@
 				case "number": // if type of current element is "number" vNumber gets called
 					vNumber(this);
 					break;
+				case "text": // if type of current element is "email" vEmail gets called
+					vText(this);
+					break;
 			}
 		}
 
@@ -158,9 +161,19 @@
 				$(elem).closest(val.elem.item).removeClass(prfx + type).addClass(prfx + "success");
 				removeMessage(elem);
 				return true;
-			} else { // if it isnt succesfull returns false and adds class "error" or "warning"
-				$(elem).closest(val.elem.item).addClass(prfx + type).removeClass(prfx + "success")
+			} else {
+				$(elem).closest(val.elem.item).addClass(prfx + type).removeClass(prfx + "success");
 				return false;
+			}
+		}
+
+		function vText(elem) { // validates normal text field
+			var type = $(elem).prop('required') ? "error" : "warning"; // check if field is required or not
+			if ($(elem).val().length > 0) {
+				$(elem).closest(val.elem.item).removeClass(prfx + type).addClass(prfx + "success");
+				removeMessage(elem);
+			} else {
+				$(elem).closest(val.elem.item).addClass(prfx + type).removeClass(prfx + "success")
 			}
 		}
 
@@ -171,7 +184,7 @@
 				$(elem).closest(val.elem.item).removeClass(prfx + type).addClass(prfx + "success");
 				removeMessage(elem);
 			} else {
-				$(elem).closest(val.elem.item).addClass(prfx + type).removeClass(prfx + "success")
+				$(elem).closest(val.elem.item).addClass(prfx + type).removeClass(prfx + "success");
 			}
 		}
 

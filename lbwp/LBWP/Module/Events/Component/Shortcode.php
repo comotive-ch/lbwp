@@ -3,7 +3,7 @@
 namespace LBWP\Module\Events\Component;
 
 use LBWP\Util\ArrayManipulation;
-use LBWP\Util\String;
+use LBWP\Util\Strings;
 
 /**
  * This class contains all the logic for the event listing shortocde.
@@ -532,7 +532,7 @@ class Shortcode extends Base
       if (isset($_REQUEST['terms'][$taxonomy]) && is_array($_REQUEST['terms'][$taxonomy])) {
         // Reset and validate what's coming on
         foreach ($_REQUEST['terms'][$taxonomy] as $slug) {
-          $slug = String::validateField($slug);
+          $slug = Strings::validateField($slug);
           if (strlen($slug) > 0) {
             $terms[] = $slug;
           }

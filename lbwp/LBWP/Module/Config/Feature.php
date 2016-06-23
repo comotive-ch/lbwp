@@ -4,7 +4,7 @@ namespace LBWP\Module\Config;
 
 use LBWP\Core;
 use LBWP\Util\External;
-use LBWP\Util\String;
+use LBWP\Util\Strings;
 
 /**
  * This Module is used at backend to provide user configurations

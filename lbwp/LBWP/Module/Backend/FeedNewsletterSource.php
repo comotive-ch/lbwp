@@ -3,7 +3,7 @@
 namespace LBWP\Module\Backend;
 
 use LBWP\Module\BaseSingleton;
-use LBWP\Util\String;
+use LBWP\Util\Strings;
 use LBWP\Helper\PageSettings;
 use ComotiveNL\Standard\ContentSource\RssFeedContentSource;
 use ComotiveNL\Newsletter\Editor\EditorDynamicSection;
@@ -253,7 +253,7 @@ class FeedNewsletterSource extends BaseSingleton
   public function createFeedSlug($slug, $name)
   {
     if (strlen($slug) == 0) {
-      $slug = String::validateField($name);
+      $slug = Strings::validateField($name);
     }
 
     return $slug;

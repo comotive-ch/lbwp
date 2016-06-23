@@ -3,7 +3,7 @@
 namespace LBWP\Newsletter\Template;
 
 use LBWP\Core;
-use LBWP\Util\String;
+use LBWP\Util\Strings;
 use LBWP\Newsletter\Template\Item;
 
 /**
@@ -91,7 +91,7 @@ abstract class Base
    */
   public function replacePlaintextLinks($match)
   {
-    $url = String::parseTagProperty($match[0], 'href');
+    $url = Strings::parseTagProperty($match[0], 'href');
     return $url . ' (' . $match[4] . ')';
   }
 

@@ -4,7 +4,7 @@ namespace LBWP\Helper;
 
 // Basic framework dependencies
 use wpdb;
-use LBWP\Util\String;
+use LBWP\Util\Strings;
 use LBWP\Util\Date;
 use LBWP\Helper\MetaItem\SimpleField;
 use LBWP\Helper\MetaItem\Templates;
@@ -204,7 +204,7 @@ class Metabox
   protected function enqueueAssets()
   {
     // Only include in post.php and post-new.php
-    if (String::startsWith($_SERVER['SCRIPT_NAME'], '/wp-admin/post')) {
+    if (Strings::startsWith($_SERVER['SCRIPT_NAME'], '/wp-admin/post')) {
       wp_enqueue_script(
         'metabox-helper-backend-js',
         '/wp-content/plugins/lbwp/resources/js/metabox-helper.js',
@@ -1326,7 +1326,7 @@ class Metabox
     }
 
     // Replace in the input field
-    $input = String::getWpEditor($value, $key, array(
+    $input = Strings::getWpEditor($value, $key, array(
       'textarea_rows' => $args['rows']
     ));
     $html = str_replace('{input}', $input, $html);
@@ -1416,7 +1416,7 @@ class Metabox
     $value = stripslashes(trim($value));
 
     // Validate the input with EU_FORMAT_DATE
-    if (!String::checkDate($value, Date::EU_FORMAT_DATE)) {
+    if (!Strings::checkDate($value, Date::EU_FORMAT_DATE)) {
       $value = ''; // Make the error pop up
     }
 
@@ -1464,8 +1464,8 @@ class Metabox
 
     // Validate the input with EU_FORMAT_DATE
     if (
-      !String::checkDate($date, Date::EU_FORMAT_DATE) ||
-      (!String::checkDate($time, DATE::EU_FORMAT_CLOCK) && !String::checkDate($time, Date::EU_FORMAT_TIME))
+      !Strings::checkDate($date, Date::EU_FORMAT_DATE) ||
+      (!Strings::checkDate($time, DATE::EU_FORMAT_CLOCK) && !Strings::checkDate($time, Date::EU_FORMAT_TIME))
     ) {
       // No saving, since not valid
       return false;
@@ -1575,7 +1575,7 @@ class Metabox
       ';
 
       global $wpdb;
-      $posts = $wpdb->get_results(String::prepareSql($sql, array(
+      $posts = $wpdb->get_results(Strings::prepareSql($sql, array(
         'postTable' => $wpdb->posts,
         'postId' => intval($_GET['term']),
         'postTitle' => '%' . $_GET['term'] . '%',
@@ -1607,7 +1607,7 @@ class Metabox
    */
   public function mediaContainerCallback($attachmentId, $postId, $attachment, $args)
   {
-    if (is_a($attachment, 'WP_Post') && String::startsWith($attachment->post_mime_type, 'image/')) {
+    if (is_a($attachment, 'WP_Post') && Strings::startsWith($attachment->post_mime_type, 'image/')) {
       list($url, $width, $height, $crop) = wp_get_attachment_image_src($attachmentId, 'thumbnail');
       $container = sprintf('
         <div class="image-media-container media-container" style="padding: %s%% 0 0 0; width: %spx; ">

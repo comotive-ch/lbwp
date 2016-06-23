@@ -2,7 +2,7 @@
 
 namespace LBWP\Module\Backend;
 
-use LBWP\Util\String;
+use LBWP\Util\Strings;
 
 /**
  * Developer Tools, only for local development purposes
@@ -123,7 +123,7 @@ class DevTools extends \LBWP\Module\Base
     $html = '';
     if (isset($_POST['compressFiles'])) {
       foreach ($_POST['compressedFiles'] as $file) {
-        $extension = substr(String::getExtension($file), 1);
+        $extension = substr(Strings::getExtension($file), 1);
         $minVersion = str_replace('.' . $extension, '.min.' . $extension, $file);
         file_put_contents($minVersion, '', FILE_TEXT);
         exec('java -jar ' . $this->compressor . ' -o ' . $minVersion . ' ' . $file);
@@ -162,11 +162,11 @@ class DevTools extends \LBWP\Module\Base
         if (!$path->isDir()) {
           $file = $path->__toString();
           // Gather css files
-          if (String::endsWith($file, '.css') && !String::endsWith($file, '.min.css')) {
+          if (Strings::endsWith($file, '.css') && !Strings::endsWith($file, '.min.css')) {
             $files['css'][] = $file;
           }
           // Gather js files
-          if (String::endsWith($file, '.js') && !String::endsWith($file, '.min.js')) {
+          if (Strings::endsWith($file, '.js') && !Strings::endsWith($file, '.min.js')) {
             $files['js'][] = $file;
           }
         }

@@ -3,7 +3,7 @@
 namespace LBWP\Theme\Feature\SocialShare;
 
 use LBWP\Util\ArrayManipulation;
-use LBWP\Util\String;
+use LBWP\Util\Strings;
 use LBWP\Util\WordPress;
 
 /**
@@ -248,7 +248,7 @@ class Buttons
     }
 
     // Save the type
-    $config['type'] = String::validateField($_POST['settingType']);
+    $config['type'] = Strings::validateField($_POST['settingType']);
     // Save the config
     $this->config = ArrayManipulation::deepMerge($this->config, $config);
     update_option(self::SETTING_NAME, $this->config);

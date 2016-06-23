@@ -1,7 +1,7 @@
 <?php
 
 namespace LBWP\Newsletter\Template;
-use LBWP\Util\String;
+use LBWP\Util\Strings;
 
 /**
  * This class represents a content item for the newsletter
@@ -50,7 +50,7 @@ class Item
     $this->link = $link;
 
     // Make title empty, if :: is at the beginning
-    if (String::startsWith($this->title, '::')) {
+    if (Strings::startsWith($this->title, '::')) {
       $this->title = '';
     }
   }

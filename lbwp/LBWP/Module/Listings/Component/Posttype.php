@@ -4,7 +4,7 @@ namespace LBWP\Module\Listings\Component;
 
 use LBWP\Helper\Metabox;
 use LBWP\Helper\MetaItem\CrossReference;
-use LBWP\Util\String;
+use LBWP\Util\Strings;
 use LBWP\Util\WordPress;
 
 /**
@@ -140,7 +140,7 @@ class Posttype extends Base
 
     // Make sure not to filter boxes without the item prefix
     foreach ($metaboxes as $id => $metabox) {
-      if (!String::startsWith($id, Configurator::BOX_PREFIX)) {
+      if (!Strings::startsWith($id, Configurator::BOX_PREFIX)) {
         $filteredList[$id] = $metabox;
       }
     }

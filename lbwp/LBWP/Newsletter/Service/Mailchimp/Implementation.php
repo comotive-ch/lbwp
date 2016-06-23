@@ -4,7 +4,7 @@ namespace LBWP\Newsletter\Service\Mailchimp;
 
 use Exception;
 use LBWP\Core as LbwpCore;
-use LBWP\Util\String;
+use LBWP\Util\Strings;
 use LBWP\Util\Date;
 use LBWP\Newsletter\Service\Base;
 use LBWP\Newsletter\Service\Definition;
@@ -156,7 +156,7 @@ class Implementation extends Base implements Definition
     if (strlen($apiKey) > 0) {
       $api = new MailchimpV3($apiKey);
       // Save the service settings
-      $this->updateSetting('sendType', String::validateField($_POST['sendType']));
+      $this->updateSetting('sendType', Strings::validateField($_POST['sendType']));
       $this->updateSetting('trackOpens', intval($_POST['trackOpens']));
       $this->updateSetting('trackLinks', intval($_POST['trackLinks']));
 

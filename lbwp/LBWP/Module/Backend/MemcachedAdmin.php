@@ -6,7 +6,7 @@ use LBWP\Core as LbwpCore;
 use LBWP\Helper\MasterApi;
 use LBWP\Util\Multilang;
 use LBWP\Module\Frontend\HTMLCache;
-use LBWP\Util\String;
+use LBWP\Util\Strings;
 
 /**
  * This module provides management of memcached keys / information. It is
@@ -261,8 +261,8 @@ class MemcachedAdmin extends \LBWP\Module\Base
     // If super admin, add some more info
     if (LbwpCore::isSuperlogin()) {
       $html .= '<pre>';
-      $html .= String::getVarDump(MC_PERSISTENT_CONNECTION_HASH);
-      $html .= String::getVarDump(wp_get_cache_bucket());
+      $html .= Strings::getVarDump(MC_PERSISTENT_CONNECTION_HASH);
+      $html .= Strings::getVarDump(wp_get_cache_bucket());
       $html .= '</pre>';
     }
 

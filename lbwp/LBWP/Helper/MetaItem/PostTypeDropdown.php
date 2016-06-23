@@ -1,7 +1,7 @@
 <?php
 
 namespace LBWP\Helper\MetaItem;
-use LBWP\Util\String;
+use LBWP\Util\Strings;
 use LBWP\Util\WordPress;
 
 /**
@@ -79,7 +79,7 @@ class PostTypeDropdown
     $assignedPostId = intval($_POST['postId']);
     $newPostId = intval(wp_insert_post(array(
       'post_title' => $_POST['title'],
-      'post_type' => String::forceSlugString($_POST['postType']),
+      'post_type' => Strings::forceSlugString($_POST['postType']),
       'post_status' => 'draft'
     )));
 

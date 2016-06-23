@@ -40,6 +40,8 @@ class Core extends \LBWP\Module\Base
     wp_register_style('lbwp-events-be-css', $uri . '/css/events/backend.css', array(), LbwpCore::REVISION, 'all');
     wp_register_script('lbwp-events-fe-js', $uri . '/js/events/frontend.js', array('jquery'), LbwpCore::REVISION, true);
     wp_register_script('lbwp-events-be-js', $uri . '/js/events/backend.js', array('jquery'), LbwpCore::REVISION, true);
+    // Load widgets
+    add_action('widgets_init', array($this, 'loadWidgets'));
 	}
 
   /**
@@ -60,6 +62,14 @@ class Core extends \LBWP\Module\Base
       $this->components[$class] = new $class($this);
       $this->components[$class]->load();
     }
+  }
+
+  /**
+   * The widget to use in sidebars
+   */
+  public function loadWidgets()
+  {
+    register_widget('\LBWP\Module\Events\Widget');
   }
 
   /**

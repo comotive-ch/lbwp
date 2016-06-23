@@ -2,7 +2,7 @@
 
 namespace LBWP\Module\General;
 
-use LBWP\Util\String;
+use LBWP\Util\Strings;
 
 /**
  * This module provides favicon upload and frontend output
@@ -25,7 +25,7 @@ class Favicon extends \LBWP\Module\Base
   public function initialize()
   {
     // Register the output method, if the favicon url is given
-    if (String::checkURL($this->config['HeaderFooterFilter:FaviconPngUrl'])) {
+    if (Strings::checkURL($this->config['HeaderFooterFilter:FaviconPngUrl'])) {
       if (is_admin()) {
         add_action('admin_head', array($this, 'printFavicons'));
       } else {
@@ -43,7 +43,7 @@ class Favicon extends \LBWP\Module\Base
     $faviconUrl = $this->config['HeaderFooterFilter:FaviconPngUrl'];
 
     $type = 'image/png';
-    if (String::endsWith($faviconUrl, '.ico')) {
+    if (Strings::endsWith($faviconUrl, '.ico')) {
       $type = 'image/x-icon';
     }
 

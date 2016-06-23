@@ -3,7 +3,7 @@
 namespace LBWP\Theme\Component;
 
 use LBWP\Theme\Base\Component as BaseComponent;
-use LBWP\Util\String;
+use LBWP\Util\Strings;
 
 /**
  * Simple redirector component
@@ -57,7 +57,7 @@ abstract class Redirect extends BaseComponent
     // Check only on 404 or root check, and if there are redirects
     if ($is404 && is_array($this->staticRedirects) && count($this->staticRedirects)) {
       foreach ($this->staticRedirects as $oldUrl => $newUrl) {
-        if (String::wildcardSearch($oldUrl, $_SERVER['REQUEST_URI'])) {
+        if (Strings::wildcardSearch($oldUrl, $_SERVER['REQUEST_URI'])) {
           header('Location: ' . $newUrl, NULL, 301);
           exit;
         }

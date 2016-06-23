@@ -3,9 +3,10 @@
 namespace LBWP\Theme\Feature;
 
 use LBWP\Core as LbwpCore;
+use LBWP\Module\Frontend\HTMLCache;
 use LBWP\Util\ArrayManipulation;
 use LBWP\Util\Multilang;
-use LBWP\Util\String;
+use LBWP\Util\Strings;
 use LBWP\Util\WordPress;
 
 /**
@@ -241,6 +242,8 @@ class Search
    */
   public static function printGoogleXmlResults()
   {
+    // First off, prevent caching as of now
+    HTMLCache::avoidCache();
     // Get the config and init the result array
     $config = LbwpCore::getInstance()->getConfig();
     $results = array();
@@ -263,6 +266,11 @@ class Search
     $totalResults = intval($xml['RES']['M']);
     if ($totalResults > self::XML_RESULTS_PER_PAGE) {
       $pagingHtml = self::getXmlResultPaging($totalResults, $page);
+    }
+
+    // Fix single result xml
+    if (isset($xml['RES']['R']['U'])) {
+      $xml['RES']['R'] = array($xml['RES']['R']);
     }
 
     // If there are results, show them
@@ -309,7 +317,7 @@ class Search
         $thumbnailId = get_post_thumbnail_id($result->ID);
         if ($thumbnailId > 0) {
           $url = WordPress::getImageUrl($thumbnailId, 'medium');
-          if (String::isURL($url)) {
+          if (Strings::isURL($url)) {
             $image = '<img src="' . $url . '" alt="' . $result->post_title . '">';
           }
         }
@@ -322,7 +330,7 @@ class Search
 
         // If still no description, use post content
         if (strlen($description) == 0) {
-          $description = String::chopToWords(strip_tags($result->post_content), 30, true);
+          $description = Strings::chopToWords(strip_tags($result->post_content), 30, true);
         }
 
         $template = self::$template;

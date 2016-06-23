@@ -4,7 +4,7 @@ namespace LBWP\Module\Forms\Action;
 
 use LBWP\Module\Forms\Item\Textfield;
 use LBWP\Util\External;
-use LBWP\Util\String;
+use LBWP\Util\Strings;
 use LBWP\Util\WordPress;
 use LBWP\Util\ArrayManipulation;
 
@@ -157,7 +157,7 @@ class SendMail extends Base
     ';
 
     // Add reply to address if valid
-    if (strlen($replyTo) > 0 && String::checkEmail($replyTo)) {
+    if (strlen($replyTo) > 0 && Strings::checkEmail($replyTo)) {
       $mail->addReplyTo($replyTo);
     } else {
       // Add info Text, if there is no reply to defined
@@ -179,7 +179,7 @@ class SendMail extends Base
     }
 
     // Add attachment, if needed
-    if (isset($this->params['anhang']) && String::checkURL($this->params['anhang'])) {
+    if (isset($this->params['anhang']) && Strings::checkURL($this->params['anhang'])) {
       $tempPath = tempnam(sys_get_temp_dir(), 'Sma');
       $fileUrl = $this->params['anhang'];
       $binaryData = file_get_contents($fileUrl);
@@ -196,7 +196,7 @@ class SendMail extends Base
     if (defined('LOCAL_DEVELOPMENT')) {
       $subject = str_replace(' ', '-', $mail->Subject);
       $filename = $subject . '_' . $this->params['email'];
-      $filename = get_temp_dir() . String::validateField($filename) . '.html';
+      $filename = get_temp_dir() . Strings::validateField($filename) . '.html';
       file_put_contents($filename, $mail->Body);
       return true;
     }

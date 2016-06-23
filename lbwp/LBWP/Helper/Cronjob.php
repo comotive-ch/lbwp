@@ -1,7 +1,7 @@
 <?php
 
 namespace LBWP\Helper;
-use LBWP\Util\String;
+use LBWP\Util\Strings;
 
 /**
  * Very simple job calling framework. Basically a developer can tell the system to guaranteedly
@@ -69,7 +69,7 @@ class Cronjob
         VALUES ({siteUrl}, {timestamp}, {identifier})
       ';
 
-      mysqli_query($conn, String::prepareSql($sql, array(
+      mysqli_query($conn, Strings::prepareSql($sql, array(
         'siteUrl' => $host,
         'timestamp' => $timestamp + (time() - current_time('timestamp')),
         'identifier' => $identifier

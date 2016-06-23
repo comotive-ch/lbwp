@@ -5,7 +5,7 @@ namespace LBWP\Module\Events\Component;
 use LBWP\Module\Forms\Core as FormCore;
 use LBWP\Module\Forms\Component\FormHandler;
 use LBWP\Util\Date;
-use LBWP\Util\String;
+use LBWP\Util\Strings;
 
 /**
  * This provides various helper functions for the frontend, as
@@ -268,7 +268,7 @@ class Frontend extends Base
 
     // Bolster up the shortcode, on loading so everything is correctly handled
     add_filter('lbwpForms_load_form_shortcode', function($shortcode, $form) use ($event) {
-      if (!String::checkEmail($event->subscribeEmail)) {
+      if (!Strings::checkEmail($event->subscribeEmail)) {
         return $shortcode;
       }
       /** @var FormHandler $formHandler */

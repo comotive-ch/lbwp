@@ -4,7 +4,7 @@ namespace LBWP\Newsletter\Component;
 
 use LBWP\Newsletter\Component\Base;
 use LBWP\Util\WordPress;
-use LBWP\Util\String;
+use LBWP\Util\Strings;
 
 /**
  * This class handles the newsletter preview
@@ -52,7 +52,7 @@ class Preview extends Base
     }
 
     // Check the page name to start with the lbwp-nl slug (for live single display)
-    if (isset($query->query['pagename']) && String::startsWith($query->query['pagename'], 'lbwp-nl/')) {
+    if (isset($query->query['pagename']) && Strings::startsWith($query->query['pagename'], 'lbwp-nl/')) {
       $newsletterId = WordPress::getPostIdByName($query->query_vars['name'], 'lbwp-nl');
       $isNlPreview = true;
     }

@@ -2,7 +2,7 @@
 
 namespace LBWP\Theme\Widget;
 
-use LBWP\Util\String;
+use LBWP\Util\Strings;
 
 /**
  * A widget that is cloned, hence uses data from another widget to display itself
@@ -109,7 +109,7 @@ class ClonedContent extends \WP_Widget
       $select_options .= '<optgroup label="' . $wp_registered_sidebars[$key]['name'] . '">';
       // Show all their widgets, except for cloning widgets (type blogwerk_promotion_widgetcloning_widget)
       foreach ($widgets as $widget_id) {
-        if (String::startsWith($widget_id, 'blogwerk_promotion_widgetcloning_widget')) {
+        if (Strings::startsWith($widget_id, 'blogwerk_promotion_widgetcloning_widget')) {
           continue;
         }
         $widget_type = substr($widget_id, 0, strrpos($widget_id, '-'));

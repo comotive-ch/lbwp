@@ -5,7 +5,7 @@ namespace LBWP\Module\Forms\Action\Newsletter;
 use LBWP\Core;
 use LBWP\Module\Forms\Action\Base;
 use LBWP\Newsletter\Core as NewsletterCore;
-use LBWP\Util\String;
+use LBWP\Util\Strings;
 use LBWP\Util\ArrayManipulation;
 
 /**
@@ -120,7 +120,7 @@ class Subscribe extends Base
     }
 
     // Check if email is actually an email and return if not
-    if (!String::checkEmail($subscription['email'])) {
+    if (!Strings::checkEmail($subscription['email'])) {
       return false;
     }
 

@@ -5,7 +5,7 @@ namespace LBWP\Module\Forms\Component;
 use LBWP\Core as LbwpCore;
 use LBWP\Util\File;
 use LBWP\Util\Multilang;
-use LBWP\Util\String;
+use LBWP\Util\Strings;
 use LBWP\Util\WordPress;
 
 /**
@@ -470,11 +470,11 @@ class FormEditor extends Base
       foreach (Multilang::getAllLanguages() as $language) {
         $args['lang'] = $language;
         $dropdownHtml = wp_dropdown_pages($args);
-        $html .= '<optgroup label="' . Multilang::getLanguageName($language) . '">' . String::xpath($dropdownHtml, '//option', false) . '</optgroup>';
+        $html .= '<optgroup label="' . Multilang::getLanguageName($language) . '">' . Strings::xpath($dropdownHtml, '//option', false) . '</optgroup>';
       }
     } else {
       $dropdownHtml = wp_dropdown_pages($args);
-      $html .= String::xpath($dropdownHtml, '//option', false);
+      $html .= Strings::xpath($dropdownHtml, '//option', false);
     }
 
     // End the select and return

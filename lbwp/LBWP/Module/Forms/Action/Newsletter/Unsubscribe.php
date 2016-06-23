@@ -3,7 +3,7 @@
 namespace LBWP\Module\Forms\Action\Newsletter;
 
 use LBWP\Core;
-use LBWP\Util\String;
+use LBWP\Util\Strings;
 use LBWP\Module\Forms\Action\Base;
 use LBWP\Newsletter\Core as NewsletterCore;
 use LBWP\Util\ArrayManipulation;
@@ -81,7 +81,7 @@ class Unsubscribe extends Base
       $service = $newsletter->getService();
 
       // Unsubscribe if valid email and return
-      if ($service->isWorking() && String::checkEmail($field['value'])) {
+      if ($service->isWorking() && Strings::checkEmail($field['value'])) {
         return $service->unsubscribe($field['value'], $listId);
       }
     }

@@ -4,7 +4,7 @@ namespace LBWP\Module\Backend;
 
 use LBWP\Core as LbwpCore;
 use LBWP\Util\ArrayManipulation;
-use LBWP\Util\String;
+use LBWP\Util\Strings;
 
 /**
  * Migration Tools upon migration from dev to live mode
@@ -191,7 +191,7 @@ class MigrationTools extends \LBWP\Module\Base
     $posts = 0;
     $sql = 'SELECT ID FROM {sql:postTable} WHERE post_type = {postType} AND post_status = {postStatus}';
 
-    $postIds = $this->wpdb->get_col(String::prepareSql($sql, array(
+    $postIds = $this->wpdb->get_col(Strings::prepareSql($sql, array(
       'postTable' => $this->wpdb->posts,
       'postType' => $_POST['postType'],
       'postStatus' => $_POST['postStatus']
@@ -265,7 +265,7 @@ class MigrationTools extends \LBWP\Module\Base
 
       // Search the tables
       foreach ($config['fields'] as $searchField => $type) {
-        $results = $this->wpdb->get_results(String::prepareSql($sql, array(
+        $results = $this->wpdb->get_results(Strings::prepareSql($sql, array(
           'idField' => $config['id'],
           'searchField' => $searchField,
           'tableName' => $table,
@@ -278,7 +278,7 @@ class MigrationTools extends \LBWP\Module\Base
             <tr>
               <td>' . $result->id . '</td>
               <td>' . $searchField . '</td>
-              <td>' . String::chopString(htmlentities($result->searchField), 500, true) . '</td>
+              <td>' . Strings::chopString(htmlentities($result->searchField), 500, true) . '</td>
             </tr>
           ';
         }
@@ -340,7 +340,7 @@ class MigrationTools extends \LBWP\Module\Base
     // Simply replace this directly on the DB server
     $sql = 'UPDATE {sql:tableName} SET {sql:searchField} = REPLACE({sql:searchField},{searchValue},{replaceValue})';
 
-    $this->wpdb->query(String::prepareSql($sql, array(
+    $this->wpdb->query(Strings::prepareSql($sql, array(
       'tableName' => $table,
       'searchField' => $field,
       'searchValue' => $search,
@@ -367,7 +367,7 @@ class MigrationTools extends \LBWP\Module\Base
       SELECT {sql:keyField}, {sql:replaceField} FROM {sql:tableName}
       WHERE {sql:replaceField} LIKE "%{raw:searchValue}%"
     ';
-    $results = $this->wpdb->get_results(String::prepareSql($sql, array(
+    $results = $this->wpdb->get_results(Strings::prepareSql($sql, array(
       'tableName' => $table,
       'keyField' => $keyField,
       'replaceField' => $replaceField,
@@ -395,7 +395,7 @@ class MigrationTools extends \LBWP\Module\Base
       if ($changed) {
         // Simply replace this directly on the DB server
         $sql = 'UPDATE {sql:tableName} SET {sql:replaceField} = {newValue} WHERE {sql:keyField} = {keyValue}';
-        $this->wpdb->query(String::prepareSql($sql, array(
+        $this->wpdb->query(Strings::prepareSql($sql, array(
           'tableName' => $table,
           'replaceField' => $replaceField,
           'newValue' => $value,

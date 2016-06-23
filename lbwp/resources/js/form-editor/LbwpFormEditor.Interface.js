@@ -15,6 +15,7 @@ LbwpFormEditor.Interface = {
 		// Prepare the interface to be used
 		LbwpFormEditor.Interface.cleanInterface();
 		LbwpFormEditor.Interface.loadInterface();
+		LbwpFormEditor.Interface.handleLeaving();
 	},
 
 	/**
@@ -42,6 +43,8 @@ LbwpFormEditor.Interface = {
 
 		// Add a click event to that new button that executes the "original" save
 		jQuery('.save-form-button').click(function () {
+			// Set hasChanges to false, so the user doesn't see a leave prompt
+			LbwpFormEditor.Core.hasChanges = false;
 			jQuery('#publish').trigger('click');
 		});
 	},
@@ -81,9 +84,20 @@ LbwpFormEditor.Interface = {
 	},
 
 	/**
+	 * Handles leaving the form editor
+	 */
+	handleLeaving : function() {
+		window.onbeforeunload = function() {
+			if (LbwpFormEditor.Core.hasChanges) {
+				return "Möchten Sie diese Website verlassen?";
+			}
+		};
+	},
+
+	/**
 	 * Attach all main UI events, like saving and tabbing
 	 */
-	addEvents: function () {
+	addEvents: function() {
 		// Make the navigation tabbable
 		jQuery('.nav-tab').click(LbwpFormEditor.Interface.onNavTabClick);
 	},
@@ -121,5 +135,7 @@ LbwpFormEditor.Interface = {
 		LbwpFormEditor.Form.initialize();
 		LbwpFormEditor.Action.initialize();
 		LbwpFormEditor.Settings.initialize();
+		// Everything loaded, not reset changes
+		LbwpFormEditor.Core.hasChanges = false;
 	}
 };

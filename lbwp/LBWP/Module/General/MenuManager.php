@@ -3,7 +3,7 @@
 namespace LBWP\Module\General;
 
 use LBWP\Util\Multilang;
-use LBWP\Util\String;
+use LBWP\Util\Strings;
 
 /**
  * Class MenuManager v2
@@ -334,7 +334,7 @@ class MenuManager extends \LBWP\Module\Base
       $guesses = array('primary', 'main');
       foreach ($locations as $key => $location) {
         foreach ($guesses as $guess) {
-          if (String::startsWith($key, $guess)) {
+          if (Strings::startsWith($key, $guess)) {
             $location = $key;
             break 2;
           }

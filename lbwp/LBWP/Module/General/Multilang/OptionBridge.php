@@ -4,7 +4,7 @@ namespace LBWP\Module\General\Multilang;
 
 use LBWP\Module\BaseSingleton;
 use LBWP\Util\Multilang;
-use LBWP\Util\String;
+use LBWP\Util\Strings;
 
 /**
  * Option bridge for multilang module
@@ -88,7 +88,7 @@ class OptionBridge extends BaseSingleton
     // Try to get the main version
     $multilangValue = get_option($optionKey . '_' . $lang, null);
     if ($multilangValue !== null) {
-      return String::deepStripSlashes($multilangValue);
+      return Strings::deepStripSlashes($multilangValue);
     }
 
     // Return the default, if set

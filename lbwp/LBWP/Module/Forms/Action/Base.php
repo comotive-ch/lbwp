@@ -2,7 +2,7 @@
 
 namespace LBWP\Module\Forms\Action;
 
-use LBWP\Util\String;
+use LBWP\Util\Strings;
 use wpdb;
 use LBWP\Module\Forms\Core;
 use LBWP\Module\Forms\Component\FormHandler;
@@ -93,7 +93,7 @@ abstract class Base
   public function getFieldContent($fields, $value)
   {
     // Return directly, if there is no parseable value
-    if (String::startsWith($value, 'field:')) {
+    if (Strings::startsWith($value, 'field:')) {
       list($tag, $fieldName) = explode(':', $value);
       foreach ($fields as $field) {
         if ($field['name'] == $fieldName || $field['id'] == $fieldName) {

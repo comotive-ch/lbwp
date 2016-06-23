@@ -1,6 +1,7 @@
 <?php
 
 namespace LBWP\Helper;
+
 use LBWP\Core;
 
 /**

@@ -5,7 +5,7 @@ namespace LBWP\Module\Forms\Item;
 use LBWP\Util\ArrayManipulation;
 use LBWP\Module\Backend\S3Upload;
 use LBWP\Util\File;
-use LBWP\Util\String;
+use LBWP\Util\Strings;
 
 /**
  * This will display a file input field
@@ -85,7 +85,7 @@ class Upload extends Base
       $uploader->initialize();
       if ($this->isValidFile($file)) {
         $extension = File::getExtension($file['name']);
-        $file['name'] = String::getRandom(40) . $extension;
+        $file['name'] = Strings::getRandom(40) . $extension;
         $url = $uploader->uploadLocalFile($file);
       }
 
@@ -112,7 +112,7 @@ class Upload extends Base
     // Check primitively for validatity
     $isValid = false;
     foreach (explode(',', $types) as $extension) {
-      if (String::endsWith($file['name'], $extension)) {
+      if (Strings::endsWith($file['name'], $extension)) {
         $isValid = true;
         break;
       }

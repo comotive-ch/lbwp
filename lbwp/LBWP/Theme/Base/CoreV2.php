@@ -2,7 +2,7 @@
 
 namespace LBWP\Theme\Base;
 
-use LBWP\Util\String;
+use LBWP\Util\Strings;
 use LBWP\Theme\Base\WpWrapper;
 use Exception;
 
@@ -302,7 +302,7 @@ abstract class CoreV2
   public function searchComponents($partialNamespacedClassname){
     // filter component class names by suffix partial comparision
     $foundComponentClassnames = array_filter(array_keys($this->components), function($componentClassName) use($partialNamespacedClassname){
-      return String::endsWith($componentClassName, $partialNamespacedClassname);
+      return Strings::endsWith($componentClassName, $partialNamespacedClassname);
     });
 
     // return the instantiated objects of the found component class names

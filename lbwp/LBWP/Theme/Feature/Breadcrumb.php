@@ -4,7 +4,7 @@ namespace LBWP\Theme\Feature;
 
 use LBWP\Util\ArrayManipulation;
 use LBWP\Util\Multilang;
-use LBWP\Util\String;
+use LBWP\Util\Strings;
 
 /**
  * Provides developers with the possibility to use breadcrumbs.
@@ -434,7 +434,7 @@ class Breadcrumb
       return;
     }
 
-    $title = String::chopString($title, $this->options['title']['max_length'], true, '...');
+    $title = Strings::chopString($title, $this->options['title']['max_length'], true, '...');
 
     echo $title;
   }

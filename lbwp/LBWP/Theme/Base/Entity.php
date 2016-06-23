@@ -1,7 +1,7 @@
 <?php
 
 namespace LBWP\Theme\Base;
-use LBWP\Util\String;
+use LBWP\Util\Strings;
 use LBWP\Util\WordPress;
 use StepChallenge\Helper\Constants;
 
@@ -90,7 +90,7 @@ abstract class Entity
   {
     // Prepare sql and load data
     $sql = 'SELECT * FROM {sql:tableName} WHERE {sql:primaryKey} = {primaryValue}';
-    $this->data = $this->db->get_row(String::prepareSql($sql, array(
+    $this->data = $this->db->get_row(Strings::prepareSql($sql, array(
       'tableName' => $this->table,
       'primaryKey' => $this->primaryKey[0],
       'primaryValue' => $this->id
@@ -189,7 +189,7 @@ abstract class Entity
   public function removeObject()
   {
     $sql = 'DELETE FROM {sql:tableName} WHERE {sql:primaryKey} = {primaryValue}';
-    $this->db->query(String::prepareSql($sql, array(
+    $this->db->query(Strings::prepareSql($sql, array(
       'tableName' => $this->table,
       'primaryKey' => $this->primaryKey[0],
       'primaryValue' => $this->id

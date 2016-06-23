@@ -3,7 +3,7 @@
 namespace LBWP\Util;
 
 use LBWP\Module\Frontend\OutputFilter;
-use LBWP\Util\String;
+use LBWP\Util\Strings;
 use LBWP\Core as LbwpCore;
 use \WP_Error;
 
@@ -297,7 +297,7 @@ class WordPress
     $wpdb = self::getDb();
     // Get id by simple query
     $sql = 'SELECT ID FROM {sql:postTable} WHERE post_type = {postType} AND post_name = {postName}';
-    $postId = $wpdb->get_var(String::prepareSql($sql, array(
+    $postId = $wpdb->get_var(Strings::prepareSql($sql, array(
       'postTable' => $wpdb->posts,
       'postType' => $posttype,
       'postName' => $name

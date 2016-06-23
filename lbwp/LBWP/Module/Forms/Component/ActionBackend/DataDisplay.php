@@ -2,7 +2,7 @@
 
 namespace LBWP\Module\Forms\Component\ActionBackend;
 
-use LBWP\Util\String;
+use LBWP\Util\Strings;
 use LBWP\Util\WordPress;
 use LBWP\Module\Forms\Component\ActionBackend\DataTable as DataTableBackend;
 
@@ -128,7 +128,7 @@ class DataDisplay
    */
   protected function prepareValue($value)
   {
-    $value = String::chopString($value, 200, false);
+    $value = Strings::chopString($value, 200, false);
     $value = nl2br(strip_tags($value));
     return $value;
   }
@@ -218,7 +218,7 @@ class DataDisplay
   protected function sendCsv($name, $columns, $data ,$utf8decode)
   {
     ob_end_clean();
-    $filename = String::forceSlugString($name) . '.csv';
+    $filename = Strings::forceSlugString($name) . '.csv';
     header('Content-Description: File Transfer');
     header('Content-Disposition: attachment; filename=' . $filename);
     header('Content-Type: application/octet-stream; charset=' . get_option('blog_charset'), true);

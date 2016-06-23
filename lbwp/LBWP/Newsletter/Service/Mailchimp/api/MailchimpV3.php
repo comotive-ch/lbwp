@@ -2,7 +2,7 @@
 
 namespace DrewM\MailChimp;
 
-use LBWP\Util\String;
+use LBWP\Util\Strings;
 
 /**
  * Super-simple, minimum abstraction MailChimp API v3 wrapper
@@ -168,7 +168,7 @@ class MailChimp
           $subject = LBWP_HOST . ' Mailchimp Exception';
           $body = 'Requested: ' . $url . PHP_EOL;
           $body.= $this->last_error . PHP_EOL . PHP_EOL;
-          $body.= String::getVarDump($this->last_response);
+          $body.= Strings::getVarDump($this->last_response);
           wp_mail(SERVER_EMAIL, $subject, $body);
         }
       }

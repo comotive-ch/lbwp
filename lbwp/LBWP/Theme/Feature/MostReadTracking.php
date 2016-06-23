@@ -3,7 +3,7 @@
 namespace LBWP\Theme\Feature;
 
 use LBWP\Util\Date;
-use LBWP\Util\String;
+use LBWP\Util\Strings;
 use LBWP\Util\WordPress;
 
 /**
@@ -161,7 +161,7 @@ class MostReadTracking
     if ($days > 0 && time() > $nextResetTs) {
       // Get all meta fields directly from db (get_posts would be too slow in time)
       $sql = 'SELECT post_id FROM {sql:postMeta} WHERE meta_key = {metaKey}';
-      $metas = $this->wpdb->get_results(String::prepareSql($sql, array(
+      $metas = $this->wpdb->get_results(Strings::prepareSql($sql, array(
         'postMeta' => $this->wpdb->postmeta,
         'metaKey' => 'most_read_tracker_hits'
       )));
@@ -185,7 +185,7 @@ class MostReadTracking
     if ($total === false) {
       $db = WordPress::getDb();
       $sql = 'SELECT SUM(meta_value) FROM {sql:metaTable} WHERE meta_key = "most_read_tracker_hits"';
-      $total = $db->get_var(String::prepareSql($sql, array(
+      $total = $db->get_var(Strings::prepareSql($sql, array(
         'metaTable' => $db->postmeta
       )));
       wp_cache_set('tracker_hit_total', $total, 'MostReadTracking', 3600);

@@ -6,7 +6,7 @@ use LBWP\Newsletter\Service\Base;
 use LBWP\Newsletter\Service\Definition;
 use LBWP\Core as LbwpCore;
 use LBWP\Util\Multilang;
-use LBWP\Util\String;
+use LBWP\Util\Strings;
 
 /**
  * Implementation class for Emarsys service
@@ -337,7 +337,7 @@ class Implementation extends Base implements Definition
     $apiKey = $_POST['secretKey'];
     if (strlen($apiKey) > 0) {
       // Save the service settings
-      $this->updateSetting('sendType', String::validateField($_POST['sendType']));
+      $this->updateSetting('sendType', Strings::validateField($_POST['sendType']));
       $this->updateSetting('userName', $_POST['userName']);
       $this->updateSetting('secretKey', $_POST['secretKey']);
       $this->updateSetting('apiUrl', $_POST['apiUrl']);

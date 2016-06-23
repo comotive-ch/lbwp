@@ -4,7 +4,7 @@ namespace LBWP\Module\General;
 
 use LBWP\Core;
 use LBWP\Util\File;
-use LBWP\Util\String;
+use LBWP\Util\Strings;
 
 /**
  * Various author features and filters, also: helpers.
@@ -177,7 +177,7 @@ class AuthorHelper extends \LBWP\Module\Base
         $avatarUrl = self::getAuthorImage($authorId);
         // If available, put it into the html code
         if (strlen($avatarUrl) > 0) {
-          $currentUrl = String::parseTagProperty($imageHtml, 'src');
+          $currentUrl = Strings::parseTagProperty($imageHtml, 'src');
           $imageHtml = str_replace($currentUrl, $avatarUrl, $imageHtml);
         }
       }

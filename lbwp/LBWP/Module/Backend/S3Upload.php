@@ -6,7 +6,7 @@ use AmazonS3;
 use LBWP\Core;
 use LBWP\Util\AwsFactory;
 use LBWP\Util\File;
-use LBWP\Util\String;
+use LBWP\Util\Strings;
 
 /**
  * Hooks in to the media upload and synchronizes the media library with the s3,
@@ -401,7 +401,7 @@ class S3Upload extends \LBWP\Module\Base
     $file_name = str_replace('%c3%a4', 'ae', $file_name);
     $file_name = str_replace('%c3%b6', 'oe', $file_name);
     // Strip everything fancy left
-    String::alphaNumFiles($file_name);
+    Strings::alphaNumFiles($file_name);
     // Rename the file
     $new_file = $directory . '/' . $file_name;
     if (is_file($file))

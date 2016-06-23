@@ -2,7 +2,7 @@
 
 namespace LBWP\Module\Listings\Component;
 
-use LBWP\Util\String;
+use LBWP\Util\Strings;
 use LBWP\Util\WordPress;
 use LBWP\Module\Listings\Core;
 use LBWP\Util\ArrayManipulation;
@@ -162,7 +162,7 @@ class Shortcode extends Base
 
     // Actually get meta data from database
     $sql = 'SELECT meta_key, meta_value FROM {sql:postMeta} WHERE post_id = {itemId}';
-    $fields = WordPress::getDb()->get_results(String::prepareSql($sql, array(
+    $fields = WordPress::getDb()->get_results(Strings::prepareSql($sql, array(
       'postMeta' => WordPress::getDb()->postmeta,
       'itemId' => $item->ID
     )));

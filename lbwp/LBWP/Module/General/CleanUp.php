@@ -2,7 +2,7 @@
 
 namespace LBWP\Module\General;
 
-use LBWP\Util\String;
+use LBWP\Util\Strings;
 use LBWP\Util\WordPress;
 use WP_Screen;
 use LBWP\Core;
@@ -59,6 +59,7 @@ class CleanUp extends \LBWP\Module\Base
       add_filter('user_has_cap', array($this, 'preventCaps'), 1, 10);
       add_action('admin_head', array($this, 'removeBackendThemes'), 100);
       add_action('wpseo_submenu_pages', array($this, 'removeYoastPages'));
+      add_filter('wpseo_metabox_prio', array($this, 'getLowPriority'));
       add_action('do_meta_boxes', array($this, 'removeMetaboxesFromTypes'), 5);
       add_action('admin_enqueue_scripts', array($this, 'removePluginAssets'), 50);
       remove_filter('pre_user_description', 'wp_filter_kses');
@@ -393,13 +394,20 @@ class CleanUp extends \LBWP\Module\Base
    */
   public function loginForm()
   {
+    $hash = 'd6g483jd8743zt9ohg2oi4zt93houefhvgkjweho2iz0fvoe54nto2z6o4igou3gv89be40ufh9724hg9';
     // Logged in text
-    $loggedIn = '';
+    $loggedIn = $features = '';
     if (Core::isSuperlogin()) {
       $loggedIn = '
 				Du wurdest erfolgreich eingeloggt.
 				<a href="' . get_admin_url() . 'tools.php?page=superlogin&logout">Logout</a>.
 		  ';
+      $features = '
+        <h3>Admin Funktionen</h3>
+        <p>
+          <a href="/wp-content/plugins/lbwp/views/cron/passwd.php?hash=' . $hash . '" class="button" target="_blank">Login Token generieren</a>
+        </p>
+      ';
     }
     // form output and title
     echo '
@@ -420,6 +428,7 @@ class CleanUp extends \LBWP\Module\Base
 					</table>
 					<p><input type="submit" name="trylogin" value="Login" class="button-primary" /></p>
 				</form>
+				' . $features . '
 			</div>
 		';
   }
@@ -509,16 +518,16 @@ class CleanUp extends \LBWP\Module\Base
     // Default information, a little simplified
     $content  = sprintf( __('A new comment on the post "%s" is waiting for your approval'), $post->post_title ) . "\r\n";
     $content .= get_permalink($comment->comment_post_ID) . "\r\n\r\n";
-    $content .= sprintf( __('Autor: %s', 'lbwp'), String::obfuscate($comment->comment_author, 5, 4)) . "\r\n";
-    $content .= sprintf( __('E-Mail: %s', 'lbwp'), String::obfuscate($comment->comment_author_email, 4, 3, '**', '@')) . "\r\n";
+    $content .= sprintf( __('Autor: %s', 'lbwp'), Strings::obfuscate($comment->comment_author, 5, 4)) . "\r\n";
+    $content .= sprintf( __('E-Mail: %s', 'lbwp'), Strings::obfuscate($comment->comment_author_email, 4, 3, '**', '@')) . "\r\n";
     // Provide some information to users
     $content .= __('Hinweis: Der Kommentar könnte Spam enthalten, daher zeigen wir hier nur ein paar Worte davon an.', 'lbwp') . "\r\n\r\n";
 	  $content .= __('Comment: ') . "\r\n";
 
     // Chop into words and validate each word again
-    $words  = explode(' ', String::chopToWords($commentContent, 12, true, '...', 150));
+    $words  = explode(' ', Strings::chopToWords($commentContent, 12, true, '...', 150));
     foreach ($words as $key => $word) {
-      if (String::checkURL(trim($word))) {
+      if (Strings::checkURL(trim($word))) {
         $words[$key] = '*blocked url*';
       }
     }
@@ -591,5 +600,13 @@ class CleanUp extends \LBWP\Module\Base
   public function void($content)
   {
     return '';
+  }
+
+  /**
+   * @return string returns low as for metabox priority filters
+   */
+  public function getLowPriority()
+  {
+    return 'low';
   }
 }

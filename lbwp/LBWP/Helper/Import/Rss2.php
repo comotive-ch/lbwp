@@ -2,7 +2,7 @@
 
 namespace LBWP\Helper\Import;
 
-use LBWP\Util\String;
+use LBWP\Util\Strings;
 
 /**
  * Simple Feedreader implementation to read RSS 2.0 feeds
@@ -88,7 +88,7 @@ class Rss2 extends Feedreader
       $regex = '/<(?:[img]+)[^>]*src[^>]*>/';
       preg_match_all($regex, $item->description, $result);
       if (is_array($result[0])) {
-        $image = String::parseTagProperty($result[0][0], 'src');
+        $image = Strings::parseTagProperty($result[0][0], 'src');
       }
     }
     return $image;

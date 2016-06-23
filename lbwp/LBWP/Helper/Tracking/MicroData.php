@@ -3,7 +3,7 @@
 namespace LBWP\Helper\Tracking;
 
 use LBWP\Util\Date;
-use LBWP\Util\String;
+use LBWP\Util\Strings;
 use LBWP\Util\WordPress;
 
 /**
@@ -26,7 +26,7 @@ class MicroData
         '@type' => 'WebPage',
         '@id' => 'https://google.com/article'
       ),
-      'headline' => String::chopString($post->post_title, 107, true, '...'),
+      'headline' => Strings::chopString($post->post_title, 107, true, '...'),
       'datePublished' => date('c', Date::getStamp(Date::SQL_DATETIME, $post->post_date_gmt)),
       'dateModified' => date('c', Date::getStamp(Date::SQL_DATETIME, $post->post_modified_gmt)),
       'author' => array(

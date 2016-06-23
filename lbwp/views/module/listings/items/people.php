@@ -1,6 +1,6 @@
 <?php
 use LBWP\Util\WordPress;
-use LBWP\Util\String;
+use LBWP\Util\Strings;
 use LBWP\Module\Listings\Core as ListingCore;
 $item = ListingCore::getCurrentListElementItem();
 
@@ -27,7 +27,7 @@ if (strlen($imageUrl)) {
 // e-mail
 $mail = get_post_meta($item->ID, 'email', true);
 if (strlen($mail)) {
-  $mail = '<a href="' . String::convertToEntities('mailto:' . $mail) . '">' . String::convertToEntities($mail) . '</a>';
+  $mail = '<a href="' . Strings::convertToEntities('mailto:' . $mail) . '">' . Strings::convertToEntities($mail) . '</a>';
 }
 
 // subtitle

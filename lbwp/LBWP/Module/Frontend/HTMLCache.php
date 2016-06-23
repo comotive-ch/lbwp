@@ -4,7 +4,7 @@ namespace LBWP\Module\Frontend;
 
 use Comotive\Firewall\Memcached;
 use LBWP\Module\Backend\MemcachedAdmin;
-use LBWP\Util\String;
+use LBWP\Util\Strings;
 use LBWP\Core as LbwpCore;
 
 /**
@@ -324,10 +324,10 @@ class HTMLCache extends \LBWP\Module\Base
       // Add content type headers if set
       $hasLocationHeader = false;
       foreach (headers_list() as $header) {
-        if (String::startsWith(strtolower($header), 'content-type')) {
+        if (Strings::startsWith(strtolower($header), 'content-type')) {
           $cacheVal['header'][] = $header;
         }
-        if (String::startsWith(strtolower($header), 'location')) {
+        if (Strings::startsWith(strtolower($header), 'location')) {
           $hasLocationHeader = true;
           $cacheVal['header'][] = $header;
         }

@@ -2,7 +2,7 @@
 
 namespace LBWP\Module\Frontend;
 
-use LBWP\Util\String;
+use LBWP\Util\Strings;
 use LBWP\Util\Date;
 
 /**
@@ -54,7 +54,7 @@ class Shortcodes extends \LBWP\Module\Base
     // Declare the redirect as ready to executed
     $doRedirect = true;
     // Prove otherwise, if the "from" param is set
-    if (strlen($fromDate) > 0 && String::checkDate($fromDate, Date::EU_FORMAT_DATETIME)) {
+    if (strlen($fromDate) > 0 && Strings::checkDate($fromDate, Date::EU_FORMAT_DATETIME)) {
       $tsFromDate = Date::getStamp(Date::EU_DATETIME, $fromDate);
       $tsNow = time();
       if ($tsFromDate > $tsNow) {

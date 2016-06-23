@@ -4,7 +4,7 @@ namespace LBWP\Module\General;
 
 use LBWP\Helper\PageSettings;
 use LBWP\Util\ArrayManipulation;
-use LBWP\Util\String;
+use LBWP\Util\Strings;
 
 /**
  * This module provides simple redirect functionality
@@ -36,7 +36,7 @@ class Redirects extends \LBWP\Module\Base
   {
     $redirects = ArrayManipulation::forceArray(get_option('lbwpUrlRedirects'));
     $currentUri = trim($_SERVER['REQUEST_URI']);
-    if (String::endsWith($currentUri, '/')) {
+    if (Strings::endsWith($currentUri, '/')) {
       $currentUri = rtrim($currentUri, '/');
     }
 
@@ -114,16 +114,16 @@ class Redirects extends \LBWP\Module\Base
       $html .= '
         <tr>
           <td>
-            <input type="text" style="width:100%;" value="' . esc_attr($item['source']) . '" name="lbwpUrlRedirects[source][]" />
+            <input type="text" class="text-field" style="width:100%;" value="' . esc_attr($item['source']) . '" name="lbwpUrlRedirects[source][]" />
           </td>
           <td>
-            <input type="text" style="width:100%;" value="' . esc_attr($item['destination']) . '" name="lbwpUrlRedirects[destination][]" />
+            <input type="text" class="text-field" style="width:100%;" value="' . esc_attr($item['destination']) . '" name="lbwpUrlRedirects[destination][]" />
           </td>
           <td>
             ' . $this->getCodeOptions($item['code'], $codeOptions) . '
           </td>
           <td>
-            <a onclick="jQuery(this).parent().parent().remove();" class="button" href="#">Löschen</a>
+            <a class="button delete-redirect" href="#">Löschen</a>
           </td>
         </tr>
       ';
@@ -132,6 +132,39 @@ class Redirects extends \LBWP\Module\Base
 
     // Close table tag and return
     $html .= '</tbody></table>';
+    // Add some JS code
+    $html .= '
+      <script type="text/javascript">
+        var LbwpRedirects = {
+          hasChanges : false,
+
+          initialize : function() {
+            // Delete button
+            jQuery(".delete-redirect").click(function() {
+              jQuery(this).parent().parent().remove();
+            });
+            // Monitor changes
+            jQuery(".text-field").change(function() {
+              LbwpRedirects.hasChanges = true;
+            });
+            // Reset if saved is clicked
+            jQuery(".button-primary").click(function() {
+              LbwpRedirects.hasChanges = false;
+            });
+            // Add a checker function
+            window.onbeforeunload = function() {
+              if (LbwpRedirects.hasChanges) {
+                return "Möchten Sie diese Website verlassen?";
+              }
+            };
+          }
+        };
+
+        jQuery(function() {
+          LbwpRedirects.initialize();
+        });
+      </script>
+    ';
     $html .= '<p><a href="?page=redirect-settings&new-item">Neue Weiterleitung hinzufügen</a></p>';
     return $html;
   }

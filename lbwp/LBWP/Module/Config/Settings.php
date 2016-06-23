@@ -4,7 +4,7 @@ namespace LBWP\Module\Config;
 
 use LBWP\Core;
 use LBWP\Util\File;
-use LBWP\Util\String;
+use LBWP\Util\Strings;
 use LBWP\Util\WordPress;
 
 /**
@@ -380,7 +380,7 @@ class Settings extends \LBWP\Module\Base
       $value = WordPress::getImageUrl($value, 'original');
     }
 
-    if (String::isURL($value)) {
+    if (Strings::isURL($value)) {
       $field .= ' | <a href="javascript:void(0);" class="remove-generic-media-upload" data-remove-image="{fieldId}">Datei entfernen</a><br>';
     }
     // Close the paragraph we started earlier
@@ -409,7 +409,7 @@ class Settings extends \LBWP\Module\Base
   public function saveFieldFile($item, $value, $key)
   {
     // Do not change, if the value is an url
-    if (String::isURL($value)) {
+    if (Strings::isURL($value)) {
       return true;
     }
 
@@ -563,7 +563,7 @@ class Settings extends \LBWP\Module\Base
   public function displayFieldEditor($config, $value, $html, $fieldId)
   {
     // Create the field
-    $field = String::getWpEditor($value, $fieldId, array(
+    $field = Strings::getWpEditor($value, $fieldId, array(
       'textarea_rows' => isset($config['rows'])? $config['rows'] : 10
     ));
     // If html follows, do so

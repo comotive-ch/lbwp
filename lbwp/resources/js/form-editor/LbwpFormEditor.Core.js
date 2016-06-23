@@ -16,6 +16,10 @@ LbwpFormEditor.Core = {
 	 */
 	isNewForm : false,
 	/**
+	 * Determines if the form has changes
+	 */
+	hasChanges : false,
+	/**
 	 * Selector for action fields
 	 */
 	actionFieldSelector : '#editor-action-tab .frame-right .field-settings .lbwp-editField',
@@ -46,6 +50,7 @@ LbwpFormEditor.Core = {
 	 */
 	updateJsonField: function () {
 		var json = JSON.stringify(LbwpFormEditor.Data);
+		LbwpFormEditor.Core.hasChanges = true;
 		jQuery('#formJson').val(json);
 	},
 

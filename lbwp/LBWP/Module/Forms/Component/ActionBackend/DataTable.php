@@ -5,7 +5,7 @@ namespace LBWP\Module\Forms\Component\ActionBackend;
 use LBWP\Module\Forms\Action\DataTable as DataTableAction;
 use LBWP\Module\Forms\Component\Base;
 use LBWP\Util\ArrayManipulation;
-use LBWP\Util\String;
+use LBWP\Util\Strings;
 use LBWP\Util\WordPress;
 
 /**
@@ -116,7 +116,7 @@ class DataTable extends Base
     // The entry can be added
     $row = array();
     foreach ($data as $item) {
-      $cellKey = String::forceSlugString($item['name']);
+      $cellKey = Strings::forceSlugString($item['name']);
       $row[$cellKey] = $item['value'];
     }
 

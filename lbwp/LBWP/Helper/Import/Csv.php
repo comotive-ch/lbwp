@@ -2,7 +2,7 @@
 
 namespace LBWP\Helper\Import;
 
-use LBWP\Util\String;
+use LBWP\Util\Strings;
 
 /**
  * Wrapper to load content from a CSV file and convert encoding
@@ -45,7 +45,7 @@ class Csv {
   public static function downloadFile($data, $filename = 'download', $delimiter = ';', $escapeChar = '"', $utf8decode = true)
   {
     ob_end_clean();
-    $filename = String::forceSlugString($filename) . '.csv';
+    $filename = Strings::forceSlugString($filename) . '.csv';
     header('Content-Description: File Transfer');
     header('Content-Disposition: attachment; filename=' . $filename);
     header('Content-Type: application/octet-stream; charset=' . get_option('blog_charset'), true);

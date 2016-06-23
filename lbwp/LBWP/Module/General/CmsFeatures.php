@@ -10,7 +10,7 @@ use LBWP\Core as LbwpCore;
 use LBWP\Util\ArrayManipulation;
 use LBWP\Util\File;
 use LBWP\Util\Multilang;
-use LBWP\Util\String;
+use LBWP\Util\Strings;
 use LBWP\Util\WordPress;
 
 /**
@@ -49,6 +49,7 @@ class CmsFeatures extends \LBWP\Module\Base
       // Sub module singletons (calling getInstance runs them at the specified filter)
       add_action('sidebar_admin_setup', array('LBWP\Module\General\Cms\WidgetEditor', 'getInstance'));
       add_filter('admin_body_class', array($this, 'addAdminBodyClasses'));
+      add_filter('mce_external_plugins', array($this, 'loadEditorPlugins'));
     } else {
       // Frontend features
       $url = File::getResourceUri() . '';
@@ -90,7 +91,7 @@ class CmsFeatures extends \LBWP\Module\Base
    */
   public function fixFeedExcerpt($excerpt)
   {
-    if (String::endsWith($excerpt, ' [&#8230;]')) {
+    if (Strings::endsWith($excerpt, ' [&#8230;]')) {
       return str_replace(' [&#8230;]', '...', $excerpt);
     }
 
@@ -129,7 +130,7 @@ class CmsFeatures extends \LBWP\Module\Base
   {
     self::$lastFromEmail = $email;
     // Honestly, if starting with wordpress@, it's bullshit. Then use admin_email
-    if (String::startsWith($email, 'wordpress@')) {
+    if (Strings::startsWith($email, 'wordpress@')) {
       self::$lastFromEmail = get_option('admin_email');
     }
 
@@ -226,7 +227,7 @@ class CmsFeatures extends \LBWP\Module\Base
       ';
 
       // To the same query as if to load the post data used below
-      $additionalResults = $db->get_results(String::prepareSql($sql, array(
+      $additionalResults = $db->get_results(Strings::prepareSql($sql, array(
         'postTable' => $db->posts,
         'queryText' => '%' . str_replace('*', '%', $query) . '%'
       )));
@@ -423,6 +424,16 @@ class CmsFeatures extends \LBWP\Module\Base
   }
 
   /**
+   * @param array $plugins
+   * @return array
+   */
+  public function loadEditorPlugins($plugins)
+  {
+    $plugins['wplinkpre45'] = File::getResourceUri() . '/js/tinymce/wplinkpre45.js';
+    return $plugins;
+  }
+
+  /**
    * Called filter at every rss item, providing the additional feed thumbnails tags
    */
   public function addRssMediaItems()
@@ -465,7 +476,7 @@ class CmsFeatures extends \LBWP\Module\Base
   {
     if (isset($_GET['wp-pwpt']) && $_GET['wp-pwpt'] == 'logout') {
       setcookie('wp-postpass_' . COOKIEHASH, NULL, time() - 86400, '/');
-      header('Location: ' . String::getUrlWithoutParameters());
+      header('Location: ' . Strings::getUrlWithoutParameters());
       exit;
     }
   }

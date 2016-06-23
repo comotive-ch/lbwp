@@ -2,7 +2,7 @@
 
 namespace LBWP\Theme\Base;
 
-use LBWP\Util\String;
+use LBWP\Util\Strings;
 
 /**
  * Base class for the main theme class
@@ -240,7 +240,7 @@ abstract class Core
   public function renderView($slug, $arguments = null)
   {
     // Fallback for a special case where slug is a file name
-    if (String::endsWith($slug, '.php')) {
+    if (Strings::endsWith($slug, '.php')) {
       $slug = 'index';
     }
 

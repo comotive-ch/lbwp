@@ -3,7 +3,7 @@
 namespace LBWP\Theme\Feature;
 
 use LBWP\Util\Date;
-use LBWP\Util\String;
+use LBWP\Util\Strings;
 
 /**
  * Provides settings to set sticky posts and remove the stickyness on a specific date
@@ -156,7 +156,7 @@ class TransientStickyPost
       // The flag is active, save stickyness
       $this->setStickyPost($postId);
       // Also save the transient date, if set by the user
-      if (String::checkDate($_POST['transient_sticky_until'], Date::EU_FORMAT_DATE)) {
+      if (Strings::checkDate($_POST['transient_sticky_until'], Date::EU_FORMAT_DATE)) {
         update_post_meta($postId, 'transient_sticky_until', $_POST['transient_sticky_until']);
       }
       // For wordpress not to remove the sticky flag, we need to add these fields
@@ -184,7 +184,7 @@ class TransientStickyPost
     if (is_array($stickyPosts) && count($stickyPosts) > 0) {
       // Get all post meta records with a transient
       $sql = 'SELECT post_id, meta_value FROM {sql:postMeta} WHERE meta_key = {metaKey}';
-      $metaRecords = $this->wpdb->get_results(String::prepareSql($sql,array(
+      $metaRecords = $this->wpdb->get_results(Strings::prepareSql($sql,array(
         'postMeta' => $this->wpdb->postmeta,
         'metaKey' => 'transient_sticky_until'
       )));

@@ -4,7 +4,7 @@ namespace LBWP\Module\Frontend;
 
 use LBWP\Core;
 use LBWP\Util\Multilang;
-use LBWP\Util\String;
+use LBWP\Util\Strings;
 
 /**
  * This module contains various frontend filters and output buffers
@@ -215,7 +215,7 @@ class OutputFilter extends \LBWP\Module\Base
       }
 
       // Do the extensions match?
-      if (substr(String::getExtension($match[2]), 1) != $extension) {
+      if (substr(Strings::getExtension($match[2]), 1) != $extension) {
         return $match[0];
       }
 
@@ -362,13 +362,13 @@ class OutputFilter extends \LBWP\Module\Base
         echo '<meta property="og:description" content="' . $description . '" />' . PHP_EOL;
       } else {
         $description = apply_filters('the_content', $post->post_content);
-        $description = String::chopString(strip_tags($description), 200, true);
+        $description = Strings::chopString(strip_tags($description), 200, true);
         echo '<meta property="og:description" content="' . $description . '" />' . PHP_EOL;
       }
       // get the post thumbnail if possible
       $attId = get_post_thumbnail_id($post->ID);
       $attachmentUrl = wp_get_attachment_image_src($attId, 'large');
-      if (String::isURL($attachmentUrl[0])) {
+      if (Strings::isURL($attachmentUrl[0])) {
         echo '<meta property="og:image" content="' . $attachmentUrl[0] . '" />' . PHP_EOL;
       }
       // the permalink
@@ -386,7 +386,7 @@ class OutputFilter extends \LBWP\Module\Base
       // get the post thumbnail if possible
       $attId = get_post_thumbnail_id($post->ID);
       $attachmentUrl = wp_get_attachment_image_src($attId, 'thumbnail');
-      if (String::isURL($attachmentUrl[0])) {
+      if (Strings::isURL($attachmentUrl[0])) {
         echo '<meta name="thumbnail" content="' . $attachmentUrl[0] . '" />' . PHP_EOL;
       }
     }
