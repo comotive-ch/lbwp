@@ -26,6 +26,10 @@ class Textfield extends Base
   protected function setParamConfig()
   {
     $this->paramConfig = ArrayManipulation::deepMerge($this->paramConfig, array(
+      'placeholder' => array(
+        'name' => 'Platzhalter Text',
+        'type' => 'textfield'
+      ),
       'type' => array(
         'name' => 'Feld-Typ',
         'type' => 'dropdown',

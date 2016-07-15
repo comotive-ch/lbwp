@@ -126,6 +126,9 @@ class PostTypeDropdown
       }
     }
 
+    // Let developers add their own shit
+    $itemInfos = apply_filters('mbh_filter_item_infos_' . $post->post_type, $itemInfos, $post);
+
     if (count($itemInfos) > 0) {
       $itemTitle .= ' (' . implode(', ', $itemInfos) . ')';
     }

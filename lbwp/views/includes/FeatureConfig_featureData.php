@@ -434,6 +434,18 @@ $this->featureData['PublicModules']['sub']['Events'] = array(
   'availabilityCallback' => array($this, 'isSuperuser')
 );
 
+$this->featureData['PublicModules']['sub']['PiwikIntegration'] = array(
+  'name' => 'Piwik Integration',
+  'state' => 'editable',
+  'class' => '\\LBWP\\Module\\General\\PiwikIntegration',
+  'install' => array(
+    'callback' => array('\\LBWP\\Module\\General\\PiwikIntegration', 'installTracker'),
+    'params' => array()
+  ),
+  'description' => 'Automatische Piwik-Integration (Erstmalige Aktivierung kann einen Moment dauern)',
+  'availabilityCallback' => array($this, 'isSuperuser')
+);
+
 $this->featureData['PublicModules']['sub']['Forms'] = array(
   'name' => 'Formulare',
   'state' => 'editable',

@@ -1,7 +1,3 @@
-/* line 150, ../scss/lbwp/_lbwp-forms.scss */
-.lbwp-form .validate-message.lbwp-form-warning label {
-  color: orange;
-}
 /* line 153, ../scss/lbwp/_lbwp-forms.scss */
 .lbwp-form .validate-message.lbwp-form-error label {
   color: red;
@@ -159,23 +155,18 @@
   padding-bottom: 5px;
 }
 
+/* line 101, scss/lbwp-form-frontend.scss */
+.lbwp-form.lbwp-form-hide {
+  display: none;
+}
+
 /* line 25, ../scss/lbwp/_lbwp-forms.scss */
 .lbwp-form .lbwp-form-error select, .lbwp-form .lbwp-form-error input[type=text], .lbwp-form .lbwp-form-error input[type=email], .lbwp-form .lbwp-form-error input[type=number], .lbwp-form .lbwp-form-error input[type=phone], .lbwp-form .lbwp-form-error input[type=password], .lbwp-form .lbwp-form-error input[type=number], .lbwp-form .lbwp-form-error textarea {
   border-color: red;
 }
 
-/* line 34, ../scss/lbwp/_lbwp-forms.scss */
-.lbwp-form .lbwp-form-warning select, .lbwp-form .lbwp-form-warning input[type=text], .lbwp-form .lbwp-form-warning input[type=email], .lbwp-form .lbwp-form-warning input[type=number], .lbwp-form .lbwp-form-warning input[type=phone], .lbwp-form .lbwp-form-warning input[type=password], .lbwp-form .lbwp-form-warning input[type=number], .lbwp-form .lbwp-form-warning textarea {
-  border-color: orange;
-}
-
-/* line 43, ../scss/lbwp/_lbwp-forms.scss */
-.lbwp-form .lbwp-form-success select, .lbwp-form .lbwp-form-success input[type=text], .lbwp-form .lbwp-form-success input[type=email], .lbwp-form .lbwp-form-success input[type=number], .lbwp-form .lbwp-form-success input[type=phone], .lbwp-form .lbwp-form-success input[type=password], .lbwp-form .lbwp-form-success input[type=number], .lbwp-form .lbwp-form-success textarea {
-  border-color: #7ed312;
-}
-
 /* Fix for the highwind theme that uses EM for paddings */
-/* line 115, scss/lbwp-form-frontend.scss */
+/* line 120, scss/lbwp-form-frontend.scss */
 .outer-wrap .content-wrapper .lbwp-form-override input[type="text"],
 .outer-wrap .content-wrapper .lbwp-form-override input[type="password"],
 .outer-wrap .content-wrapper .lbwp-form-override input[type="email"],

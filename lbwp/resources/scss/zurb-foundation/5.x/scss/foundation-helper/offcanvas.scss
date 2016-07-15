@@ -17,8 +17,10 @@ $lbwp-offcanvas-bg-color: white !default;
 $lbwp-offcanvas-breakpoint-active: $small-only !default;
 $lbwp-offcanvas-breakpoint-inactive: $medium-up !default;
 
-$lbwp-search-field-width: 160px;
-$lbwp-search-button-width: 40px;
+$lbwp-search-breakpoint-mobile: $small-only !default;
+$lbwp-search-breakpoint-desktop: $medium-up !default;
+$lbwp-search-field-width: 180px !default;
+$lbwp-search-button-width: 35px !default;
 
 @media #{$lbwp-offcanvas-breakpoint-active} {
 	@import "zurb-foundation/5.x/bower_components/foundation/scss/foundation/components/offcanvas";	
@@ -70,7 +72,6 @@ $lbwp-search-button-width: 40px;
 				padding-right: $lbwp-search-button-width + 2px;
 			}
 			input[type="submit"] {
-				padding:0;
 				position: absolute;
 				top: 10px;
 				right: 5px;
@@ -103,13 +104,15 @@ $lbwp-search-button-width: 40px;
 			}
 		}
 
+	}
+
+	@media #{$lbwp-search-breakpoint-mobile} {
 		.lbwp-search {
 			padding: 10px $column-gutter/2;
 			display: block;
 			background: white;
 			width: 100%;
 		}
-
 	}
 
 	@media #{$lbwp-offcanvas-breakpoint-inactive} {
@@ -187,11 +190,14 @@ $lbwp-search-button-width: 40px;
 			a.exit-off-canvas { display: none; }
 		}
 
+	}
+
+	@media #{$lbwp-search-breakpoint-desktop} {
 		.lbwp-search {
 			padding: 0 $column-gutter/2;
 			position: relative;
 			.form-wrapper {
-				z-index: 2;
+				z-index: -1;
 				position: absolute;
 				right: $column-gutter/2;
 				top: -100px;

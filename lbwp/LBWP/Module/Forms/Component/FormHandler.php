@@ -231,11 +231,20 @@ class FormHandler extends Base
     }
 
     // Add a message, if available
-
     if (strlen($message) > 0) {
       $class = ($this->executionError) ? 'error' : 'success';
-      $html .= '<p class="lbwp-form-message ' . $class . '">' . $message . '</p>';
       $formclass .= ' ' . $class;
+
+      // Add hiding class, only if success
+      if (!$this->executionError && $args['hide_after_success'] == 1) {
+        $formclass .= ' lbwp-form-hide';
+        // And add a backlink to the message parameter, if given
+        $text = (strlen($args['back_link_text']) > 0) ? $args['back_link_text'] : __('Zurück zum Formular', 'lbwp');
+        $message .= ' <a href="' . get_permalink() . '">' . $text . '</a>';
+      }
+
+      // Finally, create the message html
+      $html .= '<p class="lbwp-form-message ' . $class . '">' . $message . '</p>';
     }
 
     // Create the form and display an eventual message

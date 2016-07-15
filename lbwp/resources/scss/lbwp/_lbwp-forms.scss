@@ -147,9 +147,9 @@ $lbwpFormInputFields: "select, input[type=text], input[type=email], input[type=n
 
 // validation
 .lbwp-form {
-	.validate-message.lbwp-form-warning label {
-		color: $lbwpFormValidationColorWarning;
-	}
+//	.validate-message.lbwp-form-warning label {
+//		color: $lbwpFormValidationColorWarning;
+//	}
 	.validate-message.lbwp-form-error label {
 		color: $lbwpFormValidationColorError;
 	}

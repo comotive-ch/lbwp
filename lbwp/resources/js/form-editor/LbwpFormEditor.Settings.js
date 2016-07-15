@@ -24,6 +24,8 @@ LbwpFormEditor.Settings = {
 		if (LbwpFormEditor.Data.Settings == null) {
 			LbwpFormEditor.Data.Settings = {
 				redirect : 0,
+				hide_after_success : 1,
+				back_link_text : '',
 				meldung : '',
 				button : '',
 				after_submit : ''
@@ -40,6 +42,12 @@ LbwpFormEditor.Settings = {
 			switch (key) {
 				case "redirect":
 					LbwpFormEditor.Settings.setRedirect(settings[key]);
+					break;
+				case "hide_after_success":
+					LbwpFormEditor.Settings.setHideAfterSuccess(settings[key]);
+					break;
+				case "back_link_text":
+					LbwpFormEditor.Settings.setBackLinkText(settings[key]);
 					break;
 				case "meldung":
 					LbwpFormEditor.Settings.setMeldung(settings[key]);
@@ -60,6 +68,20 @@ LbwpFormEditor.Settings = {
 	 */
 	setRedirect: function (val) {
 		val != "" && jQuery("#page_id option[value=" + val + "]").prop("selected", true);
+	},
+
+	/**
+	 * Set hide after success checkbox on load, if given
+	 */
+	setHideAfterSuccess: function (val) {
+		val == 1 && jQuery('#hide_after_success').prop('checked', true);
+	},
+
+	/**
+	 * Set the backlink text on load, if given
+	 */
+	setBackLinkText: function (val) {
+		val != "" && jQuery("#back_link_text").val(val);
 	},
 
 	/**
@@ -107,6 +129,19 @@ LbwpFormEditor.Settings = {
 					LbwpFormEditor.Data.Settings.meldung = '';
 					break;
 			}
+			LbwpFormEditor.Core.updateJsonField();
+		});
+
+		jQuery('#hide_after_success').change(function() {
+			LbwpFormEditor.Data.Settings.hide_after_success = 0;
+			if (jQuery(this).is(':checked')) {
+				LbwpFormEditor.Data.Settings.hide_after_success = 1;
+			}
+			LbwpFormEditor.Core.updateJsonField();
+		});
+
+		jQuery('#back_link_text').change(function() {
+			LbwpFormEditor.Data.Settings.back_link_text = jQuery(this).val();
 			LbwpFormEditor.Core.updateJsonField();
 		});
 

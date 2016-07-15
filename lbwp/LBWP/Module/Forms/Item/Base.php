@@ -216,6 +216,14 @@ abstract class Base
       $attr .= ' style="width:' . $width . ';' . $styles . '"';
     }
 
+    // Placeholder text
+    if (isset($args['placeholder'])) {
+      if (strlen($args['placeholder']) && ($args['pflichtfeld'] == 'ja' || $args['pflichtfeld'] == 'yes')) {
+        $args['placeholder'] .= ' *';
+      }
+      $attr .= ' placeholder="' . esc_attr($args['placeholder']) . '"';
+    }
+
     // does it have rows or cols attributes?
     if (isset($args['rows']) && intval($args['rows']) > 0) {
       $attr .= ' rows="' . $args['rows'] . '"';

@@ -26,6 +26,10 @@ class Textarea extends Base
   protected function setParamConfig()
   {
     $this->paramConfig = ArrayManipulation::deepMerge($this->paramConfig, array(
+      'placeholder' => array(
+        'name' => 'Platzhalter Text',
+        'type' => 'textfield'
+      ),
       'rows' => array(
         'name' => 'Anzahl Zeilen',
         'type' => 'textfield'

@@ -95,20 +95,25 @@ $lbwpFormValidationColorSuccess: #7ed312;
 			padding-bottom: 5px;
 		}
 	}
+}
 
+// Hide a form, if there's need
+.lbwp-form.lbwp-form-hide {
+	display:none;
 }
 
 @include lbwpFormInputFieldErrorStyles() {
 	border-color: $lbwpFormValidationColorError;
 }
 
-@include lbwpFormInputFieldWarningStyles() {
-	border-color: $lbwpFormValidationColorWarning;
-}
-
-@include lbwpFormInputFieldSuccessStyles() {
-	border-color: $lbwpFormValidationColorSuccess;
-}
+// Default form styles without these colors
+//@include lbwpFormInputFieldWarningStyles() {
+//	border-color: $lbwpFormValidationColorWarning;
+//}
+//
+//@include lbwpFormInputFieldSuccessStyles() {
+//	border-color: $lbwpFormValidationColorSuccess;
+//}
 
 // TODO move to highwind theme?
 /* Fix for the highwind theme that uses EM for paddings */

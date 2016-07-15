@@ -30,6 +30,7 @@ $this->features = array(
     'Forms' => 0,
     'Listings' => 0,
     'Events' => 0,
+    'PiwikIntegration' => 0,
     'Snippets' => 0,
     'Redirects' => 0,
     'CleanUp' => 1,

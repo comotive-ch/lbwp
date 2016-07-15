@@ -59,6 +59,7 @@ ul.wp-submenu li a img { display:none; }
 .simple-table-list li { margin:0px; padding:10px; }
 .simple-table-list li:nth-child(even) { background-color:#FFFFFF; }
 .simple-table-list li:nth-child(odd) { background-color:#F9f9f9; }
+.piwik-logo { max-width:100%; }
 
 /* fix some general wordpress bugs */
 .wrap h2 .add-new-h2.primary {
@@ -92,7 +93,10 @@ ul.wp-submenu li a img { display:none; }
 .post-type-lbwp-snippet #wpseo_meta, .post-type-lbwp-form #wpseo_meta,
 .post-type-lbwp-list #wpseo_meta, .post-type-lbwp-listitem #wpseo_meta,
 .vc_license-activation-notice, #wpseo-dashboard-overview .onpage, .submitbox #wpseo-score,
-#eml-options-media-tabs a:nth-child(4), #wpuxss-eml-form-taxonomies .postbox:nth-child(6) {
+#eml-options-media-tabs a:nth-child(4), #wpuxss-eml-form-taxonomies .postbox:nth-child(6),
+.settings_page_afbia_settings_page .credits-container, #pll-module-wpml, #pll-module-share-slugs,
+#pll-module-translate-slugs, .plugin-update-tr, #pll-module-licenses, .wpseo-make-primary-term,
+.wpseo-is-primary-term{
 	display:none !important;
 }
 /* Disable and fix nextscripts crap */

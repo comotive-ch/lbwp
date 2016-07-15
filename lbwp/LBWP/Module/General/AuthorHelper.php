@@ -235,14 +235,19 @@ class AuthorHelper extends \LBWP\Module\Base
   public static function getAdditionalInputs($fields)
   {
     $html = '';
+
     foreach ($fields as $field) {
+      $required = '';
+      if (isset($field['required']) && $field['required']) {
+        $required = ' required';
+      }
       $html .= '
         <tr>
 					<th>
 						<label for="' . $field['id'] . '">' . $field['title'] . '</label>
 					</th>
 					<td>
-					  <input class="regular-text" type="text" id="' . $field['id'] . '" name="' . $field['id'] . '" value="' . esc_attr($field['value']) . '">
+					  <input class="regular-text" type="text" id="' . $field['id'] . '" name="' . $field['id'] . '" value="' . esc_attr($field['value']) . '"' . $required . '>
 					  <p class="description">' . $field['description'] . '</p>
 					</td>
 				</tr>
@@ -259,14 +264,19 @@ class AuthorHelper extends \LBWP\Module\Base
   public static function getAdditionalTextareas($fields)
   {
     $html = '';
+
     foreach ($fields as $field) {
+      $required = '';
+      if (isset($field['required']) && $field['required']) {
+        $required = ' required';
+      }
       $html .= '
         <tr>
 					<th>
 						<label for="' . $field['id'] . '">' . $field['title'] . '</label>
 					</th>
 					<td>
-					  <textarea rows="3" cols="30" id="' . $field['id'] . '" name="' . $field['id'] . '">' . $field['value'] . '</textarea>
+					  <textarea rows="3" cols="30" id="' . $field['id'] . '" name="' . $field['id'] . '"' . $required . '>' . $field['value'] . '</textarea>
 					  <p class="description">' . $field['description'] . '</p>
 					</td>
 				</tr>
