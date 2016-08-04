@@ -1,0 +1,3 @@
+@function foundationHelperColumnGutter($size:'small') {
+	@return -zf-get-bp-val($grid-column-gutter, $size);
+}

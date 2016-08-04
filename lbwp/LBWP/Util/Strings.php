@@ -1006,4 +1006,40 @@ class Strings
   {
     return self::xpath($html, '//container/node()', false);
   }
+
+  /**
+   * Replace the last occurence of a string in a string
+   * @param string $search the searched occurence
+   * @param string $replace the replacement text
+   * @param string $subject the searched text
+   * @return string the subject, with the text replaced eventually
+   */
+  public static function replaceLastOccurence($search, $replace, $subject)
+  {
+    $pos = strripos($subject, $search);
+    // Replace if found
+    if ($pos !== false) {
+      $subject = substr_replace($subject, $replace, $pos, strlen($search));
+    }
+
+    return $subject;
+  }
+
+  /**
+   * Replace the last occurence of a string in a string
+   * @param string $search the searched occurence
+   * @param string $replace the replacement text
+   * @param string $subject the searched text
+   * @return string the subject, with the text replaced eventually
+   */
+  public static function replaceFirstOccurence($search, $replace, $subject)
+  {
+    $pos = stripos($subject, $search);
+    // Replace if found
+    if ($pos !== false) {
+      $subject = substr_replace($subject, $replace, $pos, strlen($search));
+    }
+
+    return $subject;
+  }
 }

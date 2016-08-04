@@ -2,7 +2,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: LBWP\n"
 "POT-Creation-Date: 2015-08-03 11:05+0100\n"
-"PO-Revision-Date: 2016-06-29 11:46+0100\n"
+"PO-Revision-Date: 2016-07-28 08:30+0100\n"
 "Last-Translator: \n"
 "Language-Team: comotive <info@comotive.ch>\n"
 "Language: en_US\n"
@@ -405,8 +405,16 @@ msgid "Vorherige Seite"
 msgstr "Previous page"
 
 #: general
+msgid "Vorherige"
+msgstr "Previous"
+
+#: general
 msgid "Nächste Seite"
 msgstr "Next page"
+
+#: general
+msgid "Nächste"
+msgstr "Next"
 
 #: general, image gallery
 msgid "Bild {index} von {total}"
@@ -513,3 +521,15 @@ msgstr "Page"
 
 msgid "Zurück zum Formular"
 msgstr "Back to the form"
+
+msgid "Archiv"
+msgstr "Archive"
+
+msgid "Zurück"
+msgstr "Back"
+
+msgid "Zur Übersicht"
+msgstr "To the overview"
+
+msgid "Bearbeiten"
+msgstr "Edit"

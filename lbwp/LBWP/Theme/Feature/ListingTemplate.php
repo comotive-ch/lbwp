@@ -62,16 +62,17 @@ class ListingTemplate
         $helper->addInputText('content-title', $boxId, __('Titel', 'lbwp'));
         $helper->addEditor('content-text', $boxId, __('Inhalt', 'lbwp'), 10);
         $helper->addMediaUploadField('content-image', $boxId, __('Bild', 'lbwp'));
+        //todo add "alignright" to template
         $helper->addDropdown('image-position', $boxId, __('Bild-Position', 'lbwp'), array(
           'multiple' => false,
           'sortable' => false,
           'items' => array(
-            'alignleft' => __('Links', 'lbwp'),
-            'alignright' => __('Rechts', 'lbwp')
+            'alignleft' => __('Links', 'lbwp')//,
+            //'alignright' => __('Rechts', 'lbwp')
           )
         ));
-        $helper->addInputText('link', $boxId, __('Ziel-Link', 'lbwp'));
-        $helper->addInputText('link-text', $boxId, __('Link-Text', 'lbwp'));
+        $helper->addInputText('link', $boxId, __('Link'));
+        $helper->addInputText('link-text', $boxId, __('Linktext'),array('description' => 'Wenn du kein Linktext eingibst, wird «mehr» verwendet.'));
       });
 
       // Return the metabox id for further use

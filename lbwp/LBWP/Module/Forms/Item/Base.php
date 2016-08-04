@@ -2,6 +2,7 @@
 
 namespace LBWP\Module\Forms\Item;
 
+use LBWP\Module\Forms\Component\FormEditor;
 use wpdb;
 use LBWP\Module\Forms\Core;
 use LBWP\Module\Forms\Component\FormHandler;
@@ -76,7 +77,9 @@ abstract class Base
     'id' => array(
       'name' => 'Feld-ID',
       'type' => 'textfield',
-      'availability' => 'readonly'
+      'availability' => 'readonly',
+      'optin' => 1, // Make user able to remove readonly "on his own danger"
+      'help' => 'Bitte ändern Sie die Feld-ID nur, wenn die Daten an externe Systeme gesendet werden. Ansonsten kann es passieren, dass die Referenz zu einer Aktion verloren geht und diese nicht mehr funktioniert.'
     ),
   );
   /**
@@ -136,6 +139,10 @@ abstract class Base
    * @var string the content between item tags
    */
   protected $content = '';
+  /**
+   * @var string the asterisk html
+   */
+  const ASTERISK_HTML = ' <span class="required">*</span>';
 
   /**
    * @param Core $core the forms core object
@@ -161,7 +168,7 @@ abstract class Base
     if (isset($args['pflichtfeld'])) {
       if ($args['pflichtfeld'] == 'ja' || $args['pflichtfeld'] == 'yes') {
         // It is set, return the attributes
-        $args['feldname'] .= ' <span class="required">*</span>';
+        $args['feldname'] .= self::ASTERISK_HTML;
         return ' required="required" aria-required="true"';
       }
     }
@@ -218,10 +225,18 @@ abstract class Base
 
     // Placeholder text
     if (isset($args['placeholder'])) {
-      if (strlen($args['placeholder']) && ($args['pflichtfeld'] == 'ja' || $args['pflichtfeld'] == 'yes')) {
+      if (
+        strlen($args['placeholder']) > 0 &&
+        ($args['pflichtfeld'] == 'ja' || $args['pflichtfeld'] == 'yes')
+      ) {
         $args['placeholder'] .= ' *';
       }
       $attr .= ' placeholder="' . esc_attr($args['placeholder']) . '"';
+    }
+
+    // Maximum length
+    if (isset($args['maxlength']) && intval($args['maxlength']) > 0) {
+      $attr .= ' maxlength="' . intval($args['maxlength']) . '"';
     }
 
     // does it have rows or cols attributes?

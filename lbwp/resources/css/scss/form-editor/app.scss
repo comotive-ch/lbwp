@@ -191,7 +191,7 @@ div.drag-target {
 			margin-top: -10px;
 			right: -30px;
 		}
-		.help {
+		.help, .edit-optin {
 			width: 20px;
 			height: 20px;
 			cursor: pointer;
@@ -202,6 +202,9 @@ div.drag-target {
 			&:hover {
 				color: $wpColorHighlight;
 			}
+		}
+		.edit-optin {
+			right: 20px;
 		}
 		.helpText {
 			display: none;
@@ -226,7 +229,10 @@ div.drag-target {
 			max-width: 30%;
 			width: 30%;
 
-			h3 { cursor: pointer; outline: none; }
+			h3 {
+				cursor: pointer;
+				outline: none;
+			}
 
 			.button {
 				margin-top: 10px;
@@ -236,63 +242,83 @@ div.drag-target {
 				vertical-align: initial;
 			}
 
-			.ui-accordion{
-				&>h3{
+			.ui-accordion {
+				& > h3 {
 					position: relative;
-					&:after{
+					&:after {
 						font: 400 20px/1 dashicons;
 						content: '\f140';
 						position: absolute;
-						right: 10px; top: 7px;
+						right: 10px;
+						top: 7px;
 					}
 
-					&.ui-accordion-header-active{
-						& + div + h3{border-top:1px solid #eee;}
-						&:after{
+					&.ui-accordion-header-active {
+						& + div + h3 {
+							border-top: 1px solid #eee;
+						}
+						&:after {
 							content: '\f142';
 						}
 					}
 				}
 			}
-			.hndle-conditions, .field-conditions{display: none;}
+			.hndle-conditions, .field-conditions {
+				display: none;
+			}
 
 			.field-conditions {
-				table{
+				table {
 					margin-top: 20px;
 					width: 100%;
 					table-layout: fixed;
 					border-spacing: 0;
-					th{width: 50%;}
-					th:nth-child(1){
+					th {
+						width: 50%;
+					}
+					th:nth-child(1) {
 						text-align: left;
 					}
-					th:nth-child(2){
-						width: 20px;opacity: 0; visibility: hidden;
+					th:nth-child(2) {
+						width: 20px;
+						opacity: 0;
+						visibility: hidden;
 					}
-					th:nth-child(4){
+					th:nth-child(4) {
 						width: 30px;
 					}
 
-					td{position: relative;padding: 0;
-						.delete{left: 0; top: 0; right: 0; bottom: 0; margin: auto!important;}
+					td {
+						position: relative;
+						padding: 0;
+						.delete {
+							left: 0;
+							top: 0;
+							right: 0;
+							bottom: 0;
+							margin: auto !important;
+						}
 					}
 
-					td:nth-child(1){
-						select{width: 100%;}
+					td:nth-child(1) {
+						select {
+							width: 100%;
+						}
 					}
 
-					td:nth-child(2){
+					td:nth-child(2) {
 						text-align: center;
 					}
 
-					td:nth-child(3){
-						input{width: 100%}
+					td:nth-child(3) {
+						input {
+							width: 100%
+						}
 					}
 
 				}
 
 			}
-
 
 		}
 
@@ -308,8 +334,15 @@ div.drag-target {
 				box-shadow: 0 1px 1px rgba(0, 0, 0, .04);
 				background: #fff;
 				padding: 12px;
-				.close{position: absolute; top: 10px; right: 10px; cursor: pointer;}
-				p{padding: 0 10px;}
+				.close {
+					position: absolute;
+					top: 10px;
+					right: 10px;
+					cursor: pointer;
+				}
+				p {
+					padding: 0 10px;
+				}
 				a {
 					float: left;
 					width: 50%;
@@ -318,7 +351,7 @@ div.drag-target {
 					-webkit-box-sizing: border-box;
 					-moz-box-sizing: border-box;
 					box-sizing: border-box;
-					&:hover{
+					&:hover {
 						background: #dedede;
 					}
 				}
@@ -341,7 +374,9 @@ div.drag-target {
 					float: right;
 				}
 			}
-			& input[type=text],textarea,select { width: 400px; }
+			& input[type=text], textarea, select {
+				width: 400px;
+			}
 		}
 	}
 }

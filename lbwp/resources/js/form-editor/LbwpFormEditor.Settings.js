@@ -28,6 +28,8 @@ LbwpFormEditor.Settings = {
 				back_link_text : '',
 				meldung : '',
 				button : '',
+				external_action_url : '',
+				css_classes : '',
 				after_submit : ''
 			};
 		}
@@ -58,7 +60,12 @@ LbwpFormEditor.Settings = {
 				case "button":
 					LbwpFormEditor.Settings.setButton(settings[key]);
 					break;
-
+				case "css_classes":
+					LbwpFormEditor.Settings.setCssClasses(settings[key]);
+					break;
+				case "external_action_url":
+					LbwpFormEditor.Settings.setExternalAction(settings[key]);
+					break;
 			}
 		}
 	},
@@ -96,6 +103,20 @@ LbwpFormEditor.Settings = {
 	 */
 	setAfterSubmit: function (val) {
 		val != "" && jQuery("#onceMessage").val(val).keyup();
+	},
+
+	/**
+	 * Check and set value if value is given
+	 */
+	setCssClasses: function (val) {
+		val != "" && jQuery("#css_classes").val(val).keyup();
+	},
+
+	/**
+	 * Check and set value if value is given
+	 */
+	setExternalAction: function (val) {
+		val != "" && jQuery("#external_action_url").val(val).keyup();
 	},
 
 	/**
@@ -171,6 +192,16 @@ LbwpFormEditor.Settings = {
 
 		jQuery("#button").keyup(function () {
 			LbwpFormEditor.Data.Settings.button = jQuery(this).val();
+			LbwpFormEditor.Core.updateJsonField();
+		});
+
+		jQuery("#css_classes").keyup(function () {
+			LbwpFormEditor.Data.Settings.css_classes = jQuery(this).val();
+			LbwpFormEditor.Core.updateJsonField();
+		});
+
+		jQuery("#external_action_url").keyup(function () {
+			LbwpFormEditor.Data.Settings.external_action_url = jQuery(this).val();
 			LbwpFormEditor.Core.updateJsonField();
 		});
 	}

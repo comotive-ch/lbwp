@@ -27,7 +27,11 @@ class Textfield extends Base
   {
     $this->paramConfig = ArrayManipulation::deepMerge($this->paramConfig, array(
       'placeholder' => array(
-        'name' => 'Platzhalter Text',
+        'name' => 'Platzhalter Text (optional)',
+        'type' => 'textfield'
+      ),
+      'maxlength' => array(
+        'name' => 'Maximale Anzahl Zeichen (optional)',
         'type' => 'textfield'
       ),
       'type' => array(
@@ -87,7 +91,7 @@ class Textfield extends Base
     // Make the field
     $field = '<input type="' . $type . '" value="' . $this->getValue($args) . '"' . $attr . '/>';
 
-    // Display a send button
+    // Create the full html block
     $html = Base::$template;
     $html = str_replace('{id}', $this->get('id'), $html);
     $html = str_replace('{label}', $args['feldname'], $html);

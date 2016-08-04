@@ -182,8 +182,9 @@ LbwpFormEditor.Form = {
 					editField = LbwpFormEditor.Form.getTextarea(fields[key]);
 					break;
 			}
+			var optin = fields[key].optin == 1 ? '<span class="edit-optin dashicons dashicons-edit" data-key="' + fields[key].key + '"></span>' : "";
 			var help = fields[key].help != undefined ? '<span class="helpText">' + fields[key].help + '</span><span class="help dashicons dashicons-editor-help"></span>' : "";
-			html += '<div class="lbwp-editField" data-key="' + fields[key].key + '">' + editField + help + '</div>';
+			html += '<div class="lbwp-editField" data-key="' + fields[key].key + '">' + editField + optin + help + '</div>';
 		}
 
 		LbwpFormEditor.Form.editEvents(html)
@@ -378,10 +379,17 @@ LbwpFormEditor.Form = {
 			LbwpFormEditor.Form.loadAjax(current);
 		});
 
-		// toggle help text
+		// Toggle help text
 		jQuery(".help").click(function () {
 			var helptext = jQuery(this).siblings(".helpText");
 			helptext.css("display") == "none" ? helptext.css("display", "block") : helptext.hide();
+		});
+
+		// Toggle edit opt-in buttons
+		jQuery('.edit-optin').click(function() {
+			var selector = '.lbwp-editField[data-key=' + jQuery(this).data('key') + ']';
+			// Use this for select and input
+			jQuery(selector + ' input, ' + selector + ' select').removeAttr('disabled').removeAttr('readonly');
 		});
 	}
 };

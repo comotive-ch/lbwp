@@ -8,6 +8,7 @@ use LBWP\Util\File;
 use LBWP\Module\Frontend\HTMLCache;
 use LBWP\Module\Forms\Item\Base as BaseItem;
 use LBWP\Module\Forms\Action\Base as BaseAction;
+use LBWP\Util\Strings;
 
 /**
  * This class provides the shortcodes that will create the actual form elements with sub components.
@@ -108,6 +109,10 @@ class FormHandler extends Base
    * @var bool tells if the form has a field error
    */
   public $fieldError = false;
+  /**
+   * @var bool provides outside information if the backend form is generated
+   */
+  public static $isBackendForm = false;
   /**
    * @var string name of the form shortcode
    */
@@ -221,6 +226,9 @@ class FormHandler extends Base
     if (isset($args['action']) && strlen($args['action']) > 0) {
       $customAction = ' action="' . $args['action'] . '"';
     }
+    if (isset($args['external_action_url']) && strlen($args['external_action_url']) > 0 && Strings::isURL($args['external_action_url'])) {
+      $customAction = ' action="' . $args['external_action_url'] . '"';
+    }
 
     // If there is an after_submit, close the form after one submission
     if (isset($args['after_submit']) && strlen($args['after_submit']) > 0 && $this->hasSubmissionCookie($formDisplayId)) {
@@ -245,6 +253,11 @@ class FormHandler extends Base
 
       // Finally, create the message html
       $html .= '<p class="lbwp-form-message ' . $class . '">' . $message . '</p>';
+    }
+
+    // If there are additional classes
+    if (isset($args['css_classes']) && strlen($args['css_classes'])) {
+      $formclass .= ' ' . strip_tags(($args['css_classes']));
     }
 
     // Create the form and display an eventual message
@@ -596,7 +609,9 @@ class FormHandler extends Base
     );
 
     // Execute the form and populate current vars
+    FormHandler::$isBackendForm = true;
     $data['formHtml'] = trim(do_shortcode($shortcode));
+    FormHandler::$isBackendForm = false;
 
     // Set data available, if there are actions or items
     if (count($this->currentActions) > 0 || count($this->currentItems) > 0) {
@@ -621,13 +636,16 @@ class FormHandler extends Base
 
       // Add all parameters and their default or current value
       foreach ($item->getParamConfig() as $paramKey => $paramConfig) {
+        // Remove certain information from json
+        $paramConfig = $this->modifyItemForJson($paramKey, $paramConfig);
+        // Now input into the main json object
         $json['Items'][$id]['key'] = $item->get('key');
         $json['Items'][$id]['params'][] = array_merge(
           $paramConfig,
-          array(
+          $this->modifyItemForJson($paramKey, array(
             'key' => $paramKey,
             'value' => ($paramKey == 'content') ? $item->getContent() : $item->get($paramKey)
-          )
+          ))
         );
       }
     }
@@ -654,6 +672,27 @@ class FormHandler extends Base
     $data['formJsonObject'] = $json;
 
     return $data;
+  }
+
+  /**
+   * Modify certain params to not have display information in them
+   * @param string $paramKey
+   * @param array $paramConfig
+   * @return array the param config (does nothing at the moment
+   */
+  protected function modifyItemForJson($paramKey, $paramConfig)
+  {
+    // Remove the display asterisk from json so it doesn't get duplicated
+    if ($paramKey == 'placeholder' && isset($paramConfig['value'])) {
+      $paramConfig['value'] = str_replace(' *', '', $paramConfig['value']);
+    }
+
+    // Remove the asterisk html from json so it doesn't show up broken
+    if ($paramKey == 'feldname' && isset($paramConfig['value'])) {
+      $paramConfig['value'] = str_replace(BaseItem::ASTERISK_HTML, '', $paramConfig['value']);
+    }
+
+    return $paramConfig;
   }
 
   /**

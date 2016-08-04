@@ -573,6 +573,47 @@ class WordPress
   }
 
   /**
+   * @param array $config the configuration for the backlink
+   * @return array of url/text to use (maybe additional params, depending on config
+   */
+  public static function getDynamicBackLink($config = array())
+  {
+    // Pre-generate the fallback link
+    $fallback = get_bloginfo('url');
+    // If multilang, correctly get the home url
+    if (Multilang::isActive()) {
+      $fallback = Multilang::getHomeUrl();
+    }
+    // If there is a blog page defined, use (override) it
+    if (intval(get_option('page_for_posts')) > 0) {
+      $fallback = get_permalink(get_option('page_for_posts'));
+    }
+
+    // Merge the config
+    $config = array_merge(array(
+      'fallback_link' => $fallback,
+      'goto_previous_page_text' => __('Zurück', 'lbwp'),
+      'goto_posts_page_text' => __('Zur Übersicht', 'lbwp'),
+    ), $config);
+
+    // Prepare the link data initially
+    $link = array(
+      'url' => $config['fallback_link'],
+      'text' => $config['goto_posts_page_text']
+    );
+
+    // Check if the referer is internal, then switch
+    if (strlen($_SERVER['HTTP_REFERER']) > 0 && Strings::startsWith($_SERVER['HTTP_REFERER'], get_bloginfo('url'))) {
+      $link = array(
+        'url' => $_SERVER['HTTP_REFERER'],
+        'text' => $config['goto_previous_page_text']
+      );
+    }
+
+    return $link;
+  }
+
+  /**
    * This just "removes" a menu. Only use, if security is not the most imporant thing here.
    * @param string $menuItemId one of the MENU_ID_* constants
    * @param array $menu the global $menu

@@ -218,8 +218,10 @@ LbwpFormEditor.Action = {
 					editField = LbwpFormEditor.Form.getTextfieldArray(fields[i]);
 					break;
 			}
+
 			var ref = fields[i].type == "textfield" ? '<a title="' + LbwpFormEditor.Text.useFromFieldHeading + '" class="ref dashicons dashicons-admin-generic"></a>' : "";
 			var help = fields[i].help != undefined ? '<span class="helpText">' + fields[i].help + '</span><span class="help dashicons dashicons-editor-help"></span>' : "";
+
 			html += '<div class="lbwp-editField action-property" data-key="' + fields[i].key + '">' + editField + help + ref + '</div>';
 		}
 

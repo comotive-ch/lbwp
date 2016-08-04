@@ -2,6 +2,9 @@
 
 namespace LBWP\Module\Forms\Item;
 
+use LBWP\Util\ArrayManipulation;
+use LBWP\Module\Forms\Component\FormHandler;
+
 /**
  * This will display a normal input text field
  * @package LBWP\Module\Forms\Item
@@ -22,7 +25,12 @@ class Hiddenfield extends Base
    */
   protected function setParamConfig()
   {
-
+    $this->paramConfig = ArrayManipulation::deepMerge($this->paramConfig, array(
+      'vorgabewert' => array(
+        'name' => 'Feld-Inhalt',
+        'type' => 'textfield'
+      )
+    ));
   }
 
   /**
@@ -47,8 +55,25 @@ class Hiddenfield extends Base
   {
     $attr = $this->getDefaultAttributes($args);
     // Make the field
-    $field = '<input type="hidden" value="' . $this->getValue($args) . '"' . $attr . '/>';
-    return $field;
+    $html = '<input type="hidden" value="' . $this->getValue($args) . '"' . $attr . '/>';
+
+    // Override in backend editor mode
+    if (FormHandler::$isBackendForm) {
+      // Make the field a text field and read only
+      $field = '
+        <input type="text" class="disabled" readonly="readonly" value="' . $this->getValue($args) . '"' . $attr . '/>
+        <span class="description">Unsichbares Feld, wird dem Besucher nicht angezeigt.</span>
+      ';
+
+      // Create the full html block
+      $html = Base::$template;
+      $html = str_replace('{id}', $this->get('id'), $html);
+      $html = str_replace('{label}', $args['feldname'], $html);
+      $html = str_replace('{class}', trim('text-field ' . $this->params['class']), $html);
+      $html = str_replace('{field}', $field, $html);
+    }
+
+    return $html;
   }
 
   /**

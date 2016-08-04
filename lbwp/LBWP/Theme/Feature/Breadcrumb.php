@@ -81,6 +81,7 @@ class Breadcrumb
         'taxonomy_before_single' => '', //possible: any registered tax or empty for no element in between.
       ),
       'separator_html' => '&raquo;',
+      'skip_separators' => false,
       'title' => array(
         'home' => get_bloginfo('name'),
         'max_length' => 0, //If >0, then the title will be shortend
@@ -373,10 +374,12 @@ class Breadcrumb
    */
   public function displaySeparator($last = false)
   {
-    if ($last == true) {
-      echo '<li class="' . $this->options['classes']['separator_class'] . '">' . $this->options['separator_html'] . '</li>';
-    } else {
-      echo '<li class="' . $this->options['classes']['separator_class'] . ' ' . $this->options['classes']['last_separator_class'] . '">' . $this->options['separator_html'] . '</li>';
+    if (!$this->options['skip_separators']) {
+      if ($last == true) {
+        echo '<li class="' . $this->options['classes']['separator_class'] . '">' . $this->options['separator_html'] . '</li>';
+      } else {
+        echo '<li class="' . $this->options['classes']['separator_class'] . ' ' . $this->options['classes']['last_separator_class'] . '">' . $this->options['separator_html'] . '</li>';
+      }
     }
   }
 

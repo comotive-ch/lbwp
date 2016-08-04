@@ -444,13 +444,24 @@ class FormEditor extends Base
           <input type="radio" name="sent" value="meldung" id="msg">'.  __('Meldung anzeigen', 'lbwp'). '
         </label>
         <textarea rows="4" name="message" id="messageBox"></textarea>
+        <p><hr></p>
         <p><strong>' . __('Formular-Einstellungen', 'lbwp') . '</strong></p>
         <input type="checkbox" name="hide_after_success" id="hide_after_success" value="1">' . __('Nach dem Absenden soll das Formular ausgeblendet werden.', 'lbwp') . '<br>
         <label for="back_link_text">' . __('Text für den "Zurück"-Link', 'lbwp') . '</label><input type="text" name="back_link_text" id="back_link_text" value="">
         <span class="description">Der "Zurück"-Link wird nur angezeigt, wenn das Formular ausgeblendet wird.</span><br><br>
         <input type="checkbox" name="after_submit" id="once">' . __('Benutzer können das Formular nur einmal ausfüllen.', 'lbwp') . '<br>
-        <label>' . __('Nachricht, wenn Bereits ausgefüllt', 'lbwp') . '</label><textarea rows="4" name="onceMessage" id="onceMessage"></textarea><br><br>
+        <label>' . __('Nachricht, wenn Bereits ausgefüllt', 'lbwp') . '</label><textarea rows="4" name="onceMessage" id="onceMessage"></textarea>
+        <br><br>
         <label>' . __('Text des Absenden Buttons', 'lbwp') . '</label><input type="text" name="button" id="button" value="Absenden">
+        <p><hr></p>
+        <p><strong>' . __('Erweiterte Einstellungen', 'lbwp') . '</strong></p>
+        <label for="external_action_url">' . __('Daten an externe URL senden', 'lbwp') . '</label>
+        <input type="text" name="external_action_url" id="external_action_url" value="">
+        <span class="description">Hinterlegen sie eine URL, welche die Daten verarbeitet. Actions werden <strong>nicht</strong> ausgeführt.</span>
+        <br><br>
+        <label for="css_classes">' . __('Zusätzliche CSS Klasse(n)', 'lbwp') . '</label>
+        <input type="text" name="css_classes" id="css_classes" value="">
+        <span class="description">Mehrere Klassen können mit einem Leerschlag angegeben werden.</span>
       </div>
     ';
 
