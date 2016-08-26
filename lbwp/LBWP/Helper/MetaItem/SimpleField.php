@@ -35,6 +35,10 @@ class SimpleField
       $attr .= ' required="required"';
     }
 
+    if (isset($args['placeholder']) && strlen($args['placeholder']) > 0) {
+      $attr .= ' placeholder="' . esc_attr($args['placeholder']) . '"';
+    }
+
     // Replace in the input field
     $input = '
       <input type="text" id="' . $key . '" name="' . $key . '" value="' . esc_attr($value) . '"' . $attr . ' />

@@ -33,6 +33,10 @@ class Templating
    */
   public static function getContainer($container, $html, $varName = '{content}')
   {
+    if (strlen($html) == 0) {
+      return '';
+    }
+
     return str_replace($varName, $html, $container);
   }
 

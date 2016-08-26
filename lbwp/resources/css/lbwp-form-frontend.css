@@ -55,7 +55,7 @@
 }
 
 /* line 16, ../scss/lbwp/_lbwp-forms.scss */
-.lbwp-form select, .lbwp-form input[type=text], .lbwp-form input[type=email], .lbwp-form input[type=number], .lbwp-form input[type=phone], .lbwp-form input[type=password], .lbwp-form input[type=number], .lbwp-form textarea {
+.lbwp-form select, .lbwp-form input[type=text], .lbwp-form input[type=email], .lbwp-form input[type=number], .lbwp-form input[type=phone], .lbwp-form input[type=password], .lbwp-form input[type=number], .lbwp-form input[type=url], .lbwp-form textarea {
   width: 100%;
 }
 
@@ -161,7 +161,7 @@
 }
 
 /* line 25, ../scss/lbwp/_lbwp-forms.scss */
-.lbwp-form .lbwp-form-error select, .lbwp-form .lbwp-form-error input[type=text], .lbwp-form .lbwp-form-error input[type=email], .lbwp-form .lbwp-form-error input[type=number], .lbwp-form .lbwp-form-error input[type=phone], .lbwp-form .lbwp-form-error input[type=password], .lbwp-form .lbwp-form-error input[type=number], .lbwp-form .lbwp-form-error textarea {
+.lbwp-form .lbwp-form-error select, .lbwp-form .lbwp-form-error input[type=text], .lbwp-form .lbwp-form-error input[type=email], .lbwp-form .lbwp-form-error input[type=number], .lbwp-form .lbwp-form-error input[type=phone], .lbwp-form .lbwp-form-error input[type=password], .lbwp-form .lbwp-form-error input[type=number], .lbwp-form .lbwp-form-error input[type=url], .lbwp-form .lbwp-form-error textarea {
   border-color: red;
 }
 

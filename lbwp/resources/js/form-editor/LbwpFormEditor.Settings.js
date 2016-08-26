@@ -25,6 +25,7 @@ LbwpFormEditor.Settings = {
 			LbwpFormEditor.Data.Settings = {
 				redirect : 0,
 				hide_after_success : 1,
+				disable_enctype : 0,
 				back_link_text : '',
 				meldung : '',
 				button : '',
@@ -47,6 +48,9 @@ LbwpFormEditor.Settings = {
 					break;
 				case "hide_after_success":
 					LbwpFormEditor.Settings.setHideAfterSuccess(settings[key]);
+					break;
+				case "disable_enctype":
+					LbwpFormEditor.Settings.setDisableEnctype(settings[key]);
 					break;
 				case "back_link_text":
 					LbwpFormEditor.Settings.setBackLinkText(settings[key]);
@@ -82,6 +86,13 @@ LbwpFormEditor.Settings = {
 	 */
 	setHideAfterSuccess: function (val) {
 		val == 1 && jQuery('#hide_after_success').prop('checked', true);
+	},
+
+	/**
+	 * Set hide after success checkbox on load, if given
+	 */
+	setDisableEnctype: function (val) {
+		val == 1 && jQuery('#disable_enctype').prop('checked', true);
 	},
 
 	/**
@@ -157,6 +168,14 @@ LbwpFormEditor.Settings = {
 			LbwpFormEditor.Data.Settings.hide_after_success = 0;
 			if (jQuery(this).is(':checked')) {
 				LbwpFormEditor.Data.Settings.hide_after_success = 1;
+			}
+			LbwpFormEditor.Core.updateJsonField();
+		});
+
+		jQuery('#disable_enctype').change(function() {
+			LbwpFormEditor.Data.Settings.disable_enctype = 0;
+			if (jQuery(this).is(':checked')) {
+				LbwpFormEditor.Data.Settings.disable_enctype = 1;
 			}
 			LbwpFormEditor.Core.updateJsonField();
 		});

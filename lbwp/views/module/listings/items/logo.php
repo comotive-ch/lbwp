@@ -22,4 +22,4 @@ if (strlen($itemLink)) {
     '</a>';
 }
 
-echo '<li>' . $itemHtml . '</li>';
+echo '<li><div>' . $itemHtml . '</div></li>';

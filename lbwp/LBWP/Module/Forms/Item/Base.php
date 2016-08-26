@@ -154,7 +154,7 @@ abstract class Base
     $this->core = $core;
     $this->formHandler = $core->getFormHandler();
     // Set messages (translated)
-    $this->defaultWarningMessage = __('Bitte füllen Sie das Feld "%s" korrekt aus.', 'lbwp');
+    $this->defaultWarningMessage = __('Bitte überprüfen Sie den Feld-Inhalt.', 'lbwp');
     $this->defaultErrorMessage = __('Bitte füllen Sie das Feld "%s" aus.', 'lbwp');
   }
 

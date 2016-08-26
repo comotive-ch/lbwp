@@ -30,6 +30,10 @@ abstract class CoreV2
    */
   protected $version;
   /**
+   * @var string the version that can be used in enqueue functions
+   */
+  protected $parentVersion;
+  /**
    * @var string the theme slug
    */
   protected $slug;
@@ -113,6 +117,9 @@ abstract class CoreV2
     load_theme_textdomain($this->textDomain, $this->path . 'assets/languages');
     if (is_child_theme()) {
       load_theme_textdomain($this->textDomain, $this->childPath . 'assets/languages');
+      $this->parentVersion = wp_get_theme(get_template())->get('Version');
+    } else {
+      $this->parentVersion = $this->version;
     }
 
     add_action('init', array($this, 'init'));
@@ -752,6 +759,16 @@ abstract class CoreV2
   public function getVersion()
   {
     return $this->version;
+  }
+
+  /**
+   * Getter
+   *
+   * @return string
+   */
+  public function getParentVersion()
+  {
+    return $this->parentVersion;
   }
 
   /**

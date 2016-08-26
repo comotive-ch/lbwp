@@ -455,9 +455,7 @@ class Shortcode extends Base
             <h3><a href="{event-link}">{event-title}</a></h3>
             {event-short-description}
             {event-location}
-            <a class="more" href="{event-link}">
-              ' . __('mehr', 'lbwp') . '
-            </a>
+            <a class="more" href="{event-link}">' . __('mehr', 'lbwp') . '</a>
           </div>
         </article>
       '

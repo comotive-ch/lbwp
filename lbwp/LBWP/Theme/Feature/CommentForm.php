@@ -124,7 +124,7 @@ class CommentForm
       $fields[] = '[lbwp:formItem key="textfield" pflichtfeld="ja" type="text" id="author" feldname="' . $args['author'] . '"]';
       $fields[] = '[lbwp:formItem key="textfield" pflichtfeld="ja" type="email" id="email" feldname="' . $args['email'] . '"]';
       if (!$args['disableField_Website']) {
-        $fields[] = '[lbwp:formItem key="textfield" pflichtfeld="nein" type="text" id="url" feldname="' . $args['url'] . '"]';
+        $fields[] = '[lbwp:formItem key="textfield" pflichtfeld="nein" type="url" id="url" feldname="' . $args['url'] . '"]';
       }
     }
 

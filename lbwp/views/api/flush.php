@@ -28,7 +28,28 @@ if (isset($_REQUEST['search']) && strlen($_REQUEST['search']) > 0) {
 // Create a memcached connection to all servers
 $memcached = new Memcached();
 $memcached->addServer('127.0.0.1', '11211', 10);
-$keys = $memcached->getAllKeys();
+$memcached->setOptions(array(
+  Memcached::OPT_BINARY_PROTOCOL => false,
+  Memcached::OPT_NO_BLOCK => 1,
+  Memcached::OPT_CONNECT_TIMEOUT => 50,
+  Memcached::OPT_SERVER_FAILURE_LIMIT => 1,
+  Memcached::OPT_RETRY_TIMEOUT => 1
+));
+
+if (defined('EXTERNAL_LBWP')) {
+  // Now get all keys the "old" way
+  $keys = $memcached->getAllKeys();
+} else {
+  exec('bash /var/www/util/getkeys', $rawKeys);
+  $keys = array();
+  foreach ($rawKeys as $id => $candidate) {
+    if (stristr($candidate, $customerKey) !== false) {
+      $keys[] = trim(substr($candidate, 5, stripos($candidate, ' ', 5) - 5));
+    } else {
+      unset($rawKeys[$id]);
+    }
+  }
+}
 
 if (strlen($keySearch) == 0) {
   foreach ($keys as $key) {

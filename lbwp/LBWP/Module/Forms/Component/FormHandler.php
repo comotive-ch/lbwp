@@ -260,10 +260,15 @@ class FormHandler extends Base
       $formclass .= ' ' . strip_tags(($args['css_classes']));
     }
 
+    $enctype = 'enctype="multipart/form-data"';
+    if (isset($args['disable_enctype']) &&$args['disable_enctype'] == 1) {
+      $enctype = '';
+    }
+
     // Create the form and display an eventual message
     $html .= '
       <div class="lbwp-form-override">
-        <form id="lbwpForm-' . $formDisplayId . '" class="lbwp-form' . $formclass . '" method="POST" enctype="multipart/form-data" ' . $customAction . '>
+        <form id="lbwpForm-' . $formDisplayId . '" class="lbwp-form' . $formclass . '" method="POST" ' . $enctype . ' ' . $customAction . '>
           <input type="hidden" name="sentForm" value="' . $this->currentForm->ID . '" />
     ';
 
@@ -287,7 +292,9 @@ class FormHandler extends Base
     $html .= '
       <script type="text/javascript">
         jQuery(function() {
-          jQuery("#lbwpForm-' . $formDisplayId. '").validate({});
+          if (jQuery && jQuery.fn.validate) {
+            jQuery("#lbwpForm-' . $formDisplayId. '").validate({});
+          }
         });
       </script>
     ';
@@ -381,6 +388,7 @@ class FormHandler extends Base
 
     // Remove non data fields from the list
     foreach ($fields as $key => $field) {
+      $fields[$key]['name'] = str_replace(BaseItem::ASTERISK_HTML, '', $field['name']);
       // If it is one of the non data fields classes, remove it
       foreach ($nonDataFields as $className) {
         if (is_a($field['item'], $className)) {

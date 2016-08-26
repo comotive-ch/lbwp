@@ -7,7 +7,7 @@ $lbwpFormValidationColorSuccess: null !default;
 $lbwpFormUseStyledInputs: false !default;
 $lbwpFormRadioColor: #00A1FF !default;
 
-$lbwpFormInputFields: "select, input[type=text], input[type=email], input[type=number], input[type=phone], input[type=password], input[type=number],textarea";
+$lbwpFormInputFields: "select, input[type=text], input[type=email], input[type=number], input[type=phone], input[type=password], input[type=number], input[type=url],textarea";
 // mixins
 
 // input fields (not buttons)

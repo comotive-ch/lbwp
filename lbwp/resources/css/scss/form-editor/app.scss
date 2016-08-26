@@ -374,26 +374,16 @@ div.drag-target {
 					float: right;
 				}
 			}
+			& label.checkbox-wrap {
+				width:100%;
+				margin-left:251px;
+				padding:15px 0px 10px 0px;
+			}
 			& input[type=text], textarea, select {
 				width: 400px;
 			}
 		}
 	}
-}
-
-// Specific styles for the form editor
-#editor-form-tab {
-
-}
-
-// Specific styles for the action editor
-#editor-action-tab {
-
-}
-
-// Specific styles for the settings tab
-#editor-settings-tab {
-
 }
 
 // form preview

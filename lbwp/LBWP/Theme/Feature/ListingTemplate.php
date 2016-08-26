@@ -134,8 +134,9 @@ class ListingTemplate
         $helper->addMetabox($boxId, __(sprintf('Einstellungen "%s"', 'Logo'), 'lbwp'));
         $helper->addInputText('logo-title', $boxId, __('Logo Titel', 'lbwp'));
         $helper->addMediaUploadField('logo-image', $boxId, __('Logo Bild', 'lbwp'));
-        $helper->addInputText('logo-link', $boxId, __('Ziel-Link', 'lbwp'));
-        $helper->addInputText('logo-link-text', $boxId, __('Link-Text', 'lbwp'));
+        $helper->addInputText('logo-link', $boxId, __('Ziel-Link', 'lbwp'), array(
+          'placeholder' => 'http://'
+        ));
         $helper->addDropdown('logo-link-target', $boxId, __('Link öffnen in'), array(
           'multiple' => false,
           'sortable' => false,

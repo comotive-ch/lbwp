@@ -1042,4 +1042,18 @@ class Strings
 
     return $subject;
   }
+
+  /**
+   * @return bool true, if the user agent is a legitimate search engine crawler
+   */
+  public static function isSearchEngineUserAgent()
+  {
+    $agent = strtolower($_SERVER['HTTP_USER_AGENT']);
+    return (
+      stristr($agent, 'googlebot/2') !== false ||
+      stristr($agent, 'googlebot-image') !== false ||
+      stristr($agent, 'bingbot/2') !== false ||
+      stristr($agent, 'ysearch/slurp') !== false
+    );
+  }
 }

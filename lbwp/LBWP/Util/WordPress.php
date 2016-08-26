@@ -208,6 +208,19 @@ class WordPress
     return intval($result);
   }
 
+  /**
+   * @param \WP_Post $post the post to be checked
+   * @return bool true if displayable
+   */
+  public static function isDisplayable($post)
+  {
+    if (current_user_can('edit_posts')) {
+      return $post->post_status != 'trash';
+    }
+
+    return $post->post_status == 'publish';
+  }
+
 
   /**
    * PLase do not use this unless it is ultimetely needed. This function might be shaky.

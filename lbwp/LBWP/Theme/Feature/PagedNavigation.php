@@ -1,6 +1,7 @@
 <?php
 
 namespace LBWP\Theme\Feature;
+use LBWP\Util\Strings;
 
 /**
  * Adds a dynamic paged navigation
@@ -32,6 +33,8 @@ class PagedNavigation
   protected $settings = array(
     'always_show' => false,
     'always_show_first_last' => false,
+    'always_show_prev_next' => false,
+    'remove_unmeaningful_nav_links' => false,
     'switch_prev_next' => false,
     'before_html' => 'Seite: ',
     'prev_page_html' => 'vorherige',
@@ -164,8 +167,13 @@ class PagedNavigation
         add_filter('previous_posts_link_attributes', array($this, 'getLinkTitlePrev'));
         $code = get_previous_posts_link($this->settings['prev_page_html']);
 
+        // If there is no previous link, set current link if forced
+        if ($this->settings['always_show_prev_next'] && strlen($code) == 0) {
+          $code = '<a href="' . $_SERVER['REQUEST_URI'] . '">' . $this->settings['prev_page_html'] . '</a>';
+        }
+
         if (strlen($code) > 0) {
-          echo '<li class="prev" role="menuitem">' . PHP_EOL . $code . PHP_EOL . '</li>' . PHP_EOL;
+          echo '<li class="prev" role="menuitem">' . PHP_EOL . $this->removeSamePageLink($code) . PHP_EOL . '</li>' . PHP_EOL;
         }
       }
 
@@ -180,7 +188,7 @@ class PagedNavigation
         $pageTitle = str_replace("%PAGE_NUMBER%", $this->leadingZeros(1), $this->settings['page_title']);
 
         echo '<li class="pagenr prev_first" role="menuitem">' . PHP_EOL;
-        echo '<a href="' . esc_url(get_pagenum_link()) . '" title="' . $pageTitle . '">' . $firstPageText . '</a>' . PHP_EOL;
+        echo $this->removeSamePageLink('<a href="' . esc_url(get_pagenum_link()) . '" title="' . $pageTitle . '">' . $firstPageText . '</a>') . PHP_EOL;
         echo '</li>' . PHP_EOL;
 
         // Text for "extend" on the left side, usually dots
@@ -195,8 +203,13 @@ class PagedNavigation
         add_filter('previous_posts_link_attributes', array($this, 'getLinkTitlePrev'));
         $code = get_previous_posts_link($this->settings['prev_page_html']);
 
+        // If there is no previous link, set current link if forced
+        if ($this->settings['always_show_prev_next'] && strlen($code) == 0) {
+          $code = '<a href="' . $_SERVER['REQUEST_URI'] . '">' . $this->settings['prev_page_html'] . '</a>';
+        }
+
         if (strlen($code) > 0) {
-          echo '<li class="prev" role="menuitem">' . PHP_EOL . $code . PHP_EOL . '</li>' . PHP_EOL;
+          echo '<li class="prev" role="menuitem">' . PHP_EOL . $this->removeSamePageLink($code) . PHP_EOL . '</li>' . PHP_EOL;
         }
       }
 
@@ -221,8 +234,13 @@ class PagedNavigation
         add_filter('next_posts_link_attributes', array($this, 'getLinkTitleNext'));
         $code = get_next_posts_link($this->settings['next_page_html']);
 
+        // If there is no previous link, set current link if forced
+        if ($this->settings['always_show_prev_next'] && strlen($code) == 0) {
+          $code = '<a href="' . $_SERVER['REQUEST_URI'] . '">' . $this->settings['next_page_html'] . '</a>';
+        }
+
         if (strlen($code) > 0) {
-          echo '<li class="next" role="menuitem">' . PHP_EOL . $code . PHP_EOL . '</li>' . PHP_EOL;
+          echo '<li class="next" role="menuitem">' . PHP_EOL . $this->removeSamePageLink($code) . PHP_EOL . '</li>' . PHP_EOL;
         }
       }
 
@@ -239,7 +257,7 @@ class PagedNavigation
         $lastPageText = str_replace("%TOTAL_PAGES%", $this->leadingZeros($maxPage), $this->settings['last_text']);
         $pageTitle = str_replace("%PAGE_NUMBER%", $this->leadingZeros($maxPage), $this->settings['page_title']);
         echo '<li class="pagenr next_last" role="menuitem">' . PHP_EOL;
-        echo '<a href="' . esc_url(get_pagenum_link($maxPage)) . '" title="' . $pageTitle . '">' . $lastPageText . '</a>' . PHP_EOL;
+        echo $this->removeSamePageLink('<a href="' . esc_url(get_pagenum_link($maxPage)) . '" title="' . $pageTitle . '">' . $lastPageText . '</a>') . PHP_EOL;
         echo '</li>' . PHP_EOL;
       }
 
@@ -247,8 +265,14 @@ class PagedNavigation
       if (!$this->settings['switch_prev_next']) {
         add_filter('next_posts_link_attributes', array($this, 'getLinkTitleNext'));
         $code = get_next_posts_link($this->settings['next_page_html']);
+
+        // If there is no previous link, set current link if forced
+        if ($this->settings['always_show_prev_next'] && strlen($code) == 0) {
+          $code = '<a href="' . $_SERVER['REQUEST_URI'] . '">' . $this->settings['next_page_html'] . '</a>';
+        }
+
         if (strlen($code) > 0) {
-          echo '<li class="next" role="menuitem">' . PHP_EOL . $code . PHP_EOL . '</li>' . PHP_EOL;
+          echo '<li class="next" role="menuitem">' . PHP_EOL . $this->removeSamePageLink($code) . PHP_EOL . '</li>' . PHP_EOL;
         }
       }
 
@@ -262,6 +286,26 @@ class PagedNavigation
       echo '</ul>' . PHP_EOL;
       echo '</div>' . PHP_EOL;
     }
+  }
+
+  /**
+   * Makes the a tag disabled and removed the href, if it links to the current uri
+   * @param string $linkTag the link tag
+   * @return string the fixed link tag
+   */
+  protected function removeSamePageLink($linkTag)
+  {
+    if ($this->settings['remove_unmeaningful_nav_links']) {
+      $href = Strings::parseTagProperty($linkTag, 'href');
+      $href = str_replace(get_bloginfo('url'), '', $href);
+      if ($href == $_SERVER['REQUEST_URI']) {
+        $linkTag = str_replace(get_bloginfo('url'), '', $linkTag);
+        $linkTag = str_replace($_SERVER['REQUEST_URI'], '', $linkTag);
+        $linkTag = str_replace('href=""', 'class="nav-disabled"', $linkTag);
+      }
+    }
+
+    return $linkTag;
   }
 
   /**

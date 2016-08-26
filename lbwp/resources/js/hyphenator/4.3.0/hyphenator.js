@@ -197,7 +197,7 @@ var Hyphenator = (function (window) {
                 i += 1;
                 t = s[i];
             }
-            return !!r ? r : '//hyphenator.googlecode.com/svn/trunk/';
+            return !!r ? r : '//www.comotive.ch/wp-content/plugins/lbwp/resources/js/hyphenator/4.3.0/';
         }()),
 
         /**

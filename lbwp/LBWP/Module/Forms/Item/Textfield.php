@@ -39,6 +39,7 @@ class Textfield extends Base
         'type' => 'dropdown',
         'values' => array(
           'text' => 'Normales Text-Feld',
+          'url' => 'Link-Feld',
           'email' => 'E-Mail-Feld',
           'phone' => 'Telefon-Feld',
           'number' => 'Zahlen-Feld',
@@ -69,6 +70,7 @@ class Textfield extends Base
   {
     switch ($type) {
       case 'email':
+      case 'url':
       case 'phone':
       case 'number':
       case 'password':

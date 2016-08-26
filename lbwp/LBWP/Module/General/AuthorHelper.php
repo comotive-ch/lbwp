@@ -168,8 +168,9 @@ class AuthorHelper extends \LBWP\Module\Base
   public function getUserAvatar($imageHtml, $authorId)
   {
     if (!apply_filters('AuthorHelper_skip_user_avatar', false)) {
+
       // it is a comment object, if typeof stdClass
-      if ($authorId instanceof \stdClass) {
+      if ($authorId instanceof \WP_Comment || $authorId instanceof \stdClass) {
         $authorId = intval($authorId->user_id);
       }
 
@@ -178,7 +179,9 @@ class AuthorHelper extends \LBWP\Module\Base
         // If available, put it into the html code
         if (strlen($avatarUrl) > 0) {
           $currentUrl = Strings::parseTagProperty($imageHtml, 'src');
+          list($responsiveUrl) = explode(' ', Strings::parseTagProperty($imageHtml, 'srcset'));
           $imageHtml = str_replace($currentUrl, $avatarUrl, $imageHtml);
+          $imageHtml = str_replace($responsiveUrl, $avatarUrl, $imageHtml);
         }
       }
     }
