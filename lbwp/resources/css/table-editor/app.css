@@ -1,0 +1,106 @@
+/* line 4, ../scss/table-editor/app.scss */
+.settings-container {
+  width: 100%;
+  overflow: auto;
+  border-bottom: 1px solid #ccc;
+  padding: 0px 0px 20px 0px;
+  margin-bottom: 20px;
+}
+/* line 12, ../scss/table-editor/app.scss */
+.settings-container .setting-block {
+  width: 70%;
+  float: left;
+}
+/* line 16, ../scss/table-editor/app.scss */
+.settings-container .setting-block .setting-label {
+  padding: 5px 0px;
+  width: 100px;
+  float: left;
+}
+/* line 22, ../scss/table-editor/app.scss */
+.settings-container .setting-block .setting-container select {
+  width: 250px;
+}
+/* line 28, ../scss/table-editor/app.scss */
+.settings-container .button-block {
+  float: right;
+}
+
+/* line 34, ../scss/table-editor/app.scss */
+.data-containers textarea {
+  display: none;
+}
+
+/* line 39, ../scss/table-editor/app.scss */
+.cell-options {
+  display: none;
+}
+/* line 41, ../scss/table-editor/app.scss */
+.cell-options a {
+  cursor: pointer;
+  display: block;
+  clear: both;
+}
+
+/* line 54, ../scss/table-editor/app.scss */
+.backend-table {
+  border-spacing: 0;
+  border-top: 1px solid #ddd;
+  border-left: 1px solid #ddd;
+}
+/* line 61, ../scss/table-editor/app.scss */
+.backend-table .dashicons {
+  cursor: pointer;
+}
+/* line 66, ../scss/table-editor/app.scss */
+.backend-table .row-settings-cell, .backend-table .empty-settings-cell {
+  max-width: 50px;
+  width: 50px;
+  min-width: 50px;
+}
+/* line 71, ../scss/table-editor/app.scss */
+.backend-table .row-settings-cell, .backend-table .empty-settings-cell {
+  border-right-color: #bbb;
+}
+/* line 74, ../scss/table-editor/app.scss */
+.backend-table .col-settings-cell, .backend-table .empty-settings-cell {
+  border-bottom-color: #bbb;
+}
+/* line 78, ../scss/table-editor/app.scss */
+.backend-table td {
+  padding: 4px;
+  margin: 0px;
+  min-width: 150px;
+  background-color: #ffffff;
+  vertical-align: top;
+  border-bottom: 1px solid #ddd;
+  border-right: 1px solid #ddd;
+}
+/* line 90, ../scss/table-editor/app.scss */
+.backend-table td.borderTypeRight--bd-fixed {
+  border-right: 1px solid #ddd;
+}
+/* line 93, ../scss/table-editor/app.scss */
+.backend-table td.borderTypeBottom--bd-fixed {
+  border-bottom: 1px solid #ddd;
+}
+/* line 96, ../scss/table-editor/app.scss */
+.backend-table td.borderTypeRight--bd-fixed-fat {
+  border-right: 2px solid #ddd;
+}
+/* line 99, ../scss/table-editor/app.scss */
+.backend-table td.borderTypeBottom--bd-fixed-fat {
+  border-bottom: 2px solid #ddd;
+}
+/* line 102, ../scss/table-editor/app.scss */
+.backend-table td.borderTypeRight--bd-dotted {
+  border-right: 1px dotted #ddd;
+}
+/* line 105, ../scss/table-editor/app.scss */
+.backend-table td.borderTypeBottom--bd-dotted {
+  border-bottom: 1px dotted #ddd;
+}
+/* line 108, ../scss/table-editor/app.scss */
+.backend-table td.backgroundColor--primary {
+  background-color: #f4f4f4;
+}

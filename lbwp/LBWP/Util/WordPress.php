@@ -215,7 +215,7 @@ class WordPress
   public static function isDisplayable($post)
   {
     if (current_user_can('edit_posts')) {
-      return $post->post_status != 'trash';
+      return isset($post->post_status) && $post->post_status != 'trash';
     }
 
     return $post->post_status == 'publish';

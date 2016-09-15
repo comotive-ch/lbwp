@@ -690,11 +690,21 @@ class Metabox
     $args['title'] = $title;
     $args['template'] = 'short';
 
+    // Set the callback defaults, override if given
+    $displayCallback = array($this, 'displayCheckbox');
+    $saveCallback = array($this, 'saveCheckboxField');
+    if (isset($args['displayCallback']) && is_callable($args['displayCallback'])) {
+      $displayCallback = $args['displayCallback'];
+    }
+    if (isset($args['saveCallback']) && is_callable($args['saveCallback'])) {
+      $saveCallback = $args['saveCallback'];
+    }
+
     // Add the field
     $this->addField(
       $key, $boxId, $args,
-      array($this, 'displayCheckbox'),
-      array($this, 'saveCheckboxField')
+      $displayCallback,
+      $saveCallback
     );
   }
 
@@ -800,7 +810,7 @@ class Metabox
   public function addPostCrossReference($boxId, $title, $localType, $referencedType, $args = array())
   {
     $key = CrossReference::getKey($localType, $referencedType);
-    $dropdown = CrossReference::createDropdownArguments($localType, $referencedType);
+    $dropdown = CrossReference::createDropdownArguments($localType, $referencedType, $args);
     $dropdown = array_merge($dropdown, $args);
 
     $this->addDropdown($key, $boxId, $title, $dropdown);

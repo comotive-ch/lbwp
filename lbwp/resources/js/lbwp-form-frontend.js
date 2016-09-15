@@ -32,14 +32,13 @@ var LbwpFormFrontend = {
 		var sendButtons = jQuery('.lbwp-form input[name=lbwpFormSend]');
 
 		// On click, set the button as disabled and add a disabled class
-		sendButtons.on('click', function() {
+		sendButtons.on('mousedown', function() {
 			var button = jQuery(this);
-			setTimeout(function() {
-				button.prop('disabled', 'disabled');
-				button.addClass('lbwp-button-disabled');
-			}, 200);
-			// Check if we need to release it, due to errors
-			setTimeout(LbwpFormFrontend.checkFormEnable, 500);
+			button.prop('disabled', 'disabled');
+			button.attr('disabled', 'disabled');
+			button.addClass('lbwp-button-disabled');
+			// Check (twice!) if we need to release it, due to errors
+			setTimeout(LbwpFormFrontend.checkFormEnable, 250);
 			setTimeout(LbwpFormFrontend.checkFormEnable, 1000);
 			return true;
 		});
@@ -55,6 +54,7 @@ var LbwpFormFrontend = {
 			if (form.hasClass('validation-errors')) {
 				var button = form.find('input[name=lbwpFormSend]');
 				button.removeProp('disabled');
+				button.removeAttr('disabled');
 				button.removeClass('lbwp-button-disabled');
 			}
 		})

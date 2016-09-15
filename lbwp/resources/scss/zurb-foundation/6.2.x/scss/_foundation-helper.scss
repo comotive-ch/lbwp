@@ -1,3 +1,14 @@
 @function foundationHelperColumnGutter($size:'small') {
 	@return -zf-get-bp-val($grid-column-gutter, $size);
 }
+
+@function foundationHelperHeadingSize($heading: 'h1', $size:'small') {
+	// Get header map for the corresponding breakpoint value
+	$headerMap: -zf-get-bp-val($header-sizes, $size);
+	@if map-has-key($headerMap, $heading) {
+		// Get heading size for the given heading
+    @return rem-calc(map-get($headerMap, $heading));
+  } @else {
+		@return null;
+	}
+}

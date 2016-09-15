@@ -97,6 +97,13 @@
 				}
 			});
 
+			// Finally, see if there is an external function defined
+			if (typeof(lbwpAdditionalValidationCallback) == 'function') {
+				if (!lbwpAdditionalValidationCallback(form)) {
+					error++;
+				}
+			}
+
 			// Add a validation class if there are errors
 			if (error) {
 				$(form).addClass('validation-errors');

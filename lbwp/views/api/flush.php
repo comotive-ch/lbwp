@@ -6,6 +6,8 @@ if (!isset($_REQUEST[CACHE_FLUSH_KEY]) || $_REQUEST[CACHE_FLUSH_KEY] != CACHE_FL
   exit;
 }
 
+// See if external depending on host
+$isExternal = stristr($_SERVER['HTTP_HOST'], 'sdd1.ch') !== false ? false : true;
 $customerKey = $_REQUEST['customer'];
 $deletePrefix = $customerKey . '_';
 $keySearch = '';
@@ -36,7 +38,7 @@ $memcached->setOptions(array(
   Memcached::OPT_RETRY_TIMEOUT => 1
 ));
 
-if (defined('EXTERNAL_LBWP')) {
+if ($isExternal) {
   // Now get all keys the "old" way
   $keys = $memcached->getAllKeys();
 } else {

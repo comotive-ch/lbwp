@@ -1,4 +1,5 @@
 // default variables
+$lbwpSlickMobileOnlyBreakpoint: null !default;
 $lbwpSlickSliderMargin: null !default;
 $lbwpSlickDotsBottomPosition: null !default;
 $lbwpSlickDotsLeftPosition: null !default;
@@ -16,6 +17,8 @@ $lbwpSlickArrowButtonSize: null !default;
 $lbwpSlickArrowButtonColor: null !default;
 $lbwpSlickArrowButtonColorHover: null !default;
 $lbwpSlickArrowButtonOpacity: null !default;
+$lbwpSlickArrowButtonHorizontallyPosition: null !default;
+$lbwpSlickArrowButtonHorizontallyPositionMobile: null !default;
 $lbwpSlickArrowButtonPrevPosition: null !default;
 $lbwpSlickArrowButtonNextPosition: null !default;
 
@@ -86,12 +89,22 @@ button.slick-arrow {
 		}
 	}
 	&.slick-prev {
-		left: $lbwpSlickArrowButtonPrevPosition;
-		@if $lbwpSlickArrowButtonPrevPosition != null {
+		left: $lbwpSlickArrowButtonHorizontallyPosition;
+		@if $lbwpSlickArrowButtonHorizontallyPosition != null {
 			z-index: 1;
 		}
 	}
 	&.slick-next {
-		right: $lbwpSlickArrowButtonNextPosition;
+		right: $lbwpSlickArrowButtonHorizontallyPosition;
+	}
+	@if ($lbwpSlickMobileOnlyBreakpoint != null) {
+		@media #{$lbwpSlickMobileOnlyBreakpoint} {
+			&.slick-prev {
+				left: $lbwpSlickArrowButtonHorizontallyPositionMobile;
+			}
+			&.slick-next {
+				right: $lbwpSlickArrowButtonHorizontallyPositionMobile;
+			}
+		}
 	}
 }

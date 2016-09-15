@@ -32,6 +32,7 @@ $this->features = array(
     'Events' => 0,
     'PiwikIntegration' => 0,
     'Snippets' => 0,
+    'Tables' => 0,
     'Redirects' => 0,
     'CleanUp' => 1,
     'S3Upload' => 1,

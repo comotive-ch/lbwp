@@ -30,6 +30,8 @@ class DataTable extends Base
   public function initialize()
   {
     add_action('admin_menu', array($this, 'addTableMenus'));
+    add_action('wp_ajax_deleteDataTableRow', array($this, 'deleteDataTableRow'));
+    add_action('wp_ajax_editDataTableRow', array($this, 'editDataTableRow'));
   }
 
   /**
@@ -196,5 +198,57 @@ class DataTable extends Base
         'data' => array()
       ));
     }
+  }
+
+  /**
+   * Delete a single row from a data table
+   */
+  public function deleteDataTableRow()
+  {
+    $formId = intval($_POST['formId']);
+    $rowIndex = intval($_POST['rowIndex']);
+
+    // Get current table and build new without removed row
+    $table = $this->getTable($formId);
+    $newData = array();
+    foreach ($table['data'] as $key => $row) {
+      if ($key != $rowIndex) {
+        $newData[] = $row;
+      }
+    }
+
+    $table['data'] = $newData;
+    $key = self::TABLE_OPTION_PREFIX . $formId;
+    WordPress::updateJsonOption($key, $table);
+    exit;
+  }
+
+  /**
+   * Edit a single row of a data table with new data
+   */
+  public function editDataTableRow()
+  {
+    $formId = intval($_POST['formId']);
+    $rowIndex = intval($_POST['rowIndex']);
+
+    // Get current table and switch row with new data
+    $table = $this->getTable($formId);
+    $newData = array();
+    foreach ($table['data'] as $key => $row) {
+      // Switch out the values respectively
+      if ($key == $rowIndex) {
+        $index = 0;
+        foreach ($row as $key => $value) {
+          $row[$key] = $_POST['rowData'][$index++];
+        }
+      }
+      // Add row to new data
+      $newData[] = $row;
+    }
+
+    $table['data'] = $newData;
+    $key = self::TABLE_OPTION_PREFIX . $formId;
+    WordPress::updateJsonOption($key, $table);
+    exit;
   }
 } 

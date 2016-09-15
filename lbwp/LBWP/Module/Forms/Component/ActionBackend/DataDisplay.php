@@ -50,7 +50,7 @@ class DataDisplay
       <div class="wrap">
         <h2>Datenspeicher ' . $tableName . '</h2>
         ' . $this->getUserOptions($formId) . '<br />
-        ' . $this->getTableHtml($columns, $rawTable) . '<br />
+        ' . $this->getTableHtml($columns, $rawTable, $formId) . '<br />
         <br class="clear">
       </div>
     ';
@@ -75,11 +75,12 @@ class DataDisplay
   /**
    * @param array $columns the colum names
    * @param array $data the data to display
+   * @param int $formId the form id
    * @return string html code
    */
-  protected function getTableHtml($columns, $data)
+  protected function getTableHtml($columns, $data, $formId)
   {
-    $html = '<table class="widefat fixed">';
+    $html = '<table class="widefat">';
 
     // If there is no data, show it
     if (count($columns) == 0) {
@@ -88,7 +89,7 @@ class DataDisplay
     }
 
     // Table header
-    $htmlColumns = '';
+    $htmlColumns = '<th class="manage-column">&nbsp;</th>';
     foreach ($columns as $colName) {
       $htmlColumns .= '<th class="manage-column"><strong>' . $colName . '</strong></th>';
     }
@@ -101,18 +102,115 @@ class DataDisplay
 
     // Add the actual data
     $html .= '<tbody>';
-    foreach ($data as $row) {
+    foreach ($data as $id => $row) {
       $html .= '<tr' . $this->getAltClass() . '>';
+      // Add the edit/delete features
+      $html .= '
+        <td class="options">
+          <a class="dashicons dashicons-edit edit-row"></a>
+          <a class="dashicons dashicons-yes save-row" data-index="' . $id . '" data-formid="' . $formId . '"></a>
+          <a class="dashicons dashicons-no delete-row" data-index="' . $id . '" data-formid="' . $formId . '"></a>
+        </td>
+      ';
+      // Add the actual data
       foreach ($row as $key => $value) {
-        $html .= '<td class="' . $key . '">' . $this->prepareValue($value) . '</td>';
+        $html .= '
+          <td class="' . $key . '">
+            <span>' . $this->prepareValue($value) . '</span>
+            <textarea class="data-table-area">' . $value . '</textarea>
+          </td>';
       }
       $html .= '</tr>';
     }
 
     // Close the body and table and return
-    return $html . '</tbody></table>';
+    return $html . '</tbody></table>' . $this->getAssets();
   }
 
+  protected function getAssets()
+  {
+    $html = '';
+
+    // Javascript to edit and remove rows
+    $html .= '
+      <script type="text/javascript">
+        jQuery(function() {
+          // Delete a row after confirmation
+          jQuery(".delete-row").click(function() {
+            if (confirm("Datensatz wirklich löschen?")) {
+              // Actually delete the row on the table
+              jQuery.post(ajaxurl, {
+                "action" : "deleteDataTableRow",
+                "formId" : jQuery(this).data("formid"),
+                "rowIndex" : jQuery(this).data("index")
+              });
+              
+              // Remove the row visually
+              jQuery(this).closest("tr").fadeOut("fast", function() {
+                jQuery(this).remove();
+              })
+            }
+          });
+          
+          // Make field editable and show the save icon
+          jQuery(".edit-row").click(function() {
+            // Switch icons
+            var row = jQuery(this).closest("tr");
+            row.find(".save-row").show();
+            row.find(".edit-row").hide();
+            // Make all textareas visible, hide text version
+            row.find("td span").hide();
+            row.find("td textarea").fadeIn("fast");
+          });
+          
+          // Make a previously edited row saveable, and revert to the edit icon
+          jQuery(".save-row").click(function() {
+            // Switch icons
+            var row = jQuery(this).closest("tr");
+            row.find(".edit-row").show();
+            row.find(".save-row").hide();
+            
+            // Get the new data array from all textareas
+            var data = [];
+            row.find("textarea").each(function() {
+              var area = jQuery(this);
+              var newValue = area.val();
+              area.prev().text(newValue);
+              data.push(newValue);
+            });
+            
+            // Actually save the row, and switch back to text mode
+            jQuery.post(ajaxurl, {
+              "action" : "editDataTableRow",
+              "formId" : jQuery(this).data("formid"),
+              "rowIndex" : jQuery(this).data("index"),
+              "rowData" : data
+            });
+            
+            // Switch back to normal mode
+            row.find("td textarea").hide();
+            row.find("td span").show();
+          });
+        });
+      </script>
+    ';
+
+    // Some simple styles
+    $html .= '
+      <style type="text/css">
+        .data-table-area { display:none; height:80px; width:inherit; }
+        td.options { width:50px; white-space: nowrap; }
+        td.options .dashicons:hover { cursor:pointer; }
+        td.options .save-row { display:none; }
+      </style>
+    ';
+
+    return $html;
+  }
+
+  /**
+   * @return string
+   */
   protected function getAltClass()
   {
     if (++$this->altCounter % 2 == 0) {

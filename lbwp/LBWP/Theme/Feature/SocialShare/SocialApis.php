@@ -67,7 +67,7 @@ class SocialApis
                 var js, fjs = d.getElementsByTagName(s)[0];
                 if (d.getElementById(id)) return;
                 js = d.createElement(s); js.id = id;
-                js.src = "//connect.facebook.net/' . self::$apiLocale[$key] . '/sdk.js#xfbml=1&version=v2.4&appId=' . self::FB_APP_ID . '";
+                js.src = "//connect.facebook.net/' . self::$apiLocale[$key] . '/sdk.js#xfbml=1&version=v2.7&appId=' . self::FB_APP_ID . '";
                 fjs.parentNode.insertBefore(js, fjs);
               }(document, "script", "facebook-jssdk"));
               </script>

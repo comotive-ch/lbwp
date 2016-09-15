@@ -456,6 +456,16 @@ $this->featureData['PublicModules']['sub']['Forms'] = array(
   '
 );
 
+$this->featureData['PublicModules']['sub']['Tables'] = array(
+  'name' => 'Tabellen',
+  'state' => 'editable',
+  'class' => '\\LBWP\\Module\\Tables\\Core',
+  'description' => '
+    Erstellen Sie komplexe Responsive-Tabellen. Je nach Design müssen noch
+    Anpassungen vorgenommen werden, damit die Tabellen optimal dargestellt werden.
+  '
+);
+
 $this->featureData['PublicModules']['sub']['Snippets'] = array(
   'name' => 'Snippets',
   'state' => 'editable',

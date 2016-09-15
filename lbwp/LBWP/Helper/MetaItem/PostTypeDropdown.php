@@ -1,6 +1,7 @@
 <?php
 
 namespace LBWP\Helper\MetaItem;
+
 use LBWP\Util\Strings;
 use LBWP\Util\WordPress;
 
@@ -27,14 +28,21 @@ class PostTypeDropdown
       $types = array($types);
     }
 
-    // Get all items of a posttype and order alphabetically
-    $postItems = get_posts(array(
+    // Set the basic query
+    $query = array(
       'post_type' => $types,
-      'post_status' => 'all',
       'posts_per_page' => -1,
       'orderby' => 'title',
-	    'order' => 'ASC',
-    ));
+	    'order' => 'ASC'
+    );
+
+    // Set a specific or all languages, if needed
+    if (isset($args['language'])) {
+      $query['lang'] = $args['language'];
+    }
+
+    // Get all items of a posttype and order alphabetically
+    $postItems = get_posts($query);
 
     // Make a mapping of the actual post type names, if more than one
     $postTypeMap = array();

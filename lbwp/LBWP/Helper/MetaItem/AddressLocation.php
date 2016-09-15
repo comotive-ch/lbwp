@@ -68,8 +68,7 @@ class AddressLocation
     $address = array(
       'street' => $_POST[$field['key'] . '-street'],
       'zip' => $_POST[$field['key'] . '-zip'],
-      'city' => $_POST[$field['key'] . '-city'],
-      'addition' => $_POST[$field['key'] . '-addition'],
+      'city' => $_POST[$field['key'] . '-city']
     );
 
     // Get long/lat info from address data
@@ -85,6 +84,9 @@ class AddressLocation
     if (is_array($location['location']) && count($location['location']) > 0) {
       $address['location'] = $location['location'];
     }
+
+    // Add the addition that should be in the query
+    $address['addition'] = $_POST[$field['key'] . '-addition'];
 
     // Save address data array
     update_post_meta($postId, $field['key'], $address);

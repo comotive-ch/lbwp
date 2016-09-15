@@ -29,9 +29,10 @@ class CrossReference
   /**
    * @param string $localType the cross reference requesting type
    * @param string $referencedType the type that needs to be referenced
+   * @param array $args arguments
    * @return array dropdown configuration
    */
-  public static function createDropdownArguments($localType, $referencedType)
+  public static function createDropdownArguments($localType, $referencedType, $args)
   {
     // Basic configuration to allow sorting and multiple items
     $dropdown = array(
@@ -41,14 +42,21 @@ class CrossReference
       'items' => array()
     );
 
-    // Add all posts as items from the references type
-    $posts = get_posts(array(
+    $query = array(
       'post_type' => $referencedType,
       'posts_per_page' => -1,
       'orderby' => 'title',
       'order' => 'ASC',
       'post_status' => 'any'
-    ));
+    );
+
+    // Set a specific or all languages, if needed
+    if (isset($args['language'])) {
+      $query['lang'] = $args['language'];
+    }
+
+    // Add all posts as items from the references type
+    $posts = get_posts($query);
 
     foreach ($posts as $item) {
       $dropdown['items'][$item->ID] = array(

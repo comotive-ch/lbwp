@@ -1,0 +1,112 @@
+@import "compass/css3";
+
+// Settings container atop
+.settings-container {
+	width:100%;
+	overflow:auto;
+	border-bottom:1px solid #ccc;
+	padding:0px 0px 20px 0px;
+	margin-bottom:20px;
+
+	// The setting block at top
+	.setting-block {
+		width:70%;
+		float:left;
+
+		.setting-label {
+			padding:5px 0px;
+			width:100px;
+			float:left;
+		}
+
+		.setting-container select {
+			width:250px;
+		}
+	}
+
+	// The button block
+	.button-block {
+		float:right;
+	}
+}
+
+// Hide the data container
+.data-containers textarea {
+	display:none;
+}
+
+// Cell options
+.cell-options {
+	display:none;
+	a {
+		cursor:pointer;
+		display:block;
+		clear:both;
+	}
+}
+
+// Set colors for the table backend
+$borderColor : #ddd;
+$borderColorSettings : #bbb;
+$cellDefaultBackground : #ffffff;
+$cellPrimaryBackground : #f4f4f4;
+
+.backend-table {
+	// Basic table settings
+	border-spacing:0;
+	border-top:1px solid $borderColor;
+	border-left:1px solid $borderColor;
+
+	// Make icons clickable
+	.dashicons {
+		cursor:pointer;
+	}
+
+	// The settings cell (first col)
+	.row-settings-cell, .empty-settings-cell {
+		max-width: 50px;
+		width: 50px;
+		min-width: 50px;
+	}
+	.row-settings-cell, .empty-settings-cell {
+		border-right-color:$borderColorSettings;
+	}
+	.col-settings-cell, .empty-settings-cell {
+		border-bottom-color:$borderColorSettings;
+	}
+
+	td {
+		// Basic settings
+		padding:4px;
+		margin:0px;
+		min-width:150px;
+		background-color:$cellDefaultBackground;
+		vertical-align:top;
+		border-bottom:1px solid $borderColor;
+		border-right:1px solid $borderColor;
+
+		// Various class styles
+		// Various border styles
+		&.borderTypeRight--bd-fixed {
+			border-right:1px solid $borderColor;
+		}
+		&.borderTypeBottom--bd-fixed {
+			border-bottom:1px solid $borderColor;
+		}
+		&.borderTypeRight--bd-fixed-fat {
+			border-right:2px solid $borderColor;
+		}
+		&.borderTypeBottom--bd-fixed-fat {
+			border-bottom:2px solid $borderColor;
+		}
+		&.borderTypeRight--bd-dotted {
+			border-right:1px dotted $borderColor;
+		}
+		&.borderTypeBottom--bd-dotted {
+			border-bottom:1px dotted $borderColor;
+		}
+		&.backgroundColor--primary {
+			background-color:$cellPrimaryBackground;
+		}
+	}
+}
