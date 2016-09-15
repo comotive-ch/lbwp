@@ -5,8 +5,15 @@
 	width:100%;
 	overflow:auto;
 	border-bottom:1px solid #ccc;
-	padding:0px 0px 20px 0px;
+	padding:0px 0px 15px 0px;
 	margin-bottom:20px;
+
+	&.bottom {
+		margin-top:20px;
+		padding-top:20px;
+		border-top:1px solid #ccc;
+		border-bottom:0px none;
+	}
 
 	// The setting block at top
 	.setting-block {
@@ -37,11 +44,10 @@
 
 // Cell options
 .cell-options {
-	display:none;
+	visibility:hidden;
 	a {
 		cursor:pointer;
-		display:block;
-		clear:both;
+		display:inline;
 	}
 }
 
@@ -51,7 +57,7 @@ $borderColorSettings : #bbb;
 $cellDefaultBackground : #ffffff;
 $cellPrimaryBackground : #f4f4f4;
 
-.backend-table {
+.responsive-table {
 	// Basic table settings
 	border-spacing:0;
 	border-top:1px solid $borderColor;
@@ -60,6 +66,11 @@ $cellPrimaryBackground : #f4f4f4;
 	// Make icons clickable
 	.dashicons {
 		cursor:pointer;
+	}
+
+	.cell-content p,
+	.cell-content ul {
+		margin:0px;
 	}
 
 	// The settings cell (first col)
@@ -109,4 +120,19 @@ $cellPrimaryBackground : #f4f4f4;
 			background-color:$cellPrimaryBackground;
 		}
 	}
+}
+
+.modal-container-generic {
+	position: fixed;
+	top: 0;
+	right: 0;
+	left: 0;
+	bottom: -10000px;
+	width: 70%;
+	height: 500px;
+	margin: auto;
+	z-index: 10010;
+	border: 1px solid #333;
+	padding: 0px;
+	background-color: #F1F1F1;
 }

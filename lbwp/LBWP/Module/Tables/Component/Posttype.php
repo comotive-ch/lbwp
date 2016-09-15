@@ -25,6 +25,7 @@ class Posttype extends Base
     if (is_admin()) {
       add_action('media_buttons', array($this, 'addFormButton'), 20);
       add_filter('post_updated_messages', array($this, 'alterSavedMessage'));
+      add_action('admin_init', array($this, 'addCellEditorHelper'));
     }
   }
 
@@ -47,6 +48,16 @@ class Posttype extends Base
       'publicly_queryable' => true,
       'exclude_from_search' => true
     ), '');
+  }
+
+  /**
+   * Displays (but hidden by frontend JS) the editor that is used for handling table cell content
+   */
+  public function addCellEditorHelper()
+  {
+    $helper = Metabox::get(self::TABLE_SLUG);
+    $helper->addMetabox('table-helper', 'Editor');
+    $helper->addEditor('cell-editor', 'table-helper', 'Zelleneditor', 10);
   }
 
   /**

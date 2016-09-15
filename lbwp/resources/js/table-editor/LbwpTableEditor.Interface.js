@@ -17,6 +17,7 @@ LbwpTableEditor.Interface = {
 		LbwpTableEditor.Interface.cleanInterface();
 		LbwpTableEditor.Interface.loadInterface();
 		LbwpTableEditor.Interface.handleLeaving();
+		LbwpTableEditor.Interface.prepareEditor();
 	},
 
 	/**
@@ -105,5 +106,99 @@ LbwpTableEditor.Interface = {
 			LbwpTableEditor.Core.hasChanges = false;
 			jQuery('#publish').trigger('click');
 		});
+	},
+
+	/**
+	 * Saves the data to our main array and updates json field for saving and updates html
+	 * @param data
+	 */
+	saveData : function(data)
+	{
+		// Save data back into the main array
+		LbwpTableEditor.Data.data = data;
+		// After rebuilding the data, update it in field and reload html
+		LbwpTableEditor.Core.updateJsonField();
+		LbwpTableEditor.Cells.updateBackendHtml();
+	},
+
+	/**
+	 * Prepare the editor container to be used
+	 */
+	prepareEditor : function()
+	{
+		jQuery('body').append('<div id="editor-container" class="modal-container-generic"></div>');
+		// Get that inserted container object
+		var container = jQuery('#editor-container');
+
+		// Move the editor object into the container
+		var editor = jQuery('#lbwp-table__table-helper .cell-editor');
+		container.append(editor);
+
+		// Also, add close-, save buttons and hiddens
+		container.append('<a class="button save-cell-editor">' + LbwpTableEditor.Text.saveCellContent + '</a>');
+		container.append('<a class="dashicons dashicons-no-alt button editor-close-modal"></a>');
+		container.append('<input type="hidden" id="editedCellId" value="" />');
+
+		// Add events onto the buttons
+		container.find('.save-cell-editor').click(LbwpTableEditor.Interface.saveCurrentCellEditor);
+		container.find('.editor-close-modal').click(LbwpTableEditor.Interface.closeCurrentCellEditor);
+
+	},
+
+	/**
+	 * Show the cell editor
+	 * @param cellId the cell id being edited
+	 * @param html content
+	 */
+	showCellEditor : function(cellId, html)
+	{
+		// Input the content into the editor
+		if (jQuery('.mce-container').is(':visible')) {
+			tinyMCE.activeEditor.setContent(html);
+		} else {
+			jQuery('textarea.wp-editor-area').val(html)
+		}
+
+		// Show the container
+		jQuery('#editedCellId').val(cellId);
+		jQuery('#editor-container').css('bottom', 0);
+		jQuery('.media-modal-backdrop-mbh').fadeIn('fast');
+	},
+
+	/**
+	 * Save the current editor back into the cell and hide editor
+	 */
+	saveCurrentCellEditor : function()
+	{
+		var cellId = jQuery('#editedCellId').val();
+		var c = LbwpTableEditor.Cells.getCoordsFromCellId(cellId);
+		var data = LbwpTableEditor.Data.data;
+		var newContent = '';
+
+		// Get the edited content from our editor
+		if (jQuery('.mce-container').is(':visible')) {
+			newContent = tinyMCE.activeEditor.getContent();
+		} else {
+			newContent = jQuery('textarea.wp-editor-area').val();
+		}
+
+		// Put this into the data array
+		data[c.x][c.y].content = newContent;
+
+		// Update the data object
+		LbwpTableEditor.Interface.saveData(data);
+		// Close the editor
+		LbwpTableEditor.Interface.closeCurrentCellEditor();
+	},
+
+	/**
+	 * Close editor without saving
+	 */
+	closeCurrentCellEditor : function()
+	{
+		// Remove current cell id and hide the container
+		jQuery('#editedCellId').val('');
+		jQuery('#editor-container').css('bottom', -10000);
+		jQuery('.media-modal-backdrop-mbh').fadeOut('fast');
 	}
 };

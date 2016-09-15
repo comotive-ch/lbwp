@@ -101,6 +101,9 @@ class TableEditor extends Base
         LbwpTableEditor.Text = {
           saveButton : "' . esc_js(__('Tabelle Speichern', 'lbwp')) . '",
           editorLoading : "' . esc_js(__('Tabelle wird geladen', 'lbwp')) . '",
+          saveCellContent : "' . esc_js(__('Zellen-Inhalt speichern', 'lbwp')) . '",
+          confirmRowDelete : "' . esc_js(__('Möchten Sie die Zeile {x} wirklich löschen?', 'lbwp')) . '",
+          confirmColDelete : "' . esc_js(__('Möchten Sie die Spalte {x} wirklich löschen?', 'lbwp')) . '",
         };
       </script>
     ';
@@ -121,6 +124,9 @@ class TableEditor extends Base
         </div>
         <div class="table-container">
           ' . __('Tabelle wird geladen...', 'lbwp') . '
+        </div>
+        <div class="settings-container bottom">
+          ' . $this->getBottomSettingsHtml($isNew) . '
         </div>
       </div>
       <span class="data-containers">
@@ -187,7 +193,7 @@ class TableEditor extends Base
           <td data-cell="' . $rowIndex . '.' . $cellIndex . '" class="' . TableHandler::getCellClasses($cell) . '">
             <div class="cell-content">' . $cell['content'] . '</div>
             <div class="cell-options">
-              <a class="edit-cell-content">' . __('Bearbeiten', 'lbwp') . '</a>
+              <a class="edit-cell-content">' . __('Bearbeiten', 'lbwp') . '</a> | 
               <a class="edit-cell-settings">' . __('Einstellungen', 'lbwp') . '</a>
             </div>
           </td>
@@ -233,6 +239,27 @@ class TableEditor extends Base
       ';
     } else {
       $html .= '
+        <div class="button-block">
+          <button class="button table-preview-button">' . __('Vorschau', 'lbwp') . '</button>
+          <button class="button table-settings-button">' . __('Einstellungen', 'lbwp') . '</button>
+          <button class="button-primary save-table-button">' . __('Tabelle speichern', 'lbwp') . '</button>
+        </div>
+      ';
+    }
+
+    return $html;
+  }
+
+  /**
+   * @param bool $isNew is this a new table?
+   * @return string html code
+   */
+  protected function getBottomSettingsHtml($isNew)
+  {
+    $html = '';
+
+    if ($isNew == 0) {
+      $html .= '
         <div class="setting-block table-template">
           <label class="setting-label">
             ' . __('Neue Zeile', 'lbwp') . '
@@ -254,11 +281,6 @@ class TableEditor extends Base
             </select>
             <button class="button add-new-col">' . __('Hinzufügen', 'lbwp') . '</button>
           </div>
-        </div>
-        <div class="button-block">
-          <button class="button table-preview-button">' . __('Vorschau', 'lbwp') . '</button>
-          <button class="button table-settings-button">' . __('Einstellungen', 'lbwp') . '</button>
-          <button class="button-primary save-table-button">' . __('Tabelle speichern', 'lbwp') . '</button>
         </div>
       ';
     }

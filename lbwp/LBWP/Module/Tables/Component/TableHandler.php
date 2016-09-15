@@ -284,7 +284,7 @@ class TableHandler extends Base
    */
   public static function getCellClasses($cell)
   {
-    $classes = array('cell');
+    $classes = array('responsive-cell');
     if (is_array($cell['settings'])) {
       foreach ($cell['settings'] as $key => $value) {
         $classes[] = $key . '--' . $value;
@@ -300,7 +300,7 @@ class TableHandler extends Base
    */
   public static function getTableClasses($settings)
   {
-    $classes = array('backend-table');
+    $classes = array('responsive-table');
     if (is_array($settings)) {
       foreach ($settings as $key => $value) {
         $classes[] = $key . '--' . $value;

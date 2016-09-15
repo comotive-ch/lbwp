@@ -139,7 +139,7 @@ var MetaboxHelper = {
 		jQuery(document).on('click', '.mbh-close-modal', function() {
 			jQuery('.media-modal-backdrop-mbh').hide();
 			jQuery('#metaboxHelper_frame').attr('src', '');
-			jQuery('#metaboxHelperContainer').css('bottom', 10000);
+			jQuery('#metaboxHelperContainer').css('bottom', -10000);
 		});
 	},
 
