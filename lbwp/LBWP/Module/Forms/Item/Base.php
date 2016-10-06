@@ -143,6 +143,14 @@ abstract class Base
    * @var string the asterisk html
    */
   const ASTERISK_HTML = ' <span class="required">*</span>';
+  /**
+   * @var string the multi key value separator
+   */
+  const MULTI_KEY_VALUE_SEPARATOR = '==';
+  /**
+   * @var string the values separator in multi items
+   */
+  const MULTI_ITEM_VALUES_SEPARATOR = '$$';
 
   /**
    * @param Core $core the forms core object
@@ -316,11 +324,24 @@ abstract class Base
   {
     $preparedValues = array();
     $content = trim($content);
-    $values = explode(',', $content);
+
+    // Convert old comma value to new separator if none given
+    if (stristr($content, self::MULTI_ITEM_VALUES_SEPARATOR) === false) {
+      $content = str_replace(',', self::MULTI_ITEM_VALUES_SEPARATOR, $content);
+    }
+
+    // Explode the values by the (maybe converted) separator
+    $values = explode(self::MULTI_ITEM_VALUES_SEPARATOR, $content);
+
     foreach ($values as $value) {
       $value = trim($value);
       if (strlen($value) > 0) {
-        $preparedValues[] = $value;
+        if (stristr($value, self::MULTI_KEY_VALUE_SEPARATOR) !== false) {
+          list($key, $value) = explode(self::MULTI_KEY_VALUE_SEPARATOR, $value);
+          $preparedValues[$key] = $value;
+        } else {
+          $preparedValues[$value] = $value;
+        }
       }
     }
 

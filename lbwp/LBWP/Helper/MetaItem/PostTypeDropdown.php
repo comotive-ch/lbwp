@@ -4,6 +4,7 @@ namespace LBWP\Helper\MetaItem;
 
 use LBWP\Util\Strings;
 use LBWP\Util\WordPress;
+use LBWP\Util\Date;
 
 /**
  * Helper method to simplify ppst type dropdowns
@@ -31,6 +32,7 @@ class PostTypeDropdown
     // Set the basic query
     $query = array(
       'post_type' => $types,
+      'post_status' => 'all',
       'posts_per_page' => -1,
       'orderby' => 'title',
 	    'order' => 'ASC'
@@ -55,11 +57,19 @@ class PostTypeDropdown
       $typeObject = get_post_type_object($types[0]);
     }
 
+    // Set a callback for html generation (default none, simple title for each element)
+    $callback = array('\LBWP\Helper\MetaItem\PostTypeDropdown', 'defaultItemHtml');
+    if (isset($args['itemHtmlCallback']) && is_callable($args['itemHtmlCallback'])) {
+      $callback = $args['itemHtmlCallback'];
+    }
+
+    // Generate the item arguments for choosen
     foreach ($postItems as $postItem) {
       $args['items'][$postItem->ID] = array(
         'title' => self::getPostElementName($postItem, $postTypeMap),
         'data' => array(
           'url' => admin_url('post.php?post=' . $postItem->ID . '&action=edit&ui=show-as-modal'),
+          'html' => esc_attr(call_user_func($callback, $postItem, $postTypeMap)),
           'is-modal' => 1
         )
       );
@@ -85,9 +95,10 @@ class PostTypeDropdown
   {
     // Create a new empty post with the title
     $assignedPostId = intval($_POST['postId']);
+    $postType = Strings::forceSlugString($_POST['postType']);
     $newPostId = intval(wp_insert_post(array(
       'post_title' => $_POST['title'],
-      'post_type' => Strings::forceSlugString($_POST['postType']),
+      'post_type' => $postType,
       'post_status' => 'draft'
     )));
 
@@ -106,11 +117,36 @@ class PostTypeDropdown
       </option>
     ';
 
+    // Let developers add meta data to the element
+    do_action('mbh_addNewPostTypeItem', $newPostId, $postType);
+
     // Report back the new ID and the to be added option
     WordPress::sendJsonResponse(array(
       'newPostId' => $newPostId,
       'newOptionHtml' => $optionHtml
     ));
+  }
+
+  /**
+   * @param \WP_Post $item the post item
+   * @param array $typeMap a post type mapping
+   * @return string html code to represent the item
+   */
+  public static function defaultItemHtml($item, $typeMap)
+  {
+    $image = '';
+    if (has_post_thumbnail($item->ID)) {
+      $image = '<img src="' . WordPress::getImageUrl(get_post_thumbnail_id($item->ID), 'thumbnail') . '">';
+    }
+
+    return '
+      <div class="mbh-chosen-inline-element">
+        ' . $image . '
+        <h2>' . self::getPostElementName($item, $typeMap) . '</h2>
+        <p class="mbh-post-info">Autor: ' . get_the_author_meta('display_name', $item->post_author) . '</p>
+        <p class="mbh-post-info">Letzte Änderung: ' . Date::convertDate(Date::SQL_DATETIME, Date::EU_DATE, $item->post_modified) . '</p>
+      </div>
+    ';
   }
 
   /**

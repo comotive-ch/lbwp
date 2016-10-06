@@ -96,7 +96,6 @@ $cellPrimaryBackground : #f4f4f4;
 		border-bottom:1px solid $borderColor;
 		border-right:1px solid $borderColor;
 
-		// Various class styles
 		// Various border styles
 		&.borderTypeRight--bd-fixed {
 			border-right:1px solid $borderColor;
@@ -115,6 +114,12 @@ $cellPrimaryBackground : #f4f4f4;
 		}
 		&.borderTypeBottom--bd-dotted {
 			border-bottom:1px dotted $borderColor;
+		}
+		&.borderTypeRight--bd-none {
+			border-right:0px none;
+		}
+		&.borderTypeBottom--bd-none {
+			border-bottom:0px none;
 		}
 		&.backgroundColor--primary {
 			background-color:$cellPrimaryBackground;

@@ -59,6 +59,8 @@ LbwpTableEditor.Interface = {
 				LbwpTableEditor.Data = response.tableJson;
 				LbwpTableEditor.Core.updateJsonField();
 				LbwpTableEditor.Cells.updateBackendHtml();
+				LbwpTableEditor.Interface.prepareTableSettings();
+				LbwpTableEditor.Interface.prepareCellSettings();
 			} else {
 				// Still add the empty data to have an object to work with
 				LbwpTableEditor.Data = response.tableJson;
@@ -91,7 +93,7 @@ LbwpTableEditor.Interface = {
 		jQuery('.add-new-row').click(LbwpTableEditor.Cells.addNewRow);
 		jQuery('.add-new-col').click(LbwpTableEditor.Cells.addNewColumn);
 		// Let the user change table settings
-		jQuery('.table-settings-button').click(LbwpTableEditor.Cells.showTableSettings);
+		jQuery('.table-settings-button').click(LbwpTableEditor.Interface.showTableSettings);
 
 		// Add the preview button event
 		jQuery('.table-preview-button').click(function() {
@@ -110,12 +112,15 @@ LbwpTableEditor.Interface = {
 
 	/**
 	 * Saves the data to our main array and updates json field for saving and updates html
-	 * @param data
+	 * @param data doesn't need to be given
 	 */
 	saveData : function(data)
 	{
 		// Save data back into the main array
-		LbwpTableEditor.Data.data = data;
+		if (typeof(data) == 'object') {
+			LbwpTableEditor.Data.data = data;
+		}
+
 		// After rebuilding the data, update it in field and reload html
 		LbwpTableEditor.Core.updateJsonField();
 		LbwpTableEditor.Cells.updateBackendHtml();
@@ -142,7 +147,102 @@ LbwpTableEditor.Interface = {
 		// Add events onto the buttons
 		container.find('.save-cell-editor').click(LbwpTableEditor.Interface.saveCurrentCellEditor);
 		container.find('.editor-close-modal').click(LbwpTableEditor.Interface.closeCurrentCellEditor);
+	},
 
+	/**
+	 * Prepare the table settings container
+	 */
+	prepareTableSettings : function()
+	{
+		// Get the container modal
+		var container = jQuery('#table-settings-container');
+
+		// Add events onto the buttons
+		container.find('.save-table-settings').click(LbwpTableEditor.Interface.saveTableSettings);
+		container.find('.close-table-settings-modal').click(LbwpTableEditor.Interface.closeTableSettings);
+	},
+
+	/**
+	 * Show the general table settings dialog
+	 */
+	showTableSettings : function()
+	{
+		jQuery('#table-settings-container').css('bottom', 0);
+		jQuery('.media-modal-backdrop-mbh').fadeIn('fast');
+
+		// Preselect the correct values
+		Object.keys(LbwpTableEditor.Data.settings).forEach(function(property, id) {
+			var value = LbwpTableEditor.Data.settings[property];
+			jQuery('#' + property).val(value);
+		});
+
+		return false;
+	},
+
+	/**
+	 * Save table settings given in back to table
+	 */
+	saveTableSettings : function()
+	{
+		// Save the fields back into the config and reload
+		Object.keys(LbwpTableEditor.Data.settings).forEach(function(property, id) {
+			var value = jQuery('#' + property).val();
+			LbwpTableEditor.Data.settings[property] = value;
+		});
+
+		LbwpTableEditor.Interface.saveData();
+		LbwpTableEditor.Interface.closeTableSettings();
+	},
+
+	/**
+	 * Prepare the cell settings container
+	 */
+	prepareCellSettings : function()
+	{
+		// Get the container modal
+		var container = jQuery('#cell-settings-container');
+
+		// Add events onto the buttons
+		container.find('.save-cell-settings').click(LbwpTableEditor.Cells.saveCellSettings);
+		container.find('.close-cell-settings-modal').click(LbwpTableEditor.Interface.closeCellSettings);
+	},
+
+	/**
+	 * Shows the cell settings dialog that can append settings to
+	 * either a column, a row or a specific cell
+	 * @param type either "cell", "row" or "column"
+	 * @param firstOption set the first option for all dropdowns (which says "no change")
+	 * @param dataId rowIndex, colIndex or cellId
+	 */
+	showCellSettings : function(type, firstOption, dataId)
+	{
+		var container = jQuery('#cell-settings-container');
+		// Set the actual variables for later saving
+		jQuery('#cellEditorType').val(type);
+		jQuery('#cellEditorId').val(dataId);
+
+		// Set the options or prefill from dataId (which needs to be a cellId)
+		if (firstOption == true) {
+			// Prefill all dropdows with the 0 value
+			container.find('input[type=text]').val('--no-change--');
+			container.find('select').val('0');
+		} else {
+			// Prefill the dropdowns from actual cellId data
+			var c = LbwpTableEditor.Cells.getCoordsFromCellId(dataId);
+			var settings = LbwpTableEditor.Data.data[c.x][c.y].settings;
+			Object.keys(settings).forEach(function(property, id) {
+				var value = settings[property];
+				jQuery('#' + property).val(value);
+			});
+		}
+
+		// Depending on type, show the correct title
+		jQuery('.cell-settings-header').hide();
+		jQuery('.header-type-' + type).show();
+
+		// Show the dialog itself now
+		container.css('bottom', 0);
+		jQuery('.media-modal-backdrop-mbh').fadeOut('fast');
 	},
 
 	/**
@@ -199,6 +299,24 @@ LbwpTableEditor.Interface = {
 		// Remove current cell id and hide the container
 		jQuery('#editedCellId').val('');
 		jQuery('#editor-container').css('bottom', -10000);
+		jQuery('.media-modal-backdrop-mbh').fadeOut('fast');
+	},
+
+	/**
+	 * Close the table settings without saving
+	 */
+	closeTableSettings : function()
+	{
+		jQuery('#table-settings-container').css('bottom', -10000);
+		jQuery('.media-modal-backdrop-mbh').fadeOut('fast');
+	},
+
+	/**
+	 * Close the table settings without saving
+	 */
+	closeCellSettings : function()
+	{
+		jQuery('#cell-settings-container').css('bottom', -10000);
 		jQuery('.media-modal-backdrop-mbh').fadeOut('fast');
 	}
 };

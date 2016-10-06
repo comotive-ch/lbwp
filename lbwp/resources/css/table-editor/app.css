@@ -87,36 +87,44 @@
   border-bottom: 1px solid #ddd;
   border-right: 1px solid #ddd;
 }
-/* line 101, ../scss/table-editor/app.scss */
+/* line 100, ../scss/table-editor/app.scss */
 .responsive-table td.borderTypeRight--bd-fixed {
   border-right: 1px solid #ddd;
 }
-/* line 104, ../scss/table-editor/app.scss */
+/* line 103, ../scss/table-editor/app.scss */
 .responsive-table td.borderTypeBottom--bd-fixed {
   border-bottom: 1px solid #ddd;
 }
-/* line 107, ../scss/table-editor/app.scss */
+/* line 106, ../scss/table-editor/app.scss */
 .responsive-table td.borderTypeRight--bd-fixed-fat {
   border-right: 2px solid #ddd;
 }
-/* line 110, ../scss/table-editor/app.scss */
+/* line 109, ../scss/table-editor/app.scss */
 .responsive-table td.borderTypeBottom--bd-fixed-fat {
   border-bottom: 2px solid #ddd;
 }
-/* line 113, ../scss/table-editor/app.scss */
+/* line 112, ../scss/table-editor/app.scss */
 .responsive-table td.borderTypeRight--bd-dotted {
   border-right: 1px dotted #ddd;
 }
-/* line 116, ../scss/table-editor/app.scss */
+/* line 115, ../scss/table-editor/app.scss */
 .responsive-table td.borderTypeBottom--bd-dotted {
   border-bottom: 1px dotted #ddd;
 }
-/* line 119, ../scss/table-editor/app.scss */
+/* line 118, ../scss/table-editor/app.scss */
+.responsive-table td.borderTypeRight--bd-none {
+  border-right: 0px none;
+}
+/* line 121, ../scss/table-editor/app.scss */
+.responsive-table td.borderTypeBottom--bd-none {
+  border-bottom: 0px none;
+}
+/* line 124, ../scss/table-editor/app.scss */
 .responsive-table td.backgroundColor--primary {
   background-color: #f4f4f4;
 }
 
-/* line 125, ../scss/table-editor/app.scss */
+/* line 130, ../scss/table-editor/app.scss */
 .modal-container-generic {
   position: fixed;
   top: 0;

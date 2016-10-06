@@ -41,7 +41,7 @@
       // On mousedown of choice element,
       // we don't want to display the dropdown list
       $chosen.find('.chosen-choices').bind('mousedown', function(event){
-        if ($(event.target).is('span')) {
+        if (!$(event.target).is('ul') ) {
           event.stopPropagation();
         }
       });

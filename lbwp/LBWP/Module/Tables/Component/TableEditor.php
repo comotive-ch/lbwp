@@ -137,6 +137,11 @@ class TableEditor extends Base
 
     $table = $this->handler->getTable($tableId);
 
+    // Additional containers, if not a new table
+    if ($isNew == 0) {
+      $html .= $this->getSettingsModals($table);
+    }
+
     WordPress::sendJsonResponse(array(
       'tableHtml' => $html,
       'tableConfig' => $this->handler->getConfig(),
@@ -205,6 +210,80 @@ class TableEditor extends Base
     // Close the table
     $html .= '</tbody></table>';
     WordPress::sendJsonResponse(array('html' => $html));
+  }
+
+  /**
+   * @return string html code for settings modals
+   */
+  protected function getSettingsModals($table)
+  {
+    $html = '';
+    $settings = $this->handler->getConfig();
+
+    // Create the modal for table settings
+    $html .= '
+      <div id="table-settings-container" class="modal-container-generic">
+        <h1>' . __('Tabellen-Einstellungen', 'lbwp') . '</h1>
+        ' . $this->getGenericSettingsHtml($settings['tableSettings'], false) . '
+        <a class="button save-table-settings">' . __('Speichern', 'lbwp') . '</a>
+        <a class="dashicons dashicons-no-alt button close-table-settings-modal"></a>
+      </div>
+    ';
+
+    // Create the modal for cell settings (used for row, col and cell settings)
+    $html .= '
+      <div id="cell-settings-container" class="modal-container-generic">
+        <h1 class="cell-settings-header header-type-cell">' . __('Zellen-Einstellungen', 'lbwp') . '</h1>
+        <h1 class="cell-settings-header header-type-row">' . __('Zeilen-Einstellungen', 'lbwp') . '</h1>
+        <h1 class="cell-settings-header header-type-column">' . __('Spalten-Einstellungen', 'lbwp') . '</h1>
+        ' . $this->getGenericSettingsHtml($settings['cellSettings'], true) . '
+        <input type="hidden" id="cellEditorType" value="" />
+        <input type="hidden" id="cellEditorId" value="" />
+        <a class="button save-cell-settings">' . __('Speichern', 'lbwp') . '</a>
+        <a class="dashicons dashicons-no-alt button close-cell-settings-modal"></a>
+      </div>
+    ';
+
+    return $html;
+  }
+
+  /**
+   * @param array $settings the settings to be displayed
+   * @param bool $addNoChangeValue adds a first option to all dropdowns
+   * @return string the html ti display the fields
+   */
+  protected function getGenericSettingsHtml($settings, $addNoChangeValue)
+  {
+    $html = '';
+
+    foreach ($settings as $setting) {
+      $html .= '
+        <div class="generic-setting">
+          <label for="' . $setting['key'] . '">' . $setting['label'] . '</label>
+          <div class="setting-element">
+      ';
+
+      // Decide how to render
+      switch ($setting['type']) {
+        case 'dropdown':
+          $html .= '<select name="' . $setting['key'] . '" id="' . $setting['key'] . '">';
+          // Is there a first option to be added
+          if ($addNoChangeValue) {
+            $html .= '<option value="0">' . __('Keine Änderung', 'lbwp') .'</option>';
+          }
+          // Add the options to be selected
+          foreach ($setting['selection'] as $key => $value) {
+            $html .= '<option value="' . $key . '">' . $value .'</option>';
+          }
+          $html .= '</select>';
+          break;
+      }
+
+      // Close the setting element and the setting contianer
+      $html .= '</div></div>';
+    }
+
+    return $html;
   }
 
   /**

@@ -121,14 +121,14 @@ LbwpTableEditor.Cells = {
 		return false;
 	},
 
-	/** TODO
+	/**
 	 * Shows the row settings (sames as cell settings, taken on all cells of the row)
 	 */
 	showRowSettings : function()
 	{
 		var button = jQuery(this);
 		var rowIndex = button.parent().data('row-settings');
-		alert('show settings for row: ' + rowIndex);
+		LbwpTableEditor.Interface.showCellSettings('row', true, rowIndex);
 	},
 
 	/**
@@ -195,14 +195,14 @@ LbwpTableEditor.Cells = {
 		}
 	},
 
-	/** TODO
+	/**
 	 * Shows the column settings (sames as cell settings, taken on all cells of the column)
 	 */
 	showColumnSettings : function()
 	{
 		var button = jQuery(this);
 		var colIndex = button.parent().data('col-settings');
-		alert('show settings for col: ' + colIndex);
+		LbwpTableEditor.Interface.showCellSettings('column', true, colIndex);
 	},
 
 	/**
@@ -273,15 +273,6 @@ LbwpTableEditor.Cells = {
 		}
 	},
 
-	/** TODO
-	 * Show the general table settings dialog
-	 */
-	showTableSettings : function()
-	{
-		alert('table-settings not implemented yet');
-		return false;
-	},
-
 	/**
 	 * On hovering onto a cell
 	 */
@@ -321,8 +312,77 @@ LbwpTableEditor.Cells = {
 		var button = jQuery(this);
 		// Get the cell id and make sure it is a splittable string
 		var cellId = button.closest('.cell-options').parent().data('cell') + '';
+		LbwpTableEditor.Interface.showCellSettings('cell', false, cellId);
+	},
 
-		alert('edit settings for cell: ' + cellId);
+	/**
+	 * Saves the cell, row or col settings depending on its context
+	 */
+	saveCellSettings : function()
+	{
+		var type = jQuery('#cellEditorType').val();
+		var id = jQuery('#cellEditorId').val();
+		var copy = LbwpTableEditor.Data.data;
+
+		// Get the new cell config from fields (leave 0 options alone)
+		var container = jQuery('#cell-settings-container');
+		var newSettings = {};
+		container.find('input[type=text],select').each(function() {
+			var element = jQuery(this);
+			var key = element.attr('id');
+			var value = element.val();
+
+			// If the value is valid, add to newSettings
+			if (value != 0 && value != '--no-change--') {
+				newSettings[key] = value;
+			}
+		});
+
+		// Save depending on type
+		switch (type) {
+			case 'column':
+				// Save the new config to all cells in the "id" column
+				var cell = null;
+				var rows = copy.length;
+				for (var x = 0;x < rows;++x) {
+					cellSettings = copy[x][id].settings;
+					LbwpTableEditor.Cells.applyCellSettings(cellSettings, newSettings);
+				}
+				break;
+			case 'row':
+				// Save the new config to all cells in the "id" row
+				var cell = null;
+				var cells = copy[id].length;
+				for (var x = 0;x < cells;++x) {
+					cellSettings = copy[id][x].settings;
+					LbwpTableEditor.Cells.applyCellSettings(cellSettings, newSettings);
+				}
+				break;
+			case 'cell':
+				// Save the new config to the cell relating to cellId=id
+				var c = LbwpTableEditor.Cells.getCoordsFromCellId(id);
+				var cellSettings = copy[c.x][c.y].settings;
+				LbwpTableEditor.Cells.applyCellSettings(cellSettings, newSettings);
+				break;
+		}
+
+		// Save everythign and close dialog
+		LbwpTableEditor.Interface.saveData(copy);
+		LbwpTableEditor.Interface.closeCellSettings();
+	},
+
+	/**
+	 * Applys newSettings into settings, if keys are existing
+	 * @param settings
+	 * @param newSettings
+	 */
+	applyCellSettings : function (settings, newSettings)
+	{
+		Object.keys(newSettings).forEach(function(key) {
+			if (settings.hasOwnProperty(key)) {
+				settings[key] = newSettings[key];
+			}
+		});
 	},
 
 	/**

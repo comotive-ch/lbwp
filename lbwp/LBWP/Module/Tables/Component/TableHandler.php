@@ -61,7 +61,7 @@ class TableHandler extends Base
           )
         ),
         array(
-          'key' => 'borderTypeLTop',
+          'key' => 'borderTypeTop',
           'label' => 'Oberer Rahmen',
           'type' => 'dropdown',
           'default' => 'bd-fixed',
@@ -132,7 +132,18 @@ class TableHandler extends Base
             'borderTypeTop' => 'bd-fixed',
             'tableDesign' => 'standard',
           ),
-          'data' => array()
+          'data' => array(
+            0 => array(
+              array(
+                'content' => 'Beispiel-Inhalt',
+                'settings' => array(
+                  'borderTypeRight' => 'bd-fixed',
+                  'borderTypeBottom' => 'bd-fixed',
+                  'backgroundColor' => 'transparent'
+                )
+              )
+            )
+          )
         )
       ),
       'simpleGenericTable' => array(

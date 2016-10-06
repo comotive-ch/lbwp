@@ -20,6 +20,10 @@ class HtmlColumnSpanning
    * @var LineColumnSpanning the instance
    */
   protected static $instance = NULL;
+  /**
+   * @var bool allows a developer to force spanning, even if not in loop
+   */
+  public static $forceSpanning = false;
 
   /**
    * Can only be called within init
@@ -57,7 +61,7 @@ class HtmlColumnSpanning
    */
   public function applyColumnSpanning($html)
   {
-    if (in_the_loop()) {
+    if (in_the_loop() || self::$forceSpanning) {
       $contentParts = array();
       // Try to split by one of the spanning tags
       foreach ($this->options['spanning_tags'] as $tag) {

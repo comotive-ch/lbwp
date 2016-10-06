@@ -55,6 +55,12 @@ class CrossReference
       $query['lang'] = $args['language'];
     }
 
+    // Set a callback for html generation (default none, simple title for each element)
+    $callback = array('\LBWP\Helper\MetaItem\PostTypeDropdown', 'defaultItemHtml');
+    if (isset($args['itemHtmlCallback']) && is_callable($args['itemHtmlCallback'])) {
+      $callback = $args['itemHtmlCallback'];
+    }
+
     // Add all posts as items from the references type
     $posts = get_posts($query);
 
@@ -63,6 +69,7 @@ class CrossReference
         'title' => PostTypeDropdown::getPostElementName($item),
         'data' => array(
           'url' => admin_url('post.php?post=' . $item->ID . '&action=edit&ui=show-as-modal'),
+          'html' => esc_attr(call_user_func($callback, $item, array())),
           'is-modal' => 1
         )
       );

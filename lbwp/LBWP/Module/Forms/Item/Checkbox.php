@@ -29,7 +29,9 @@ class Checkbox extends Base
     $this->paramConfig = ArrayManipulation::deepMerge($this->paramConfig, array(
       'content' => array(
         'name' => 'Auswahlmöglichkeiten',
-        'type' => 'textfieldArray'
+        'type' => 'textfieldArray',
+        'help' => 'Bitte geben Sie eine oder mehrere Möglichkeiten an.',
+        'separator' => Base::MULTI_ITEM_VALUES_SEPARATOR
       )
     ));
   }
@@ -70,14 +72,14 @@ class Checkbox extends Base
     $field = '';
     $values = $this->prepareContentValues($content);
 
-    foreach ($values as $value) {
+    foreach ($values as $key => $value) {
       $checked = '';
-      if (stristr($this->getValue($args), strip_tags($value))) {
+      if (stristr($this->getValue($args), strip_tags($key))) {
         $checked = ' checked="checked"';
       }
       $field .= '
         <label class="label-checkbox">
-          <input type="checkbox" value="' . strip_tags($value) . '"' . $attr . $checked . ' />
+          <input type="checkbox" value="' . strip_tags($key) . '"' . $attr . $checked . ' />
           <div class="beside-checkbox">' . $value . '</div>
         </label>
       ';
@@ -118,6 +120,12 @@ class Checkbox extends Base
    */
   public function getContent()
   {
-    return esc_attr(parent::getContent());
+    $content = parent::getContent();
+    // Convert old comma value to new separator if none given
+    if (stristr($content, self::MULTI_ITEM_VALUES_SEPARATOR) === false) {
+      $content = str_replace(',', self::MULTI_ITEM_VALUES_SEPARATOR, $content);
+    }
+
+    return esc_attr($content);
   }
 } 

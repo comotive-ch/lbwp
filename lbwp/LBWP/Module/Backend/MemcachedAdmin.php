@@ -56,6 +56,7 @@ class MemcachedAdmin extends \LBWP\Module\Base
       add_action('edited_term', array($this, 'onChangeImmediateFlush'), 200);
       add_action('delete_term', array($this, 'onChangeImmediateFlush'), 200);
       add_action('transition_comment_status', array($this, 'onCommentStatusChangeFlush'), 200, 3);
+      add_action('wp_insert_comment', array($this, 'onNewApprovedCommentFlush'), 200, 2);
       add_action('cron_job_flush_html_cache', array($this, 'onChangeImmediateFlush'), 200);
       add_action('customize_save_after', array($this, 'onChangeImmediateFlush'), 200);
     }
@@ -70,7 +71,18 @@ class MemcachedAdmin extends \LBWP\Module\Base
   public function onCommentStatusChangeFlush($newStatus, $oldStatus, $comment)
   {
     // Only if comment goes live or gets taken offline
-    if ($newStatus == 'approved' || $newStatus == 'unapproved') {
+    if ($newStatus == 'approved' || $newStatus == 'unapproved' || $newStatus == 'trash') {
+      $this->flushFrontendCache(false);
+    }
+  }
+
+  /**
+   * @param int $id the new comments id
+   * @param \WP_Comment $comment the comment object
+   */
+  public function onNewApprovedCommentFlush($id, $comment)
+  {
+    if ($id > 0 && $comment->comment_approved == 1) {
       $this->flushFrontendCache(false);
     }
   }

@@ -22,6 +22,7 @@ $lbwpTinyMceImageMarginBottomMobile: null !default;
 $lbwpTinyMceImageCaptionColor: null !default;
 $lbwpTinyMceImageCaptionFontWeight: null !default;
 $lbwpTinyMceImageCaptionFontSize: null !default;
+$lbwpTinyMceImageCaptionLineHeight: null !default;
 $lbwpTinyMceImageCaptionMargin: null !default;
 
 // calc margin top for floating images (with line-height and font-size, if given)
@@ -109,5 +110,6 @@ $lbwpTinyMceImageMarginTop: 0 !default;
 	color: $lbwpTinyMceImageCaptionColor;
 	font-weight: $lbwpTinyMceImageCaptionFontWeight;
 	font-size:  $lbwpTinyMceImageCaptionFontSize;
+	line-height: $lbwpTinyMceImageCaptionLineHeight;
 	margin: $lbwpTinyMceImageCaptionMargin;
 }

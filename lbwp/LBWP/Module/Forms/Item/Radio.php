@@ -30,7 +30,8 @@ class Radio extends Base
       'content' => array(
         'name' => 'Auswahlmöglichkeiten',
         'type' => 'textfieldArray',
-        'help' => 'Bitte geben Sie eine oder mehrere Möglichkeiten an.'
+        'help' => 'Bitte geben Sie eine oder mehrere Möglichkeiten an.',
+        'separator' => Base::MULTI_ITEM_VALUES_SEPARATOR
       )
     ));
   }
@@ -70,9 +71,9 @@ class Radio extends Base
     $numberOfRadios = 0;
     $values = $this->prepareContentValues($content);
 
-    foreach ($values as $value) {
+    foreach ($values as $key => $value) {
       $checked = '';
-      if ($this->getValue($args) == strip_tags($value)) {
+      if ($this->getValue($args) == strip_tags($key)) {
         $checked = ' checked="checked"';
       }
       $radioAttr = str_replace(
@@ -82,7 +83,7 @@ class Radio extends Base
       );
       $field .= '
         <label class="label-checkbox">
-          <input type="radio" value="' . strip_tags($value) . '"' . $radioAttr . $checked . ' />
+          <input type="radio" value="' . strip_tags($key) . '"' . $radioAttr . $checked . ' />
           <div class="beside-checkbox">' . $value . '</div>
         </label>
       ';
@@ -118,6 +119,12 @@ class Radio extends Base
    */
   public function getContent()
   {
-    return esc_attr(parent::getContent());
+    $content = parent::getContent();
+    // Convert old comma value to new separator if none given
+    if (stristr($content, self::MULTI_ITEM_VALUES_SEPARATOR) === false) {
+      $content = str_replace(',', self::MULTI_ITEM_VALUES_SEPARATOR, $content);
+    }
+
+    return esc_attr($content);
   }
-} 
+}

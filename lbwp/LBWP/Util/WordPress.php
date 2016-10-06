@@ -64,7 +64,7 @@ class WordPress
       if (is_array($value) && isset($config[$key])) {
         $mergedConfig[$key] = array_merge($defaults[$key], $config[$key]);
       } else {
-        $mergedConfig[$key] = $value;
+        $mergedConfig[$key] = isset($config[$key]) ? $config[$key] : $value;
       }
     }
 

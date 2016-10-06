@@ -160,34 +160,34 @@ LbwpFormEditor.Form = {
 	 */
 	loadEdits: function (key) {
 		var html = "";
-		var fields = LbwpFormEditor.Data.Items[key].params
+		var fields = LbwpFormEditor.Data.Items[key].params;
 		jQuery("[for^=" + key + "]").closest(".forms-item").addClass("selected");
 
-		for (var key in fields) {
+		for (var fieldKey in fields) {
 			var editField = "";
-			switch (fields[key].type) {
+			switch (fields[fieldKey].type) {
 				case "textfield":
-					editField = LbwpFormEditor.Form.getTextfield(fields[key]);
+					editField = LbwpFormEditor.Form.getTextfield(fields[fieldKey]);
 					break;
 				case "dropdown":
-					editField = LbwpFormEditor.Form.getDropdown(fields[key]);
+					editField = LbwpFormEditor.Form.getDropdown(fields[fieldKey]);
 					break;
 				case "radio":
-					editField = LbwpFormEditor.Form.getRadioButtons(fields[key]);
+					editField = LbwpFormEditor.Form.getRadioButtons(fields[fieldKey]);
 					break;
 				case "textfieldArray":
-					editField = LbwpFormEditor.Form.getTextfieldArray(fields[key]);
+					editField = LbwpFormEditor.Form.getTextfieldArray(fields[fieldKey]);
 					break;
 				case "textarea":
-					editField = LbwpFormEditor.Form.getTextarea(fields[key]);
+					editField = LbwpFormEditor.Form.getTextarea(fields[fieldKey]);
 					break;
 			}
-			var optin = fields[key].optin == 1 ? '<span class="edit-optin dashicons dashicons-edit" data-key="' + fields[key].key + '"></span>' : "";
-			var help = fields[key].help != undefined ? '<span class="helpText">' + fields[key].help + '</span><span class="help dashicons dashicons-editor-help"></span>' : "";
-			html += '<div class="lbwp-editField" data-key="' + fields[key].key + '">' + editField + optin + help + '</div>';
+			var optin = fields[fieldKey].optin == 1 ? '<span class="edit-optin dashicons dashicons-edit" data-key="' + fields[fieldKey].key + '"></span>' : "";
+			var help = fields[fieldKey].help != undefined ? '<span class="helpText">' + fields[fieldKey].help + '</span><span class="help dashicons dashicons-editor-help"></span>' : "";
+			html += '<div class="lbwp-editField" data-key="' + fields[fieldKey].key + '">' + editField + optin + help + '</div>';
 		}
 
-		LbwpFormEditor.Form.editEvents(html)
+		LbwpFormEditor.Form.editEvents(html, key)
 	},
 	/**
 	 * Returns html for a textfield
@@ -251,7 +251,8 @@ LbwpFormEditor.Form = {
 	 */
 	getTextfieldArray: function (field) {
 		var html = "";
-		var values = field.value.split(",");
+		var separator = (typeof(field.separator)) == 'string' ? field.separator : ',';
+		var values = field.value.split(separator);
 		html += "<label>" + field.name + "</label>";
 
 		for (var key in values) {
@@ -284,13 +285,13 @@ LbwpFormEditor.Form = {
 		var newElement = jQuery(e).prev().clone();
 		newElement.find('input').val('');
 		jQuery(e).before(newElement);
-		LbwpFormEditor.Form.editEvents('');
+		LbwpFormEditor.Form.editEvents('', '');
 	},
 
 	/**
 	 * All events related to the edit fields
 	 */
-	editEvents: function (html) {
+	editEvents: function (html, key) {
 		var time = 100;
 
 		// add html to field-settings, if given
@@ -369,8 +370,10 @@ LbwpFormEditor.Form = {
 					case "textfieldArray":
 						LbwpFormEditor.Data.Items[current].params[key].value = "";
 						jQuery(LbwpFormEditor.Core.itemFieldSelector).eq(key).find("input").each(function () {
-							LbwpFormEditor.Data.Items[current].params[key].value += jQuery(this).val() != "" ? jQuery(this).val() + "," : "";
-						})
+							var separator = LbwpFormEditor.Data.Items[current].params[key].separator;
+							if (typeof(separator) != 'string') separator = ',';
+							LbwpFormEditor.Data.Items[current].params[key].value += jQuery(this).val() != "" ? jQuery(this).val() + separator : "";
+						});
 						break;
 				}
 			}
@@ -391,5 +394,13 @@ LbwpFormEditor.Form = {
 			// Use this for select and input
 			jQuery(selector + ' input, ' + selector + ' select').removeAttr('disabled').removeAttr('readonly');
 		});
+
+		// If "spamschutz" field, hide the pflichtfeld option
+		var parts = key.split('_');
+		if (parts[0] == 'calculation') {
+			var container = jQuery('.lbwp-editField[data-key=pflichtfeld]');
+			container.find('input[value=ja]').trigger('click');
+			container.hide();
+		}
 	}
 };

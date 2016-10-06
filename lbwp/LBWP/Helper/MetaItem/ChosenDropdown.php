@@ -152,12 +152,16 @@ class ChosenDropdown
                       $(this).addClass("has-image");
                     }
                   }
+                  if($(option).data("html") && $(option).data("html").length > 0){
+                    $("span", this).after($(option).data("html"));
+                    $("span", this).remove();
+                  }
                 }
               });
 
               if (!hasModals) {
                 $("#' . $chosenKey . ' .search-choice-link").click(function(e){
-                  // chosen is registered on parent, stop the propagation, but don\'t prevent the default action (i.e. browswer link)
+                  // chosen is registered on parent, stop the propagation, but dont prevent the default action (i.e. browswer link)
                   e.stopPropagation();
                 });
               }
@@ -193,6 +197,7 @@ class ChosenDropdown
   {
     // Prepare some data for the html block
     $id = $key . '-newitem';
+    $typeDropdown = '';
     $attr = '
       data-post-id="' . $args['post']->ID . '"
       data-post-type="' . esc_attr($args['newItem']['postType']) . '"
@@ -201,11 +206,21 @@ class ChosenDropdown
       data-option-key="' . esc_attr($args['key']) . '"
     ';
 
+    // Add a dropdown for a type, if given
+    if (isset($args['metaDropdown'])) {
+      $typeDropdown = '<select id="' . $id . '-metaDropdown" name="metaDropdown" class="mbh-type-dropdown-inline" data-key="' . $args['metaDropdown']['key'] . '">';
+      foreach ($args['metaDropdown']['data'] as $key => $value) {
+        $typeDropdown .= '<option value="' . $key . '">' . $value . '</option>';
+      }
+      $typeDropdown .= '</select>';
+    }
+
     // Directly return the html block
     return '
       <div class="add-new-dropdown-item ' . $args['newItem']['containerClass'] . '">
         <label for="' . $id . '">' . $args['newItem']['title'] . ':</label>
         <input type="text" id="' . $id . '" value="" placeholder="Titel eingeben">
+        ' . $typeDropdown . '
         <a href="javascript:void(0);" class="button"' . $attr . '>Hinzufügen</a>
       </div>
     ';

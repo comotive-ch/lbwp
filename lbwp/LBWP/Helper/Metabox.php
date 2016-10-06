@@ -101,11 +101,14 @@ class Metabox
    */
   public function addMetabox($id, $title, $context = 'normal', $priority = 'default')
   {
+    // Create the metabox array item
     $this->metaboxes[$id] = array(
       'title' => $title,
       'context' => $context,
       'priority' => $priority
     );
+    // Prepare the field namespace
+    $this->fields[$id] = array();
   }
 
   /**
@@ -145,14 +148,11 @@ class Metabox
     }
 
     // Display the fields
-    if (is_array($this->fields[$id['args']])) {
+    if (is_array($this->fields[$id['args']]) && count($this->fields[$id['args']]) > 0) {
       foreach ($this->fields[$id['args']] as $field) {
         $field['args']['post'] = $post;
         $html .= call_user_func($field['display'], $field['args']);
       }
-    } else {
-      // Don't show a metabox that doesn't have fields
-      $html .= '<p>Dieser Metabox sind noch keine Felder zugewiesen.</p>';
     }
 
     echo $html;
@@ -387,6 +387,15 @@ class Metabox
   }
 
   /**
+   * @param string $boxId the box id
+   * @return bool true, if there are fields in this box
+   */
+  public function hasMetaboxFields($boxId)
+  {
+    return count($this->getBoxFields($boxId)) > 0;
+  }
+
+  /**
    * @return array of all fields / metabox combos
    */
   public function getFields()
@@ -478,11 +487,6 @@ class Metabox
    */
   public function addField($key, $boxId, array $args, $displayCb, $saveCb)
   {
-    // Create a namespace for the box, if not exists
-    if (!isset($this->fields[$boxId])) {
-      $this->fields[$boxId] = array();
-    }
-
     // Put the key into the args and save the field for later display/save
     $args['key'] = $key;
     $this->fields[$boxId][] = array(
@@ -1087,6 +1091,7 @@ class Metabox
   {
     $key = $args['post']->ID . '_' . $args['key'];
     $template = '';
+    $classes = array();
     if (isset($args['template'])) {
       $template = $args['template'];
     }
@@ -1121,6 +1126,12 @@ class Metabox
     $attr = ' style="width:' . $this->getWidth($args) . ';"';
     if (isset($args['required']) && $args['required']) {
       $attr .= ' required="required"';
+    }
+    if (isset($args['autosave_on_change']) && $args['autosave_on_change']) {
+      $classes[] = 'mbh-autosave-on-change';
+    }
+    if (count($classes) > 0) {
+      $attr .= ' class="' . implode(' ', $classes) . '"';
     }
     $description = '';
     if (isset($args['description'])) {

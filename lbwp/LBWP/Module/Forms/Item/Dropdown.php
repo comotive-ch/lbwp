@@ -33,7 +33,9 @@ class Dropdown extends Base
       ),
       'content' => array(
         'name' => 'Auswahlmöglichkeiten',
-        'type' => 'textfieldArray'
+        'type' => 'textfieldArray',
+        'help' => 'Bitte geben Sie eine oder mehrere Möglichkeiten an.',
+        'separator' => Base::MULTI_ITEM_VALUES_SEPARATOR
       )
     ));
   }
@@ -77,13 +79,13 @@ class Dropdown extends Base
       $field .= '<option value="">' . $this->params['first'] . '</option>';
     }
 
-    foreach ($values as $value) {
+    foreach ($values as $key => $value) {
       $selected = '';
-      if ($this->getValue($args) == strip_tags($value)) {
+      if ($this->getValue($args) == strip_tags($key)) {
         $selected = ' selected="selected"';
       }
       $field .= '
-        <option value="' . strip_tags($value) . '"' . $selected . '>' . $value . '</option>
+        <option value="' . strip_tags($key) . '"' . $selected . '>' . $value . '</option>
       ';
     }
 
@@ -119,6 +121,12 @@ class Dropdown extends Base
    */
   public function getContent()
   {
-    return esc_attr(parent::getContent());
+    $content = parent::getContent();
+    // Convert old comma value to new separator if none given
+    if (stristr($content, self::MULTI_ITEM_VALUES_SEPARATOR) === false) {
+      $content = str_replace(',', self::MULTI_ITEM_VALUES_SEPARATOR, $content);
+    }
+
+    return esc_attr($content);
   }
 } 

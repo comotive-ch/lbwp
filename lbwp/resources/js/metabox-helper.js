@@ -13,6 +13,7 @@ var MetaboxHelper = {
 		MetaboxHelper.handleDynamicPostHelper();
 		MetaboxHelper.handleInlineModal();
 		MetaboxHelper.handleAddingNewItems();
+		MetaboxHelper.handleAutosaving();
 	},
 
 	/**
@@ -151,6 +152,7 @@ var MetaboxHelper = {
 		jQuery('.add-new-dropdown-item a.button').on('click', function() {
 			var link = jQuery(this);
 			var input = link.closest('.add-new-dropdown-item').find('input');
+			var typeDropdown = link.closest('.add-new-dropdown-item').find('select[name=metaDropdown]');
 			var data = {
 				title : input.val(),
 				postId : link.data('post-id'),
@@ -159,6 +161,12 @@ var MetaboxHelper = {
 				optionKey : link.data('option-key'),
 				action : link.data('ajax-action')
 			};
+
+			// Add type information, if given
+			if (typeDropdown.length == 1) {
+				data.typeKey = typeDropdown.data('key');
+				data.typeValue = typeDropdown.val();
+			}
 
 			// Check if there is an input
 			if (data.title.length > 0 && data.postId > 0) {
@@ -171,6 +179,7 @@ var MetaboxHelper = {
 					select.trigger('chosen:ready');
 					// Remove the text from input
 					input.val('');
+					link.text('Hinzufügen');
 				});
 
 				// Set a waiting text and revert the error
@@ -178,6 +187,21 @@ var MetaboxHelper = {
 				input.removeClass('error');
 			} else {
 				input.addClass('error');
+			}
+		});
+	},
+
+	/**
+	 * Automatically fires a save function
+	 */
+	handleAutosaving : function()
+	{
+		jQuery('.mbh-autosave-on-change').change(function() {
+			var saveButton = jQuery('#save-post');
+			if (saveButton.length == 1) {
+				saveButton.trigger('click');
+			} else {
+				jQuery('#publish').trigger('click');
 			}
 		});
 	}
