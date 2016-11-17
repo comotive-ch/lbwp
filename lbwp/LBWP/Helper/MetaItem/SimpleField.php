@@ -24,6 +24,10 @@ class SimpleField
       $value = $args['default'];
     }
 
+    if (!isset($args['inputType'])) {
+      $args['inputType'] = 'text';
+    }
+
     // Default width
     $width = self::getWidth($args);
     if ($width == 'none') {
@@ -41,7 +45,7 @@ class SimpleField
 
     // Replace in the input field
     $input = '
-      <input type="text" id="' . $key . '" name="' . $key . '" value="' . esc_attr($value) . '"' . $attr . ' />
+      <input type="' . $args['inputType'] . '" id="' . $key . '" name="' . $key . '" value="' . esc_attr($value) . '"' . $attr . ' />
     ';
     $html = str_replace('{input}', $input, $html);
     return $html;

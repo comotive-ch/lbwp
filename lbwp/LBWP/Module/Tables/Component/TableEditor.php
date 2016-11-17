@@ -34,8 +34,8 @@ class TableEditor extends Base
 
     // Save functions and ajax is needed in admin generally
     if (is_admin()) {
+      add_action('wp_insert_post_data', array($this->handler, 'saveTableJson'));
       add_action('wp_insert_post_data', array($this->handler, 'handleHtmlConversion'));
-      add_action('save_post_' . Posttype::TABLE_SLUG, array($this->handler, 'saveTableJson'));
       add_action('wp_ajax_getTableInterfaceHtml', array($this, 'getInterfaceHtml'));
       add_action('wp_ajax_getBackendTableHtml', array($this, 'getBackendTableHtml'));
     }
@@ -136,6 +136,7 @@ class TableEditor extends Base
     ';
 
     $table = $this->handler->getTable($tableId);
+    $table = $this->handler->forceMissingSettings($table);
 
     // Additional containers, if not a new table
     if ($isNew == 0) {
@@ -169,11 +170,11 @@ class TableEditor extends Base
     $html .= '<td class="empty-settings-cell">&nbsp;<!--empty--></td>';
     foreach ($table['data'][0] as $colIndex => $column) {
       $html .= '
-        <td class="col-settings-cell" data-col-settings="' . $colIndex . '">
+        <td class="settings-cell col-settings-cell" data-col-settings="' . $colIndex . '">
           <a class="dashicons dashicons-admin-generic column-settings"></a>
-          <a class="dashicons dashicons-no column-delete"></a>
-          <a class="dashicons dashicons-arrow-left-alt column-move-left"></a>
-          <a class="dashicons dashicons-arrow-right-alt column-move-right"></a>
+          <a class="dashicons dashicons-trash column-delete"></a>
+          <a class="dashicons dashicons-arrow-left-alt2 column-move-left"></a>
+          <a class="dashicons dashicons-arrow-right-alt2 column-move-right"></a>
         </td>
       ';  
     }
@@ -184,11 +185,11 @@ class TableEditor extends Base
       $html .= '<tr data-row="' . $rowIndex . '">';
       // Add the settings cell
       $html .= '
-        <td data-row-settings="' . $rowIndex . '" class="row-settings-cell">
+        <td data-row-settings="' . $rowIndex . '" class="settings-cell row-settings-cell">
           <a class="dashicons dashicons-admin-generic row-settings"></a>
-          <a class="dashicons dashicons-no row-delete"></a>
-          <a class="dashicons dashicons-arrow-up-alt row-move-up"></a>
-          <a class="dashicons dashicons-arrow-down-alt row-move-down"></a>
+          <a class="dashicons dashicons-arrow-up-alt2 row-move-up"></a>
+          <a class="dashicons dashicons-arrow-down-alt2 row-move-down"></a>
+          <a class="dashicons dashicons-trash row-delete"></a>
         </td>
       ';
 
@@ -197,7 +198,7 @@ class TableEditor extends Base
         $html .= '
           <td data-cell="' . $rowIndex . '.' . $cellIndex . '" class="' . TableHandler::getCellClasses($cell) . '">
             <div class="cell-content">' . $cell['content'] . '</div>
-            <div class="cell-options">
+            <div class="cell-options row-actions">
               <a class="edit-cell-content">' . __('Bearbeiten', 'lbwp') . '</a> | 
               <a class="edit-cell-settings">' . __('Einstellungen', 'lbwp') . '</a>
             </div>
@@ -225,8 +226,8 @@ class TableEditor extends Base
       <div id="table-settings-container" class="modal-container-generic">
         <h1>' . __('Tabellen-Einstellungen', 'lbwp') . '</h1>
         ' . $this->getGenericSettingsHtml($settings['tableSettings'], false) . '
-        <a class="button save-table-settings">' . __('Speichern', 'lbwp') . '</a>
-        <a class="dashicons dashicons-no-alt button close-table-settings-modal"></a>
+        <a class="button button-primary save-table-settings">' . __('Speichern', 'lbwp') . '</a>
+        <a class="dashicons dashicons-no-alt button button-close close-table-settings-modal"></a>
       </div>
     ';
 
@@ -239,8 +240,8 @@ class TableEditor extends Base
         ' . $this->getGenericSettingsHtml($settings['cellSettings'], true) . '
         <input type="hidden" id="cellEditorType" value="" />
         <input type="hidden" id="cellEditorId" value="" />
-        <a class="button save-cell-settings">' . __('Speichern', 'lbwp') . '</a>
-        <a class="dashicons dashicons-no-alt button close-cell-settings-modal"></a>
+        <a class="button button-primary save-cell-settings">' . __('Speichern', 'lbwp') . '</a>
+        <a class="dashicons dashicons-no-alt button button-close close-cell-settings-modal"></a>
       </div>
     ';
 

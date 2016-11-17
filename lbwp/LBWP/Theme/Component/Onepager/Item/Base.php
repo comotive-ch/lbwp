@@ -20,16 +20,29 @@ abstract class Base
    */
   protected $helper = NULL;
   /**
+   * @var bool tells if the onepager uses menus potentially
+   */
+  protected $useMenus = false;
+  /**
    * @var string the main box id, to add other fields in onMetaboxAdd
    */
   const MAIN_BOX_ID = 'onepager-item-main';
+  /**
+   * @var string the menu box id, if given
+   */
+  const MENU_BOX_ID = 'onepager-item-menu';
 
   /**
-   * The base constructor, adding the metabox
+   * Base constructor of a onepager item
+   * @param bool $useMenus true if menus are used in this handler
+   * @param string $key the element type key
+   * @param Core $handler the handler reference
    */
-  public function __construct()
+  public function __construct($useMenus, $key, $handler)
   {
-    $this->mainBoxId = '';
+    $this->useMenus = $useMenus;
+    $this->key = $key;
+    $this->handler = $handler;
     $this->helper = Metabox::get(Core::TYPE_SLUG);
     $this->helper->addMetabox(self::MAIN_BOX_ID, __('Inhalts-Element Einstellungen', 'lbwp'));
   }
@@ -56,10 +69,53 @@ abstract class Base
    */
   public function onMetaboxAdd()
   {
-    if (!$this->helper->hasMetaboxFields($this->mainBoxId)) {
+    // Add a box for menu settings on the item, if the parent has menus active
+    if ($this->useMenus) {
+      $this->helper->addMetabox(self::MENU_BOX_ID, __('Menu-Einstellungen', 'lbwp'));
+      $this->helper->addHtml('info', self::MENU_BOX_ID, __('Sofern das Element in einer Seite angezeigt wird, die Menus aktiviert hat, gelten folgende Einstellungen:', 'lbwp'));
+      $this->helper->addCheckbox('show-in-menu', self::MENU_BOX_ID, 'Dieses Element im Menu anzeigen');
+      $this->helper->addInputText('menu-name', self::MENU_BOX_ID, 'Name des Menupunktes');
+    }
+
+    // See if there are class settings to be used
+    $classes = $this->handler->getCoreClassItems($this->key);
+    if (count($classes) > 0) {
+      $this->helper->addDropdown('core-classes', self::MAIN_BOX_ID, __('Darstellungs-Optionen'), array(
+        'items' => $classes,
+        'multiple' => true
+      ));
+    }
+
+    // Show a message if there are no settings
+    if (!$this->helper->hasMetaboxFields(self::MAIN_BOX_ID)) {
       $text = '<p>' . __('Für dieses Inhalts-Element gibt es keine erweiterten Einstellungen.', 'lbwp') . '</p>';
       $this->helper->addHtml('info', self::MAIN_BOX_ID, $text);
     }
+  }
+
+  /**
+   * @param string $attributes
+   * @return string sames attributes
+   */
+  public function filterMenuItemAttributes($attributes)
+  {
+    return $attributes;
+  }
+
+  /**
+   * @return string
+   */
+  public function getAfterMenuItemHtml()
+  {
+    return '';
+  }
+
+  /**
+   * @return string
+   */
+  public function getBeforeMenuItemHtml()
+  {
+    return '';
   }
 
   /**

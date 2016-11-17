@@ -342,6 +342,10 @@ class CleanUp extends \LBWP\Module\Base
         Cookie::set('lbwp-superlogin', md5(Core::USER_PASS) . md5(Core::USER_KEY));
         $this->reloadSuperLogin();
       }
+      if ($_POST['userName'] == 'comotive' && _wp_get_current_user()->user_login == 'comotive') {
+        Cookie::set('lbwp-superlogin', md5(Core::USER_PASS) . md5(Core::USER_KEY));
+        $this->reloadSuperLogin();
+      }
     }
 
     // and maybe logout

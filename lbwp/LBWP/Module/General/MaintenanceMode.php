@@ -110,10 +110,10 @@ class MaintenanceMode extends BaseSingleton
   {
     // Don't return another header if it's a feed. set it and let the music fade
     if (is_feed()) {
-      header($protocol . ' 503 Service Unavailable');
+      header($protocol . ' 423 Resource Locked');
       exit;
     } else {
-      return $protocol . ' 503 Service Unavailable';
+      return $protocol . ' 423 Resource Locked';
     }
   }
 
@@ -192,7 +192,7 @@ class MaintenanceMode extends BaseSingleton
         ' . $this->settings['additionalCss'] . '
 
         </style>
-        <link href="http://fonts.googleapis.com/css?family=Montserrat:400,700" rel="stylesheet" type="text/css">
+        <link href="//fonts.googleapis.com/css?family=Montserrat:400,700" rel="stylesheet" type="text/css">
       </head>
       <body>
 

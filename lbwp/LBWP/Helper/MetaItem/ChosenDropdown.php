@@ -25,6 +25,9 @@ class ChosenDropdown
   public static function displayDropdown($args)
   {
     $key = $args['post']->ID . '_' . $args['key'];
+    if (!isset($args['containerClasses'])) {
+      $args['containerClasses'] = 'chosen-dropdown-item';
+    }
     $html = Templates::get($args, $key);
     $isCrossReference = Strings::startsWith($key, $args['post']->ID . '_' . CrossReference::PREFIX);
 

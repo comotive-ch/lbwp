@@ -91,6 +91,10 @@ class WordPress
       $firewall = new \Comotive\Firewall\Defender();
       $firewall->checkIpSignature($signature, $testtime, $calls, $blocktime);
     }
+
+    // Independent if the signature has been checked, track a rating
+    lbwpTrackRating($signature, true);
+    lbwpTrackRating($signature);
   }
 
   /**

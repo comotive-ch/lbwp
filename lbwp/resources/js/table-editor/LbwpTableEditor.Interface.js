@@ -97,7 +97,6 @@ LbwpTableEditor.Interface = {
 
 		// Add the preview button event
 		jQuery('.table-preview-button').click(function() {
-			jQuery('#sample-permalink a').trigger('click');
 			window.open(jQuery('#sample-permalink a').attr('href'));
 			return false;
 		});
@@ -107,6 +106,7 @@ LbwpTableEditor.Interface = {
 			// Set hasChanges to false, so the user doesn't see a leave prompt
 			LbwpTableEditor.Core.hasChanges = false;
 			jQuery('#publish').trigger('click');
+			return false;
 		});
 	},
 
@@ -140,8 +140,8 @@ LbwpTableEditor.Interface = {
 		container.append(editor);
 
 		// Also, add close-, save buttons and hiddens
-		container.append('<a class="button save-cell-editor">' + LbwpTableEditor.Text.saveCellContent + '</a>');
-		container.append('<a class="dashicons dashicons-no-alt button editor-close-modal"></a>');
+		container.append('<a class="button button-primary save-cell-editor">' + LbwpTableEditor.Text.saveCellContent + '</a>');
+		container.append('<a class="dashicons dashicons-no-alt button button-close editor-close-modal"></a>');
 		container.append('<input type="hidden" id="editedCellId" value="" />');
 
 		// Add events onto the buttons
@@ -242,7 +242,7 @@ LbwpTableEditor.Interface = {
 
 		// Show the dialog itself now
 		container.css('bottom', 0);
-		jQuery('.media-modal-backdrop-mbh').fadeOut('fast');
+		jQuery('.media-modal-backdrop-mbh').fadeIn('fast');
 	},
 
 	/**
@@ -255,8 +255,9 @@ LbwpTableEditor.Interface = {
 		// Input the content into the editor
 		if (jQuery('.mce-container').is(':visible')) {
 			tinyMCE.activeEditor.setContent(html);
+			tinyMCE.activeEditor.focus();
 		} else {
-			jQuery('textarea.wp-editor-area').val(html)
+			jQuery('textarea.wp-editor-area').val(html).focus();
 		}
 
 		// Show the container

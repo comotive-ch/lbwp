@@ -24,6 +24,9 @@ class PostTypeDropdown
     if (!is_array($args['items'])) {
       $args['items'] = array();
     }
+    if (!isset($args['containerClasses'])) {
+      $args['containerClasses'] = 'chosen-dropdown-item post-type-dropdown';
+    }
 
     if (is_string($types)) {
       $types = array($types);

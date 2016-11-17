@@ -1056,4 +1056,37 @@ class Strings
       stristr($agent, 'ysearch/slurp') !== false
     );
   }
+
+  /**
+   * @param string $key the key
+   * @param string $value the value
+   * @param string $url the url to attach params
+   * @return string new url with attached param
+   */
+  public static function attachParam($key, $value, $url)
+  {
+    if (stristr($url, '?') === false) {
+      $url .= '?' . $key . '=' . urlencode($value);
+    } else {
+      $url .= '&' . $key . '=' . urlencode($value);
+    }
+
+    return $url;
+  }
+
+  /**
+   * @param string $hash the hash to attach or replace
+   * @param string $url the url to attach the hash to
+   * @return string url with hash
+   */
+  public static function attachHash($hash, $url)
+  {
+    // Only add a hash, if theree isn't one in the url
+    if (stristr($url, '#') === false) {
+      // Save to add new hash
+      $url .= '#' . $hash;
+    }
+
+    return $url;
+  }
 }

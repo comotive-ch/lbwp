@@ -20,7 +20,7 @@ class Cronjob
   {
     // Post the data to the master view
     $call = curl_init();
-    curl_setopt($call, CURLOPT_URL, 'http://' . MASTER_HOST . '/wp-content/plugins/lbwp/views/api/register-jobs.php');
+    curl_setopt($call, CURLOPT_URL, 'https://' . MASTER_HOST . '/wp-content/plugins/lbwp/views/api/register-jobs.php');
     curl_setopt($call, CURLOPT_POST, 1);
     curl_setopt($call, CURLOPT_RETURNTRANSFER, true);
     curl_setopt($call, CURLOPT_POSTFIELDS, http_build_query(array(

@@ -4,6 +4,7 @@ namespace LBWP\Module\Forms\Action;
 
 use LBWP\Module\Forms\Item\Textfield;
 use LBWP\Util\External;
+use LBWP\Util\File;
 use LBWP\Util\Strings;
 use LBWP\Util\WordPress;
 use LBWP\Util\ArrayManipulation;
@@ -31,6 +32,18 @@ class SendMail extends Base
     'help' => 'Sendet eine E-Mail mit den Formulardaten',
     'group' => 'Häufig verwendet'
   );
+  /**
+   * @var array list of email templates
+   */
+  protected $htmlTemplates = array();
+  /**
+   * @var string the default template key
+   */
+  const DEFAULT_TEMPLATE_KEY = 'default';
+  /**
+   * @var string the minimum template var
+   */
+  const MINIMUM_TEMPLATE_VAR = 'email-content';
 
   /**
    * Extend the parameter configuration for the editor
@@ -70,6 +83,27 @@ class SendMail extends Base
         'help' => 'Hier können Sie Ihren eigenen E-Mail Inhalte definieren. Bleibt das Feld leer, wird eine Tabelle der Formulardaten in der E-Mail angezegit. Wenn Sie die Formulardaten in Ihrem Inhalt verwenden möchten, setzen Sie den Platzhalter {lbwp:formContent} ein. Sie können auch Formularfelder verwenden indem Sie die Feld-ID z.B. wie folgt verwenden: {email_adresse}.'
       ),
     ));
+
+    // Define a basic single template for emails and let developers extend the array
+    $this->htmlTemplates = apply_filters('lbwp_email_action_templates', array(
+      self::DEFAULT_TEMPLATE_KEY => array(
+        'name' => 'Standard-Vorlage',
+        'file' => File::getResourcePath() . '/newsletter/zurb-emails-v2/lbwp-email/inlined.html'
+      )
+    ));
+
+    // Create the dropdown config from it
+    $templateConfig = array(
+      'name' => 'E-Mail Vorlage',
+      'type' => 'dropdown',
+      'help' => 'Die Design-Vorlage für die E-Mail. Gerne entwickeln wir Vorlagen nach individuelle Wünschen. <a href="mailto:support@comotive.ch">Melden Sie sich bei uns</a>!',
+      'values' => array()
+    );
+    foreach ($this->htmlTemplates as $key => $template) {
+      $templateConfig['values'][$key] = $template['name'];
+    }
+
+    $this->paramConfig['template'] = $templateConfig;
   }
 
   /**
@@ -128,55 +162,8 @@ class SendMail extends Base
       $replyTo = get_option('admin_email');
     }
 
-    // Table beginning
-    $table = '<table width="100%" cellpadding="5" cellspacing="0" border="0">';
-
-    // Loop trought the fields data
-    foreach ($data as $field) {
-      // Check the value
-      if (!isset($field['value']) || strlen($field['value']) == 0) {
-        $field['value'] = __('Nicht ausgefüllt', 'lbwp');
-      }
-
-      // Print the field
-      $table .= '
-        <tr>
-          <td width="25%">' . $field['name'] . ':</td>
-          <td width="75%">' . $field['value'] . '</td>
-        </tr>
-      ';
-    }
-
-    // Close the table and add to body
-    $table .= '</table>';
-    $html = '
-      <p>' . __('Ein Formular auf Ihrer Webseite wurde ausgefüllt', 'lbwp') . ':</p>
-      <br />
-      ' . $table . '
-      <p>' . __('Diese E-Mail wurde generiert am', 'lbwp') . ' ' . date_i18n('d.m.Y H:i:s') . '</p>
-    ';
-
-    // Add reply to address if valid
-    if (strlen($replyTo) > 0 && Strings::checkEmail($replyTo)) {
-      $mail->addReplyTo($replyTo);
-    } else {
-      // Add info Text, if there is no reply to defined
-      $html .= '<p>' . __('Zum Beantworten dieser E-Mail nutzen sie bitte die Weiterleiten Funktion und kopieren die E-Mail Adresse aus den Formulardaten, sofern der Besucher eine E-Mail Adresse angegeben hat.', 'lbwp') . '</p>';
-    }
-
-    // Set the actual body
-    if (strlen(trim($this->content)) == 0) {
-      $mail->Body = $html;
-    } else {
-      // Add content and form table, if needed
-      $this->content = wpautop(strip_tags(trim($this->content)));
-      $this->content = str_replace(self::FORM_CONTENT_VARIABLE, $table, $this->content);
-      // Add all fields, if given seperately
-      foreach ($data as $field) {
-        $this->content = str_replace('{' . $field['id'] . '}', $field['value'], $this->content);
-      }
-      $mail->Body = $this->content;
-    }
+    // Append email body with file html template
+    $this->appendMailBody($data, $mail, $replyTo);
 
     // Add attachment, if needed
     if (isset($this->params['anhang']) && Strings::checkURL($this->params['anhang'])) {
@@ -207,5 +194,95 @@ class SendMail extends Base
     // Send and assume it worked
     $mail->Send();
     return true;
+  }
+
+  /**
+   * @param array $data field data
+   * @param \PHPMailer $mail the email object by reference
+   * @param string $replyTo a reply to address
+   */
+  protected function appendMailBody($data, &$mail, $replyTo)
+  {
+    // Table beginning
+    $table = '<table width="100%" cellpadding="5" cellspacing="0" border="0">';
+
+    // Loop trought the fields data
+    foreach ($data as $field) {
+      // Check the value
+      if (!isset($field['value']) || strlen($field['value']) == 0) {
+        $field['value'] = __('Nicht ausgefüllt', 'lbwp');
+      }
+
+      // Print the field
+      $table .= '
+        <tr>
+          <td width="25%">' . $field['name'] . ':</td>
+          <td width="75%">' . $field['value'] . '</td>
+        </tr>
+      ';
+    }
+
+    // Close the table and add to body
+    $table .= '</table>';
+    $html = '
+      <p>' . __('Ein Formular auf Ihrer Webseite wurde ausgefüllt', 'lbwp') . ':</p>
+      <br />
+      ' . $table . '
+    ';
+
+    // Add reply to address if valid
+    if (strlen($replyTo) > 0 && Strings::checkEmail($replyTo)) {
+      $mail->addReplyTo($replyTo);
+    } else {
+      // Add info Text, if there is no reply to defined
+      $html .= '<p>' . __('Zum Beantworten dieser E-Mail nutzen sie bitte die Weiterleiten Funktion und kopieren die E-Mail Adresse aus den Formulardaten, sofern der Besucher eine E-Mail Adresse angegeben hat.', 'lbwp') . '</p>';
+    }
+
+    // Prepare the content variable
+    $email = array(
+      'subject' => $mail->Subject,
+      'meta' => __('Diese E-Mail wurde generiert am', 'lbwp') . ' ' . date_i18n('d.m.Y H:i:s'),
+      'content' => ''
+    );
+
+    // Create the email content block (Table only or content with table inside, eventually)
+    if (strlen(trim($this->content)) == 0) {
+      $email['content'] = $html;
+    } else {
+      // Add content and form table, if needed
+      $this->content = wpautop(strip_tags(trim($this->content)));
+      $this->content = str_replace(self::FORM_CONTENT_VARIABLE, $table, $this->content);
+      // Add all fields, if given seperately
+      foreach ($data as $field) {
+        $this->content = str_replace('{' . $field['id'] . '}', $field['value'], $this->content);
+      }
+      $email['content'] = $this->content;
+    }
+
+    $mail->Body = $this->getEmailTemplateBody($email);
+  }
+
+  /**
+   * @param array $variables the replace vars for the template
+   * @return string the finished html template
+   */
+  protected function getEmailTemplateBody($variables)
+  {
+    $template = $this->htmlTemplates[self::DEFAULT_TEMPLATE_KEY];
+    if (strlen($this->params['template']) > 0 && isset($this->htmlTemplates[$this->params['template']])) {
+      $template = $this->htmlTemplates[$this->params['template']];
+    }
+
+    // Get the actual file content and fallback to content only, if the template is missing
+    $template = file_get_contents($template['file']);
+    if (stristr($template, '{' . self::MINIMUM_TEMPLATE_VAR . '}') !== false) {
+      foreach ($variables as $key => $value) {
+        $template = str_replace('{email-' . $key . '}', $value, $template);
+      }
+    } else {
+      return $variables[self::MINIMUM_TEMPLATE_VAR];
+    }
+
+    return $template;
   }
 } 

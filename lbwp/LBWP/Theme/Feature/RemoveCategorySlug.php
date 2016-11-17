@@ -70,7 +70,14 @@ class RemoveCategorySlug
     $rules = array();
 
     // Get the categories (This retrieves all categories, if polylang)
-    $categories = get_categories(array('hide_empty' => false));
+    $categories = array();
+    if (Multilang::isActive()) {
+      foreach (Multilang::getAllLanguages() as $slug) {
+        $categories = array_merge($categories, get_categories(array('hide_empty' => false, 'lang' => $slug)));
+      }
+    } else {
+      $categories = get_categories(array('hide_empty' => false));
+    }
 
     // Go trough each category adding specific rules
     foreach ($categories as $category) {

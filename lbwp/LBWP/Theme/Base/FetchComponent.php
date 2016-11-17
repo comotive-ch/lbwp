@@ -211,7 +211,7 @@ abstract class FetchComponent extends Component
 
     // Define tags to remove, let user filter it
     $removedMetaTags = apply_filters('fetchComponent_removeCoreMetaTags', array(
-      'generator', 'title', 'description', 'keywords', 'og:(.+?)'
+      'generator', 'title', 'description', 'keywords', 'og:(.+?)', 'robots'
     ));
 
     // Replace all found elements with "nothing"

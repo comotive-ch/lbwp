@@ -5,6 +5,7 @@ namespace LBWP\Module\Backend;
 use LBWP\Core as LbwpCore;
 use LBWP\Util\ArrayManipulation;
 use LBWP\Util\Strings;
+use LBWP\Util\WordPress;
 
 /**
  * Migration Tools upon migration from dev to live mode
@@ -102,8 +103,59 @@ class MigrationTools extends \LBWP\Module\Base
         </p>
         ' . $this->displayTestForm() . '<br />
         ' . $this->displayExecutionForm() . '<br />
-        ' . $this->displayMetaAddForm() . '
+        ' . $this->displaySSLForm() . '<br />
+        ' . $this->displayMetaAddForm() . '<br />
 		  </div>
+    ';
+  }
+
+  /**
+   * SSL information form
+   */
+  protected function displaySSLForm()
+  {
+    $results = '';
+
+    // Run the info
+    if (isset($_GET['runSslInfo'])) {
+      foreach (array('src="http://') as $search) {
+        $results .= $this->searchData($search);
+      }
+    }
+
+    return '
+      <form method="post" action="?page=' . $_GET['page'] . '&runSslInfo">
+        <h3>SSL Migration</h3>
+        <p>Zeigt info, wo sich externe HTTP Ressourcen befinden (Durchsucht Posts, Meta)</p>
+        ' . $results . '
+        <p>
+          <input type="submit" name="cmdSslInfo" value="Unsicheren Content suchen" class="button-primary" />
+          <input type="button" name="cmdUrlMigration" value="Interne URLs migrieren" class="button" />
+          <input type="button" name="cmdCdnUrlMigration" value="CDN URLs migrieren" class="button" />
+          <input type="hidden" id="migratedHostName" value="' . getLbwpHost() . '" />
+          <input type="hidden" id="cdnType" value="' . CDN_TYPE . '" />
+          <input type="hidden" id="cdnHttpUrl" value="http://lbwp-cdn.sdd1.ch/' . ASSET_KEY . '/files/" />
+          <input type="hidden" id="cdnHttpsUrl" value="https://s3-eu-west-1.amazonaws.com/lbwp-cdn.sdd1.ch/' . ASSET_KEY . '/files/" />
+        </p>
+        <script type="text/javascript">
+          jQuery("input[name=cmdUrlMigration]").click(function() {
+            var host = jQuery("#migratedHostName").val();
+            var from = "http://" + host + "/";
+            var to = "https://" + host + "/";
+            jQuery("input[name=searchValue]").val(from);
+            jQuery("input[name=replaceValue]").val(to);
+          });
+          
+          jQuery("input[name=cmdCdnUrlMigration]").click(function() {
+            jQuery("input[name=searchValue]").val(jQuery("#cdnHttpUrl").val());
+            jQuery("input[name=replaceValue]").val(jQuery("#cdnHttpsUrl").val());
+          });
+          
+          if (jQuery("#cdnType").val() != ' . CDN_TYPE_AMAZONS3_EU . ') {
+            jQuery("input[name=cmdCdnUrlMigration]").hide();
+          }
+        </script>
+      </form>
     ';
   }
 
@@ -276,7 +328,69 @@ class MigrationTools extends \LBWP\Module\Base
         foreach ($results as $result) {
           $html .= '
             <tr>
-              <td>' . $result->id . '</td>
+              <td>' . $this->linkResult($result->id, $table) . '</td>
+              <td>' . $searchField . '</td>
+              <td>' . Strings::chopString(htmlentities($result->searchField), 500, true) . '</td>
+            </tr>
+          ';
+        }
+
+        if (count($results) == 0) {
+          $html .= '
+            <tr>
+              <td colspan="3">Keine betroffenen Datensätze gefunden</td>
+            </tr>
+          ';
+        }
+      }
+
+      // Close the table
+      $html .= '</table></p>';
+    }
+
+    return $html;
+  }
+
+  /**
+   * Tests data and prints a table with results for each field and table.
+   * This shows every field, altough only text fields are migrateable now.
+   */
+  protected function searchData($search)
+  {
+    // Define the SQL template
+    $sql = '
+      SELECT {sql:idField} AS id, {sql:searchField} AS searchField
+      FROM {sql:tableName} WHERE {sql:searchField} LIKE {searchValue}
+    ';
+
+    $html = '';
+    foreach ($this->tables as $table => $config) {
+      // Begin the table
+      $html .= '
+        <p>
+        <h3>Tabelle: ' . $table . '</h3>
+        <table width="100%" class="widefat fixed">
+          <tr>
+            <td width="80"><strong>' . $config['id'] . '</strong></td>
+            <td width="150"><strong>Feld</strong></td>
+            <td><strong>Inhalt</strong></td>
+          </tr>
+      ';
+
+      // Search the tables
+      foreach ($config['fields'] as $searchField => $type) {
+        $results = $this->wpdb->get_results(Strings::prepareSql($sql, array(
+          'idField' => $config['id'],
+          'searchField' => $searchField,
+          'tableName' => $table,
+          'searchValue' => '%' . $search . '%',
+        )));
+
+        // Display the resultset
+        foreach ($results as $result) {
+          $html .= '
+            <tr>
+              <td>' . $this->linkResult($result->id, $table) . '</td>
               <td>' . $searchField . '</td>
               <td>' . Strings::chopString(htmlentities($result->searchField), 500, true) . '</td>
             </tr>
@@ -409,5 +523,22 @@ class MigrationTools extends \LBWP\Module\Base
     $message = '<p>' . $counter . ' rows have been migrated in ' . $table . '.' . $keyField . '</p>';
 
     return $message;
+  }
+
+  /**
+   * @param $id
+   * @param $table
+   * @return string
+   */
+  protected function linkResult($id, $table)
+  {
+    $db = WordPress::getDb();
+    switch ($table) {
+      case $db->posts:
+        return '<a href="/wp-admin/post.php?post=' . $id . '&action=edit">' . $id . '</a>';
+        break;
+    }
+
+    return $id;
   }
 }

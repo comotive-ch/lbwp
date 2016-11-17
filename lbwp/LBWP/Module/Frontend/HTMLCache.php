@@ -317,6 +317,7 @@ class HTMLCache extends \LBWP\Module\Base
         'header' => array(),
         'host' => $_SERVER['HTTP_HOST'],
         'uri' => $_SERVER['REQUEST_URI'],
+        'is404' => is_404(),
         'expires' => $expireTime,
         'content' => $output
       );

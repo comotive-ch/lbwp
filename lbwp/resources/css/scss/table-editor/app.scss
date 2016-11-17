@@ -1,12 +1,13 @@
 @import "compass/css3";
+@import "../lib";
 
 // Settings container atop
 .settings-container {
 	width:100%;
 	overflow:auto;
-	border-bottom:1px solid #ccc;
-	padding:0px 0px 15px 0px;
-	margin-bottom:20px;
+	//border-bottom:1px solid #ccc;
+	padding:0px 0px 20px 0px;
+	//margin-bottom:20px;
 
 	&.bottom {
 		margin-top:20px;
@@ -26,9 +27,13 @@
 			float:left;
 		}
 
-		.setting-container select {
-			width:250px;
+		.setting-container {
+			margin-bottom: 5px;
+			select {
+				width:250px;
+			}
 		}
+
 	}
 
 	// The button block
@@ -138,6 +143,106 @@ $cellPrimaryBackground : #f4f4f4;
 	margin: auto;
 	z-index: 10010;
 	border: 1px solid #333;
-	padding: 0px;
+	padding: 10px 20px;
 	background-color: #F1F1F1;
+	// Primary button (save)
+	.button-primary {
+		position: absolute;
+		top: 20px;
+		right: 20px;
+	}
+	//todo use the same class for all these buttons
+	.button-close {
+		position: absolute;
+		right: -40px;
+		top: 0;
+		background: white;
+		font-size: 30px;
+		height: 30px;
+		width: 30px;
+		line-height: 1;
+		padding: 0;
+	}
+
+	h1 {
+		margin-bottom: 10px;
+	}
+
+	.generic-setting {
+		margin-bottom: 10px;
+	}
+}
+
+// Editor modal
+#editor-container {
+	padding-top: 65px;
+}
+
+// Column options
+
+// Hide unnecessary move icons (first and last)
+.responsive-table {
+	tr:nth-child(2) {
+		.row-move-up {
+			display: none;
+		}
+	}
+	tr:last-child {
+		.row-move-down {
+			display: none;
+		}
+	}
+}
+
+.first-settings-row {
+	td:nth-child(2) {
+		.column-move-left {
+			display: none;
+		}
+	}
+	td:last-child {
+		.column-move-right {
+			display: none;
+		}
+	}
+}
+.col-settings-cell {
+	text-align: center;
+}
+
+.column-settings {
+	float: left;
+}
+
+.row-settings-cell {
+	a[class*="row-move"] {
+		padding: 5px 0;
+	}
+}
+
+.settings-cell {
+	padding-left: 8px;
+	padding-right: 8px;
+
+	.dashicons {
+		color: #ccc;
+		//@include transition(color .5s, background .5s, opacity .5s);
+	}
+
+	&:hover {
+		.dashicons {
+			color: #333;
+			&:hover {
+				color: $wpBackendColorMainHover;
+			}
+		}
+	}
+
+	.column-delete {
+		float: right;
+	}
+	
+	.row-settings, .row-delete {
+		display: block;
+	}
 }

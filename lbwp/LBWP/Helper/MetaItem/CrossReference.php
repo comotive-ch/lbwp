@@ -39,7 +39,8 @@ class CrossReference
       'sortable' => true,
       'multiple' => true,
       'saveCallback' => array('\LBWP\Helper\MetaItem\CrossReference', 'saveCallback'),
-      'items' => array()
+      'items' => array(),
+      'containerClasses' => 'chosen-dropdown-item cross-reference-item'
     );
 
     $query = array(

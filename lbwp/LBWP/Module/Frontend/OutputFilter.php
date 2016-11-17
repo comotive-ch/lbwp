@@ -36,6 +36,10 @@ class OutputFilter extends \LBWP\Module\Base
    * The cloudfront domain
    */
   const CLOUDFRONT_DOMAIN = 'd26bapchbjra74.cloudfront.net';
+  /**
+   * The late head conten variable
+   */
+  const LATE_HEAD_CONTENT_VARIABLE = '<!--HEAD-CONTENT-VAR-->';
 
   /**
    * call parent constructor and initialize the module
@@ -90,14 +94,16 @@ class OutputFilter extends \LBWP\Module\Base
       $this->disableEmojiAssets();
     }
 
-    // Allow to print output on post type single headers
-    add_action('wp_head', array($this, 'runSingularHeadFilters'));
+    // Allow to print output on post type single headers and do various stuff in header
+    add_action('wp_head', array($this, 'addHeaderFilters'));
     // Register JSON LD output for posts
     add_action('wp_head_single_post', array('\LBWP\Helper\Tracking\MicroData', 'printArticleData'));
     // Remove CSS identifiers
     add_filter('output_buffer', array($this, 'removeCssIdentifiers'), 8200);
     // Replace some super global template variables
     add_filter('output_buffer', array($this, 'replaceTemplateVariables'), 8300);
+    // Print late head content by using filters
+    add_filter('output_buffer', array($this, 'printLateHeadContent'), 8400);
   }
 
   /**
@@ -108,6 +114,19 @@ class OutputFilter extends \LBWP\Module\Base
   {
     $classes[] = 'lang-' . Multilang::getCurrentLang();
     return $classes;
+  }
+
+  /**
+   * @param $html
+   * @return mixed
+   */
+  public function printLateHeadContent($html)
+  {
+    return str_replace(
+      self::LATE_HEAD_CONTENT_VARIABLE,
+      apply_filters('add_late_head_content', ''),
+      $html
+    );
   }
 
   /**
@@ -447,6 +466,16 @@ class OutputFilter extends \LBWP\Module\Base
     }
 
     return $value;
+  }
+
+  /**
+   * Run various wp_head start
+   */
+  public function addHeaderFilters()
+  {
+    $this->runSingularHeadFilters();
+    // Add a template comment that is much later replaced in an output buffer
+    echo self::LATE_HEAD_CONTENT_VARIABLE;
   }
 
   /**

@@ -24,6 +24,17 @@ class CmsFeatures extends \LBWP\Module\Base
    */
   protected static $lastFromEmail = '';
   /**
+   * @var array overrides for the yoast wpseo_titles option
+   */
+  protected $yoastTitlesOverrides = array(
+    'hideeditbox-lbwp-form' => true,
+    'hideeditbox-lbwp-table' => true,
+    'hideeditbox-lbwp-list' => true,
+    'hideeditbox-lbwp-listitem' => true,
+    'hideeditbox-lbwp-snippet' => true,
+    'hideeditbox-lbwp-onepager-item' => true
+  );
+  /**
    * call parent constructor and initialize the module
    */
   public function __construct()
@@ -50,6 +61,9 @@ class CmsFeatures extends \LBWP\Module\Base
       add_action('sidebar_admin_setup', array('LBWP\Module\General\Cms\WidgetEditor', 'getInstance'));
       add_filter('admin_body_class', array($this, 'addAdminBodyClasses'));
       add_filter('mce_external_plugins', array($this, 'loadEditorPlugins'));
+      add_filter('option_wpseo_titles', array($this, 'mergeYoastTitleDefaults'));
+      // Allow yoast seo title overrides
+      $this->yoastTitlesOverrides = apply_filters('lbwp_yoast_seo_title_override', $this->yoastTitlesOverrides);
     } else {
       // Frontend features
       $url = File::getResourceUri() . '';
@@ -120,6 +134,7 @@ class CmsFeatures extends \LBWP\Module\Base
     add_action('widgets_init', array($this, 'registerGlobalWidgets'));
     add_filter('wp_mail_from', array($this, 'replaceEmailFrom'), 50);
     add_action('phpmailer_init', array($this, 'addReplyToEmail'), 50);
+    add_action('shutdown', array($this, 'trackUncachedResponseTime'));
   }
 
   /**
@@ -519,10 +534,29 @@ class CmsFeatures extends \LBWP\Module\Base
   }
 
   /**
+   * Hide yoast seo crap on our internal types
+   * @param array $option
+   * @return mixed
+   */
+  public function mergeYoastTitleDefaults($option)
+  {
+    return array_merge($option, $this->yoastTitlesOverrides);
+  }
+
+  /**
    * Called at the rss_ns filter to print an additional media-rss namespace
    */
   public function addRssNamespace()
   {
     echo 'xmlns:media="http://search.yahoo.com/mrss/" ';
+  }
+
+  /**
+   * Tracks uncached response times
+   */
+  public function trackUncachedResponseTime()
+  {
+    global $lbwpTime;
+    \StatsD::gauge('lbwp.gauges.requests.uncached', (microtime(true) - $lbwpTime) * 1000);
   }
 }

@@ -69,7 +69,7 @@
 	}
 }
 
-@mixin lbwp-clearfix-pseudoele() {
+@mixin lbwpClearfixPseudoele() {
 	visibility: hidden;
 	display: block;
 	font-size: 0;
@@ -78,10 +78,20 @@
 	height: 0;
 }
 
-@mixin lbwp-clearfix() {
+@mixin lbwpClearfix() {
 	&:after {
 		@include lbwp-clearfix-pseudoele();
 	}
+}
+
+// deprecated, use lbwpClearfixPseudoele
+@mixin lbwp-clearfix-pseudoele() {
+	@include lbwpClearfixPseudoele;
+}
+
+// deprecated, use lbwpClearfix
+@mixin lbwp-clearfix() {
+	@include lbwpClearfix;
 }
 
 @mixin link-style($color:$colorMain,$colorHover:$color) {

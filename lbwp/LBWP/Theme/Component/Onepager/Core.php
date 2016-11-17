@@ -21,7 +21,6 @@ abstract class Core extends BaseComponent
    * @var array the types that are allowed to use the onepager logic
    */
   protected $types = array('page');
-
   /**
    * @var array the list of possible items to use
    */
@@ -31,13 +30,12 @@ abstract class Core extends BaseComponent
       'class' => '\LBWP\Theme\Component\Onepager\Item\SimpleContent'
     )
   );
-
   /**
    * @var array the basic templates around items
    */
   protected $templates = array(
     'container' => '
-      <div class="lbwp-onepager-contaner">
+      <div class="lbwp-onepager-container">
         {items}
       </div>
     ',
@@ -46,9 +44,41 @@ abstract class Core extends BaseComponent
         <a name="{itemSlug}"></a>
         {itemContent}
       </section>
+    ',
+    'menu' => '
+      <nav class="lbwp-onepager-menu">
+        <ul>
+          {items}
+        </ul>
+      </nav>
+    ',
+    'menu-item' => '
+      <li {itemAttributes}>
+        {itemBeforeLink}
+        <a href="{itemLink}">{itemName}</a>
+        {itemAfterLink}
+      </li>
     '
   );
-
+  /**
+   * Can be used to provide a dropdown (multi) of classes on a onepager element.
+   * Use "core" key to add classes for every item and the item-key for specific classes.
+   * Example usage of two core classes and classes for certain types
+   * array(
+   *   // for all elements
+   *   'core' => array(
+   *     'tiles-background' => 'Hintergrund mit Kacheln',
+   *     'negative-top-margin' => 'In vorheriges Element schieben (Negativ-Margin)'
+   *   ),
+   *   // Only for the simple-content element
+   *   'simple-content' => array(
+   *     'gallery-small' => 'Galerie: Kleine Bilder',
+   *     'gallery-large' => 'Galerie: Slider in voller Breite'
+   *   )
+   * )
+   * @var array
+   */
+  protected $classSettings = array();
   /**
    * @var array actual instances of items, keyed by post ids
    */
@@ -57,6 +87,22 @@ abstract class Core extends BaseComponent
    * @var string the item class
    */
   protected $itemClass = '';
+  /**
+   * @var bool tells if the current menu has menus enabled
+   */
+  protected $currentBackendHasMenusEnabled = false;
+  /**
+   * @var bool needs to be overridden, if menu features are being used
+   */
+  protected $useMenus = false;
+  /**
+   * @var bool tells if a menu has already been displayed
+   */
+  protected $displayedMenu = false;
+  /**
+   * @var string can be overridden: If set, the page template is preselected automatically
+   */
+  protected $autoSetPageTemplate = '';
   /**
    * The slug of one pager post items
    */
@@ -83,6 +129,7 @@ abstract class Core extends BaseComponent
     // Execute item metaboxes, if an item admin is displayed
     add_action('admin_init', array($this, 'executeItemMetaboxes'));
     add_action('save_post', array($this, 'executeItemMetaboxes'));
+    add_action('save_post_page', array($this, 'addAutoTemplate'));
   }
 
   /**
@@ -141,6 +188,7 @@ abstract class Core extends BaseComponent
       // If the checkbox is active, add full stuff
       if ($postId > 0) {
         $onepagerActive = get_post_meta($postId, 'onepager-active', true) == 'on';
+        $this->currentBackendHasMenusEnabled = get_post_meta($postId, 'onepager-activate-menu', true) == 'on';
         // If the onepager is active, add / remove everything needed
         if ($onepagerActive) {
           remove_post_type_support($type, 'editor');
@@ -150,12 +198,28 @@ abstract class Core extends BaseComponent
           $helper->addPostTypeDropdown('elements', $boxId, 'Inhalte', self::TYPE_SLUG, array(
             'sortable' => true,
             'multiple' => true,
+            'containerClasses' => 'chosen-dropdown-item one-pager-content',
             'itemHtmlCallback' => array($this, 'getChoosenItemHtml'),
             'metaDropdown' => array(
               'key' => 'element-type',
               'data' => $this->getNamedKeys()
             )
           ));
+
+          // IF menus are active, add another metabox for it
+          if ($this->useMenus) {
+            $boxId = $type . '_onepager-menu';
+            $helper->addMetabox($boxId, 'Menu für den Onepager', 'normal', 'high');
+            $helper->addCheckbox('onepager-activate-menu', $boxId, 'Automatisches Menu anzeigen');
+            $helper->addCheckbox('onepager-has-home-menu', $boxId, 'Zusätzlicher erster Menupunkt (z.B Home)');
+            $helper->addInputText('onepager-home-menu-name', $boxId, 'Titel des ersten Menupunkt');
+            $helper->addDropdown('onepager-home-type', $boxId, 'Verhalten des Menupunktes', array(
+              'items' => array(
+                'scroll-top' => 'Nach oben springen/scrollen',
+                'reload' => 'Seite neu laden'
+              )
+            ));
+          }
         }
       }
     }
@@ -178,7 +242,7 @@ abstract class Core extends BaseComponent
         if (isset($this->items[$type])) {
           /** @var BaseItem $element */
           $class = $this->items[$type]['class'];
-          $element = new $class();
+          $element = new $class($this->useMenus, $type, $this);
           $element->onMetaboxAdd();
         }
       }
@@ -252,6 +316,20 @@ abstract class Core extends BaseComponent
   }
 
   /**
+   * Automatically set the template, if needed
+   * @param int $postId
+   */
+  public function addAutoTemplate($postId)
+  {
+    $isActive = get_post_meta($postId, 'onepager-active', true) == 'on' || $_POST[$postId . '_onepager-active'] == 'on';
+    $alreadyDone = get_post_meta($postId, 'automatically_set_template', true);
+    if ($isActive && !$alreadyDone && strlen($this->autoSetPageTemplate) > 0) {
+      update_post_meta($postId, '_wp_page_template', $this->autoSetPageTemplate);
+      update_post_meta($postId, 'automatically_set_template', true);
+    }
+  }
+
+  /**
    * Add the actual item type to an item after creating a new element
    * @param int $postId the post id of the new item
    * @param string $type the post type to check
@@ -264,6 +342,55 @@ abstract class Core extends BaseComponent
   }
 
   /**
+   * @param array $items
+   * @return string
+   */
+  public function getItemsHtml($items)
+  {
+    $html = '';
+    // If menus are active and there is a menu to display
+    if ($this->useMenus && !$this->displayedMenu) {
+      $html .= $this->getMenuHtml();
+    }
+
+    if (is_array($items) && count($items) > 0) {
+      // Get item html and wrap in template
+      foreach ($items as $element) {
+        // Create the html output
+        $elementHtml = $element->getHtml();
+        if (strlen($elementHtml) > 0) {
+          // Set attributes of the item
+          $attributes = '';
+          $item = $element->getPost();
+          $classes = get_post_class($this->itemClass, $item->ID);
+          $classes[] = get_post_meta($item->ID, 'item-type', true);
+          // Add and merge core classes, if given
+          $coreClasses = get_post_meta($item->ID, 'core-classes');
+          if (is_array($coreClasses) && count($coreClasses) > 0) {
+            $classes = array_merge($classes, $coreClasses);
+          }
+          if (count($classes) > 0) {
+            $attributes .= ' class="' . implode(' ', $classes) . '"';
+          }
+
+          $html .= Templating::getBlock($this->templates['item'], array(
+            '{itemAttributes}' => trim($attributes),
+            '{itemSlug}' => $item->post_name,
+            '{itemContent}' => $elementHtml,
+          ));
+        }
+      }
+    }
+
+    // Wrap the output into the container
+    return Templating::getContainer(
+      $this->templates['container'],
+      $html,
+      '{items}'
+    );
+  }
+
+  /**
    * Shortcode to output the actual one pager content
    */
   public function getPageHtml()
@@ -271,30 +398,77 @@ abstract class Core extends BaseComponent
     // Get the parent object to load the items
     $parent = WordPress::getPost();
     $items = $this->getItems($parent->ID);
+    return $this->getItemsHtml($items);
+  }
 
+  /**
+   * @return string the menu html of a onepager, if given
+   */
+  public function getMenuHtml()
+  {
+    // Get the parent object to load the items
+    $parent = WordPress::getPost();
+
+    if ($this->displayedMenu || get_post_meta($parent->ID, 'onepager-activate-menu', true) != 'on') {
+      return '';
+    }
+
+    // Get the actual items
     $html = '';
+    $items = $this->getItems($parent->ID);
+
+    // Create the home item if needed
+    if (get_post_meta($parent->ID, 'onepager-activate-menu', true) == 'on') {
+      // Decide how it works
+      switch (get_post_meta($parent->ID, 'onepager-home-type', true)) {
+        case 'scroll-top':
+          $url = 'javascript:window.scrollTo(0,0);';
+          break;
+        case 'reload':
+        default:
+          $url = get_permalink($parent->ID);
+          break;
+      }
+
+      // Create the menu item
+      $html .= Templating::getBlock($this->templates['menu-item'], array(
+        '{itemAttributes}' => 'class="menu-item home"',
+        '{itemLink}' => $url,
+        '{itemName}' => get_post_meta($parent->ID, 'onepager-home-menu-name', true),
+        '{itemBeforeLink}' => '',
+        '{itemAfterLink}' => '',
+      ));
+    }
+
     if (is_array($items) && count($items) > 0) {
       // Get item html and wrap in template
       foreach ($items as $element) {
-        // Set attributes of the item
-        $attributes = '';
-        $classes = get_post_class($this->itemClass, $element->getPost()->ID);
-        if (count($classes) > 0) {
-          $attributes .= ' class="' . implode(' ', $classes) . '"';
+        $item = $element->getPost();
+        // Skip if not configured to show
+        if (get_post_meta($item->ID, 'show-in-menu', true) != 'on') {
+          continue;
         }
 
-        // Create the html output
-        $html .= Templating::getBlock($this->templates['item'], array(
-          '{itemAttributes}' => trim($attributes),
-          '{itemSlug}' => $element->getPost()->post_name,
-          '{itemContent}' => $element->getHtml(),
+        // Create the attributes
+        $attributes = 'class="menu-item ' . get_post_meta($item->ID, 'item-type', true) . ' ' . $item->post_name . '"';
+
+        // Create the html block
+        $html .= Templating::getBlock($this->templates['menu-item'], array(
+          '{itemAttributes}' => trim($element->filterMenuItemAttributes($attributes)),
+          '{itemLink}' => '#' . $item->post_name,
+          '{itemName}' => get_post_meta($item->ID, 'menu-name', true),
+          '{itemBeforeLink}' => $element->getBeforeMenuItemHtml(),
+          '{itemAfterLink}' => $element->getAfterMenuItemHtml(),
         ));
       }
     }
 
+    // Remember, that we already did this once
+    $this->displayedMenu = true;
+
     // Wrap the output into the container
     return Templating::getContainer(
-      $this->templates['container'],
+      $this->templates['menu'],
       $html,
       '{items}'
     );
@@ -312,13 +486,26 @@ abstract class Core extends BaseComponent
       $image = '<img src="' . WordPress::getImageUrl(get_post_thumbnail_id($item->ID), 'thumbnail') . '">';
     }
 
+    $additional = '';
+    if ($this->currentBackendHasMenusEnabled) {
+      // See if it should be shown in the menu
+      $showInMenu = __('Nein', 'lbwp');
+      $menuName = '';
+      if (get_post_meta($item->ID, 'show-in-menu', true) == 'on') {
+        $showInMenu = __('Ja', 'lbwp');
+        $menuName = '<p class="mbh-post-info">' . __('Name des Menupunktes', 'lbwp') . ': ' . get_post_meta($item->ID, 'menu-name', true) . '</p>';
+      }
+      $additional .= '<p class="mbh-post-info">' . __('Im Menu anzeigen', 'lbwp') . ': ' . $showInMenu . '</p>' . $menuName;
+    }
+
     return '
       <div class="mbh-chosen-inline-element">
         ' . $image . '
         <h2>' . PostTypeDropdown::getPostElementName($item, $typeMap) . '</h2>
-        <p class="mbh-post-info">Autor: ' . get_the_author_meta('display_name', $item->post_author) . '</p>
-        <p class="mbh-post-info">Letzte Änderung: ' . Date::convertDate(Date::SQL_DATETIME, Date::EU_DATE, $item->post_modified) . '</p>
-        <p class="mbh-post-info">Inhalts-Typ: ' . $this->getItemTypeName($item->ID) . '</p>
+        <p class="mbh-post-info">' . __('Autor', 'lbwp') . ': ' . get_the_author_meta('display_name', $item->post_author) . '</p>
+        <p class="mbh-post-info">' . __('Letzte Änderung', 'lbwp') . ': ' . Date::convertDate(Date::SQL_DATETIME, Date::EU_DATE, $item->post_modified) . '</p>
+        <p class="mbh-post-info">' . __('Inhalts-Typ', 'lbwp') . ': ' . $this->getItemTypeName($item->ID) . '</p>
+        ' . $additional . '
       </div>
     ';
   }
@@ -354,11 +541,11 @@ abstract class Core extends BaseComponent
       // Load data of each element, but only execute published ones
       foreach ($elements as $postId) {
         $postObject = get_post($postId);
-        if ($postObject->post_status == 'publish') {
+        if ($postObject->post_status == 'publish' || current_user_can('edit_posts')) {
           $type = get_post_meta($postId, 'item-type', true);
           /** @var BaseItem $element */
           $class = $this->items[$type]['class'];
-          $element = new $class();
+          $element = new $class($this->useMenus, $type, $this);
           $element->setPost($postObject);
           $this->instances[$postId] = $element;
         }
@@ -366,6 +553,44 @@ abstract class Core extends BaseComponent
     }
 
     return $this->instances;
+  }
+
+  /**
+   * @param array $elements list of one pager item ids
+   */
+  public function getItemsByIdList($elements)
+  {
+    $items = array();
+    foreach ($elements as $postId) {
+      $postObject = get_post($postId);
+      $type = get_post_meta($postId, 'item-type', true);
+      /** @var BaseItem $element */
+      $class = $this->items[$type]['class'];
+      $element = new $class(false, $type, $this);
+      $element->setPost($postObject);
+      $items[$postId] = $element;
+    }
+
+    return $items;
+  }
+
+  /**
+   * @param string $key the item key
+   * @return array a listof useable core classes
+   */
+  public function getCoreClassItems($key)
+  {
+    $classes = array();
+    $keyList = array('core', $key);
+
+    // See if there are mergeable classes for the item
+    foreach ($keyList as $classKey) {
+      if (isset($this->classSettings[$classKey])) {
+        $classes = array_merge($this->classSettings[$classKey], $classes);
+      }
+    }
+
+    return $classes;
   }
 
   /**

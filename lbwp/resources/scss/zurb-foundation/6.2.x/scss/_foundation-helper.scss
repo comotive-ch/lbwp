@@ -1,5 +1,9 @@
+@function foundationHelperGetBreakpointValue($map, $key) {
+	@return -zf-get-bp-val($map, $key);
+}
+
 @function foundationHelperColumnGutter($size:'small') {
-	@return -zf-get-bp-val($grid-column-gutter, $size);
+	@return foundationHelperGetBreakpointValue($grid-column-gutter, $size);
 }
 
 @function foundationHelperHeadingSize($heading: 'h1', $size:'small') {

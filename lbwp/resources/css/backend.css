@@ -3,8 +3,8 @@ body.modal-backend {
   margin-top: -32px;
 }
 /* line 7, scss/backend.scss */
-body.modal-backend #wpadminbar, body.modal-backend #adminmenuback, body.modal-backend #adminmenuwrap, body.modal-backend .page-title-action, body.modal-backend #wpfooter,
-body.modal-backend #view-post-btn, body.modal-backend #delete-action, body.modal-backend #minor-publishing-actions {
+body.modal-backend #wpadminbar, body.modal-backend #adminmenuback, body.modal-backend #adminmenuwrap, body.modal-backend .page-title-action,
+body.modal-backend #view-post-btn, body.modal-backend #delete-action, body.modal-backend #wpfooter {
   display: none;
 }
 /* line 12, scss/backend.scss */

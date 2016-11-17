@@ -197,6 +197,9 @@ class FormHandler extends Base
     $formDisplayId = $this->currentForm->ID . '-' . (++$this->idDistinguisher);
     if (isset($args['id']) && strlen($args['id']) > 0) {
       $formDisplayId = $args['id'];
+      // Set a correct id so it doesn't get mixed up with "normal" forms
+      $this->currentForm = new \stdClass();
+      $this->currentForm->ID = $formDisplayId;
     }
 
     // See if the form has been sent, and execute the actions

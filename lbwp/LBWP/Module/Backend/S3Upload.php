@@ -145,6 +145,7 @@ class S3Upload extends \LBWP\Module\Base
     $s3 = AwsFactory::getS3Service();
     $opts = array('curlopts' => array(CURLOPT_SSL_VERIFYPEER => false));
     // Delete it.
+    $filename = str_replace(Core::getCdnProtocol() . '://' . Core::getCdnName() . '/', '', $filename);
     $s3->delete_object(CDN_BUCKET_NAME, $filename, $opts);
   }
 
@@ -264,6 +265,25 @@ class S3Upload extends \LBWP\Module\Base
   }
 
   /**
+   * @param array $file entry from $_FILES
+   * @return string the final url of the file
+   */
+  public function uploadDiskFile($file, $type = '')
+  {
+    // Move the file to a local temp path
+    $localFile = $this->fixAndRename($file);
+    // Create the url
+    $s3Path = '/' . time() . '/' . File::getFileOnly($localFile);
+    $s3Url = $this->changeUploadUrl('') . $s3Path;
+    // Do the upload
+    if ($this->handleUpload($localFile, $s3Url, $type)) {
+      return $s3Url;
+    }
+
+    return '';
+  }
+
+  /**
    * @param array $file the file path
    * @param string $name the file name it should have afterwards
    * @return string the full path of the file
@@ -302,9 +322,9 @@ class S3Upload extends \LBWP\Module\Base
   }
 
   /**
-   * Handles the upload to S3
+   * Handles the upload to CDN
    * @param string $localFile The local file name
-   * @param string $url The URL it should have on the S3
+   * @param string $url The URL it should have on the CDN
    * @param string $mime_type The mime type of the file
    * @return bool true/false if the upload is successful
    */

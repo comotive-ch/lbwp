@@ -24,6 +24,9 @@ class TableHandler extends Base
    */
   public function initialize()
   {
+    // Add the main shortcode, that doesn't yet do anything
+    add_shortcode('lbwp:table', array($this, 'displayTable'));
+
     // Set the basic config, and allow filtering
     $this->tableConfig = apply_filters('LbwpTables_tableConfig', array(
       'tableSettings' => array(
@@ -84,8 +87,18 @@ class TableHandler extends Base
       ),
       'cellSettings' => array(
         array(
+          'key' => 'formatType',
+          'label' => 'Zellen-Formatierung',
+          'type' => 'dropdown',
+          'default' => 'normal',
+          'selection' => array(
+            'normal' => 'Standard',
+            'title' => 'Titel'
+          )
+        ),
+        array(
           'key' => 'borderTypeRight',
-          'label' => 'rechter Rahmen',
+          'label' => 'Rechter Rahmen',
           'type' => 'dropdown',
           'default' => 'bd-fixed',
           'selection' => array(
@@ -137,6 +150,7 @@ class TableHandler extends Base
               array(
                 'content' => 'Beispiel-Inhalt',
                 'settings' => array(
+                  'formatType' => 'normal',
                   'borderTypeRight' => 'bd-fixed',
                   'borderTypeBottom' => 'bd-fixed',
                   'backgroundColor' => 'transparent'
@@ -161,6 +175,7 @@ class TableHandler extends Base
               array(
                 'content' => '',
                 'settings' => array(
+                  'formatType' => 'title',
                   'borderTypeRight' => 'bd-fixed-fat',
                   'borderTypeBottom' => 'bd-fixed-fat',
                   'backgroundColor' => 'primary'
@@ -169,6 +184,7 @@ class TableHandler extends Base
               array(
                 'content' => 'Überschrift Zelle 1',
                 'settings' => array(
+                  'formatType' => 'title',
                   'borderTypeRight' => 'bd-fixed',
                   'borderTypeBottom' => 'bd-fixed-fat',
                   'backgroundColor' => 'primary'
@@ -177,6 +193,7 @@ class TableHandler extends Base
               array(
                 'content' => 'Überschrift Zelle 2',
                 'settings' => array(
+                  'formatType' => 'title',
                   'borderTypeRight' => 'bd-fixed',
                   'borderTypeBottom' => 'bd-fixed-fat',
                   'backgroundColor' => 'primary'
@@ -187,6 +204,7 @@ class TableHandler extends Base
               array(
                 'content' => 'Zeile 1',
                 'settings' => array(
+                  'formatType' => 'normal',
                   'borderTypeRight' => 'bd-fixed-fat',
                   'borderTypeBottom' => 'bd-fixed',
                   'backgroundColor' => 'primary'
@@ -195,6 +213,7 @@ class TableHandler extends Base
               array(
                 'content' => 'Inhalt 1',
                 'settings' => array(
+                  'formatType' => 'normal',
                   'borderTypeRight' => 'bd-fixed',
                   'borderTypeBottom' => 'bd-fixed',
                   'backgroundColor' => 'transparent'
@@ -203,6 +222,7 @@ class TableHandler extends Base
               array(
                 'content' => 'Inhalt 2',
                 'settings' => array(
+                  'formatType' => 'normal',
                   'borderTypeRight' => 'bd-fixed',
                   'borderTypeBottom' => 'bd-fixed',
                   'backgroundColor' => 'transparent'
@@ -213,6 +233,7 @@ class TableHandler extends Base
               array(
                 'content' => 'Zeile 2',
                 'settings' => array(
+                  'formatType' => 'normal',
                   'borderTypeRight' => 'bd-fixed-fat',
                   'borderTypeBottom' => 'bd-fixed',
                   'backgroundColor' => 'primary'
@@ -221,6 +242,7 @@ class TableHandler extends Base
               array(
                 'content' => 'Inhalt 3',
                 'settings' => array(
+                  'formatType' => 'normal',
                   'borderTypeRight' => 'bd-fixed',
                   'borderTypeBottom' => 'bd-fixed',
                   'backgroundColor' => 'transparent'
@@ -229,6 +251,7 @@ class TableHandler extends Base
               array(
                 'content' => 'Inhalt 4',
                 'settings' => array(
+                  'formatType' => 'normal',
                   'borderTypeRight' => 'bd-fixed',
                   'borderTypeBottom' => 'bd-fixed',
                   'backgroundColor' => 'transparent'
@@ -247,9 +270,11 @@ class TableHandler extends Base
    */
   public function handleHtmlConversion($data)
   {
-    $table = $this->getTable($_POST['post_ID']);
-    $data['post_content'] = $this->getTableHtml($table);
-    $data['post_status'] = 'publish';
+    if ($data['post_type'] == Posttype::TABLE_SLUG) {
+      $table = $this->getTable($_POST['post_ID']);
+      $data['post_content'] = $this->getTableHtml($table);
+    }
+
     return $data;
   }
 
@@ -324,19 +349,63 @@ class TableHandler extends Base
   /**
    * @param int $tableId the table that has been saved
    */
-  public function saveTableJson($tableId)
+  public function saveTableJson($filterData)
   {
-    // Create the table from a template, if it's a new one
-    if ($_POST['isNewTable'] == 1) {
-      // Override tableJson with a template
-      $template = $this->getTemplateById($_POST['tableTemplate']);
-      $data = $template['template'];
-    } else {
-      $data = json_decode($_POST['tableJson'], true);
+    if ($filterData['post_type'] == Posttype::TABLE_SLUG) {
+      $tableId = is_array($filterData) ? 0 : intval($filterData);
+      if (isset($_POST['post_ID']) && $tableId == 0) {
+        $tableId = intval($_POST['post_ID']);
+      }
+
+      // Create the table from a template, if it's a new one
+      if ($_POST['isNewTable'] == 1) {
+        // Override tableJson with a template
+        $template = $this->getTemplateById($_POST['tableTemplate']);
+        $data = $template['template'];
+      } else {
+        $data = json_decode($_POST['tableJson'], true);
+      }
+
+      // Save table json as meta info
+      if ($tableId > 0) {
+        update_post_meta($tableId, 'tableData', $data);
+      }
     }
 
-    // Save table json as meta info
-    update_post_meta($tableId, 'tableData', $data);
+    return $filterData;
+  }
+
+  /**
+   * @param $table
+   */
+  public function forceMissingSettings($table)
+  {
+    // Get trough each table row and cell
+    foreach ($table['data'] as $x => $row) {
+      foreach($row as $y => $cell) {
+        // Now search every setting for its existance, and add if missing
+        foreach ($this->tableConfig['cellSettings'] as $setting) {
+          if (!isset($cell['settings'][$setting['key']])) {
+            $cell['settings'][$setting['key']] = $setting['default'];
+          }
+        }
+        $table['data'][$x][$y] = $cell;
+      }
+    }
+
+    return $table;
+  }
+
+  /**
+   * @param string $args the table
+   * @return string the table
+   */
+  public function displayTable($args)
+  {
+    $table = $this->getTable($args['id']);
+    // TODO enqueue scripts here for the footer (for frontend interactions)
+    //return $this->getTableHtml($table);
+    return '<!--not-yet-enabled-->';
   }
 
   /**

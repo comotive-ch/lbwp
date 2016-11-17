@@ -52,6 +52,10 @@ class Metabox
    */
   protected $posttype = '';
   /**
+   * @var int used for the lines counter in addLine
+   */
+  protected $lineId = 0;
+  /**
    * @var array an array of all metabox helper instances
    */
   protected static $instances = array();
@@ -547,6 +551,15 @@ class Metabox
   }
 
   /**
+   * Adds a simple line as element
+   * @param $boxId
+   */
+  public function addLine($boxId)
+  {
+    $this->addHtml('simple-line-' . (++$this->lineId), $boxId, '<hr class="simple-line">');
+  }
+
+  /**
    * Helper for adding an input text field (one liner)
    * @param string $key the key to store the metadata in
    * @param string $boxId the metabox to display the field
@@ -788,6 +801,45 @@ class Metabox
       array('\LBWP\Helper\MetaItem\ChosenDropdown', 'displayDropdown'),
       $saveCallback
     );
+  }
+
+  /**
+   * Displays a pages dropdown with hierarchy
+   * @param string $key
+   * @param string $boxId
+   * @param string $title
+   * @param array $args
+   */
+  public function addPagesDropdown($key, $boxId, $title, $args = array())
+  {
+    $items = array(0 => __('Bitte Seite auswählen', 'lbwp'));
+    $pages = get_pages();
+
+    foreach ($pages as $page) {
+      $items[$page->ID] = $page->post_title;
+    }
+
+    $args['items'] = $items;
+    $this->addDropdown($key, $boxId, $title, $args);
+  }
+
+  /**
+   * @param $key
+   * @param $boxId
+   * @param $title
+   * @param $taxonomy
+   * @param array $args
+   */
+  public function addTaxonomyDropdown($key, $boxId, $title, $taxonomy, $args = array())
+  {
+    $args['taxonomy'] = $taxonomy;
+    $terms = get_terms($args);
+    $args['items'] = array();
+    foreach ($terms as $term) {
+      $args['items'][$term->slug] = $term->name;
+    }
+
+    $this->addDropdown($key, $boxId, $title, $args);
   }
 
   /**

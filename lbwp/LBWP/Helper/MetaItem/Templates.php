@@ -20,7 +20,7 @@ class Templates
   public static function setTemplates()
   {
     self::$templates['description'] = '
-      <div class="mbh-item-normal">
+      <div class="mbh-item-normal{containerClasses}">
         <div class="mbh-title"><label for="{fieldId}">{title}</label></div>
         <div class="mbh-field {fieldClass}">
           <div class="mbh-input">{input}</div>
@@ -30,7 +30,7 @@ class Templates
     ';
 
     self::$templates['description_full'] = '
-      <div class="mbh-item-full">
+      <div class="mbh-item-full{containerClasses}">
         <div class="mbh-title"><label for="{fieldId}">{title}</label></div>
         <div class="mbh-field {fieldClass}">
           <div class="mbh-input">{input}</div>
@@ -40,7 +40,7 @@ class Templates
     ';
 
     self::$templates['short'] = '
-      <div class="mbh-item-normal">
+      <div class="mbh-item-normal{containerClasses}">
         <div class="mbh-title"><label for="{fieldId}">{title}</label></div>
         <div class="mbh-field {fieldClass}">
           <div class="mbh-input">{input}</div>
@@ -49,7 +49,7 @@ class Templates
     ';
 
     self::$templates['short_full'] = '
-      <div class="mbh-item-full">
+      <div class="mbh-item-full{containerClasses}">
         <div class="mbh-title"><label for="{fieldId}">{title}</label></div>
         <div class="mbh-field {fieldClass}">
           <div class="mbh-input">{input}</div>
@@ -58,7 +58,7 @@ class Templates
     ';
 
     self::$templates['short_input_list'] = '
-      <div class="mbh-item-normal list">
+      <div class="mbh-item-normal list{containerClasses}">
         <div class="mbh-title"><label for="{fieldId}">{title}</label></div>
         <div class="mbh-field {fieldClass}">
           <div class="mbh-input" style="{fieldStyle}">{input}</div>
@@ -67,15 +67,15 @@ class Templates
     ';
 
     self::$templates['empty'] = '
-      <div class="mbh-item-normal">{html}</div>
+      <div class="mbh-item-normal{containerClasses}">{html}</div>
     ';
 
     self::$templates['emptyFull'] = '
-      <div class="mbh-item-full">{html}</div>
+      <div class="mbh-item-full{containerClasses}">{html}</div>
     ';
 
     self::$templates['media'] = '
-      <div class="mbh-item-normal">
+      <div class="mbh-item-normal{containerClasses}">
         <div class="mbh-title"><label for="{fieldId}">{title}</label></div>
         <div class="mbh-field {fieldClass}">
           {media}
@@ -123,6 +123,11 @@ class Templates
       }
     }
 
+    // Set container classes if given
+    if (isset($args['containerClasses']) && strlen($args['containerClasses']) > 0) {
+      $html = str_replace('{containerClasses}', ' ' . $args['containerClasses'], $html);
+    }
+
     // Put a required flag on the label
     if (isset($args['required']) && $args['required']) {
       $args['title'] .= ' <span class="required">*</span>';
@@ -135,6 +140,8 @@ class Templates
     $html = str_replace('{title}', $args['title'], $html);
     $html = str_replace('{fieldId}', $key, $html);
     $html = str_replace('{fieldClass}', $args['class'], $html);
+    // Replace with empty string, if not replaced above
+    $html = str_replace('{containerClasses}', '', $html);
     return $html;
   }
 } 

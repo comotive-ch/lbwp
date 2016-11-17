@@ -1,0 +1,28 @@
+$lbwpPrintUseDefaults: true !default;
+
+// Hide generall non-printing elements
+@mixin lbwpPrintDefaults() {
+	@media print {
+		nav,
+		iframe,
+		form,
+		.widget_nav_menu,
+		.lbwp-breadcrumb,
+		.widget.AutomaticSubMenu,
+		.widget_categories,
+		.lbwp-form-widget,
+		.lbwp-hide-for-print {
+			display: none;
+		}
+
+		// hide standard (foundation) elements
+		.left-off-canvas-toggle,
+		.right-off-canvas-toggle {
+			display: none !important;
+		}
+	}
+}
+
+@if ($lbwpPrintUseDefaults) {
+	@include lbwpPrintDefaults;
+}
