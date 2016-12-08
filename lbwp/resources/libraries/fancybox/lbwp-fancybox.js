@@ -131,12 +131,14 @@ var SimpleFancyBox = {
 		jQuery('.auto-fancybox').fancybox({
 			padding: FancyBoxConfig.padding,
 			margin: FancyBoxConfig.margin,
+			maxWidth: FancyBoxConfig.maxWidth,
 			beforeShow: SimpleFancyBox.onBeforeShow,
 			afterLoad: SimpleFancyBox.onAfterLoad,
 			openEffect : FancyBoxConfig.effectOpen,
 			closeEffect : FancyBoxConfig.effectClose,
 			nextEffect : FancyBoxConfig.effectNext,
-			prevEffect : FancyBoxConfig.effectPrev
+			prevEffect : FancyBoxConfig.effectPrev,
+			helpers : FancyBoxConfig.helpers
 		});
 	},
 

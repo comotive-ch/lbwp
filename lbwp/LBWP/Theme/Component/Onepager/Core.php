@@ -96,6 +96,10 @@ abstract class Core extends BaseComponent
    */
   protected $useMenus = false;
   /**
+   * @var bool use direct children only to be selected from a onepager
+   */
+  protected $directChildrenOnly = true;
+  /**
    * @var bool tells if a menu has already been displayed
    */
   protected $displayedMenu = false;
@@ -192,10 +196,8 @@ abstract class Core extends BaseComponent
         // If the onepager is active, add / remove everything needed
         if ($onepagerActive) {
           remove_post_type_support($type, 'editor');
-          // Add the helper to add one pager elements
-          $boxId = $type . '_onepager-elements';
-          $helper->addMetabox($boxId, 'Inhalte für den Onepager', 'normal', 'high');
-          $helper->addPostTypeDropdown('elements', $boxId, 'Inhalte', self::TYPE_SLUG, array(
+          // Define arguments for the drodpwon
+          $args = array(
             'sortable' => true,
             'multiple' => true,
             'containerClasses' => 'chosen-dropdown-item one-pager-content',
@@ -204,7 +206,17 @@ abstract class Core extends BaseComponent
               'key' => 'element-type',
               'data' => $this->getNamedKeys()
             )
-          ));
+          );
+
+          // Only display direct children, if configured
+          if ($this->directChildrenOnly) {
+            $args['parent'] = $postId;
+          }
+
+          // Add the helper to add one pager elements
+          $boxId = $type . '_onepager-elements';
+          $helper->addMetabox($boxId, 'Inhalte für den Onepager', 'normal', 'high');
+          $helper->addPostTypeDropdown('elements', $boxId, 'Inhalte', self::TYPE_SLUG, $args);
 
           // IF menus are active, add another metabox for it
           if ($this->useMenus) {

@@ -16,9 +16,9 @@ class SimpleFancybox extends \LBWP\Module\Base
   /**
    * @var int Module version for resource files
    */
-  const VERSION = 18;
+  const VERSION = 19;
   /**
-   * @var array configuration array
+   * @var array configuration array (you can use more additional parameters "maxWidth" and "helpers" without a configured default value)
    */
   protected static $settings = array(
     'margin' => 10,

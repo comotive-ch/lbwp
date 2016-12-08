@@ -34,7 +34,8 @@ class Core extends \LBWP\Module\Base
    */
   protected $serviceClasses = array(
     '\\LBWP\\Newsletter\\Service\\Mailchimp\\Implementation',
-    '\\LBWP\\Newsletter\\Service\\Emarsys\\Implementation'
+    '\\LBWP\\Newsletter\\Service\\Emarsys\\Implementation',
+    '\\LBWP\\Newsletter\\Service\\LocalMail\\Implementation'
   );
 
   /**
@@ -57,7 +58,7 @@ class Core extends \LBWP\Module\Base
     }
     // Load actions, if a working service is available
     if ($this->isWorkingServiceAvailable()) {
-      add_action('lbwpFormActions', array($this, 'addFormActions'));
+      add_filter('lbwpFormActions', array($this, 'addFormActions'));
     }
   }
 

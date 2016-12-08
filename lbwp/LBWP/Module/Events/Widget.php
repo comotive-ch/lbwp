@@ -67,6 +67,9 @@ class Widget extends \WP_Widget
     // Get the next events as configured
     $frontend = Core::getInstance()->getFrontendComponent();
     $config = Core::getInstance()->getShortcodeComponent()->getListConfiguration($shortcodeArgs);
+    // Only query for future events as of right now and half a year into the future
+    $config['from'] = current_time('timestamp');
+    $config['to'] = $config['from'] + (86400 * 180);
     $events = $frontend->queryEvents($config);
     $frontend->populateEventData($events, $config, current_time('timestamp'));
 

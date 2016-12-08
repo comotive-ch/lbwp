@@ -318,3 +318,28 @@ body .mbh-type-dropdown-inline {
 	border-color:#cc0000;
 	background-color:rgba(150,80,80,0.1)
 }
+
+.mbh-generic-table {
+	margin:0px;
+	padding:0px;
+	width: 100%;
+}
+.mbh-generic-table th {
+	text-align:left;
+	font-weight:bold;
+	padding:2px;
+	margin:0px;
+}
+.mbh-generic-table td {
+	padding:2px;
+	margin:0px;
+}
+.mbh-generic-table tr {
+	border-bottom:1px solid #aaa;
+}
+.mbh-generic-table tr:nth-child(odd) {
+	background-color:#ffffff;
+}
+.mbh-generic-table tr:nth-child(even) {
+	background-color:#eeeeee;
+}

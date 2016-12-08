@@ -187,7 +187,7 @@
 			}
 
 			// Now show the message, if needed
-			if ($(this).prop('required') && $(this).val().length == 0 || !validField) {
+			if ($(this).prop('required') && $(this).val().trim().length == 0 || !validField) {
 				// Warn, if it was validated and isn't valid, else error, since it's required
 				var type = !validField ? "warning" : "error";
 				var userMsg = $(this).attr("data-" + type + "Msg");

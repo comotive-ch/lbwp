@@ -41,6 +41,10 @@ class PostTypeDropdown
 	    'order' => 'ASC'
     );
 
+    if (isset($args['parent']) && intval($args['parent']) > 0) {
+      $query['post_parent'] = $args['parent'];
+    }
+
     // Set a specific or all languages, if needed
     if (isset($args['language'])) {
       $query['lang'] = $args['language'];
@@ -102,7 +106,8 @@ class PostTypeDropdown
     $newPostId = intval(wp_insert_post(array(
       'post_title' => $_POST['title'],
       'post_type' => $postType,
-      'post_status' => 'draft'
+      'post_status' => 'draft',
+      'post_parent' => ($postType == 'onepager-item') ? $assignedPostId : 0,
     )));
 
     // Add the new ID to the option, in case the user doesn't save afterwards

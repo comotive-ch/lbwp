@@ -268,9 +268,11 @@ class Frontend extends Base
 
     // Bolster up the shortcode, on loading so everything is correctly handled
     add_filter('lbwpForms_load_form_shortcode', function($shortcode, $form) use ($event) {
-      if (!Strings::checkEmail($event->subscribeEmail)) {
+      // Check if there is a subscribe email and the form is actually from the event
+      if (!Strings::checkEmail($event->subscribeEmail) || $form->ID != $event->subscribeFormId) {
         return $shortcode;
       }
+
       /** @var FormHandler $formHandler */
       $formHandler = FormCore::getInstance()->getFormHandler();
 

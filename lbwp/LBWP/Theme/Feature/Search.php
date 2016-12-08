@@ -281,7 +281,7 @@ class Search
         $postName = substr($url, strrpos($url, '/') + 1);
         $postId = WordPress::getPostIdByName($postName, 'post');
         $result = get_post($postId);
-        if ($postId > 0 && $result instanceof \WP_Post) {
+        if ($postId > 0 && $result instanceof \WP_Post && $result->post_status == 'publish') {
           $results[] = $result;
         }
       }

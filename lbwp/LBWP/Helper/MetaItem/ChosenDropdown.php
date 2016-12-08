@@ -130,14 +130,12 @@ class ChosenDropdown
             $("#' . $key . '").on("chosen:ready change", function(evt, params) {
               var hasModals = false;
               $("#' . $chosenKey . ' .search-choice").each(function(){
-
-                // compare label to option text
-                var label = $(this).text().trim();
-                var options = $("#' . $key . '").find("option").filter(function(){
-                  return $(this).text().trim() == label;
-                });
-                if(options.length > 0){
-                  var option = options[0];
+                // Get all options and the index via close button, to access data from it
+                var options = $("#' . $key . '").find("option");
+                var index = parseInt($(this).find(".search-choice-close").data("option-array-index"));
+                
+                if(options.length > 0 && !isNaN(index)){
+                  var option = options[index];
                   if($(option).data("url")){
                     var className = "search-choice-link";
                     if ($(option).data("is-modal") == 1) {
@@ -240,7 +238,7 @@ class ChosenDropdown
   {
     $options = array();
 
-    if (!$singleValue) {
+    if (!$singleValue && is_array($value)) {
       foreach ($value as $selectedValue) {
         $title = $items[$selectedValue];
         if (isset($items[$selectedValue]['title'])) {
@@ -253,11 +251,15 @@ class ChosenDropdown
             $dataAttributes .= ' data-' . $dataKey . '="' . $dataValue . '"';
           }
         }
-        $options[] = '<option value="' . $selectedValue . '" selected="selected" ' . $dataAttributes . '>' . $title . '</option>';
+        $options[$selectedValue] = '<option value="' . $selectedValue . '" selected="selected" ' . $dataAttributes . '>' . $title . '</option>';
       }
     }
 
     foreach ($items as $itemValue => $item) {
+      // Skip if already added above
+      if (isset($options[$itemValue])) {
+        continue;
+      }
 
       $dataAttributes = '';
       if (isset($item['data'])) {
@@ -273,12 +275,12 @@ class ChosenDropdown
       }
       if ($singleValue) {
         $selected = selected($itemValue, $value, false);
-        $options[] = '<option value="' . $itemValue . '" ' . $selected . ' ' . $dataAttributes . '>' . $title . '</option>';
+        $options[$itemValue] = '<option value="' . $itemValue . '" ' . $selected . ' ' . $dataAttributes . '>' . $title . '</option>';
       } else {
-        if (in_array($itemValue, $value)) {
+        if (is_array($itemValue) && in_array($itemValue, $value)) {
           continue;
         } else {
-          $options[] = '<option value="' . $itemValue . '" ' . $dataAttributes . '>' . $title . '</option>';
+          $options[$itemValue] = '<option value="' . $itemValue . '" ' . $dataAttributes . '>' . $title . '</option>';
         }
       }
     }

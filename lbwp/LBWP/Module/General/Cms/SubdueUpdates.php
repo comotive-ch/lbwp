@@ -45,6 +45,7 @@ class SubdueUpdates
     add_filter('pre_site_transient_update_plugins', array($this, 'last_checked_plugins'));
     add_filter('pre_transient_update_core', array($this, 'last_checked_core'));
     add_filter('pre_site_transient_update_core', array($this, 'last_checked_core'));
+    remove_action('admin_bar_menu', 'wp_admin_bar_updates_menu', 50);
 
     // Disable All Automatic Updates
     add_filter('auto_update_translation', '__return_false');
@@ -62,6 +63,12 @@ class SubdueUpdates
     add_filter('automatic_updates_is_vcs_checkout', '__return_true');
     add_filter('automatic_updates_send_debug_email ', '__return_false', 1);
     add_filter('pre_http_request', array($this, 'block_request'), 10, 3);
+
+    // Disable scheduled updates of themes and plugins
+    $timestamp = wp_next_scheduled('wp_update_plugins');
+    wp_unschedule_event($timestamp, 'wp_update_plugins', array());
+    $timestamp = wp_next_scheduled('wp_update_themes');
+    wp_unschedule_event($timestamp, 'wp_update_themes', array());
   }
 
 

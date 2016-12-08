@@ -1,34 +1,125 @@
+$lbwpFancyBoxOverlayBgColor: null !default;
 $lbwpFancyBoxSkinBgColor: null !default;
-$lbwpFancyBoxSkinFontColor: null !default;
-$lbwpFancyBoxFontColorLegend : null !default;
+$lbwpFancyBoxSkinShadow: null !default;
+$lbwpFancyBoxSkinBorderRadius: null !default;
+// Default: Always use theme font
+$lbwpFancyBoxTitleInheritFont: true !default;
+$lbwpFancyBoxTitleColor: null !default;
 
-$lbwpFancyBoxBackgroundArrowLeft: null !default;
-$lbwpFancyBoxBackgroundArrowRight: null !default;
+$lbwpFancyBoxCloseIconResetDefaults: false !default;
+$lbwpFancyBoxCloseIconSize: null !default;
+$lbwpFancyBoxCloseIconPositionTop: null !default;
+$lbwpFancyBoxCloseIconPositionRight: null !default;
 
-div.fancybox-skin {
+$lbwpFancyBoxArrowResetBackground: false !default;
+$lbwpFancyBoxArrowWidth: null !default;
+$lbwpFancyBoxArrowHeight: null !default;
+
+// todo
+//$lbwpFancyBoxColorLegend : null !default;
+
+@mixin lbwpFancyBoxWrapper() {
+	div.fancybox-wrap {
+		@content;
+	}
+}
+
+@mixin lbwpFancyBoxImage() {
+	div.fancybox-inner img {
+		@content;
+	}
+}
+
+@mixin lbwpFancyBoxTitle() {
+	div.fancybox-title {
+		@content;
+	}
+}
+
+@include lbwpFancyBoxTitle {
+	color: $lbwpFancyBoxTitleColor;
+	@if ($lbwpFancyBoxTitleInheritFont) {
+		font: inherit;
+	}
+}
+
+@mixin lbwpFancyBoxCloseIcon() {
+	a.fancybox-close {
+		@content;
+	}
+}
+
+@include lbwpFancyBoxCloseIcon {
+	@if ($lbwpFancyBoxCloseIconResetDefaults) {
+		background: none;
+		background-size: auto;
+		top: auto;
+		right: auto;
+		width: auto;
+		height: auto;
+	}
+	width: $lbwpFancyBoxCloseIconSize;
+	height: $lbwpFancyBoxCloseIconSize;
+	top: $lbwpFancyBoxCloseIconPositionTop;
+	right: $lbwpFancyBoxCloseIconPositionRight;
+}
+
+@mixin lbwpFancyBoxOverlay() {
+	div.fancybox-overlay {
+		@content;
+	}
+}
+
+@include lbwpFancyBoxOverlay {
+	background: $lbwpFancyBoxOverlayBgColor;
+}
+
+@mixin lbwpFancyBoxSkin() {
+	div.fancybox-skin {
+		@content;
+	}
+}
+
+@include lbwpFancyBoxSkin {
 	background: $lbwpFancyBoxSkinBgColor;
-	color: $lbwpFancyBoxSkinFontColor;
+	@include border-radius($lbwpFancyBoxSkinBorderRadius);
+	.fancybox-opened & {
+		@include box-shadow($lbwpFancyBoxSkinShadow);
+	}
 }
 
-a.fancybox-nav span{height: 54px;}
-a.fancybox-prev span{background: $lbwpFancyBoxBackgroundArrowLeft;}
-a.fancybox-next span{background: $lbwpFancyBoxBackgroundArrowRight;}
-
-div.fancybox-title-float-wrap{position: relative; margin: 15px 0 0; right: 0; text-align: left;}
-div.fancybox-title-float-wrap .child {
-	background: none;
-	text-shadow: none;
-	text-align: left;
-	width: 75%;
-	margin-right: 0;
-	white-space: normal;
-	padding-left: 0;
-	color: $lbwpFancyBoxSkinFontColor;
+@mixin lbwpFancyBoxArrows() {
+	a.fancybox-nav span {
+		@content;
+	}
 }
 
-.fancybox-wrap .pagination {
-	position: absolute;
-	right: 0;
-	bottom: 0;
-	color: $lbwpFancyBoxFontColorLegend;
+@include lbwpFancyBoxArrows() {
+	@if ($lbwpFancyBoxArrowResetBackground) {
+		background: none;
+	}
+	width: $lbwpFancyBoxArrowWidth;
+	height: $lbwpFancyBoxArrowHeight;
+	@if ($lbwpFancyBoxArrowHeight != null) {
+		margin-top: $lbwpFancyBoxArrowHeight / 2 * -1;
+	}
 }
+
+@mixin lbwpFancyBoxArrowLeft() {
+	a.fancybox-prev span {
+		@content;
+	}
+}
+
+@mixin lbwpFancyBoxArrowRight() {
+	a.fancybox-next span {
+		@content;
+	}
+}
+
+
+
+
+//.fancybox-wrap .pagination {
+//	color: $lbwpFancyBoxColorLegend;
+//}

@@ -2,6 +2,8 @@
 
 namespace LBWP\Module\Tables\Component;
 use LBWP\Util\ArrayManipulation;
+use LBWP\Util\File;
+use LBWP\Core;
 
 /**
  * This class provides the shortcodes for the table frontend
@@ -24,8 +26,12 @@ class TableHandler extends Base
    */
   public function initialize()
   {
+    // handle preview -> direct custom posttype
+    add_action('wp', array($this, 'displayCustomPostType'));
+
     // Add the main shortcode, that doesn't yet do anything
     add_shortcode('lbwp:table', array($this, 'displayTable'));
+    wp_enqueue_style('datatables-css', File::getResourceUri().'/libraries/dataTables/datatables.min.css', array(), Core::REVISION, 'all');
 
     // Set the basic config, and allow filtering
     $this->tableConfig = apply_filters('LbwpTables_tableConfig', array(
@@ -265,6 +271,16 @@ class TableHandler extends Base
   }
 
   /**
+   * Will be called before custom post type is displayed
+   */
+  public function displayCustomPostType() {
+    if (is_singular('lbwp-table')) {
+      // include necessary scripts
+      $this->prepareDataTable();
+    }
+  }
+
+  /**
    * @param array $data the data
    * @return array added new post content
    */
@@ -289,12 +305,41 @@ class TableHandler extends Base
     if (!is_array($table['data'])) {
       return '';
     }
+    $html = '<div class="lbwp-table-wrapper">';
+
+    $fixFirstCol = intval($this->getSetting($table, 'fixateFirstColumn'));
+    $fixFirstRows = intval($this->getSetting($table, 'fixateFirstRows'));
+
+    // add fullscreen link
+    // TODO Text multilanguage
+    $html .= '
+      <div class="datatable-top-menu">
+        <a class="datatable-maximize" href="#">Tabelle vergrössern</a>
+        <a class="datatable-exit-minimize" style="display: none;" href="#">Vollansicht verlassen</a>
+      </div>';
 
     // Prepare the initial table
-    $html = '<table class="' . self::getTableClasses($table['settings']) . '"><tbody>';
+    $html .= '
+      <div class="datatable-container">
+        <table class="' . self::getTableClasses($table['settings']) . '" data-fix-first-col="'.$fixFirstCol.'"  data-fix-first-rows="'.$fixFirstRows.'"><thead>';
 
+    $tablePart = null;
     // Go trough the whole table now to generate it
     foreach ($table['data'] as $rowIndex => $row) {
+      // handle head and body part
+      if ($rowIndex == $fixFirstRows) {
+        // thead must be set -> empty add hidden thead
+        if ($rowIndex == 0) {
+          // if cols should be fixed, header cannot been display:none;
+          $display = '';
+          if ($fixFirstCol == 0) {
+            $display = 'display:none';
+          }
+          $html .= '<tr style="'.$display.'">' . str_repeat('<td></td>', count($row)) . '</tr>';
+        }
+        $html .= '</thead><tbody>';
+      }
+
       $html .= '<tr>';
       // Look at all the cells we have
       foreach ($row as $cellIndex => $cell) {
@@ -308,9 +353,28 @@ class TableHandler extends Base
     }
 
     // Close the table
-    $html .= '</table>';
+    $html .= '
+          </tbody></table>
+        </div>
+      </div>';
 
     return $html;
+  }
+
+  /**
+   * Read setting from table
+   * @param $table
+   * @param $key
+   * @return mixed|null
+   */
+  protected function getSetting($table, $key) {
+    if (is_array($table) && array_key_exists('settings', $table)) {
+      $tableSettings = $table['settings'];
+      if (is_array($tableSettings) && array_key_exists($key, $tableSettings)) {
+        return $tableSettings[$key];
+      }
+    }
+    return null;
   }
 
   /**
@@ -351,7 +415,7 @@ class TableHandler extends Base
    */
   public function saveTableJson($filterData)
   {
-    if ($filterData['post_type'] == Posttype::TABLE_SLUG) {
+    if ($filterData['post_type'] == Posttype::TABLE_SLUG && isset($_POST['tableJson']) && strlen($_POST['tableJson']) > 0) {
       $tableId = is_array($filterData) ? 0 : intval($filterData);
       if (isset($_POST['post_ID']) && $tableId == 0) {
         $tableId = intval($_POST['post_ID']);
@@ -402,10 +466,22 @@ class TableHandler extends Base
    */
   public function displayTable($args)
   {
+    $this->prepareDataTable();
+
     $table = $this->getTable($args['id']);
-    // TODO enqueue scripts here for the footer (for frontend interactions)
-    //return $this->getTableHtml($table);
+
+    // TODO on go live, show for everyone
+    if (current_user_can('edit_posts')) {
+      return $this->getTableHtml($table);
+    }
+
     return '<!--not-yet-enabled-->';
+  }
+
+  protected function prepareDataTable() {
+    wp_enqueue_script('datatables', File::getResourceUri().'/libraries/dataTables/datatables.min.js', array('jquery'), Core::REVISION, true);
+    wp_enqueue_script('dragscroll', File::getResourceUri().'/libraries/dragscroll/dragscroll.js', array('jquery'), Core::REVISION, true);
+    wp_enqueue_script('lbwp-table-editor-fronted', File::getResourceUri().'/js/table-editor/LbwpTableEditor.Frontend.js', array('jquery'), Core::REVISION, true);
   }
 
   /**
