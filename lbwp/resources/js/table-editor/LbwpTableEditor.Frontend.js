@@ -10,15 +10,14 @@ LbwpTableEditor.Frontend = {
 	/**
 	 * The id of the current form
 	 */
-	tableClass: '.responsive-table',
-
-	height: '500px',
+	scrollableTable: '.table-scrollable',
+	height: '550px',
 
 	/**
 	 * The main initializer, that also loads the sub classes
 	 */
 	initialize: function () {
-    jQuery(LbwpTableEditor.Frontend.tableClass).each(function (i, e) {
+    jQuery(LbwpTableEditor.Frontend.scrollableTable + ' table').each(function (i, e) {
 			var fixFirstCol = jQuery(e).data('fix-first-col');
 			var fixFirstRows = jQuery(e).data('fix-first-rows');
 
@@ -37,7 +36,6 @@ LbwpTableEditor.Frontend = {
 				}
 			});
 
-
 			var tableId = jQuery(e).context.id;
 			var bodyHeight = jQuery('#' + tableId + '_wrapper .DTFC_RightBodyLiner').css('overflow', 'hidden');
 
@@ -47,43 +45,43 @@ LbwpTableEditor.Frontend = {
 			}
 		});
 
-		// register menu
-		jQuery('.datatable-maximize').on('click', function (e) {
-			var height = window.innerHeight || document.documentElement.clientHeight || document.body.clientHeight;
-			var $tableContainer = jQuery(this).closest('.lbwp-table-wrapper');
-			var headerRow = $tableContainer.find('.dataTables_scrollHead').css('height');
-			// set height minus header and padding
-			LbwpTableEditor.Frontend.toggleFullview(e, this, height-60-parseInt(headerRow));
-		});
-		jQuery('.datatable-exit-minimize').on('click', function (e) {
-			LbwpTableEditor.Frontend.toggleFullview(e, this, LbwpTableEditor.Frontend.height);
+		// register menu (toggle fullview)
+		jQuery('.datatable-top-menu a').on('click', function (e) {
+			LbwpTableEditor.Frontend.toggleFullview(e, this);
 		});
 
-		// register scrolling features
-		jQuery('.dataTables_scrollBody').addClass('dragscroll');
-		dragscroll.reset();
+		// register scrolling features for non touch devices
+		if (!LbwpTableEditor.Frontend.isTouchDevice()) {
+			Draggable.create('.dataTables_scrollBody', {
+				type: "scroll",
+				edgeResistance: 1,
+				lockAxis: true
+			});
+		}
 	},
 
 	/**
 	 * toggle fullview
-	 * @param e
-	 * @param obj
-	 * @param height
+	 * @param e event
+	 * @param obj the element that fired the event
 	 */
-	toggleFullview : function (e, obj, height) {
+	toggleFullview : function (e, obj) {
 		e.preventDefault();
 		var $tableContainer = jQuery(obj).closest('.lbwp-table-wrapper');
+		// Toggle classes and links
 		$tableContainer.toggleClass('maximised');
 		jQuery('body').toggleClass('body-maximised');
-
-		$tableContainer.find('.datatable-maximize').toggle();
-		$tableContainer.find('.datatable-exit-minimize').toggle();
-
-		$tableContainer.find('.dataTables_scrollBody, .DTFC_LeftBodyLiner, .DTFC_RightBodyLiner').css('max-height', height);
-
-		// avoid rendering fails (wrong width)
-		jQuery(window).trigger('resize');
+		$tableContainer.find('.datatable-top-menu a').toggle();
 	},
+
+	/**
+	 * isTouchDevice: not the best way to detect a touch devices, but shoud works for most browsers/devices, perhaps we have to improve here once
+	 * @returns {boolean|*}
+	 */
+	isTouchDevice : function() {
+  	return 'ontouchstart' in window        // works on most browsers
+      || navigator.maxTouchPoints;       // works on IE10/11 and Surface
+	}
 };
 
 // Loading the editor on load (eh..)

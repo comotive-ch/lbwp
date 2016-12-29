@@ -22,7 +22,7 @@ class External
     $mail->IsHTML(true);
     $mail->CharSet = 'UTF-8';
     $mail->FromName = get_bloginfo('name');
-    $mail->From = SERVER_EMAIL;
+    $mail->From = CUSTOM_EMAIL_SENDER;
 
     return $mail;
   }

@@ -1,0 +1,45 @@
+/* line 1, ../scss/table-editor/frontend.scss */
+.body-maximised {
+  overflow: hidden;
+}
+
+@media print {
+  /* line 8, ../scss/table-editor/frontend.scss */
+  .lbwp-table-wrapper .datatable-top-menu {
+    display: none;
+  }
+}
+@media print {
+  /* line 15, ../scss/table-editor/frontend.scss */
+  .lbwp-table-wrapper .table-scrollable {
+    display: none;
+  }
+}
+@media screen {
+  /* line 22, ../scss/table-editor/frontend.scss */
+  .lbwp-table-wrapper .table-fullview-static {
+    display: none;
+  }
+}
+/* line 29, ../scss/table-editor/frontend.scss */
+.lbwp-table-wrapper.maximised {
+  overflow: scroll;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 9999;
+  background-color: rgba(122, 122, 122, 0.9);
+  padding: 30px;
+}
+@media screen {
+  /* line 41, ../scss/table-editor/frontend.scss */
+  .lbwp-table-wrapper.maximised .table-fullview-static {
+    display: block;
+  }
+}
+/* line 48, ../scss/table-editor/frontend.scss */
+.lbwp-table-wrapper.maximised .table-scrollable {
+  display: none;
+}

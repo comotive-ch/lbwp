@@ -134,8 +134,10 @@ class Posttype extends Base
     $lists = get_post_meta($post->ID, $listKey, true);
 
     // Go trough lists to find out templates
-    foreach ($lists as $listId) {
-      $templates[] = get_post_meta($listId, 'template-id', true);
+    if (is_array($lists) && count($lists) > 0){
+      foreach ($lists as $listId) {
+        $templates[] = get_post_meta($listId, 'template-id', true);
+      }
     }
 
     // Make sure not to filter boxes without the item prefix

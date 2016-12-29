@@ -1,10 +1,12 @@
 <?php
 
 namespace LBWP\Theme\Feature;
+use LBWP\Helper\Cronjob;
 use LBWP\Helper\Import\Csv;
 use LBWP\Helper\Metabox;
 use LBWP\Util\ArrayManipulation;
 use LBWP\Util\Date;
+use LBWP\Util\External;
 use LBWP\Util\File;
 use LBWP\Util\Strings;
 use LBWP\Util\WordPress;
@@ -41,6 +43,14 @@ class LocalMailService
    * Maximum number of rows in list data shown
    */
   const MAX_ROWS_DISPLAYED = 25;
+  /**
+   * Maximum number of emails to be send per cron call
+   */
+  const MAX_MAILS_PER_SEND_PERIOD = 50;
+  /**
+   * Salt to be used as validator for unsubscribes
+   */
+  const UBSUB_SALT = '9t2hoeg24tgrhg';
 
   /**
    * Can only be called within init
@@ -82,9 +92,11 @@ class LocalMailService
   public function initialize()
   {
     add_action('init', array($this, 'registerType'));
+    add_action('wp', array($this, 'handleUnsubscribe'));
     add_action('admin_init', array($this, 'addMetaboxes'));
     add_action('save_post_' . self::LIST_TYPE_NAME, array($this, 'addMetaboxes'));
     add_filter('lbwpFormActions', array(NLCore::getInstance(), 'addFormActions'));
+    add_action('cron_job_localmail_sending', array($this, 'tryAndSendMails'));
   }
 
   /**
@@ -392,6 +404,22 @@ class LocalMailService
   }
 
   /**
+   * Do a newsletter unsubscription
+   */
+  public function handleUnsubscribe()
+  {
+    if (isset($_GET['lm_unsub'])) {
+      list($recordId, $checkId, $listId) = explode('-', $_GET['lm_unsub']);
+      $listId = intval($listId);
+      $recordHash = md5(self::UBSUB_SALT . $recordId);
+      // Unsubscribe, if check is valid and list is valid
+      if ($listId > 0 && $recordHash == $checkId) {
+        $this->unsubscribe($recordId, $listId);
+      }
+    }
+  }
+
+  /**
    * @param string $recordId the record id (md5 of email)
    * @param int $listId the list id to save to
    * @param string $data the data array to be added
@@ -453,6 +481,118 @@ class LocalMailService
     }
 
     return $postId;
+  }
+
+  /**
+   * Actually send a bunch of mails. If there are more mails to be sent, add another
+   * job cron in a minute, if not, stop sending and remove the mailings from the list.
+   */
+  public function tryAndSendMails()
+  {
+    $mailings = ArrayManipulation::forceArray(get_option('LocalMail_Mailings'));
+
+    // Only proceed if there are still mailings
+    if (count($mailings) == 0) {
+      return;
+    }
+
+    // Loop trough all mailings. This will eventually go over the limit, but happens rarely
+    foreach ($mailings as $mailingId => $status) {
+      // Only proceed if the mailing is read to send
+      if ($status !== 'sending') {
+        continue;
+      }
+
+      // Load the mails
+      $mails = ArrayManipulation::forceArray(get_option('LocalMail_Mailing_' . $mailingId));
+
+      // Send maximum number of mails
+      $mailsSent = 0;
+      foreach ($mails as $id => $mail) {
+        // Prepare and send the mailing
+        $phpMail = External::PhpMailer();
+        $phpMail->Subject = $mail['subject'];
+        $phpMail->Body = $mail['html'];
+        $phpMail->FromName = $mail['senderName'];
+        $phpMail->addReplyTo($mail['senderEmail']);
+        $phpMail->addAddress($mail['recipient']);
+        $phpMail->send();
+
+        // Unset from the array so it's not sent again
+        unset($mails[$id]);
+
+        // Check if we need to take a break
+        if (++$mailsSent >= self::MAX_MAILS_PER_SEND_PERIOD) {
+          break;
+        }
+      }
+
+      // Are there still mails left
+      if (count($mails) > 0) {
+        // Schedule another cron
+        $this->scheduleSendingCron();
+        // Save the mails back into the mailing (deleting the already sent ones)
+        $this->createMailObjects($mailingId, $mails);
+      } else {
+        // Delete the mailing completely and don't reschedule
+        unset($mailings[$mailingId]);
+        $this->removeMailing($mailingId);
+        delete_option('LocalMail_Mailing_' . $mailingId);
+      }
+    }
+  }
+
+  /**
+   * @param string $id the mailing status
+   * @param string $status the mailing status
+   */
+  public function setMailing($id, $status)
+  {
+    $mailings = ArrayManipulation::forceArray(get_option('LocalMail_Mailings'));
+    $mailings[$id] = $status;
+    update_option('LocalMail_Mailings', $mailings);
+  }
+
+  /**
+   * Removes a mailing from the list of local mail mailings
+   * @param string $id
+   */
+  public function removeMailing($id)
+  {
+    $mailings = ArrayManipulation::forceArray(get_option('LocalMail_Mailings'));
+    unset($mailings[$id]);
+    update_option('LocalMail_Mailings', $mailings);
+  }
+
+  /**
+   * Create an unsubscribe link
+   * @param string $memberId the member id
+   * @param int $listId the list id
+   * @return string the unsubscribe url
+   */
+  public function getUnsubscribeLink($memberId, $listId)
+  {
+    $unsubscribeCode = $memberId . '-' . md5(self::UBSUB_SALT . $memberId) . '-' . $listId;
+    return $this->config['unsubscribeUrl'] . '?lm_unsub=' . $unsubscribeCode;
+  }
+
+  /**
+   * Schedule a sending cron in n-seconds
+   */
+  public function scheduleSendingCron($seconds = 60)
+  {
+    Cronjob::register(array(
+      (current_time('timestamp') + $seconds) => 'localmail_sending'
+    ));
+  }
+
+  /**
+   * @param string $mailingId the mailing id to save to
+   * @param array $mails the emails to be sent
+   */
+  public function createMailObjects($mailingId, $mails)
+  {
+    update_option('LocalMail_Mailing_' . $mailingId, $mails);
   }
 }
 

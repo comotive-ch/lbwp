@@ -4,14 +4,14 @@ define('URL_CACHED_GAUGE', 'http://graphite.comotive.ch:8080/render/?from=-15min
 define('URL_UNCACHED_GAUGE', 'http://graphite.comotive.ch:8080/render/?from=-15minutes&target=averageSeries(stats.gauges.lbwp.gauges.requests.uncached)&format=json');
 define('URL_404_ERRORS', 'http://graphite.comotive.ch:8080/render/?from=-15minutes&target=summarize(stats.counters.lbwp.rating._mass404.count, "30s")&format=json');
 // Thresholds
-define('E404_MAX_ERRORS_PER_PERIOD', 200);
-define('E404_MAX_ERRORS_AVERAGE', 20);
-define('UNCACHED_PERIOD_MAX_AVERAGE', 1000);
-define('UNCACHED_REQUEST_PEAK_THRESHOLD', 1500);
-define('UNCACHED_MAX_PEAKS_PER_PERIOD', 20);
-define('CACHED_PERIOD_MAX_AVERAGE', 20);
-define('CACHED_REQUEST_PEAK_THRESHOLD', 100);
-define('CACHED_MAX_PEAKS_PER_PERIOD', 10);
+define('E404_MAX_ERRORS_PER_PERIOD', 300);
+define('E404_MAX_ERRORS_AVERAGE', 25);
+define('UNCACHED_PERIOD_MAX_AVERAGE', 1500);
+define('UNCACHED_REQUEST_PEAK_THRESHOLD', 2500);
+define('UNCACHED_MAX_PEAKS_PER_PERIOD', 25);
+define('CACHED_PERIOD_MAX_AVERAGE', 50);
+define('CACHED_REQUEST_PEAK_THRESHOLD', 200);
+define('CACHED_MAX_PEAKS_PER_PERIOD', 20);
 // Configs
 define('VERBOSE_OUTPUT', false);
 define('LOG_EMAIL', 'it@comotive.ch');

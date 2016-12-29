@@ -1,6 +1,7 @@
 <?php
 
 namespace LBWP\Module\Tables\Component;
+
 use LBWP\Util\ArrayManipulation;
 use LBWP\Util\File;
 use LBWP\Core;
@@ -31,7 +32,8 @@ class TableHandler extends Base
 
     // Add the main shortcode, that doesn't yet do anything
     add_shortcode('lbwp:table', array($this, 'displayTable'));
-    wp_enqueue_style('datatables-css', File::getResourceUri().'/libraries/dataTables/datatables.min.css', array(), Core::REVISION, 'all');
+    wp_enqueue_style('datatables-css', File::getResourceUri() . '/libraries/dataTables/datatables.min.css', array(), Core::REVISION, 'all');
+    wp_enqueue_style('lbwp-table-css', File::getResourceUri() . '/css/table-editor/frontend.css', array(), Core::REVISION, 'all');
 
     // Set the basic config, and allow filtering
     $this->tableConfig = apply_filters('LbwpTables_tableConfig', array(
@@ -273,7 +275,8 @@ class TableHandler extends Base
   /**
    * Will be called before custom post type is displayed
    */
-  public function displayCustomPostType() {
+  public function displayCustomPostType()
+  {
     if (is_singular('lbwp-table')) {
       // include necessary scripts
       $this->prepareDataTable();
@@ -294,7 +297,7 @@ class TableHandler extends Base
     return $data;
   }
 
-  /** TODO actually generate tables
+  /**
    * Create the actual table output for the frontend
    * @param array $table the table config and data
    * @return string the html representation of the table
@@ -310,7 +313,7 @@ class TableHandler extends Base
     $fixFirstCol = intval($this->getSetting($table, 'fixateFirstColumn'));
     $fixFirstRows = intval($this->getSetting($table, 'fixateFirstRows'));
 
-    // add fullscreen link
+    // Add fullscreen link
     // TODO Text multilanguage
     $html .= '
       <div class="datatable-top-menu">
@@ -318,12 +321,7 @@ class TableHandler extends Base
         <a class="datatable-exit-minimize" style="display: none;" href="#">Vollansicht verlassen</a>
       </div>';
 
-    // Prepare the initial table
-    $html .= '
-      <div class="datatable-container">
-        <table class="' . self::getTableClasses($table['settings']) . '" data-fix-first-col="'.$fixFirstCol.'"  data-fix-first-rows="'.$fixFirstRows.'"><thead>';
-
-    $tablePart = null;
+    $tablePart = '<table class="' . self::getTableClasses($table['settings']) . '" data-fix-first-col="' . $fixFirstCol . '"  data-fix-first-rows="' . $fixFirstRows . '"><thead>';
     // Go trough the whole table now to generate it
     foreach ($table['data'] as $rowIndex => $row) {
       // handle head and body part
@@ -331,32 +329,35 @@ class TableHandler extends Base
         // thead must be set -> empty add hidden thead
         if ($rowIndex == 0) {
           // if cols should be fixed, header cannot been display:none;
-          $display = '';
-          if ($fixFirstCol == 0) {
-            $display = 'display:none';
-          }
-          $html .= '<tr style="'.$display.'">' . str_repeat('<td></td>', count($row)) . '</tr>';
+          $display = ($fixFirstCol == 0) ? 'display:none' : '';
+          $tablePart .= '<tr style="' . $display . '">' . str_repeat('<td></td>', count($row)) . '</tr>';
         }
-        $html .= '</thead><tbody>';
+        $tablePart .= '</thead><tbody>';
       }
 
-      $html .= '<tr>';
+      $tablePart .= '<tr>';
       // Look at all the cells we have
       foreach ($row as $cellIndex => $cell) {
-        $html .= '
+        $tablePart .= '
           <td class="' . self::getCellClasses($cell) . '">
             ' . $cell['content'] . '
           </td>
         ';
       }
-      $html .= '</tr>';
+      $tablePart .= '</tr>';
     }
 
     // Close the table
+    $tablePart .= '</tbody></table>';
+
+    // Prepare the initial table
     $html .= '
-          </tbody></table>
+        <div class="datatable-container">
+          <div class="table-scrollable" aria-hidden="true">' . $tablePart . '</div>
+          <div class="table-fullview-static">' . $tablePart . '</div>
         </div>
-      </div>';
+      </div>
+    ';
 
     return $html;
   }
@@ -367,7 +368,8 @@ class TableHandler extends Base
    * @param $key
    * @return mixed|null
    */
-  protected function getSetting($table, $key) {
+  protected function getSetting($table, $key)
+  {
     if (is_array($table) && array_key_exists('settings', $table)) {
       $tableSettings = $table['settings'];
       if (is_array($tableSettings) && array_key_exists($key, $tableSettings)) {
@@ -446,7 +448,7 @@ class TableHandler extends Base
   {
     // Get trough each table row and cell
     foreach ($table['data'] as $x => $row) {
-      foreach($row as $y => $cell) {
+      foreach ($row as $y => $cell) {
         // Now search every setting for its existance, and add if missing
         foreach ($this->tableConfig['cellSettings'] as $setting) {
           if (!isset($cell['settings'][$setting['key']])) {
@@ -467,21 +469,19 @@ class TableHandler extends Base
   public function displayTable($args)
   {
     $this->prepareDataTable();
-
     $table = $this->getTable($args['id']);
-
-    // TODO on go live, show for everyone
-    if (current_user_can('edit_posts')) {
-      return $this->getTableHtml($table);
-    }
-
-    return '<!--not-yet-enabled-->';
+    return $this->getTableHtml($table);
   }
 
-  protected function prepareDataTable() {
-    wp_enqueue_script('datatables', File::getResourceUri().'/libraries/dataTables/datatables.min.js', array('jquery'), Core::REVISION, true);
-    wp_enqueue_script('dragscroll', File::getResourceUri().'/libraries/dragscroll/dragscroll.js', array('jquery'), Core::REVISION, true);
-    wp_enqueue_script('lbwp-table-editor-fronted', File::getResourceUri().'/js/table-editor/LbwpTableEditor.Frontend.js', array('jquery'), Core::REVISION, true);
+  protected function prepareDataTable()
+  {
+    wp_enqueue_script('datatables', File::getResourceUri() . '/libraries/dataTables/datatables.min.js', array('jquery'), Core::REVISION, true);
+    //todo remove this and the assets
+    //wp_enqueue_script('dragscroll', File::getResourceUri().'/libraries/dragscroll/dragscroll.js', array('jquery'), Core::REVISION, true);
+    wp_enqueue_script('gsap-dragscroll', File::getResourceUri() . '/libraries/gsap/TweenLite.min.js', array('jquery'), Core::REVISION, true);
+    wp_enqueue_script('gsap-draggable', File::getResourceUri() . '/libraries/gsap/utils/Draggable.min.js', array('jquery'), Core::REVISION, true);
+    wp_enqueue_script('gsap-CSSPlugin', File::getResourceUri() . '/libraries/gsap/plugins/CSSPlugin.min.js', array('jquery'), Core::REVISION, true);
+    wp_enqueue_script('lbwp-table-editor-fronted', File::getResourceUri() . '/js/table-editor/LbwpTableEditor.Frontend.js', array('jquery'), Core::REVISION, true);
   }
 
   /**

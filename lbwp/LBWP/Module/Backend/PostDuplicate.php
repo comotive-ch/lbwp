@@ -12,7 +12,7 @@ class PostDuplicate extends \LBWP\Module\Base
   /**
    * @var array Array with the duplicateable post types
    */
-  protected $duplicateableTypes = array('post', 'page', 'lbwp-form', 'lbwp-event');
+  protected $duplicateableTypes = array('post', 'page', 'lbwp-form', 'lbwp-event', 'lbwp-table');
   /**
    * @var array global meta data duplication blacklist
    */
@@ -108,8 +108,9 @@ class PostDuplicate extends \LBWP\Module\Base
     $fmeta = array();
     $blacklist = apply_filters('duplicate_post_meta_key_blacklist', $this->globalMetaBlacklist);
     foreach($meta as $key => $value) {
-      if (!in_array($key, $blacklist))
-      $fmeta[$key] = $value[0];
+      if (!in_array($key, $blacklist)) {
+        $fmeta[$key] = maybe_unserialize($value[0]);
+      }
     }
 
     // Duplicate primitively or with logic

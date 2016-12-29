@@ -1,0 +1,53 @@
+.body-maximised {
+	overflow: hidden;
+}
+
+.lbwp-table-wrapper {
+
+	// Link to expand the table
+	.datatable-top-menu {
+		@media print {
+			display: none;
+		}
+	}
+
+	// Dynamic scrollable table, with fixed rows and cols
+	.table-scrollable {
+		@media print {
+			display: none;
+		}
+	}
+
+	// Static table html for, only for fullview (and screen readers)
+	.table-fullview-static {
+		@media screen {
+			display: none;
+		}
+	}
+
+	// Fullview
+	&.maximised {
+		overflow: scroll;
+		position: fixed;
+		top: 0;
+		left: 0;
+		width: 100%;
+		height: 100%;
+		z-index: 9999;
+		background-color: rgba(122,122,122,0.9); //rgba(255,255,255,0.8);
+		padding: 30px;
+
+		// Show the table in fullview mode
+		.table-fullview-static {
+			@media screen {
+				display: block;
+			}
+		}
+
+		// Hide the scrollable table
+		.table-scrollable {
+			display: none;
+		}
+	}
+
+}

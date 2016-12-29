@@ -23,7 +23,18 @@ class PrintToPdf
   protected $options = array(
     'apiKey' => 'H3CM2Yff0XwryukWJdB',
     'libraryVersion' => '1.0.0',
-    'useJavascript' => true
+    'useJavascript' => true,
+    'urlParameters' => array(
+      'PageSpeed' => 'off'
+    ),
+    'userAgentBlacklist' => array(
+      '*googlebot*',
+      '*crawler*',
+      '*bingbot*',
+      '*duckduckgo*',
+      '*meta*search*',
+      '*slurp*'
+    )
   );
   /**
    * @var PrinttoPdf the instance
@@ -60,9 +71,26 @@ class PrintToPdf
    */
   public function listenForPdfParam()
   {
-    if (isset($_GET['print-to-pdf']) && intval($_GET['print-to-pdf']) > 0) {
+    if (isset($_GET['print-to-pdf']) && intval($_GET['print-to-pdf']) > 0 && !$this->isBlacklisted()) {
       $this->generatePostPdf(intval($_GET['print-to-pdf']));
     }
+  }
+
+  /**
+   * DocRaptor crashes, if a bot calls the link without loading JS
+   * @return bool true, if the agent is blacklisted for generation of pdfs
+   */
+  protected function isBlacklisted()
+  {
+    $status = false;
+    $userAgent = strtolower(trim($_SERVER['HTTP_USER_AGENT']));
+    foreach ($this->options['userAgentBlacklist'] as $entry) {
+      if (fnmatch($entry, $userAgent)) {
+        return true;
+      }
+    }
+
+    return false;
   }
 
   /**
@@ -159,9 +187,24 @@ class PrintToPdf
     $document->setStrict('none');
 
     // Set the document url
-    $url = get_permalink($printedPost->ID);
+    $url = $this->parametrize(get_permalink($printedPost->ID));
     $document->setDocumentUrl($url);
     return $docraptor->createDoc($document);
+  }
+
+  /**
+   * @param string $url the basic url
+   * @return string the url parameters to be added
+   */
+  protected function parametrize($url)
+  {
+    if (count($this->options['urlParameters']) > 0) {
+      foreach ($this->options['urlParameters'] as $key => $value) {
+        $url = Strings::attachParam($key, $value, $url);
+      }
+    }
+
+    return $url;
   }
 
   /**

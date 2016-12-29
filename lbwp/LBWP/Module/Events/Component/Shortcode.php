@@ -2,6 +2,7 @@
 
 namespace LBWP\Module\Events\Component;
 
+use LBWP\Module\Frontend\HTMLCache;
 use LBWP\Util\ArrayManipulation;
 use LBWP\Util\Strings;
 
@@ -52,6 +53,7 @@ class Shortcode extends Base
     'display_past_events',
     'display_past_events_filter',
     'display_past_years',
+    'display_past_years_check',
     'year',
     'month'
   );
@@ -87,6 +89,8 @@ class Shortcode extends Base
         'display_past_events' => 0,
         'display_past_events_filter' => 0,
         'display_past_years' => 0,
+        // Only add this option temporary, if really needed (very slow)
+        'display_past_years_check' => 0,
         'max_events' => -1,
         'date_format' => get_option('date_format'),
         'time_format' => get_option('time_format'),
@@ -117,15 +121,31 @@ class Shortcode extends Base
   {
     // First get the configuration for displaying
     $config = $this->getListConfiguration($args);
-    // Now actually get the events with that
+    // Now actually get the events with the query, and populate additional data
     $events = $this->frontend->queryEvents($config);
     $this->frontend->populateEventData($events, $config, $this->currentTime);
+    // Eventually re-sort the whole array
+    $events = $this->eventuallyReverseOrder($events, $config);
 
     // If there are no events, have alook at the future, and redirect there if it has events
-    if (count($events) == 0 && $config['year'] == $this->currentYear && $this->frontend->hasFutureEvents($config, $this->currentYear + 1)) {
+    if (
+      !isset($_SESSION['events_AutoRedirectedOnce']) &&
+      count($events) == 0 &&
+      $config['year'] == $this->currentYear &&
+      $this->frontend->hasFutureEvents($config, $this->currentYear + 1)
+    ) {
+      // Avoid caching of this redirect, so it hits every user once by session
+      HTMLCache::avoidCache();
+      $_SESSION['events_AutoRedirectedOnce'] = true;
       $link = $this->getListingLink($config, array('year' => $this->currentYear + 1));
       header('Location: ' . $link, null, 302);
       exit;
+    }
+
+    // If there is no URI and no events, prevent caching for the above use case, so everyone
+    // is redirected once, if the configuration/data allows/forces it for december end edge cases
+    if (count($events) == 0 && strlen($_SERVER['QUERY_STRING']) == 0) {
+      HTMLCache::avoidCache();
     }
 
     // Generate templates and let developers override them
@@ -139,12 +159,41 @@ class Shortcode extends Base
       $html .= $this->templates['container'];
       $html = $this->handleFilters($html, $config);
       $html = $this->addNavigation($html, $config);
-      // Finally, ddd the events
+      // Finally, add the events
       $html = $this->addEvents($html, $events, $config);
     }
 
     // For the last time, let the developer do their own thing
     return apply_filters('lbwpEvents_list_shortcode_html', $html, $config, $events, $this->templates);
+  }
+
+
+  /**
+   * If there are only events in the past, reverse event order to display the youngest first
+   * This makes more sense, if the calendar view shows only past/archived events.
+   * @param array $events the events
+   * @param array $config the display configuration
+   * @return array $events the maybe sorted array
+   */
+  protected function eventuallyReverseOrder($events, $config)
+  {
+    if ($config['display_past_events']) {
+      $reverseOrder = true;
+      // Loop trough events to see if there is an event in the future
+      // If that's the case, we won't reverse the order
+      foreach ($events as $event) {
+        if ($event->endTime > $this->currentTime) {
+          $reverseOrder = false;
+          break;
+        }
+      }
+
+      if ($reverseOrder) {
+        $events = array_reverse($events);
+      }
+    }
+
+    return $events;
   }
 
   /**
@@ -244,10 +293,12 @@ class Shortcode extends Base
     if ($config['display_past_years'] > 0) {
       for ($i = 1; $i <= $config['display_past_years']; $i ++) {
         $pastYear = $this->currentYear - $i;
-        $navigation[$pastYear] = array(
-          'label' => $pastYear,
-          'link' => $this->getListingLink($config, array('year' => $pastYear))
-        );
+        if ($this->isYearNavigateable($pastYear, $config)) {
+          $navigation[$pastYear] = array(
+            'label' => $pastYear,
+            'link' => $this->getListingLink($config, array('year' => $pastYear))
+          );
+        }
       }
     }
 
@@ -271,6 +322,43 @@ class Shortcode extends Base
     // Let developers override the output completely
     $navHtml = apply_filters('lbwpEvents_list_navigation_html', $navHtml, $navigation, $config);
     return str_replace('{navigation}', $navHtml, $html);
+  }
+
+  /**
+   * Note, that this says "true" always, if checking if off (display_past_years_check=0)
+   * @param int $year the year to be navigated to
+   * @param array $config the shortcode config
+   * @return bool true, if the year can be navigated (has events)
+   */
+  public function isYearNavigateable($year, $config)
+  {
+    // If check is off, always allow the navigation
+    if ($config['display_past_years_check'] == 0) {
+      return true;
+    }
+
+    $eventCount = wp_cache_get('eventCount_' . $year, 'EventShortcode');
+    // If there is no cached value, do a simple yet semi-valid query
+    if ($eventCount == false) {
+      $start = mktime(0, 0, 0, 1, 1, $year);
+      $end = mktime(23, 59, 59, 12, 31, $year);
+      $sql = '
+        SELECT COUNT(meta_id) FROM {sql:postMeta}
+        WHERE meta_key = "event-start"
+        AND meta_value BETWEEN {sql:btStart} AND {sql:btEnd}
+      ';
+      $eventCount = intval($this->wpdb->get_var(Strings::prepareSql($sql, array(
+        'postMeta' => $this->wpdb->postmeta,
+        'btStart' => $start,
+        'btEnd' => $end
+      ))));
+
+      // Cache this for half a day
+      wp_cache_set('eventCount_' . $year, $eventCount, 'EventShortcode', 43200);
+    }
+
+    // If there is more than one event, it is navigateable
+    return $eventCount > 0;
   }
 
   /**

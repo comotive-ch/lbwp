@@ -60,6 +60,7 @@ class MemcachedAdmin extends \LBWP\Module\Base
       add_action('edit_comment', array($this, 'onEditApprovedCommentFlush'), 200, 1);
       add_action('cron_job_flush_html_cache', array($this, 'onChangeImmediateFlush'), 200);
       add_action('customize_save_after', array($this, 'onChangeImmediateFlush'), 200);
+      add_action('profile_update', array($this, 'onChangeImmediateFlush'), 200);
     }
   }
 

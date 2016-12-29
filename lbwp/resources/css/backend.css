@@ -297,3 +297,16 @@ ul.nsx_tabs {
 .sibling_list .menu-item-handle .item-title {
   margin-right: 75px !important;
 }
+
+.dashboard-generic {
+  width:100%;
+  border-spacing:0px;
+}
+.dashboard-generic td {
+  padding:2px 5px 2px 0px;
+  border-bottom:1px solid #ddd;
+}
+.dashboard-generic .right-fat {
+  font-weight:bold;
+  text-align:right;
+}

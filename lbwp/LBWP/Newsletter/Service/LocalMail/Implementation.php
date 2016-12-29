@@ -2,6 +2,8 @@
 
 namespace LBWP\Newsletter\Service\LocalMail;
 
+use LBWP\Helper\Cronjob;
+use LBWP\Helper\MasterApi;
 use LBWP\Newsletter\Service\Base;
 use LBWP\Newsletter\Service\Definition;
 use LBWP\Core as LbwpCore;
@@ -163,40 +165,44 @@ class Implementation extends Base implements Definition
    */
   public function createMailing($listId, $html, $text, $subject, $senderEmail, $senderName, $originalTarget, $language)
   {
-    // Define if it is a segment or list, initalize both as 0
-    // $sendItemId is not used, because it is the same as the validated $listId
-    $contactListId = $segmentId = 0;
-    list($sendItemId, $typeId) = explode('$$', $originalTarget);
-    switch ($typeId) {
-      case 'segment':
-        $segmentId = $listId;
-        break;
-      case 'list':
-        $contactListId = $listId;
-        break;
+    // Create the mailing ID as a resilt of list and content
+    $mailingId = md5($html . $subject . $listId) . '-' . $listId;
+
+    // Create an unfinished mailing in our option array
+    $this->api->setMailing($mailingId, 'creating');
+
+    // Get the list and loop trough it to create the actual mailing object
+    $mails = array();
+    $list = get_post_meta($listId, 'list-data', true);
+    if (is_array($list) && count($list)) {
+      foreach ($list as $memberId => $recipient) {
+        // First, add an unsubscribe object to the recipient
+        $recipient['unsubscribe'] = $this->api->getUnsubscribeLink($memberId, $listId);
+
+        // Personalize the mailing text with user data
+        $personalizedHtml = $html;
+        foreach ($recipient as $field => $value) {
+          $personalizedHtml = str_replace('{' . $field . '}', $value, $personalizedHtml);
+        }
+
+        // Create a new mailing entry
+        $mails[] = array(
+          'html' => $personalizedHtml,
+          'subject' => $subject,
+          'recipient' => $recipient['email'],
+          'senderEmail' => $senderEmail,
+          'senderName' => $senderName
+        );
+      }
     }
 
-    // Submit the mailing to emarsys
-    $mailingId = $this->api->createMailing(
-      $this->getSetting('languageSetting_' . $language),
-      $subject,
-      $senderEmail,
-      $senderName,
-      $subject,
-      $this->getSetting('emailCategory'),
-      $segmentId,
-      $contactListId,
-      $html,
-      $text
-    );
+    // Save the mails to be sent
+    $this->api->createMailObjects($mailingId, $mails);
 
-    // Schedule if configured
-    if ($this->getSetting('sendType') == 'automatic') {
-      // Schedule the campaign
-      $this->api->scheduleMailing($mailingId, current_time('timestamp'));
-    }
+    // Create a cron that is checking for local mail sendings and actually starts sending
+    $this->api->scheduleSendingCron($mailingId);
+    $this->api->setMailing($mailingId, 'sending');
 
-    // Return the mailing id
     return $mailingId;
   }
 

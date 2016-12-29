@@ -727,9 +727,11 @@ class FormHandler extends Base
 
         foreach ($itemData['params'] as $param) {
           if ($param['key'] != 'content') {
-            $paramString .= ' ' . $param['key'] . '="' . $param['value'] . '"';
+            // En- and decode, so that we only have double quotes html encoded -> Don't double enquote though
+            $value = html_entity_decode(htmlentities($param['value'], ENT_COMPAT, 'UTF-8', false), ENT_NOQUOTES, 'UTF-8');
+            $paramString .= ' ' . $param['key'] . '="' . $value . '"';
           } else {
-            $hasContentParam =true;
+            $hasContentParam = true;
             $content = trim(html_entity_decode($param['value'], ENT_QUOTES, 'UTF-8'));
           }
         }

@@ -150,7 +150,7 @@ class CmsFeatures extends \LBWP\Module\Base
       self::$lastFromEmail = get_option('admin_email');
     }
 
-    return SERVER_EMAIL;
+    return CUSTOM_EMAIL_SENDER;
   }
 
   /**

@@ -66,7 +66,7 @@ class TableEditor extends Base
 
     // Also load the CSS machine
     $baseUrl = File::getResourceUri() . '/css/table-editor';
-    wp_enqueue_style('lbwp-table-editor-css', $baseUrl . '/app.css', array(), LbwpCore::REVISION);
+    wp_enqueue_style('lbwp-table-editor-css', $baseUrl . '/backend.css', array(), LbwpCore::REVISION);
   }
 
   /**

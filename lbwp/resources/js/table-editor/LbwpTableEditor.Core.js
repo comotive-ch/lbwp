@@ -27,6 +27,10 @@ LbwpTableEditor.Core = {
 		// Get the form id and set defaults
 		LbwpTableEditor.Core.tableId = jQuery('#post_ID').val();
 		LbwpTableEditor.Core.isNewTable = (adminpage == 'post-new-php');
+		// Don't treat as new table, if there is a new_lang parameter
+		if (document.location.search.indexOf('new_lang') >= 0) {
+			LbwpTableEditor.Core.isNewTable = false;
+		}
 		// Initialize the empty data object
 		LbwpTableEditor.Data = {};
 		// Initialize the interface

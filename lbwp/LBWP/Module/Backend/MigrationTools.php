@@ -125,17 +125,20 @@ class MigrationTools extends \LBWP\Module\Base
 
     return '
       <form method="post" action="?page=' . $_GET['page'] . '&runSslInfo">
-        <h3>SSL Migration</h3>
-        <p>Zeigt info, wo sich externe HTTP Ressourcen befinden (Durchsucht Posts, Meta)</p>
+        <h3>SSL /Asset Migration</h3>
+        <p>Zeigt info, wo sich externe HTTP Ressourcen befinden etc.</p>
         ' . $results . '
         <p>
           <input type="submit" name="cmdSslInfo" value="Unsicheren Content suchen" class="button-primary" />
           <input type="button" name="cmdUrlMigration" value="Interne URLs migrieren" class="button" />
           <input type="button" name="cmdCdnUrlMigration" value="CDN URLs migrieren" class="button" />
+          <input type="button" name="cmdCdnExoMigration" value="Exoscale: Native > Cached" class="button" />
           <input type="hidden" id="migratedHostName" value="' . getLbwpHost() . '" />
           <input type="hidden" id="cdnType" value="' . CDN_TYPE . '" />
           <input type="hidden" id="cdnHttpUrl" value="http://lbwp-cdn.sdd1.ch/' . ASSET_KEY . '/files/" />
           <input type="hidden" id="cdnHttpsUrl" value="https://s3-eu-west-1.amazonaws.com/lbwp-cdn.sdd1.ch/' . ASSET_KEY . '/files/" />
+          <input type="hidden" id="cdnExoNative" value="https://sos.exo.io/lbwp-cdn/' . ASSET_KEY . '/files/" />
+          <input type="hidden" id="cdnExoCached" value="https://' . LBWP_HOST . '/assets/lbwp-cdn/' . ASSET_KEY . '/files/" />
         </p>
         <script type="text/javascript">
           jQuery("input[name=cmdUrlMigration]").click(function() {
@@ -149,6 +152,11 @@ class MigrationTools extends \LBWP\Module\Base
           jQuery("input[name=cmdCdnUrlMigration]").click(function() {
             jQuery("input[name=searchValue]").val(jQuery("#cdnHttpUrl").val());
             jQuery("input[name=replaceValue]").val(jQuery("#cdnHttpsUrl").val());
+          });
+          
+          jQuery("input[name=cmdCdnExoMigration]").click(function() {
+            jQuery("input[name=searchValue]").val(jQuery("#cdnExoNative").val());
+            jQuery("input[name=replaceValue]").val(jQuery("#cdnExoCached").val());
           });
           
           if (jQuery("#cdnType").val() != ' . CDN_TYPE_AMAZONS3_EU . ') {
