@@ -203,7 +203,7 @@ class FormHandler extends Base
     }
 
     // See if the form has been sent, and execute the actions
-    $message = '';
+    $message = $messageHtml = '';
     if (isset($_POST['lbwpFormSend']) && $this->currentForm->ID == $_POST['sentForm'] && $this->formIsSecure()) {
       $message = $this->executeForm($args, $formDisplayId);
       $this->idProvider = 0;
@@ -225,7 +225,7 @@ class FormHandler extends Base
     }
 
     // Set a custom action, if requested
-    $customAction = '';
+    $customAction = 'action="' . $_SERVER['REQUEST_URI'] . '#message-' . $formDisplayId . '"';
     if (isset($args['action']) && strlen($args['action']) > 0) {
       $customAction = ' action="' . $args['action'] . '"';
     }
@@ -255,7 +255,10 @@ class FormHandler extends Base
       }
 
       // Finally, create the message html
-      $html .= '<p class="lbwp-form-message ' . $class . '">' . $message . '</p>';
+      $messageHtml = '
+        <a class="lbwp-form-anchor" id="message-' . $formDisplayId . '"></a>
+        <p class="lbwp-form-message ' . $class . '">' . $message . '</p>
+      ';
     }
 
     // If there are additional classes
@@ -271,6 +274,7 @@ class FormHandler extends Base
     // Create the form and display an eventual message
     $html .= '
       <div class="lbwp-form-override">
+        ' . $messageHtml . '
         <form id="lbwpForm-' . $formDisplayId . '" class="lbwp-form' . $formclass . '" method="POST" ' . $enctype . ' ' . $customAction . '>
           <input type="hidden" name="sentForm" value="' . $this->currentForm->ID . '" />
     ';

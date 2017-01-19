@@ -102,6 +102,14 @@ $lbwpFormValidationColorSuccess: #7ed312;
 	display:none;
 }
 
+// Default gap for form anchor
+@include lbwpFormAnchor {
+	display: block;
+	visibility: hidden;
+}
+@include lbwpFormSetAnchorTopGap();
+
+
 @include lbwpFormInputFieldErrorStyles() {
 	border-color: $lbwpFormValidationColorError;
 }

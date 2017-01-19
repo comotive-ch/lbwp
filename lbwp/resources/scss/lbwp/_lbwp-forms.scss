@@ -53,6 +53,20 @@ $lbwpFormInputFields: "select, input[type=text], input[type=email], input[type=n
 	}
 }
 
+// Styles for anchor
+@mixin lbwpFormAnchor() {
+	.lbwp-form-anchor {
+		@content;
+	}
+}
+
+@mixin lbwpFormSetAnchorTopGap($topGap:20px) {
+	@include lbwpFormAnchor {
+		height: $topGap;
+		margin-top: $topGap * -1;
+	}
+}
+
 // LBWP forms are displayed with a table layout, except on small screens (mobile).
 // You can use this mixin to overwrite/reset the table layout (reset=true)
 // -> param reset: reset the table layout

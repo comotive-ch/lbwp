@@ -11,7 +11,6 @@ var MetaboxHelper = {
 	{
 		MetaboxHelper.handleMediaHelper();
 		MetaboxHelper.handleDynamicPostHelper();
-		MetaboxHelper.handleInlineModal();
 		MetaboxHelper.handleAddingNewItems();
 		MetaboxHelper.handleAutosaving();
 	},
@@ -128,20 +127,57 @@ var MetaboxHelper = {
 	handleInlineModal : function()
 	{
 		// Allow to open iframe modals
-		jQuery(document).on('click', 'a.open-modal', function() {
+		jQuery('a.open-modal').off('click').on('click', function(event) {
 			var link = jQuery(this);
 			jQuery('.media-modal-backdrop-mbh').show();
 			jQuery('#metaboxHelper_frame').attr('src', link.attr('href'));
 			jQuery('#metaboxHelperContainer').css('bottom', 0);
-			return false;
+			return MetaboxHelper.preventBubbling(event);
 		});
 
 		// Allow closing of iframe modals
-		jQuery(document).on('click', '.mbh-close-modal', function() {
+		jQuery('.mbh-close-modal').off('click').on('click', function(event) {
 			jQuery('.media-modal-backdrop-mbh').hide();
 			jQuery('#metaboxHelper_frame').attr('src', '');
 			jQuery('#metaboxHelperContainer').css('bottom', -10000);
+			return MetaboxHelper.preventBubbling(event);
 		});
+	},
+
+	/**
+	 * Handles removal of objects whilst trashing them
+	 */
+	handleElementRemoval : function()
+	{
+		jQuery('a.trash-element').off('click').on('click', function(event) {
+			if (confirm("Möchten Sie den Inhalt wirklich aus der Liste entfernen und löschen?")) {
+				var choice = jQuery(this);
+				// Trash the item via ajax and directly save in case the user leaves the page
+				jQuery.post(ajaxurl, {
+					action : 'trashAndRemoveItem',
+					metaKey : choice.closest('.mbh-input').find('select').data('metakey'),
+					elementId : choice.data("id"),
+					postId : jQuery('#post_ID').val()
+				});
+
+				// Remove the element by triggering the remove action
+				choice.closest('.search-choice').find('.search-choice-close').trigger('click');
+			}
+
+			return MetaboxHelper.preventBubbling(event);
+		});
+	},
+
+	/**
+	 * Prevent bubbling of an event (primarily used for chosen)
+	 * @param event
+	 * @returns {boolean} always false
+	 */
+	preventBubbling : function(event)
+	{
+		event.preventDefault();
+		event.stopPropagation();
+		return false;
 	},
 
 	/**
@@ -153,6 +189,7 @@ var MetaboxHelper = {
 			var link = jQuery(this);
 			var input = link.closest('.add-new-dropdown-item').find('input');
 			var typeDropdown = link.closest('.add-new-dropdown-item').find('select[name=metaDropdown]');
+			// Create data array to add the post item
 			var data = {
 				title : input.val(),
 				postId : link.data('post-id'),
@@ -204,6 +241,44 @@ var MetaboxHelper = {
 				jQuery('#publish').trigger('click');
 			}
 		});
+	},
+
+	/**
+	 * Handles all chosen events
+	 * @param key (html id) of the chosen
+	 */
+	handleChosenEventsOnChange : function(chosenKey, optionKey)
+	{
+		// Create a placeholder (fixed) on search input, if findable
+		var search = jQuery('#' + chosenKey + ' .search-field input');
+		if (search.length > 0 && search.prop('placeholder').length == 0) {
+			search.prop('placeholder', '+');
+		}
+
+		// Change the options to contain images or use "html" data attribute to represent them
+		jQuery('#' + chosenKey + ' .search-choice').each(function() {
+			// Get all options and the index via close button, to access data from it
+			var options = jQuery('#' + optionKey).find('option');
+			var index = parseInt(jQuery(this).find('.search-choice-close').data('option-array-index'));
+
+			if (options.length > 0 && !isNaN(index)) {
+				var option = options[index];
+				if (jQuery(option).data('image')) {
+					if (!jQuery(this).hasClass('has-image')) {
+						jQuery('span', this).before('<img class="search-choice-image" src="' + jQuery(option).data('image') + '" />');
+						jQuery(this).addClass('has-image');
+					}
+				}
+				if (jQuery(option).data('html') && jQuery(option).data('html').length > 0) {
+					jQuery('span', this).after(jQuery(option).data('html'));
+					jQuery('span', this).remove();
+				}
+			}
+		});
+
+		// Re-Register edit and delete events
+		MetaboxHelper.handleInlineModal();
+		MetaboxHelper.handleElementRemoval();
 	}
 };
 

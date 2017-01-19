@@ -177,7 +177,7 @@ class Implementation extends Base implements Definition
     if (is_array($list) && count($list)) {
       foreach ($list as $memberId => $recipient) {
         // First, add an unsubscribe object to the recipient
-        $recipient['unsubscribe'] = $this->api->getUnsubscribeLink($memberId, $listId);
+        $recipient['unsubscribe'] = $this->api->getUnsubscribeLink($memberId, $listId, $language);
 
         // Personalize the mailing text with user data
         $personalizedHtml = $html;
@@ -200,8 +200,8 @@ class Implementation extends Base implements Definition
     $this->api->createMailObjects($mailingId, $mails);
 
     // Create a cron that is checking for local mail sendings and actually starts sending
-    $this->api->scheduleSendingCron($mailingId);
     $this->api->setMailing($mailingId, 'sending');
+    $this->api->scheduleSendingCron();
 
     return $mailingId;
   }

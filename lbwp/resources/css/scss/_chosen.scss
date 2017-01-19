@@ -1,0 +1,241 @@
+$wpMbhChosenFontsize: 14px;
+// Chosen as part of metabox-helper
+.mbh-item-normal {
+	// Generall
+	.chosen-container {
+		font-size: $wpMbhChosenFontsize;
+
+		.chosen-results {
+			padding: 0;
+			margin: 0;
+			li.highlighted {
+				background: $wpBackendColorButtonPrimaryHoverBg;
+			}
+		}
+
+		//
+		.mbh-chosen-inline-element {
+			padding:5px;
+
+			h2, .mbh-item-actions {
+				display: inline-block;
+			}
+
+			#poststuff & {
+				h2 {
+					padding: 0 15px 0 0;
+					margin: 0px 0px 4px 0px;
+					font-weight:bold;
+					a {
+						text-decoration: none;
+					}
+				}
+			}
+
+			.mbh-post-info {
+				margin-bottom: 0;
+			}
+
+			img {
+				float:right;
+				width:65px;
+			}
+		}
+
+		// Item action links (edit, delete)
+		.search-choice {
+			.mbh-item-actions {
+				list-style-type: none;
+				font-size: 13px;
+				a {
+					text-decoration: none;
+					&.trash {
+						color: $wpBackendColorDelete;
+						&:hover, &:active {
+							color: $wpBackendColorDeleteHover;
+						}
+					}
+				}
+				li {
+					display: inline-block;
+					margin: 0;
+					visibility: hidden;
+					&:not(:last-child):after {
+						content: ' | ';
+					}
+				}
+			}
+			&:hover {
+				.mbh-item-actions {
+					li {
+						visibility: visible;
+					}
+				}
+			}
+
+			// Items with image
+			&.has-image {
+				padding: 0;
+				white-space: nowrap;
+    		font-size: 0;
+				img, span {
+					display: inline-block;
+    			font-size: 0;
+					white-space: normal;
+    			vertical-align: middle;
+				}
+				& > img {
+					height: 50px;
+					padding-right: 5px;
+				}
+				& > span {
+					width: 75%;
+					font-size: $wpMbhChosenFontsize;
+				}
+			}
+
+		}
+
+	}
+
+	.chosen-choices.ui-sortable {
+		// Show the sort target
+		.ui-state-highlight {
+			height: 32px;
+			margin: 5px 0;
+			border-style: dashed;
+			border-color: #b4b9be;
+			background: none;
+		}
+		li.search-choice:hover {
+			cursor: move;
+		}
+	}
+
+	.chosen-container-single {
+		.chosen-single {
+			height: 28px;
+			line-height: 28px;
+			border: 1px solid #ddd;
+			@include box-shadow(inset 0 1px 2px rgba(0,0,0,.07));
+			@include border-radius(0);
+			background: #fff;
+		}
+		&.chosen-container-active {
+			.chosen-single {
+				@include wpBackendInputFocus;
+				background-image: none;
+			}
+		}
+		// Dropdown for single selects
+		.chosen-drop {
+			@include border-radius(0);
+			@include wpBackendInputFocus;
+			margin-top: 0;
+			// Hide shadow of the upper edge
+			&:after {
+				content: '';
+				height: 2px;
+				position: absolute;
+				top: -2px;
+				width: 100%;
+				background: white;
+			}
+		}
+		// Show a delimiter for dropdowns without search
+		&.chosen-container-single-nosearch {
+			.chosen-drop {
+				border-top: 1px solid #ddd;
+				&:after {
+					top: -3px;
+				}
+			}
+		}
+	}
+
+	// Multi select
+	.chosen-container-multi {
+
+		&.chosen-container-active {
+			.chosen-choices {
+				//@include wpBackendInputFocus;
+			}
+		}
+
+		.chosen-choices {
+			background-image: none;
+			@include border-radius(0);
+			@include wpBackendInput(false);
+
+			li {
+				float: none;
+				display: block;
+				box-sizing: border-box;
+				&.search-choice {
+					margin: 4px 0;
+					border-color: #ddd;
+					background: #fafafa;
+					background-image: none;
+					@include border-radius(0);
+					@include box-shadow(none);
+					&:hover {
+						border-color: #999;
+						background: white;
+					}
+					// While moving
+					&.ui-sortable-helper {
+
+					}
+				}
+				&.search-field input[type="text"] {
+					font-family: inherit;
+				  @include input-placeholder {
+						//font-weight: 600;
+					}
+				}
+			}
+		}
+
+		.search-choice span {
+			font-size: 13px;
+    	font-weight: 600;
+    	line-height: 16px;
+			padding: 4px;
+			display: inline-block;
+		}
+
+		.chosen-drop {
+			border-color: $wpBackendColorInputBorder;
+			@include box-shadow(0 1px 0 #ccc);
+
+			.chosen-results {
+				li.no-results {
+
+				}
+			}
+		}
+
+	}
+
+	// Multi and NOT "cross reference" and "onepager"
+	&:not(.one-pager-content),
+	&:not(.cross-reference-item) {
+
+	}
+
+	// Chosen for "cross reference" and "onepager". Items are displaed more like content elements
+	&.one-pager-content,
+	&.cross-reference-item {
+
+	}
+
+	// "cross reference" only
+	&.cross-reference-item {
+
+	}
+
+	// "onepager" only
+	&.one-pager-content {
+
+	}
+}

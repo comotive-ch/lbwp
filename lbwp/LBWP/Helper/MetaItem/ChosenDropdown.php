@@ -38,7 +38,7 @@ class ChosenDropdown
       $name = $key;
     }
 
-    $attr = '';
+    $attr = ' data-metakey="' . $args['key'] . '"';
     if (isset($args['required'])) {
       $attr .= __checked_selected_helper($args['required'], true, false, 'required');
     }
@@ -53,6 +53,16 @@ class ChosenDropdown
       }
       $singleValue = false;
     }
+
+    // Set default texts and settings for chosen, if none are given
+    if (!isset($args['placeholder_text_multiple']))
+      $args['placeholder_text_multiple'] = __('Bitte wählen', 'lbwp');
+    if (!isset($args['placeholder_text_single']))
+      $args['placeholder_text_single'] = __('Bitte wählen', 'lbwp');
+    if (!isset($args['no_results_text']))
+      $args['no_results_text'] = __('Keine Suchergebnisse für', 'lbwp');
+    if (!isset($args['disable_search_threshold']))
+      $args['disable_search_threshold'] = 9;
 
     if (isset($args['value']) && $singleValue && !is_array($args['value']) && !is_object($args['value'])) {
       $value = $args['value'];
@@ -122,52 +132,16 @@ class ChosenDropdown
     // convert array to object recursively
     $chosenArgumentsObject = json_decode(json_encode($chosenArguments), FALSE);
     $chosenArgumentsJson = json_encode($chosenArgumentsObject);
+
     $html .= '
       <script>
         (function ($) {
           $(document).ready(function(){
-
-            $("#' . $key . '").on("chosen:ready change", function(evt, params) {
-              var hasModals = false;
-              $("#' . $chosenKey . ' .search-choice").each(function(){
-                // Get all options and the index via close button, to access data from it
-                var options = $("#' . $key . '").find("option");
-                var index = parseInt($(this).find(".search-choice-close").data("option-array-index"));
-                
-                if(options.length > 0 && !isNaN(index)){
-                  var option = options[index];
-                  if($(option).data("url")){
-                    var className = "search-choice-link";
-                    if ($(option).data("is-modal") == 1) {
-                      className += " open-modal";
-                      hasModals = true;
-                    }
-                    if(!$(this).hasClass("has-link-action")){
-                      $(".search-choice-close", this).before("<a class=\"" + className + "\" href=\"" + $(option).data("url") + "\" ></a>");
-                      $(this).addClass("has-link-action");
-                    }
-                  }
-                  if($(option).data("image")){
-                    if(!$(this).hasClass("has-image")){
-                      $("span", this).before("<img class=\"search-choice-image\" src=\"" + $(option).data("image") + "\" />");
-                      $(this).addClass("has-image");
-                    }
-                  }
-                  if($(option).data("html") && $(option).data("html").length > 0){
-                    $("span", this).after($(option).data("html"));
-                    $("span", this).remove();
-                  }
-                }
-              });
-
-              if (!hasModals) {
-                $("#' . $chosenKey . ' .search-choice-link").click(function(e){
-                  // chosen is registered on parent, stop the propagation, but dont prevent the default action (i.e. browswer link)
-                  e.stopPropagation();
-                });
-              }
+            // Register an event on change of the chosen
+            $("#' . $key . '").on("chosen:ready change", function() {
+              MetaboxHelper.handleChosenEventsOnChange("' . $chosenKey . '","' . $key . '");
             });
-
+            // Actually create the chosen with arguments
             jQuery("#' . $key . '").chosen(' . $chosenArgumentsJson . ');
           });
         }(jQuery));
@@ -305,14 +279,6 @@ class ChosenDropdown
     } else {
       $value = stripslashes(trim($value));
     }
-
-    // Check if the field is required
-    /* TODO solve this riddle
-    if (isset($field['args']['required']) && $field['args']['required'] && empty($value)) {
-      $this->addError($boxId, 'Bitte füllen Sie das Feld "' . $field['args']['title'] . '" aus.');
-      return;
-    }
-    */
 
     // Safely handle the post meta
     self::saveToMeta($postId, $field['key'], $value);

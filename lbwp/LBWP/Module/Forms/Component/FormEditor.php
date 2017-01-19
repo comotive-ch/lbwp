@@ -222,8 +222,9 @@ class FormEditor extends Base
   {
     // If the shortcode is empty, create a new form element
     if (strlen(trim($shortcode)) == 0) {
+      $msg = __('Ihre Nachricht wurde erfolgreich gesendet.', 'lbwp');
       $shortcode = '
-        [' . FormHandler::SHORTCODE_FORM . ' button="' . __('Absenden', 'lbwp') . '" hide_after_success="1" disable_enctype="0"]
+        [' . FormHandler::SHORTCODE_FORM . ' button="' . __('Absenden', 'lbwp') . '" meldung="' . $msg . '" redirect="0" hide_after_success="1" disable_enctype="0"]
 
         [/' . FormHandler::SHORTCODE_FORM . ']
       ';
@@ -485,7 +486,12 @@ class FormEditor extends Base
   {
     // Start the select element
     $html = '<select name="page_id" id="page_id">';
-    $args = array('echo' => false, 'value_field' => 'id');
+    $args = array(
+      'echo' => false,
+      'value_field' => 'id',
+      'show_option_none' => __('Keine Seite zur Weiterleitung ausgewählt', 'lbwp'),
+      'option_none_value' => 0
+    );
 
     // Get pages (either normally, or multilang version
     if (Multilang::isActive()) {
@@ -493,6 +499,8 @@ class FormEditor extends Base
         $args['lang'] = $language;
         $dropdownHtml = wp_dropdown_pages($args);
         $html .= '<optgroup label="' . Multilang::getLanguageName($language) . '">' . Strings::xpath($dropdownHtml, '//option', false) . '</optgroup>';
+        // After the first loop, remove show_option_none to prevent havoc
+        unset($args['show_option_none'], $args['option_none_value']);
       }
     } else {
       $dropdownHtml = wp_dropdown_pages($args);

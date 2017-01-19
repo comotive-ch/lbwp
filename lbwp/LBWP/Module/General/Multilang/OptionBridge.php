@@ -33,6 +33,7 @@ class OptionBridge extends BaseSingleton
     self::add('blogname');
     self::add('blogdescription');
     self::add('LbwpConfig');
+    self::add('automaticNewsletter');
   }
 
   /**

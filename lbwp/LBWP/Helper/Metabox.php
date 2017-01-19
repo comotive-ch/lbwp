@@ -62,7 +62,7 @@ class Metabox
   /**
    * @var int the version of this class
    */
-  const VERSION = 10;
+  const VERSION = 14;
   /**
    * @var string merged fields metabox id
    */
@@ -95,6 +95,7 @@ class Metabox
     add_action('add_meta_boxes_' . $posttype, array($this, 'addMetaboxes'), 150);
     // Generic ajax actions and listeners (just in case it is used)
     add_action('wp_ajax_newPostTypeItem', array('\LBWP\Helper\MetaItem\PostTypeDropdown', 'addNewPostTypeItem'));
+    add_action('wp_ajax_trashAndRemoveItem', array('\LBWP\Helper\MetaItem\PostTypeDropdown', 'trashAndRemoveItem'));
   }
 
   /**

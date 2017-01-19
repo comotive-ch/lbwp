@@ -41,7 +41,7 @@ abstract class Core extends BaseComponent
     ',
     'item' => '
       <section {itemAttributes}>
-        <a name="{itemSlug}"></a>
+        <a name="{itemSlug}" class="item-anchor"></a>
         {itemContent}
       </section>
     ',
@@ -130,6 +130,7 @@ abstract class Core extends BaseComponent
     add_action('save_post', array($this, 'addMetaboxes'));
     add_action('wp_insert_post_data', array($this, 'filterPostContent'));
     add_action('mbh_addNewPostTypeItem', array($this, 'addTypeMetaInfo'), 10, 2);
+    add_filter('mbh_addNewPostTypeItemHtmlCallback', array($this, 'getNewItemCallback'));
     // Execute item metaboxes, if an item admin is displayed
     add_action('admin_init', array($this, 'executeItemMetaboxes'));
     add_action('save_post', array($this, 'executeItemMetaboxes'));
@@ -172,6 +173,14 @@ abstract class Core extends BaseComponent
   }
 
   /**
+   * @return callable
+   */
+  public function getNewItemCallback()
+  {
+    return array($this, 'getChoosenItemHtml');
+  }
+
+  /**
    * Adds the metaboxes, removes post type support for editor if one pager is active
    */
   public function addMetaboxes()
@@ -201,7 +210,7 @@ abstract class Core extends BaseComponent
             'sortable' => true,
             'multiple' => true,
             'containerClasses' => 'chosen-dropdown-item one-pager-content',
-            'itemHtmlCallback' => array($this, 'getChoosenItemHtml'),
+            'itemHtmlCallback' => $this->getNewItemCallback(),
             'metaDropdown' => array(
               'key' => 'element-type',
               'data' => $this->getNamedKeys()
@@ -510,10 +519,17 @@ abstract class Core extends BaseComponent
       $additional .= '<p class="mbh-post-info">' . __('Im Menu anzeigen', 'lbwp') . ': ' . $showInMenu . '</p>' . $menuName;
     }
 
+    // Edit link for modals
+    $editLink = admin_url('post.php?post=' . $item->ID . '&action=edit&ui=show-as-modal');
+
     return '
       <div class="mbh-chosen-inline-element">
         ' . $image . '
-        <h2>' . PostTypeDropdown::getPostElementName($item, $typeMap) . '</h2>
+        <h2><a href="' . $editLink . '" class="open-modal">' . PostTypeDropdown::getPostElementName($item, $typeMap) . '</a></h2>
+        <ul class="mbh-item-actions">
+          <li><a href="' . $editLink . '" class="open-modal">' . __('Bearbeiten', 'lbwp') . '</a></li>
+          <li><a href="#" data-id="' . $item->ID . '" class="trash-element trash">' . __('Löschen', 'lbwp') . '</a></li>
+        </ul>
         <p class="mbh-post-info">' . __('Autor', 'lbwp') . ': ' . get_the_author_meta('display_name', $item->post_author) . '</p>
         <p class="mbh-post-info">' . __('Letzte Änderung', 'lbwp') . ': ' . Date::convertDate(Date::SQL_DATETIME, Date::EU_DATE, $item->post_modified) . '</p>
         <p class="mbh-post-info">' . __('Inhalts-Typ', 'lbwp') . ': ' . $this->getItemTypeName($item->ID) . '</p>

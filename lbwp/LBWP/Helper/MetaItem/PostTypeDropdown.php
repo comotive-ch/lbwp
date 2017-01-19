@@ -35,7 +35,7 @@ class PostTypeDropdown
     // Set the basic query
     $query = array(
       'post_type' => $types,
-      'post_status' => 'all',
+      'post_status' => array('publish', 'private', 'future', 'draft', 'pending'),
       'posts_per_page' => -1,
       'orderby' => 'title',
 	    'order' => 'ASC'
@@ -96,6 +96,25 @@ class PostTypeDropdown
   }
 
   /**
+   * Trash and remove and element from a post
+   */
+  public static function trashAndRemoveItem()
+  {
+    // Validate parameters
+    $success = false;
+    $metaKey = Strings::forceSlugString($_POST['metaKey']);
+    $elementId = intval($_POST['elementId']);
+    $postId = intval($_POST['postId']);
+
+    // Since these are multi elements, we can just delete the one meta record we need
+    delete_post_meta($postId, $metaKey, $elementId);
+    // Now trash the element that was removed
+    $result = wp_trash_post($elementId);
+    // Send back a success response
+    WordPress::sendJsonResponse(array('result' => $result));
+  }
+
+  /**
    * The basic new post type item call
    */
   public static function addNewPostTypeItem()
@@ -110,6 +129,9 @@ class PostTypeDropdown
       'post_parent' => ($postType == 'onepager-item') ? $assignedPostId : 0,
     )));
 
+    // Let developers add meta data to the element
+    do_action('mbh_addNewPostTypeItem', $newPostId, $postType);
+
     // Add the new ID to the option, in case the user doesn't save afterwards
     $assignedPosts = get_post_meta($assignedPostId, $_POST['optionKey']);
     if (is_array($assignedPosts)) {
@@ -117,16 +139,17 @@ class PostTypeDropdown
       ChosenDropdown::saveToMeta($assignedPostId, $_POST['optionKey'], $assignedPosts);
     }
 
+    // Use the default callback to provide minimum info and edit links
+    $callback = array('\LBWP\Helper\MetaItem\PostTypeDropdown', 'defaultItemHtml');
+    $callback = apply_filters('mbh_addNewPostTypeItemHtmlCallback', $callback);
+
     // Create the option HTML to be added to chosen
     $optionHtml = '
       <option value="' . $newPostId . '" selected="selected"
-        data-url="' . admin_url('post.php?post=' . $newPostId . '&action=edit&ui=show-as-modal') . '"
+        data-html="' . esc_attr(call_user_func($callback, get_post($newPostId), array())) . '"
         data-is-modal="1">' . $_POST['title'] . ' (Entwurf)
       </option>
     ';
-
-    // Let developers add meta data to the element
-    do_action('mbh_addNewPostTypeItem', $newPostId, $postType);
 
     // Report back the new ID and the to be added option
     WordPress::sendJsonResponse(array(
@@ -140,21 +163,42 @@ class PostTypeDropdown
    * @param array $typeMap a post type mapping
    * @return string html code to represent the item
    */
-  public static function defaultItemHtml($item, $typeMap)
+  public static function defaultItemHtml($item, $typeMap, $delete = true)
   {
-    $image = '';
+    $image = $deleteLink = '';
     if (has_post_thumbnail($item->ID)) {
       $image = '<img src="' . WordPress::getImageUrl(get_post_thumbnail_id($item->ID), 'thumbnail') . '">';
     }
 
+    if ($delete) {
+      $deleteLink = '<li><a href="#" data-id="' . $item->ID . '" class="trash-element trash">' . __('Löschen', 'lbwp') . '</a></li>';
+    }
+
+    // Edit link for modals
+    $editLink = admin_url('post.php?post=' . $item->ID . '&action=edit&ui=show-as-modal');
+
     return '
       <div class="mbh-chosen-inline-element">
         ' . $image . '
-        <h2>' . self::getPostElementName($item, $typeMap) . '</h2>
+        <h2><a href="' . $editLink . '" class="open-modal">' . self::getPostElementName($item, $typeMap) . '</a></h2>
+        <ul class="mbh-item-actions">
+          <li><a href="' . $editLink . '" class="open-modal">' . __('Bearbeiten', 'lbwp') . '</a></li>
+          ' . $deleteLink . '
+        </ul>
         <p class="mbh-post-info">Autor: ' . get_the_author_meta('display_name', $item->post_author) . '</p>
         <p class="mbh-post-info">Letzte Änderung: ' . Date::convertDate(Date::SQL_DATETIME, Date::EU_DATE, $item->post_modified) . '</p>
       </div>
     ';
+  }
+
+  /**
+   * @param \WP_Post $item the post item
+   * @param array $typeMap a post type mapping
+   * @return string html code to represent the item
+   */
+  public static function defaultItemHtmlNoDelete($item, $typeMap)
+  {
+    return self::defaultItemHtml($item, $typeMap, false);
   }
 
   /**

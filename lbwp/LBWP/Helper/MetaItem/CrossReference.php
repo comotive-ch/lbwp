@@ -57,7 +57,7 @@ class CrossReference
     }
 
     // Set a callback for html generation (default none, simple title for each element)
-    $callback = array('\LBWP\Helper\MetaItem\PostTypeDropdown', 'defaultItemHtml');
+    $callback = array('\LBWP\Helper\MetaItem\PostTypeDropdown', 'defaultItemHtmlNoDelete');
     if (isset($args['itemHtmlCallback']) && is_callable($args['itemHtmlCallback'])) {
       $callback = $args['itemHtmlCallback'];
     }

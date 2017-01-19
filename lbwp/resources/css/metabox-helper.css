@@ -1,70 +1,311 @@
+/* line 5, scss/_chosen.scss */
+.mbh-item-normal .chosen-container {
+  font-size: 14px;
+}
+/* line 8, scss/_chosen.scss */
+.mbh-item-normal .chosen-container .chosen-results {
+  padding: 0;
+  margin: 0;
+}
+/* line 11, scss/_chosen.scss */
+.mbh-item-normal .chosen-container .chosen-results li.highlighted {
+  background: #008ec2;
+}
+/* line 17, scss/_chosen.scss */
+.mbh-item-normal .chosen-container .mbh-chosen-inline-element {
+  padding: 5px;
+}
+/* line 20, scss/_chosen.scss */
+.mbh-item-normal .chosen-container .mbh-chosen-inline-element h2, .mbh-item-normal .chosen-container .mbh-chosen-inline-element .mbh-item-actions {
+  display: inline-block;
+}
+/* line 25, scss/_chosen.scss */
+#poststuff .mbh-item-normal .chosen-container .mbh-chosen-inline-element h2 {
+  padding: 0 15px 0 0;
+  margin: 0px 0px 4px 0px;
+  font-weight: bold;
+}
+/* line 29, scss/_chosen.scss */
+#poststuff .mbh-item-normal .chosen-container .mbh-chosen-inline-element h2 a {
+  text-decoration: none;
+}
+/* line 35, scss/_chosen.scss */
+.mbh-item-normal .chosen-container .mbh-chosen-inline-element .mbh-post-info {
+  margin-bottom: 0;
+}
+/* line 39, scss/_chosen.scss */
+.mbh-item-normal .chosen-container .mbh-chosen-inline-element img {
+  float: right;
+  width: 65px;
+}
+/* line 47, scss/_chosen.scss */
+.mbh-item-normal .chosen-container .search-choice .mbh-item-actions {
+  list-style-type: none;
+  font-size: 13px;
+}
+/* line 50, scss/_chosen.scss */
+.mbh-item-normal .chosen-container .search-choice .mbh-item-actions a {
+  text-decoration: none;
+}
+/* line 52, scss/_chosen.scss */
+.mbh-item-normal .chosen-container .search-choice .mbh-item-actions a.trash {
+  color: #a00;
+}
+/* line 54, scss/_chosen.scss */
+.mbh-item-normal .chosen-container .search-choice .mbh-item-actions a.trash:hover, .mbh-item-normal .chosen-container .search-choice .mbh-item-actions a.trash:active {
+  color: red;
+}
+/* line 59, scss/_chosen.scss */
+.mbh-item-normal .chosen-container .search-choice .mbh-item-actions li {
+  display: inline-block;
+  margin: 0;
+  visibility: hidden;
+}
+/* line 63, scss/_chosen.scss */
+.mbh-item-normal .chosen-container .search-choice .mbh-item-actions li:not(:last-child):after {
+  content: ' | ';
+}
+/* line 70, scss/_chosen.scss */
+.mbh-item-normal .chosen-container .search-choice:hover .mbh-item-actions li {
+  visibility: visible;
+}
+/* line 77, scss/_chosen.scss */
+.mbh-item-normal .chosen-container .search-choice.has-image {
+  padding: 0;
+  white-space: nowrap;
+  font-size: 0;
+}
+/* line 81, scss/_chosen.scss */
+.mbh-item-normal .chosen-container .search-choice.has-image img, .mbh-item-normal .chosen-container .search-choice.has-image span {
+  display: inline-block;
+  font-size: 0;
+  white-space: normal;
+  vertical-align: middle;
+}
+/* line 87, scss/_chosen.scss */
+.mbh-item-normal .chosen-container .search-choice.has-image > img {
+  height: 50px;
+  padding-right: 5px;
+}
+/* line 91, scss/_chosen.scss */
+.mbh-item-normal .chosen-container .search-choice.has-image > span {
+  width: 75%;
+  font-size: 14px;
+}
+/* line 103, scss/_chosen.scss */
+.mbh-item-normal .chosen-choices.ui-sortable .ui-state-highlight {
+  height: 32px;
+  margin: 5px 0;
+  border-style: dashed;
+  border-color: #b4b9be;
+  background: none;
+}
+/* line 110, scss/_chosen.scss */
+.mbh-item-normal .chosen-choices.ui-sortable li.search-choice:hover {
+  cursor: move;
+}
+/* line 116, scss/_chosen.scss */
+.mbh-item-normal .chosen-container-single .chosen-single {
+  height: 28px;
+  line-height: 28px;
+  border: 1px solid #ddd;
+  -moz-box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.07);
+  -webkit-box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.07);
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.07);
+  -moz-border-radius: 0;
+  -webkit-border-radius: 0;
+  border-radius: 0;
+  background: #fff;
+}
+/* line 125, scss/_chosen.scss */
+.mbh-item-normal .chosen-container-single.chosen-container-active .chosen-single {
+  border-color: #5b9dd9;
+  -moz-box-shadow: 0 0 2px rgba(30, 140, 190, 0.8);
+  -webkit-box-shadow: 0 0 2px rgba(30, 140, 190, 0.8);
+  box-shadow: 0 0 2px rgba(30, 140, 190, 0.8);
+  background-image: none;
+}
+/* line 131, scss/_chosen.scss */
+.mbh-item-normal .chosen-container-single .chosen-drop {
+  -moz-border-radius: 0;
+  -webkit-border-radius: 0;
+  border-radius: 0;
+  border-color: #5b9dd9;
+  -moz-box-shadow: 0 0 2px rgba(30, 140, 190, 0.8);
+  -webkit-box-shadow: 0 0 2px rgba(30, 140, 190, 0.8);
+  box-shadow: 0 0 2px rgba(30, 140, 190, 0.8);
+  margin-top: 0;
+}
+/* line 136, scss/_chosen.scss */
+.mbh-item-normal .chosen-container-single .chosen-drop:after {
+  content: '';
+  height: 2px;
+  position: absolute;
+  top: -2px;
+  width: 100%;
+  background: white;
+}
+/* line 147, scss/_chosen.scss */
+.mbh-item-normal .chosen-container-single.chosen-container-single-nosearch .chosen-drop {
+  border-top: 1px solid #ddd;
+}
+/* line 149, scss/_chosen.scss */
+.mbh-item-normal .chosen-container-single.chosen-container-single-nosearch .chosen-drop:after {
+  top: -3px;
+}
+/* line 165, scss/_chosen.scss */
+.mbh-item-normal .chosen-container-multi .chosen-choices {
+  background-image: none;
+  -moz-border-radius: 0;
+  -webkit-border-radius: 0;
+  border-radius: 0;
+  border: 1px solid #ddd;
+  -moz-box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.07);
+  -webkit-box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.07);
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.07);
+}
+/* line 170, scss/_chosen.scss */
+.mbh-item-normal .chosen-container-multi .chosen-choices li {
+  float: none;
+  display: block;
+  box-sizing: border-box;
+}
+/* line 174, scss/_chosen.scss */
+.mbh-item-normal .chosen-container-multi .chosen-choices li.search-choice {
+  margin: 4px 0;
+  border-color: #ddd;
+  background: #fafafa;
+  background-image: none;
+  -moz-border-radius: 0;
+  -webkit-border-radius: 0;
+  border-radius: 0;
+  -moz-box-shadow: none;
+  -webkit-box-shadow: none;
+  box-shadow: none;
+}
+/* line 181, scss/_chosen.scss */
+.mbh-item-normal .chosen-container-multi .chosen-choices li.search-choice:hover {
+  border-color: #999;
+  background: white;
+}
+/* line 190, scss/_chosen.scss */
+.mbh-item-normal .chosen-container-multi .chosen-choices li.search-field input[type="text"] {
+  font-family: inherit;
+}
+/* line 199, scss/_chosen.scss */
+.mbh-item-normal .chosen-container-multi .search-choice span {
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 16px;
+  padding: 4px;
+  display: inline-block;
+}
+/* line 207, scss/_chosen.scss */
+.mbh-item-normal .chosen-container-multi .chosen-drop {
+  border-color: #ddd;
+  -moz-box-shadow: 0 1px 0 #ccc;
+  -webkit-box-shadow: 0 1px 0 #ccc;
+  box-shadow: 0 1px 0 #ccc;
+}
+
+/* line 6, scss/metabox-helper.scss */
 .mbh-item-normal, .mbh-item-full {
   width: 100%;
   padding: 3px 0px 2px 0px;
   box-sizing: border-box;
 }
 
+/* line 12, scss/metabox-helper.scss */
 .mbh-item-normal:before, .mbh-item-full:before,
 .mbh-item-normal:after, .mbh-item-full:after {
-  content: " "; display: table;
+  content: " ";
+  display: table;
 }
+
+/* line 16, scss/metabox-helper.scss */
 .mbh-item-normal:after, .mbh-item-full:after {
   clear: both;
 }
+
+/* line 19, scss/metabox-helper.scss */
 .mbh-title {
   font-weight: bold;
 }
+
+/* line 22, scss/metabox-helper.scss */
 .mbh-title label a {
   font-weight: normal;
 }
+
+/* line 25, scss/metabox-helper.scss */
 .mbh-title .required {
   font-weight: bold;
   color: #CC0000;
 }
+
+/* line 29, scss/metabox-helper.scss */
 .mbh-item-normal .mbh-title {
   width: 25%;
   float: left;
   padding: 4px 0px 0px 0px;
 }
+
+/* line 34, scss/metabox-helper.scss */
 .mbh-item-normal .mbh-field {
   width: 75%;
   float: left;
 }
+
 /* the editor is not very responsive... rearrange it a bit */
 @media (max-width: 1160px) {
+  /* line 40, scss/metabox-helper.scss */
   .mbh-item-normal .mbh-field.editor {
     width: 100%;
     clear: left;
   }
 }
-
+/* line 46, scss/metabox-helper.scss */
 #side-sortables .mbh-item-normal .mbh-title,
 #side-sortables .mbh-item-normal .mbh-field {
   width: 100%;
 }
+
+/* line 50, scss/metabox-helper.scss */
 #side-sortables .mbh-item-normal .mbh-title {
-	margin-bottom:5px;
+  margin-bottom: 5px;
 }
+
+/* line 53, scss/metabox-helper.scss */
 .mbh-item-normal h4 {
   font-size: 14px;
   margin: 5px 0px 5px 0px;
 }
+
+/* line 57, scss/metabox-helper.scss */
 .mbh-item-normal p {
   margin: 0px 0px 5px 0px;
 }
+
+/* line 60, scss/metabox-helper.scss */
 .mbh-item-full .mbh-title {
   width: 100%;
   margin: 0px 0px 5px 0px;
 }
+
+/* line 64, scss/metabox-helper.scss */
 .mbh-item-full .mbh-field {
   width: 100%;
   margin-left: -3px;
 }
+
+/* line 68, scss/metabox-helper.scss */
 .mbh-description {
   margin: 0px 0px 0px 5px;
   color: #444444;
   font-style: italic;
 }
+
+/* line 73, scss/metabox-helper.scss */
 .mbh-error-list {
   list-style: square;
   background-color: #FFBBBB;
@@ -74,10 +315,13 @@
   -webkit-border-radius: 3px;
   padding: 5px 0px 5px 0px;
 }
+
+/* line 82, scss/metabox-helper.scss */
 .mbh-error-list li {
   margin: 3px 0px 3px 25px;
 }
 
+/* line 86, scss/metabox-helper.scss */
 .mbh-item-normal.list .mbh-input {
   overflow-y: scroll;
   background: #FFFFFF;
@@ -87,36 +331,44 @@
   -webkit-border-radius: 3px;
   box-sizing: border-box;
   padding: 0 0 3px 5px;
-  width: 99.99%; /* chrome display bug */
+  width: 99.99%;
+  /* chrome display bug */
 }
 
+/* line 98, scss/metabox-helper.scss */
 .mbh-item-normal.list .mbh-input::-webkit-scrollbar {
   -webkit-appearance: none;
 }
 
+/* line 102, scss/metabox-helper.scss */
 body .mbh-type-dropdown-inline {
-	max-width:200px;
-	height:27px;
-	padding:0px;
-	vertical-align: top;
+  max-width: 200px;
+  height: 27px;
+  padding: 0px;
+  vertical-align: top;
 }
 
+/* line 109, scss/metabox-helper.scss */
 .mbh-item-normal.list .mbh-input::-webkit-scrollbar:vertical {
   width: 11px;
 }
 
+/* line 113, scss/metabox-helper.scss */
 .mbh-item-normal.list .mbh-input::-webkit-scrollbar:horizontal {
   height: 11px;
 }
 
+/* line 117, scss/metabox-helper.scss */
 .mbh-item-normal.list .mbh-input::-webkit-scrollbar-thumb {
   border-radius: 8px;
   -moz-border-radius: 8px;
   -webkit-border-radius: 8px;
-  border: 2px solid white; /* should match background, can't be transparent */
-  background-color: rgba(0, 0, 0, .5);
+  border: 2px solid white;
+  /* should match background, can't be transparent */
+  background-color: rgba(0, 0, 0, 0.5);
 }
 
+/* line 125, scss/metabox-helper.scss */
 .mbh-item-normal.list .mbh-input::-webkit-scrollbar-track {
   background-color: #FFFFFF;
   border-radius: 8px;
@@ -124,27 +376,61 @@ body .mbh-type-dropdown-inline {
   -webkit-border-radius: 8px;
 }
 
+/* line 132, scss/metabox-helper.scss */
 .mbh-input input[type="checkbox"],
-.mbh-input input[type="radio"] { float: left; margin-top: 5px; clear: left; }
-.mbh-input input[type="checkbox"] + label,
-.mbh-input input[type="radio"] + label { float: left; padding-top: 4px; box-sizing: border-box; padding-left: 5px; }
-.mbh-input { float: left; width: 100%; padding-bottom: 3px; }
-.mbh-datefield { width: 120px; background-image: url('../images/icons/date.png'); background-position: 97% 50%; background-repeat: no-repeat; }
-.mbh-timefield { width: 60px; }
-.mbh-field.wide { width: 70%; float: left; margin-left: 2.5%; }
-.mbhRemoveMedia { float: right; }
-
-.mbh-input .search-choice span {
-	font-weight:bold;
-	font-size:15px;
-	display:inline-block;
-	padding:5px;
+.mbh-input input[type="radio"] {
+  float: left;
+  margin-top: 5px;
+  clear: left;
 }
 
+/* line 134, scss/metabox-helper.scss */
+.mbh-input input[type="checkbox"] + label,
+.mbh-input input[type="radio"] + label {
+  float: left;
+  padding-top: 4px;
+  box-sizing: border-box;
+  padding-left: 5px;
+}
+
+/* line 136, scss/metabox-helper.scss */
+.mbh-input {
+  float: left;
+  width: 100%;
+  padding-bottom: 3px;
+}
+
+/* line 137, scss/metabox-helper.scss */
+.mbh-datefield {
+  width: 120px;
+  background-image: url("../images/icons/date.png");
+  background-position: 97% 50%;
+  background-repeat: no-repeat;
+}
+
+/* line 138, scss/metabox-helper.scss */
+.mbh-timefield {
+  width: 60px;
+}
+
+/* line 139, scss/metabox-helper.scss */
+.mbh-field.wide {
+  width: 70%;
+  float: left;
+  margin-left: 2.5%;
+}
+
+/* line 140, scss/metabox-helper.scss */
+.mbhRemoveMedia {
+  float: right;
+}
+
+/* line 142, scss/metabox-helper.scss */
 .mbh-field .chosen-container-multi .chosen-choices li.search-choice.has-link-action {
   padding-right: 32px;
 }
 
+/* line 146, scss/metabox-helper.scss */
 .mbh-field .chosen-container-multi .chosen-choices li.search-choice .search-choice-link {
   position: absolute;
   top: 4px;
@@ -156,190 +442,219 @@ body .mbh-type-dropdown-inline {
   font-size: 1px;
 }
 
-.mbh-chosen-inline-element {
-	padding:5px;
-}
-
-.mbh-chosen-inline-element img {
-	float:right;
-	width:65px;
-}
-
-#post-body .mbh-chosen-inline-element h2 {
-	padding:0px;
-	margin:0px 0px 4px 0px;
-	text-decoration: underline;
-	font-weight:bold;
-	font-size:14px;
-}
-
-#post-body .mbh-chosen-inline-element .mbh-post-info {
-	margin-bottom:1px;
-}
-
+/* line 157, scss/metabox-helper.scss */
 .chosen-container-multi .chosen-choices li.search-choice .search-choice-close:hover {
-    background-position: -42px -10px;
+  background-position: -42px -10px;
 }
 
-.chosen-choices li.search-choice .search-choice-link, .chosen-choices li.search-choice .search-choice-close { -webkit-transition-property: none; -moz-transition-property: none; transition-property: none; }
+/* line 161, scss/metabox-helper.scss */
+.chosen-choices li.search-choice .search-choice-link, .chosen-choices li.search-choice .search-choice-close {
+  -webkit-transition-property: none;
+  -moz-transition-property: none;
+  transition-property: none;
+}
+
+/* line 162, scss/metabox-helper.scss */
 .mbh-field .chosen-container-multi .chosen-choices li.search-choice .search-choice-link:hover {
   background-position: 12px 0px;
 }
-.mbh-field li.search-choice.has-image img { float: left; height: 50px; margin-right: 10px; }
 
+/* line 166, scss/metabox-helper.scss */
 .mbh-field .chosen-container-multi .chosen-choices li.search-field input[type=text] {
   height: 25px;
 }
-.mbh-field .chosen-container-multi .chosen-choices {
-  border-color: #DFDFDF;
-  border-radius: 3px;
-  -moz-border-radius: 3px;
-  -webkit-border-radius: 3px;
-  background-image: none;
+
+/* line 170, scss/metabox-helper.scss */
+#mbh-assign-posts-container {
+  padding: 20px 0px 5px 0px;
+  float: left;
+  width: 100%;
 }
-.mbh-field .chosen-container-active .chosen-choices {
-  border-color: #DFDFDF;
-  border-radius: 3px 3px 0px 0px;
-  -moz-border-radius: 3px 3px 0px 0px;
-  -webkit-border-radius: 3px 3px 0px 0px;
-  background-image: none;
-  box-shadow: none;
+
+/* line 171, scss/metabox-helper.scss */
+#mbh-assign-posts-container .mbh-assigned-post-item:nth-child(odd) {
+  background-color: #FFFFFF;
 }
-.mbh-field .chosen-container-multi .chosen-choices li.search-choice { width: 97%; box-sizing: border-box; margin-left: 1.5%; margin-right: 1.5%; color: #555555; border-color: #CCCCCC; background: #F7F7F7; min-height: 22px; }
-.mbh-field .chosen-container-multi .chosen-choices.ui-sortable li.search-choice:hover { cursor: grabbing; cursor: -moz-grabbing; cursor: -webkit-grabbing; }
 
-.mbh-field .chosen-container .chosen-drop { border-color: #DFDFDF; }
+/* line 172, scss/metabox-helper.scss */
+#mbh-assign-posts-container .mbh-assigned-post-item:nth-child(even) {
+  background-color: #EEEEEE;
+}
 
-.mbh-field .chosen-container .chosen-results li.highlighted { background: #0074A2; }
+/* line 173, scss/metabox-helper.scss */
+#mbh-assign-posts-container .mbh-assigned-post-item {
+  cursor: move;
+  overflow: auto;
+  clear: both;
+  padding: 8px;
+  border-bottom: 1px solid #DDDDDD;
+}
 
-#mbh-assign-posts-container { padding: 20px 0px 5px 0px; float: left; width: 100%; }
-#mbh-assign-posts-container .mbh-assigned-post-item:nth-child(odd) { background-color: #FFFFFF; }
-#mbh-assign-posts-container .mbh-assigned-post-item:nth-child(even) { background-color: #EEEEEE; }
-#mbh-assign-posts-container .mbh-assigned-post-item { cursor: move; overflow: auto; clear: both; padding: 8px; border-bottom: 1px solid #DDDDDD; }
-#mbh-assign-posts-container .mbh-assigned-post-item .post-id { cursor: move; float: left; width: 10%; }
-#mbh-assign-posts-container .mbh-assigned-post-item .post-title { float: left; width: 70%; }
-#mbh-assign-posts-container .mbh-assigned-post-item .delete-link { cursor: pointer; display: block; float: left; width: 10%; }
+/* line 174, scss/metabox-helper.scss */
+#mbh-assign-posts-container .mbh-assigned-post-item .post-id {
+  cursor: move;
+  float: left;
+  width: 10%;
+}
 
+/* line 175, scss/metabox-helper.scss */
+#mbh-assign-posts-container .mbh-assigned-post-item .post-title {
+  float: left;
+  width: 70%;
+}
+
+/* line 176, scss/metabox-helper.scss */
+#mbh-assign-posts-container .mbh-assigned-post-item .delete-link {
+  cursor: pointer;
+  display: block;
+  float: left;
+  width: 10%;
+}
+
+/* line 178, scss/metabox-helper.scss */
 .image-chooser {
-	float: left;
-	width: 150px;
-	margin: 0 10px 10px 0;
-	padding: 5px;
-	border: 1px solid #e5e5e5;
+  float: left;
+  width: 150px;
+  margin: 0 10px 10px 0;
+  padding: 5px;
+  border: 1px solid #e5e5e5;
 }
 
+/* line 186, scss/metabox-helper.scss */
 .image-chooser .image-option {
-	padding-top: 10px;
+  padding-top: 10px;
 }
 
+/* line 190, scss/metabox-helper.scss */
 .image-chooser input[type="radio"] {
-	margin: 0 2px 0 0;
+  margin: 0 2px 0 0;
 }
 
+/* line 194, scss/metabox-helper.scss */
 .ui-autocomplete li {
-	padding: 5px;
+  padding: 5px;
 }
 
+/* line 198, scss/metabox-helper.scss */
 .ui-autocomplete li:nth-child(odd) {
-	background: white;
+  background: white;
 }
 
+/* line 202, scss/metabox-helper.scss */
 .ui-autocomplete li.ui-state-focus {
-	color:#999;
-	cursor: pointer;
+  color: #999;
+  cursor: pointer;
 }
 
+/* line 207, scss/metabox-helper.scss */
 #lbwp-nl__newsletter-items #newAssignedItem {
-	width: 78% !important;
+  width: 78% !important;
 }
 
+/* line 211, scss/metabox-helper.scss */
 #metaboxHelperContainer {
-	position:fixed;
-	top: 0;
-	right: 0;
-	left: 0;
-	bottom: -10000px;
-	width:80%;
-	height:800px;
-	margin: auto;
-	z-index:10010;
-	/* styling of the box */
-	border:1px solid #333;
-	padding:0px;
-	background-color:#F1F1F1;
+  position: fixed;
+  top: 0;
+  right: 0;
+  left: 0;
+  bottom: -10000px;
+  width: 80%;
+  height: 800px;
+  margin: auto;
+  z-index: 10010;
+  /* styling of the box */
+  border: 1px solid #333;
+  padding: 0px;
+  background-color: #F1F1F1;
 }
 
+/* line 227, scss/metabox-helper.scss */
 #metaboxHelperContainer .dashicons-no-alt {
-	position: absolute;
-	right: -40px;
-	top: 0;
-	background: white;
-	font-size: 30px;
-	height: 30px;
-	width: 30px;
-	line-height: 1;
-	padding: 0;
-
+  position: absolute;
+  right: -40px;
+  top: 0;
+  background: white;
+  font-size: 30px;
+  height: 30px;
+  width: 30px;
+  line-height: 1;
+  padding: 0;
 }
 
+/* line 240, scss/metabox-helper.scss */
 .media-modal-backdrop-mbh {
-	position: fixed;
-	top: 0;
-	left: 0;
-	right: 0;
-	bottom: 0;
-	min-height: 360px;
-	background: #000;
-	opacity: .7;
-	z-index: 10000;
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  min-height: 360px;
+  background: #000;
+  opacity: .7;
+  z-index: 10000;
 }
 
+/* line 252, scss/metabox-helper.scss */
 .add-new-dropdown-item {
-	border:1px solid #DFDFDF;
-	border-radius: 3px;
-	background-image: none;
-	margin-top:10px;
-	margin-bottom:10px;
-	padding:5px 14px;
+  border: 1px solid #DFDFDF;
+  border-radius: 3px;
+  background-image: none;
+  margin-top: 10px;
+  margin-bottom: 10px;
+  padding: 5px 14px;
 }
 
+/* line 261, scss/metabox-helper.scss */
 .add-new-dropdown-item label {
-	display: inline-block;
-	margin: -3px 10px 0px 0px;
-	padding-top: 0px;
-	font-style: italic;
+  display: inline-block;
+  margin: -3px 10px 0px 0px;
+  padding-top: 0px;
+  font-style: italic;
 }
 
+/* line 268, scss/metabox-helper.scss */
 .add-new-dropdown-item input {
-	min-width: 200px;
+  min-width: 200px;
 }
 
+/* line 272, scss/metabox-helper.scss */
 .add-new-dropdown-item input.error {
-	border-color:#cc0000;
-	background-color:rgba(150,80,80,0.1)
+  border-color: #cc0000;
+  background-color: rgba(150, 80, 80, 0.1);
 }
 
+/* line 277, scss/metabox-helper.scss */
 .mbh-generic-table {
-	margin:0px;
-	padding:0px;
-	width: 100%;
+  margin: 0px;
+  padding: 0px;
+  width: 100%;
 }
+
+/* line 282, scss/metabox-helper.scss */
 .mbh-generic-table th {
-	text-align:left;
-	font-weight:bold;
-	padding:2px;
-	margin:0px;
+  text-align: left;
+  font-weight: bold;
+  padding: 2px;
+  margin: 0px;
 }
+
+/* line 288, scss/metabox-helper.scss */
 .mbh-generic-table td {
-	padding:2px;
-	margin:0px;
+  padding: 2px;
+  margin: 0px;
 }
+
+/* line 292, scss/metabox-helper.scss */
 .mbh-generic-table tr {
-	border-bottom:1px solid #aaa;
+  border-bottom: 1px solid #aaa;
 }
+
+/* line 295, scss/metabox-helper.scss */
 .mbh-generic-table tr:nth-child(odd) {
-	background-color:#ffffff;
+  background-color: #ffffff;
 }
+
+/* line 298, scss/metabox-helper.scss */
 .mbh-generic-table tr:nth-child(even) {
-	background-color:#eeeeee;
+  background-color: #eeeeee;
 }

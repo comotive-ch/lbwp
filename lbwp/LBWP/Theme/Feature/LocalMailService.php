@@ -97,6 +97,7 @@ class LocalMailService
     add_action('save_post_' . self::LIST_TYPE_NAME, array($this, 'addMetaboxes'));
     add_filter('lbwpFormActions', array(NLCore::getInstance(), 'addFormActions'));
     add_action('cron_job_localmail_sending', array($this, 'tryAndSendMails'));
+    add_filter('standard-theme-modify-data', array($this, 'replaceDefaultVariables'));
   }
 
   /**
@@ -151,6 +152,11 @@ class LocalMailService
     $helper->hideEditor($boxId);
 
     if ($postId > 0) {
+      // Get the post and continue only if correct type
+      if (get_post($postId)->post_type != self::LIST_TYPE_NAME) {
+        return;
+      }
+
       // Get the current field config
       $fields = get_post_meta($postId, 'field-config', true);
       $fields = array_map('trim', explode(',', $fields));
@@ -537,9 +543,30 @@ class LocalMailService
         // Delete the mailing completely and don't reschedule
         unset($mailings[$mailingId]);
         $this->removeMailing($mailingId);
-        delete_option('LocalMail_Mailing_' . $mailingId);
       }
     }
+  }
+
+  /**
+   * @param array $data configuration data
+   * @return array maybe replaced variables
+   */
+  public function replaceDefaultVariables($data)
+  {
+    $mcReplacers = array(
+      '*|LNAME|*' => '{lastname}',
+      '*|FNAME|*' => '{firstname}',
+      '*|EMAIL|*' => '{email}',
+      '*|UNSUB|*' => '{unsubscribe}',
+      '*|FORWARD|*' => '',
+      '*|ARCHIVE|*' => ''
+    );
+
+    foreach ($mcReplacers as $key => $value) {
+      $data = ArrayManipulation::deepReplace($key, $value, $data);
+    }
+
+    return $data;
   }
 
   /**
@@ -562,24 +589,27 @@ class LocalMailService
     $mailings = ArrayManipulation::forceArray(get_option('LocalMail_Mailings'));
     unset($mailings[$id]);
     update_option('LocalMail_Mailings', $mailings);
+    delete_option('LocalMail_Mailing_' . $id);
   }
 
   /**
    * Create an unsubscribe link
    * @param string $memberId the member id
    * @param int $listId the list id
+   * @param string $language the language code
    * @return string the unsubscribe url
    */
-  public function getUnsubscribeLink($memberId, $listId)
+  public function getUnsubscribeLink($memberId, $listId, $language)
   {
     $unsubscribeCode = $memberId . '-' . md5(self::UBSUB_SALT . $memberId) . '-' . $listId;
-    return $this->config['unsubscribeUrl'] . '?lm_unsub=' . $unsubscribeCode;
+    return $this->config['unsubscribeUrl_' . $language] . '?lm_unsub=' . $unsubscribeCode;
   }
 
   /**
    * Schedule a sending cron in n-seconds
+   * @param int $seconds to wait until the cron is called
    */
-  public function scheduleSendingCron($seconds = 60)
+  public function scheduleSendingCron($seconds = 75)
   {
     Cronjob::register(array(
       (current_time('timestamp') + $seconds) => 'localmail_sending'
