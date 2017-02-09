@@ -152,6 +152,28 @@ class PageSettings
    * @param string $page the page to use
    * @param string $section the section to use
    * @param string $key the name of the option to save to
+   * @param string $title the title
+   * @param array $config must contain a saveCallback and an infoCallback
+   * @param bool $isMultilang
+   */
+  public static function addFileUpload($page, $section, $key, $title, $config, $isMultilang = false)
+  {
+    $config['multilang'] = $isMultilang;
+    $config['saveAlways'] = true;
+    self::addItem(array(
+      'page' => $page,
+      'section' => $section,
+      'id' => $key,
+      'title' => $title,
+      'type' => 'upload',
+      'config' => $config
+    ));
+  }
+
+  /**
+   * @param string $page the page to use
+   * @param string $section the section to use
+   * @param string $key the name of the option to save to
    * @param string $title the title, left displayed (optional)
    * @param bool $isMultilang determines if the field is configurable in every language
    * @param string $description the description below the setting (optional)

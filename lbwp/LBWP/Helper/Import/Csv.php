@@ -34,6 +34,18 @@ class Csv {
     return $csvData;
   }
 
+  /**
+   * @param array $data
+   */
+  public static function convertNonUtf8Data(&$data)
+  {
+    foreach ($data as $rowIndex => $row) {
+      foreach ($row as $colIndex => $cell) {
+        $data[$rowIndex][$colIndex] = utf8_encode($cell);
+      }
+    }
+  }
+
 
   /**
    * @param $data

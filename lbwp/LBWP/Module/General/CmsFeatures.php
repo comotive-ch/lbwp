@@ -136,6 +136,7 @@ class CmsFeatures extends \LBWP\Module\Base
     add_filter('wp_mail_from', array($this, 'replaceEmailFrom'), 50);
     add_action('phpmailer_init', array($this, 'addReplyToEmail'), 50);
     add_action('shutdown', array($this, 'trackUncachedResponseTime'));
+    add_filter('antispam_bee_patterns', array($this, 'addCustomSpamPatterns'));
   }
 
   /**
@@ -483,6 +484,30 @@ class CmsFeatures extends \LBWP\Module\Base
       echo '<enclosure url="' . $url . '" type="' . $attachment->post_mime_type . '" length="' . $metaData['filesize'] . '" />' . "\n";
       echo '<media:content url="' . $url . '" type="' . $attachment->post_mime_type . '" expression="sample" />' . "\n";
     }
+  }
+
+  /**
+   * @param array $patterns the standard patterns
+   * @return array improved patterns
+   */
+  public function addCustomSpamPatterns($patterns)
+  {
+    // Body text with two or less characters
+    $patterns[] = array('body' => '^(?=.{0,2}$).*');
+    // Spammy email addresses (gmail would be here too, but this is not useful for an european blog)
+    $patterns[] = array('email' => '@mail\.ru|@yandex\.$');
+    // Every comment with .ru/.bid top level domain
+    $patterns[] = array('email' => '(^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.(ru|bid)+$)');
+    // Spam text in email, host and body
+    $patterns[] = array('email' => 'viagra|cialis|casino');
+    $patterns[] = array('host' => 'viagra|cialis|casino');
+    $patterns[] = array('body' => 'target[t]?ed (visitors|traffic)|viagra|cialis');
+    // 3 or more links in body
+    $patterns[] = array('body' => '(.*(http|https|ftp|ftps)\:\/\/){3,}');
+    // Non latin characters (like Cyricllic, Japanese, etc.) in body
+    $patterns[] = array('body' => '\p{Arabic}|\p{Armenian}|\p{Bengali}|\p{Bopomofo}|\p{Braille}|\p{Buhid}|\p{Canadian_Aboriginal}|\p{Cherokee}|\p{Cyrillic}|\p{Devanagari}|\p{Ethiopic}|\p{Georgian}|\p{Greek}|\p{Gujarati}|\p{Gurmukhi}|\p{Han}|\p{Hangul}|\p{Hanunoo}|\p{Hebrew}|\p{Hiragana}|\p{Inherited}|\p{Kannada}|\p{Katakana}|\p{Khmer}|\p{Lao}|\p{Limbu}|\p{Malayalam}|\p{Mongolian}|\p{Myanmar}|\p{Ogham}|\p{Oriya}|\p{Runic}|\p{Sinhala}|\p{Syriac}|\p{Tagalog}|\p{Tagbanwa}|\p{Tamil}|\p{Telugu}|\p{Thaana}|\p{Thai}|\p{Tibetan}|\p{Yi}');
+
+    return $patterns;
   }
 
   /**

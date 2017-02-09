@@ -502,15 +502,18 @@ abstract class CoreV2
    * @param string $slug an identifier (to be stored in the _wp_page_template meta field
    * @param string $view relative file path (to the theme root)
    * @param string $name page template name shown in dropdown
+   * @param string $types the post types which this template is for
    */
-  public function registerPageTemplate($slug, $view, $name)
+  public function registerPageTemplate($slug, $view, $name, $types = array('page'))
   {
     // fetch the currently registered page templates
-    $this->pageTemplateViewsBySlug = $this->getWordpressTheme()->get_page_templates();
-    $this->pageTemplateViewsBySlug[$slug] = $name;
+    foreach ($types as $postType) {
+      $this->pageTemplateViewsBySlug = $this->getWordpressTheme()->get_page_templates(null, $postType);
+      $this->pageTemplateViewsBySlug[$postType][$slug] = $name;
+    }
 
     // override the page template loader from wordpress by just storing the page template configuration in cache
-    wp_cache_set('page_templates-' . $this->getThemeCacheHash(), $this->getPageTemplateViewsBySlug(), 'themes', 3);
+    wp_cache_set('post_templates-' . $this->getThemeCacheHash(), $this->getPageTemplateViewsBySlug(), 'themes', 3);
 
     // register the view: will be rendered by renderView
     $this->registerView($slug, $view);

@@ -99,6 +99,8 @@ class HtmlColumnSpanning
         return ++$id;
       case '12grid':
         return 6;
+      case 'leftright':
+        return (++$id % 2 == 0) ? 'right' : 'left';
     }
   }
 }

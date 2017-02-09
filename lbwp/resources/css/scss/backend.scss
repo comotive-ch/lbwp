@@ -88,7 +88,7 @@ ul.wp-submenu li a img { display:none; }
 /* Disable Yoast and other plugins crappy messages */
 .wpseo_content_cell #sidebar, .wpseo_content_cell #i18n_promo_box { display:none; }
 .yoast-ga-banners, .yoast-ga-content #i18n_promo_box, #onpage-tab, #wpseo-dismiss-about,
-.yoast-ga-content #customdimensions-tab, #wpseo-dismiss-recalculate, #wpseo-dismiss-gsc,
+.yoast-ga-content #customdimensions-tab, #wpseo-dismiss-recalculate,
 .yoast-ga-content #debugmode-tab, #nav-tab-lingotek, .wpseo-tab-add-keyword,
 .post-type-lbwp-snippet #wpseo_meta, .post-type-lbwp-form #wpseo_meta,
 .post-type-lbwp-list #wpseo_meta, .post-type-lbwp-listitem #wpseo_meta,
@@ -96,7 +96,8 @@ ul.wp-submenu li a img { display:none; }
 #eml-options-media-tabs a:nth-child(4), #wpuxss-eml-form-taxonomies .postbox:nth-child(6),
 .settings_page_afbia_settings_page .credits-container, #pll-module-wpml, #pll-module-share-slugs,
 #pll-module-translate-slugs, .plugin-update-tr, #pll-module-licenses, .wpseo-make-primary-term,
-.wpseo-is-primary-term{
+.wpseo-is-primary-term, .yoast-issue-counter, .yoast-issue-added,
+#toplevel_page_wpseo_dashboard .update-plugins {
 	display:none !important;
 }
 /* Disable and fix nextscripts crap */

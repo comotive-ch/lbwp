@@ -3,8 +3,8 @@ body.modal-backend {
   margin-top: -32px;
 }
 /* line 7, scss/backend.scss */
-body.modal-backend #wpadminbar, body.modal-backend #adminmenuback, body.modal-backend #adminmenuwrap, body.modal-backend .page-title-action,
-body.modal-backend #view-post-btn, body.modal-backend #delete-action, body.modal-backend #wpfooter {
+body.modal-backend #wpadminbar, body.modal-backend #adminmenuback, body.modal-backend #adminmenuwrap, body.modal-backend .page-title-action, body.modal-backend #wpfooter,
+body.modal-backend #view-post-btn, body.modal-backend #delete-action, body.modal-backend #minor-publishing-actions {
   display: none;
 }
 /* line 12, scss/backend.scss */
@@ -225,7 +225,7 @@ ul.wp-submenu li a img {
 
 /* line 90, scss/backend.scss */
 .yoast-ga-banners, .yoast-ga-content #i18n_promo_box, #onpage-tab, #wpseo-dismiss-about,
-.yoast-ga-content #customdimensions-tab, #wpseo-dismiss-recalculate, #wpseo-dismiss-gsc,
+.yoast-ga-content #customdimensions-tab, #wpseo-dismiss-recalculate,
 .yoast-ga-content #debugmode-tab, #nav-tab-lingotek, .wpseo-tab-add-keyword,
 .post-type-lbwp-snippet #wpseo_meta, .post-type-lbwp-form #wpseo_meta,
 .post-type-lbwp-list #wpseo_meta, .post-type-lbwp-listitem #wpseo_meta,
@@ -233,35 +233,36 @@ ul.wp-submenu li a img {
 #eml-options-media-tabs a:nth-child(4), #wpuxss-eml-form-taxonomies .postbox:nth-child(6),
 .settings_page_afbia_settings_page .credits-container, #pll-module-wpml, #pll-module-share-slugs,
 #pll-module-translate-slugs, .plugin-update-tr, #pll-module-licenses, .wpseo-make-primary-term,
-.wpseo-is-primary-term {
+.wpseo-is-primary-term, .yoast-issue-counter, .yoast-issue-added,
+#toplevel_page_wpseo_dashboard .update-plugins {
   display: none !important;
 }
 
 /* Disable and fix nextscripts crap */
-/* line 103, scss/backend.scss */
+/* line 104, scss/backend.scss */
 ul.nsx_tabs {
   margin-top: 20px !important;
 }
 
 /* menu manager */
-/* line 106, scss/backend.scss */
+/* line 107, scss/backend.scss */
 .parent_page {
   font-weight: 700;
 }
 
-/* line 107, scss/backend.scss */
+/* line 108, scss/backend.scss */
 .parent_page select {
   width: 100%;
   margin-top: 5px;
   font-weight: 100;
 }
 
-/* line 108, scss/backend.scss */
+/* line 109, scss/backend.scss */
 .show_in_menu {
   padding: 10px 0;
 }
 
-/* line 109, scss/backend.scss */
+/* line 110, scss/backend.scss */
 .sibling_list {
   -moz-border-radius: 5px;
   -webkit-border-radius: 5px;
@@ -271,42 +272,29 @@ ul.nsx_tabs {
   position: relative;
 }
 
-/* line 110, scss/backend.scss */
+/* line 111, scss/backend.scss */
 .sibling_list ul.menu {
   padding: 0 !important;
 }
 
-/* line 111, scss/backend.scss */
+/* line 112, scss/backend.scss */
 .sibling_list .menu-item-handle {
   width: auto !important;
 }
 
-/* line 112, scss/backend.scss */
+/* line 113, scss/backend.scss */
 .sibling_list .menu-item-settings {
   width: auto !important;
   padding: 6px 6px 8px 10px !important;
 }
 
-/* line 113, scss/backend.scss */
+/* line 114, scss/backend.scss */
 .sibling_list p.description-thin {
   width: 100% !important;
   margin: 0 !important;
 }
 
-/* line 114, scss/backend.scss */
+/* line 115, scss/backend.scss */
 .sibling_list .menu-item-handle .item-title {
   margin-right: 75px !important;
-}
-
-.dashboard-generic {
-  width:100%;
-  border-spacing:0px;
-}
-.dashboard-generic td {
-  padding:2px 5px 2px 0px;
-  border-bottom:1px solid #ddd;
-}
-.dashboard-generic .right-fat {
-  font-weight:bold;
-  text-align:right;
 }

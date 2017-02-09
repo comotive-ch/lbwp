@@ -118,9 +118,13 @@ class PageSettingsBackend
       // Afterwards show all features to configure
       foreach ($section['items'] as $key => $item) {
         // decide on which template to use
-        if (isset($item['description'])) {
+        if (isset($item['description']) || isset($item['config']['infoCallback'])) {
           $tpl = $this->tplDesc;
-          $tpl = str_replace('{description}', $item['description'], $tpl);
+          if (isset($item['config']['infoCallback'])) {
+            $tpl = str_replace('{description}', call_user_func($item['config']['infoCallback'], $item), $tpl);
+          } else {
+            $tpl = str_replace('{description}', $item['description'], $tpl);
+          }
         } else {
           $tpl = $this->tplNodesc;
         }
@@ -150,7 +154,7 @@ class PageSettingsBackend
       <div class="wrap lbwp-settings-page">
         <h2>' . $config['name'] . '</h2>
         ' . $message . '
-        <form action="" method="post">
+        <form action="" method="post" enctype="multipart/form-data">
           ' . $html . '
           <p style="clear:both">
             <input type="submit" class="button-primary" name="savePageSettings" value="Speichern">
@@ -180,7 +184,6 @@ class PageSettingsBackend
           if (isset($item['config']['saveCallback']) && is_callable($item['config']['saveCallback'])) {
             $saveCallable = $item['config']['saveCallback'];
           }
-
           call_user_func($saveCallable, $item);
         }
       }
@@ -278,6 +281,32 @@ class PageSettingsBackend
     if (isset($config['optional']) && !$config['optional']) {
       $attr['required'] = 'required';
     }
+    // Create the field
+    $field = $this->buildClosingTag('input', $attr);
+    // If html follows, do so
+    if (isset($config['afterHtml'])) {
+      $field .= ' ' . $config['afterHtml'];
+    }
+    // Display a number field
+    $html = str_replace('{input}', $field, $html);
+    return $html;
+  }
+
+  /**
+   * @param array $config configuration for this field
+   * @param mixed $value the current configuration
+   * @param string $html the html template in where to replace {input}
+   * @return string the resulting html code
+   */
+  public function displayFieldUpload($config, $value, $html)
+  {
+    $attr = array(
+      'type' => 'file',
+      'class' => 'cfg-field-file',
+      'id' => '{fieldId}',
+      'name' => '{fieldId}'
+    );
+
     // Create the field
     $field = $this->buildClosingTag('input', $attr);
     // If html follows, do so

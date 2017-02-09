@@ -17,7 +17,7 @@ class Core
   /**
    * @var int Revisionnumber of the plugins (not svn revision, only for updates)
    */
-  const REVISION = 161;
+  const REVISION = 163;
   /**
    * @var int CSS/JS file version for cloudfront
    */
@@ -274,9 +274,8 @@ class Core
     $this->mergeConfig();
     // Plugin specific hooks
     Installer::resetWooCommerceCrons();
-    // delete S3Upload from backend
-    //unset($this->features['BackendModules']['S3Upload']);
-    //update_option('LbwpFeatures',$this->features);
+    // Remove monster insights message for 6.0 beta
+    update_option('monsterinsights_60_beta', 1);
   }
 
   /**

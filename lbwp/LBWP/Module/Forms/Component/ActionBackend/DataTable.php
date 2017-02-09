@@ -238,9 +238,7 @@ class DataTable extends Base
       // Switch out the values respectively
       if ($key == $rowIndex) {
         $index = 0;
-        foreach ($row as $key => $value) {
-          $row[$key] = $_POST['rowData'][$index++];
-        }
+        $row = $_POST['rowData'];
       }
       // Add row to new data
       $newData[] = $row;

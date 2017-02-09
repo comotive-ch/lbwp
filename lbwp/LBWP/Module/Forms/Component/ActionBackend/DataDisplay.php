@@ -117,7 +117,7 @@ class DataDisplay
         $html .= '
           <td class="' . $key . '">
             <span>' . $this->prepareValue($value) . '</span>
-            <textarea class="data-table-area">' . $value . '</textarea>
+            <textarea class="data-table-area" data-key="' . $key . '">' . $value . '</textarea>
           </td>';
       }
       $html .= '</tr>';
@@ -171,13 +171,15 @@ class DataDisplay
             row.find(".save-row").hide();
             
             // Get the new data array from all textareas
-            var data = [];
+            var data = {};
             row.find("textarea").each(function() {
               var area = jQuery(this);
               var newValue = area.val();
               area.prev().text(newValue);
-              data.push(newValue);
+              data[area.data("key")] = newValue;
             });
+            
+            console.log(data);
             
             // Actually save the row, and switch back to text mode
             jQuery.post(ajaxurl, {

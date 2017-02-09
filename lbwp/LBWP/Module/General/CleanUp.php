@@ -465,7 +465,7 @@ class CleanUp extends \LBWP\Module\Base
       }
     }
 
-    // Loop that whole menu to move yoast analytics if found
+    // Loop that whole menu to move analytics if found
     foreach ($menu as $key => $item) {
       if ($item[2] == 'yst_ga_dashboard') {
         unset($menu[$key]);
@@ -478,6 +478,15 @@ class CleanUp extends \LBWP\Module\Base
       foreach ($submenu['yst_ga_dashboard'] as $key => $item) {
         if ($item[2] == 'yst_ga_extensions') {
           unset($submenu['yst_ga_dashboard'][$key]);
+        }
+      }
+    }
+
+    // Remove lingotek from polylang, as this is seemingly bad quality
+    if (isset($submenu['mlang'])) {
+      foreach ($submenu['mlang'] as $key => $item) {
+        if ($item[2] == 'mlang_lingotek') {
+          unset($submenu['mlang'][$key]);
         }
       }
     }

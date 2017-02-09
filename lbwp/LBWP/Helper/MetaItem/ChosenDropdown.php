@@ -138,9 +138,11 @@ class ChosenDropdown
         (function ($) {
           $(document).ready(function(){
             // Register an event on change of the chosen
-            $("#' . $key . '").on("chosen:ready change", function() {
-              MetaboxHelper.handleChosenEventsOnChange("' . $chosenKey . '","' . $key . '");
-            });
+            if (typeof(MetaboxHelper) != "undefined") {
+              $("#' . $key . '").on("chosen:ready change", function() {
+                MetaboxHelper.handleChosenEventsOnChange("' . $chosenKey . '","' . $key . '");
+              });
+            }
             // Actually create the chosen with arguments
             jQuery("#' . $key . '").chosen(' . $chosenArgumentsJson . ');
           });

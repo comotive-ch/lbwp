@@ -16,14 +16,14 @@ class SimpleFancybox extends \LBWP\Module\Base
   /**
    * @var int Module version for resource files
    */
-  const VERSION = 19;
+  const VERSION = 20;
   /**
    * @var array configuration array (you can use more additional parameters "maxWidth" and "helpers" without a configured default value)
    */
   protected static $settings = array(
     'margin' => 10,
     'padding' => 10,
-    'grouping' => 'automatic', // automatic|gallery
+    'grouping' => 'automatic', // automatic|gallery|none
     'ifGalleryRegisterAutoImages' => true,
     'alwaysAddGalleryItemClasses' => true,
     'shortcodeForceFileLinks' => false,

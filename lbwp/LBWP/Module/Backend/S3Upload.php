@@ -66,6 +66,8 @@ class S3Upload extends \LBWP\Module\Base
       if (!defined('ASSET_KEY')) {
         define('ASSET_KEY', CUSTOMER_KEY);
       }
+      // Call wp_upload_dir once, since it could be caching from an earlier call without the filters
+      wp_upload_dir(null, true, true);
     }
   }
 
