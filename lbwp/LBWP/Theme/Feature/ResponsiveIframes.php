@@ -19,7 +19,9 @@ class ResponsiveIframes
   protected $options = array(
     'selectors' => '.single.post iframe, .type-page iframe',
     'containerClasses' => 'lbwp-iframe-container ratio-16x9',
-    'containerTag' => 'div'
+    'containerTag' => 'div',
+    'wrapperClasses' => '',
+    'wrapperTag' => ''
   );
   /**
    * @var ResponsiveWidgets the instance

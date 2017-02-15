@@ -67,7 +67,7 @@ class Textarea extends Base
     $html = Base::$template;
     $html = str_replace('{id}', $this->get('id'), $html);
     $html = str_replace('{label}', $args['feldname'], $html);
-    $html = str_replace('{class}', trim('text-field ' . $this->params['class']), $html);
+    $html = str_replace('{class}', trim('text-field textarea-field ' . $this->params['class']), $html);
     $html = str_replace('{field}', $field, $html);
 
     return $html;

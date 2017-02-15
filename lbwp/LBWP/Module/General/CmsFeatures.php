@@ -32,7 +32,7 @@ class CmsFeatures extends \LBWP\Module\Base
     'hideeditbox-lbwp-list' => true,
     'hideeditbox-lbwp-listitem' => true,
     'hideeditbox-lbwp-snippet' => true,
-    'hideeditbox-lbwp-onepager-item' => true,
+    'hideeditbox-onepager-item' => true, // yes, lbwp missing
     'hideeditbox-lbwp-mailing-list' => true
   );
   /**

@@ -25,6 +25,12 @@ var SimpleFancyBox = {
 					SimpleFancyBox.registerStandaloneImages();
 				}
 				break;
+			case 'unlink':
+				// First register galleries/images, to then unlink them easily
+				SimpleFancyBox.registerGalleryImages();
+				SimpleFancyBox.registerStandaloneImages();
+				SimpleFancyBox.unlinkImages();
+				break;
 			case 'automatic':
 			default:
 				SimpleFancyBox.registerStandaloneImages();
@@ -396,6 +402,16 @@ var SimpleFancyBox = {
 
 		// No swipe, normal fancybox
 		return false;
+	},
+
+	/**
+	 * Unlink all images from their linked originals
+	 */
+	unlinkImages : function()
+	{
+		jQuery('.auto-fancybox')
+			.removeAttr('href')
+			.removeClass('auto-fancybox');
 	}
 };
 

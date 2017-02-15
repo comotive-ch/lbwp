@@ -103,17 +103,20 @@ class Metabox
    * @param string $title the title of the metabox
    * @param string $context the context (normal, advanced (default))
    * @param string $priority the priority (default, high, core)
+   * @param bool $force creating of a new metabox, flushing an existing one
    */
-  public function addMetabox($id, $title, $context = 'normal', $priority = 'default')
+  public function addMetabox($id, $title, $context = 'normal', $priority = 'default', $force = true)
   {
     // Create the metabox array item
-    $this->metaboxes[$id] = array(
-      'title' => $title,
-      'context' => $context,
-      'priority' => $priority
-    );
-    // Prepare the field namespace
-    $this->fields[$id] = array();
+    if (!isset($this->metaboxes[$id]) || $force) {
+      $this->metaboxes[$id] = array(
+        'title' => $title,
+        'context' => $context,
+        'priority' => $priority
+      );
+      // Prepare the field namespace
+      $this->fields[$id] = array();
+    }
   }
 
   /**

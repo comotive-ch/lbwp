@@ -10,6 +10,7 @@ var LbwpFormFrontend = {
 	{
 		LbwpFormFrontend.moveEmailField();
 		LbwpFormFrontend.preventDoubleClick();
+		LbwpFormFrontend.handleItemWrapping();
 	},
 
 	/**
@@ -57,6 +58,24 @@ var LbwpFormFrontend = {
 				button.removeAttr('disabled');
 				button.removeClass('lbwp-button-disabled');
 			}
+		})
+	},
+
+	/**
+	 * Forms with the lbwp-wrap-items get their items wrapped in an additional div
+	 * This allows for better styling possibilities (As two col forms for example)
+	 */
+	handleItemWrapping : function()
+	{
+		jQuery('.lbwp-wrap-items').each(function() {
+			// Find all form elements
+			jQuery(this).find('.forms-item').each(function() {
+				var item = jQuery(this);
+				var classes = item.attr('class');
+				// Remove the forms item class, but add a wrapper class instead
+				classes = classes.replace('forms-item', 'forms-item-wrapper');
+				item.wrap('<div class="' + classes + '"></div>');
+			});
 		})
 	}
 };

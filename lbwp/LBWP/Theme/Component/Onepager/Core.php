@@ -439,7 +439,7 @@ abstract class Core extends BaseComponent
     $items = $this->getItems($parent->ID);
 
     // Create the home item if needed
-    if (get_post_meta($parent->ID, 'onepager-activate-menu', true) == 'on') {
+    if (get_post_meta($parent->ID, 'onepager-has-home-menu', true) == 'on') {
       // Decide how it works
       switch (get_post_meta($parent->ID, 'onepager-home-type', true)) {
         case 'scroll-top':

@@ -508,7 +508,6 @@ abstract class CoreV2
   {
     // fetch the currently registered page templates
     foreach ($types as $postType) {
-      $this->pageTemplateViewsBySlug = $this->getWordpressTheme()->get_page_templates(null, $postType);
       $this->pageTemplateViewsBySlug[$postType][$slug] = $name;
     }
 

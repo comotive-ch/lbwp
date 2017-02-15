@@ -2,7 +2,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: LBWP\n"
 "POT-Creation-Date: 2015-08-03 11:05+0100\n"
-"PO-Revision-Date: 2017-01-05 13:47+0100\n"
+"PO-Revision-Date: 2017-02-14 08:45+0100\n"
 "Last-Translator: \n"
 "Language-Team: comotive <info@comotive.ch>\n"
 "Language: de_DE\n"
@@ -155,7 +155,7 @@ msgstr ""
 
 #: /var/www/lbwp/wp-content/plugins/lbwp/LBWP/Theme/Widget/LatestArticles.php:79
 msgid "&raquo; weiterlesen"
-msgstr ""
+msgstr "&raquo; continue"
 
 #: /var/www/lbwp/wp-content/plugins/lbwp/LBWP/Theme/Widget/LatestArticles.php:94
 msgid "mehr"
