@@ -236,7 +236,8 @@
 		 */
 		function vURL(elem) {
 			var url = $(elem).val();
-			var pattern = new RegExp(/^(ftp|https?):\/\/+(www\.)?[a-z0-9\-\.]{3,}\.[a-z]{3}$/i);
+			var pattern = new RegExp(/^(ftp|https?):\/\/+(www\.)?[a-z0-9\-\.]{3,}\.[a-z]{2,}$/i);
+			console.log(pattern.test(url), url);
 			if (url.length == 0 || pattern.test(url)) {
 				$(elem).closest(val.elem.item).removeClass(prfx + "error").addClass(prfx + "success");
 				removeMessage(elem);

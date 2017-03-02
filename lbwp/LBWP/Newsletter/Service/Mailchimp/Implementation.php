@@ -8,6 +8,7 @@ use LBWP\Util\Strings;
 use LBWP\Util\Date;
 use LBWP\Newsletter\Service\Base;
 use LBWP\Newsletter\Service\Definition;
+use LBWP\Util\ArrayManipulation;
 use DrewM\MailChimp\MailChimp as MailChimpV3;
 
 /**
@@ -190,26 +191,35 @@ class Implementation extends Base implements Definition
   }
 
   /**
-   * @param string $selectedKey
+   * @param array $selectedKeys
    * @return array list of options to use in a dropdown
    */
-  public function getListOptions($selectedKey = '', $fieldKey = 'listId')
+  public function getListOptions($selectedKeys = array(), $fieldKey = 'listId')
   {
     // Grab lists from API
-    $html = '<option value="">Bitte wählen Sie eine Liste aus</option>';
+    $html = '';
     $lists = $this->getLists();
     $currentListId = $this->getSetting($fieldKey);
+    $selectedKeys = ArrayManipulation::forceArrayAndInclude($selectedKeys);
 
     // Display a list if possible
     if (is_array($lists['lists']) && count($lists['lists']) > 0) {
       foreach ($lists['lists'] as $list) {
         $listKey = $list['id'] . '$$' . $list['name'];
+
         // Preselect with id or key
-        if (strlen($selectedKey) == 0) {
-          $selected = selected($currentListId, $list['id'], false);
-        } else {
-          $selected = selected($selectedKey, $listKey, false);
+        $selected = '';
+        foreach ($selectedKeys as $selectedKey) {
+          if (strlen($selectedKey) == 0) {
+            $selected = selected($currentListId, $list['id'], false);
+          } else {
+            $selected = selected($selectedKey, $listKey, false);
+          }
+          if (strlen($selected) > 0) {
+            break;
+          }
         }
+
         // Display the entry
         $html .= '
           <option value="' . $listKey . '"' . $selected . '>
@@ -266,7 +276,7 @@ class Implementation extends Base implements Definition
   }
 
   /**
-   * @param string $listId the list ID to use on the api
+   * @param array $targets the list IDs to use on the api
    * @param string $html the html code for the newsletter
    * @param string $text the text version of the newsletter
    * @param string $subject the subject
@@ -276,43 +286,45 @@ class Implementation extends Base implements Definition
    * @param string $language not used
    * @return string|int the mailing id from the service
    */
-  public function createMailing($listId, $html, $text, $subject, $senderEmail, $senderName, $originalTarget, $language)
+  public function createMailing($targets, $html, $text, $subject, $senderEmail, $senderName, $originalTarget, $language)
   {
-    // This would be returned if anything bad happens
-    $mailingId = 0;
+    foreach ($targets as $listId) {
+      // This would be returned if anything bad happens
+      $mailingId = 0;
 
-    // Create the campaign
-    $result = $this->getApi()->post('campaigns', array(
-      'type' => 'regular',
-      'recipients' => array(
-        'list_id' => $listId,
-      ),
-      'settings' => array(
-        'subject_line' => html_entity_decode($subject, ENT_QUOTES, 'UTF-8'),
-        'reply_to' => $senderEmail,
-        'from_name' => $senderName
-      ),
-      'tracking' => array(
-        'opens' => ($this->getSetting('trackOpens') == 1) ? true : false,
-        'html_clicks' => ($this->getSetting('trackLinks') == 1) ? true : false
-      )
-    ));
+      // Create the campaign
+      $result = $this->getApi()->post('campaigns', array(
+        'type' => 'regular',
+        'recipients' => array(
+          'list_id' => $listId,
+        ),
+        'settings' => array(
+          'subject_line' => html_entity_decode($subject, ENT_QUOTES, 'UTF-8'),
+          'reply_to' => $senderEmail,
+          'from_name' => $senderName
+        ),
+        'tracking' => array(
+          'opens' => ($this->getSetting('trackOpens') == 1) ? true : false,
+          'html_clicks' => ($this->getSetting('trackLinks') == 1) ? true : false
+        )
+      ));
 
-    // Try finding the id in results
-    if (isset($result['id']) && strlen($result['id']) > 0) {
-      $mailingId = $result['id'];
-    }
+      // Try finding the id in results
+      if (isset($result['id']) && strlen($result['id']) > 0) {
+        $mailingId = $result['id'];
+      }
 
-    // Set the content of the campaign
-    $this->getApi()->put('campaigns/' . $mailingId . '/content', array(
-      'html' => $html,
-      'plain_text' => $text
-    ));
+      // Set the content of the campaign
+      $this->getApi()->put('campaigns/' . $mailingId . '/content', array(
+        'html' => $html,
+        'plain_text' => $text
+      ));
 
-    // Schedule if configured
-    if ($this->getSetting('sendType') == 'automatic') {
-      // Schedule the campaign for "now"
-      $this->getApi()->post('campaigns/' . $mailingId . '/actions/send');
+      // Schedule if configured
+      if ($this->getSetting('sendType') == 'automatic') {
+        // Schedule the campaign for "now"
+        $this->getApi()->post('campaigns/' . $mailingId . '/actions/send');
+      }
     }
 
     // Return the campaing id as mailing id

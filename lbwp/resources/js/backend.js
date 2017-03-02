@@ -19,6 +19,7 @@ var LbwpBackend = {
 	{
 		// Handle image cache-busting in image editor
 		LbwpBackend.handleImageCacheBusting();
+		LbwpBackend.handleUnwantedNotices();
 	},
 
 	/**
@@ -38,6 +39,19 @@ var LbwpBackend = {
 					LbwpBackend.imageEditorLastState = currentState;
 				}
 			}, 750);
+		}
+	},
+
+	/**
+	 * Dismiss unwanted notices that are only hidden by CSS.
+	 * This JS triggers clicks so notices are gone "forever"
+	 */
+	handleUnwantedNotices : function()
+	{
+		if (jQuery('.frash-notice').length > 0) {
+			setTimeout(function() {
+				jQuery('.frash-notice-dismiss').trigger('click');
+			}, 1000);
 		}
 	},
 

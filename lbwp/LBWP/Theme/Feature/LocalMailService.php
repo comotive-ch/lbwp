@@ -42,7 +42,7 @@ class LocalMailService
   /**
    * Maximum number of rows in list data shown
    */
-  const MAX_ROWS_DISPLAYED = 25;
+  const MAX_ROWS_DISPLAYED = 300;
   /**
    * Maximum number of emails to be send per cron call
    */
@@ -50,7 +50,7 @@ class LocalMailService
   /**
    * Salt to be used as validator for unsubscribes
    */
-  const UBSUB_SALT = '9t2hoeg24tgrhg';
+  const UNSUB_SALT = '9t2hoeg24tgrhg';
 
   /**
    * Can only be called within init
@@ -125,6 +125,9 @@ class LocalMailService
   {
     $postId = $this->getCurrentPostId();
 
+    // Try getting the list type (can fail on first save)
+    $type = get_post_meta($postId, 'list-type', true);
+
     // Only do something, if a post ID is given
     $helper = Metabox::get(self::LIST_TYPE_NAME);
     // Basic field definitions that need to be set first
@@ -137,17 +140,26 @@ class LocalMailService
         'dynamic' => 'Automatische Liste aus dynamischer Quelle'
       )
     ));
-    $helper->addDropdown('optin-type', $boxId, 'Opt-In-Typ', array(
-      'items' => array(
-        'default' => 'Direkte Anmeldung ohne Bestätigung',
-        'double' => 'Anmeldung erst bei Bestätigung der E-Mail-Adresse (Noch nicht implementiert)'
-      )
-    ));
-    $helper->addInputText('field-config', $boxId, 'Feld-IDs', array(
-      'description' => '
-      Kommagetrennte Liste der Feld-IDs in der gleichen Reihenfolge wie sie in geuploadeten CSV Dateien oder der automatische Liste vorkommen.
-      Die Felder sollten nur Kleinbuchstaben und keine Sonderzeichen beinhalten. Beispiel: email,vorname,nachname,anrede,strasse,ort.'
-    ));
+
+    if (strlen($type) == 0 || $type == 'static') {
+      $helper->addDropdown('optin-type', $boxId, 'Opt-In-Typ', array(
+        'items' => array(
+          'default' => 'Direkte Anmeldung ohne Bestätigung',
+          'none' => 'Keine Anmeldung (von aussen) möglich',
+          'double' => 'Anmeldung erst bei Bestätigung der E-Mail-Adresse (Noch nicht implementiert)'
+        )
+      ));
+      $helper->addInputText('field-config', $boxId, 'Feld-IDs', array(
+        'description' => '
+          Kommagetrennte Liste der Feld-IDs in der gleichen Reihenfolge wie sie in geuploadeten CSV Dateien vorkommen.
+          Die Felder sollten nur Kleinbuchstaben und keine Sonderzeichen beinhalten. Beispiel: email,vorname,nachname,anrede,strasse,ort.
+        '
+      ));
+    } else {
+      $helper->addInputText('config-key', $boxId, 'Konfigurations-Schlüssel', array(
+        'description' => 'vom Entwickler genannter Konfigurations-Schlüssel für die automatische Liste'
+      ));
+    }
     // Hide the editor that is only active for uploads to work
     $helper->hideEditor($boxId);
 
@@ -162,9 +174,9 @@ class LocalMailService
       $fields = array_map('trim', explode(',', $fields));
 
       // If there are fields to be mapped
-      if (count($fields) > 0) {
+      if (count($fields) > 0 && strlen($fields[0]) > 0) {
         // Predefine the item selections for the default fields
-        $selection = array();
+        $selection = array('empty' => 'Keine zuordnung');
         foreach ($fields as $fieldId) {
           $selection[$fieldId] = $fieldId;
         }
@@ -181,13 +193,14 @@ class LocalMailService
       $type = get_post_meta($postId, 'list-type', true);
       $emailField = get_post_meta($postId, $this->variables['email'], true);
 
-      if (strlen($emailField) > 0 && count($fields) > 0) {
+      if ($type == 'dynamic' || (strlen($emailField) > 0 && count($fields) > 0)) {
         switch ($type) {
           case 'static':
             $this->addMetaboxForStaticLists($fields);
             break;
           case 'dynamic':
-            $this->addMetaboxForDynamicLists($fields);
+            $key = get_post_meta($postId, 'config-key', true);
+            $this->addMetaboxForDynamicLists($postId, $key);
             break;
         }
       }
@@ -247,17 +260,35 @@ class LocalMailService
   }
 
   /**
-   * @param int $postId the post id of the list
+   * @param int $listId
+   * @return array list data
+   */
+  public function getListData($listId)
+  {
+    switch (get_post_meta($listId, 'list-type', true))
+    {
+      case 'dynamic':
+        $key = get_post_meta($listId, 'config-key', true);
+        return apply_filters('Lbwp_LMS_Data_' . $key, array(), $listId);
+      case 'static':
+      default:
+        return ArrayManipulation::forceArray(get_post_meta($listId, 'list-data', true));
+    }
+  }
+
+  /**
+   * @param int $listId the post id of the list
    * @param array $fields the field names
    * @return string html table
    */
-  protected function getStaticListData($postId, $fields)
+  protected function getStaticListData($listId, $fields = array())
   {
     $html = '';
+    $rowId = 0;
     $countFields = count($fields);
 
     // First, display how many items are in the table
-    $listData = ArrayManipulation::forceArray(get_post_meta($postId, 'list-data', true));
+    $listData = $this->getListData($listId);
     $rowCount = count($listData);
     if ($rowCount > self::MAX_ROWS_DISPLAYED) {
       $html .= 'Es sind aktuell ' . $rowCount . ' Datensätze vorhanden. Es werden nur ' . self::MAX_ROWS_DISPLAYED . ' davon angezeigt';
@@ -265,11 +296,20 @@ class LocalMailService
       $html .= 'Es sind aktuell ' . $rowCount . ' Datensätze vorhanden.';
     }
 
+    // If there are no fields, it might just be a dynamic list
+    if ($countFields == 0 && $rowCount > 0) {
+      foreach ($listData[0] as $key => $value) {
+        $fields[] = $key;
+        $countFields++;
+      }
+    }
+
     // Create the table
     $html .= '<table class="mbh-generic-table">';
 
     // Create table headings from fields
     $html .= '<tr>';
+    $html .= '<th>ID</th>';
     foreach ($fields as $field) {
       $html .= '<th>' . $field . '</th>';
     }
@@ -278,8 +318,9 @@ class LocalMailService
     // Display maximum number of records
     array_slice($listData, 0, self::MAX_ROWS_DISPLAYED, true);
 
-    foreach ($listData as $record) {
+    foreach ($listData as $key => $record) {
       $html .= '<tr>';
+      $html .= '<td data-key="' . $key . '">' . (++$rowId) . '</td>';
       $countCells = 0;
       foreach ($record as $field) {
         if ($countFields >= ++$countCells) {
@@ -371,14 +412,27 @@ class LocalMailService
 
   /**
    * Displays metaboxes for dynamic lists
-   * @param array $fields list of all field keys
+   * @param int $postId the post id
    */
-  protected function addMetaboxForDynamicLists($fields)
+  protected function addMetaboxForDynamicLists($postId, $key)
   {
     $helper = Metabox::get(self::LIST_TYPE_NAME);
     $boxId = 'dynamic-list-box';
     $helper->addMetabox($boxId, 'Dynamische Liste');
-    $helper->addHtml('info', $boxId, '<p>Dynamische Listen werden noch nicht unterstützt.</p>');
+
+    // Show a message, if there is no key yet
+    if (strlen($key) == 0) {
+      $helper->addHtml('info', $boxId, '<p>Bitte geben Sie den Konfigurations-Schlüssel an.</p>');
+      return;
+    }
+
+    // If we have a key, let actions from developers react to it
+    do_action('Lbwp_LMS_Metabox_' . $key, $helper, $boxId, $postId);
+
+    // Display the data information, if an import took place
+    if (strlen($key) > 0) {
+      $helper->addHtml('table', $boxId, $this->getStaticListData($postId));
+    }
   }
 
   /**
@@ -417,7 +471,7 @@ class LocalMailService
     if (isset($_GET['lm_unsub'])) {
       list($recordId, $checkId, $listId) = explode('-', $_GET['lm_unsub']);
       $listId = intval($listId);
-      $recordHash = md5(self::UBSUB_SALT . $recordId);
+      $recordHash = md5(self::UNSUB_SALT . $recordId);
       // Unsubscribe, if check is valid and list is valid
       if ($listId > 0 && $recordHash == $checkId) {
         $this->unsubscribe($recordId, $listId);
@@ -601,7 +655,7 @@ class LocalMailService
    */
   public function getUnsubscribeLink($memberId, $listId, $language)
   {
-    $unsubscribeCode = $memberId . '-' . md5(self::UBSUB_SALT . $memberId) . '-' . $listId;
+    $unsubscribeCode = $memberId . '-' . md5(self::UNSUB_SALT . $memberId) . '-' . $listId;
     return $this->config['unsubscribeUrl_' . $language] . '?lm_unsub=' . $unsubscribeCode;
   }
 

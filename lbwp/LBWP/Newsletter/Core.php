@@ -123,13 +123,13 @@ class Core extends \LBWP\Module\Base
 
   /**
    * Wrapper to get all current services list options
-   * @param string $selectedKey the selected list
+   * @param array $selectedKeys the selected list
    * @return array list of option html strings
    */
-  public function getListOptions($selectedKey = '')
+  public function getListOptions($selectedKeys = array())
   {
     $service = $this->getService();
-    return $service->getListOptions($selectedKey);
+    return $service->getListOptions($selectedKeys);
   }
 
   /**

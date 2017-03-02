@@ -7,6 +7,7 @@ use LBWP\Newsletter\Service\Definition;
 use LBWP\Core as LbwpCore;
 use LBWP\Util\Multilang;
 use LBWP\Util\Strings;
+use LBWP\Util\ArrayManipulation;
 
 /**
  * Implementation class for Emarsys service
@@ -385,13 +386,16 @@ class Implementation extends Base implements Definition
   }
 
   /**
-   * @param string $selectedKey
+   * @param array $selectedKeys
    * @return array list of options to use in a dropdown
    */
-  public function getListOptions($selectedKey = '')
+  public function getListOptions($selectedKeys = array(), $fieldKey = 'listId')
   {
     // Grab lists from API
     $html = '';
+    $currentListId = $this->getSetting($fieldKey);
+    $selectedKeys = ArrayManipulation::forceArrayAndInclude($selectedKeys);
+
     $optionGroups = array(
       'segment' => array(
         'name' => 'Segmente',
@@ -408,11 +412,20 @@ class Implementation extends Base implements Definition
       $html .= '<optgroup label="' . $groupConfig['name'] . '">';
       foreach ($groupConfig['items'] as $id => $item) {
         $listKey = $id . '$$' . $groupKey . '$$' . $item;
+
         // Preselect with id or key
         $selected = '';
-        if (strlen($selectedKey) > 0) {
-          $selected = selected($selectedKey, $listKey, false);
+        foreach ($selectedKeys as $selectedKey) {
+          if (strlen($selectedKey) == 0) {
+            $selected = selected($currentListId, $id, false);
+          } else {
+            $selected = selected($selectedKey, $listKey, false);
+          }
+          if (strlen($selected) > 0) {
+            break;
+          }
         }
+
         // Display the entry
         $html .= '
           <option value="' . $listKey . '"' . $selected . '>
@@ -456,7 +469,7 @@ class Implementation extends Base implements Definition
   }
 
   /**
-   * @param string $listId the list ID to use on the api
+   * @param array $targets the list IDs to use on the api
    * @param string $html the html code for the newsletter
    * @param string $text the text version of the newsletter
    * @param string $subject the subject
@@ -466,39 +479,41 @@ class Implementation extends Base implements Definition
    * @param string $language internal language code to be mapped to emarsys
    * @return string|int the mailing id from the service
    */
-  public function createMailing($listId, $html, $text, $subject, $senderEmail, $senderName, $originalTarget, $language)
+  public function createMailing($targets, $html, $text, $subject, $senderEmail, $senderName, $originalTarget, $language)
   {
-    // Define if it is a segment or list, initalize both as 0
-    // $sendItemId is not used, because it is the same as the validated $listId
-    $contactListId = $segmentId = 0;
-    list($sendItemId, $typeId) = explode('$$', $originalTarget);
-    switch ($typeId) {
-      case 'segment':
-        $segmentId = $listId;
-        break;
-      case 'list':
-        $contactListId = $listId;
-        break;
-    }
+    foreach ($targets as $index => $listId) {
+      // Define if it is a segment or list, initalize both as 0
+      // $sendItemId is not used, because it is the same as the validated $listId
+      $contactListId = $segmentId = 0;
+      list($sendItemId, $typeId) = explode('$$', $originalTarget[$index]);
+      switch ($typeId) {
+        case 'segment':
+          $segmentId = $listId;
+          break;
+        case 'list':
+          $contactListId = $listId;
+          break;
+      }
 
-    // Submit the mailing to emarsys
-    $mailingId = $this->api->createMailing(
-      $this->getSetting('languageSetting_' . $language),
-      $subject,
-      $senderEmail,
-      $senderName,
-      $subject,
-      $this->getSetting('emailCategory'),
-      $segmentId,
-      $contactListId,
-      $html,
-      $text
-    );
+      // Submit the mailing to emarsys
+      $mailingId = $this->api->createMailing(
+        $this->getSetting('languageSetting_' . $language),
+        $subject,
+        $senderEmail,
+        $senderName,
+        $subject,
+        $this->getSetting('emailCategory'),
+        $segmentId,
+        $contactListId,
+        $html,
+        $text
+      );
 
-    // Schedule if configured
-    if ($this->getSetting('sendType') == 'automatic') {
-      // Schedule the campaign
-      $this->api->scheduleMailing($mailingId, current_time('timestamp'));
+      // Schedule if configured
+      if ($this->getSetting('sendType') == 'automatic') {
+        // Schedule the campaign
+        $this->api->scheduleMailing($mailingId, current_time('timestamp'));
+      }
     }
 
     // Return the mailing id

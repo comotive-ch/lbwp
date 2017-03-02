@@ -26,7 +26,7 @@ abstract class Core extends BaseComponent
    */
   protected $items = array(
     'simple-content' => array(
-      'name' => 'Editor-Inhalt / 2-Spaltiger Inhalt',
+      'name' => 'Standardtemplate (Editor)',
       'class' => '\LBWP\Theme\Component\Onepager\Item\SimpleContent'
     )
   );

@@ -539,44 +539,33 @@ abstract class CoreV2
   }
 
   /**
-   * Helper function to determine if the current or a specific page is a page template
-   *
+   * Helper function to determine if the current or a specific post is a page template
    * @param string $slug the slug under which the page template was registered
    * @param int|null $pageId optional page id
    * @return bool true if a page template (identfied by slug)
    */
-  public function isPageTemplate($slug, $pageId = null)
+  public function isPageTemplate($slug, $postId = null)
   {
     $result = false;
     // get the page id somehow, if not specified
-    if ($pageId === null) {
+    if ($postId === null) {
       $post = get_post();
-      $pageId = $post->ID;
+      $postId = $post->ID;
     }
 
     // if passed directly as a post parameter
-    if ($pageId == null && isset($_POST['post_ID'])) {
-      $pageId = absint($_POST['post_ID']);
+    if ($postId == null && isset($_POST['post_ID'])) {
+      $postId = absint($_POST['post_ID']);
     }
     // if passed directly as get parameter
-    if ($pageId == null && isset($_GET['post'])) {
-      $pageId = absint($_GET['post']);
+    if ($postId == null && isset($_GET['post'])) {
+      $postId = absint($_GET['post']);
     }
 
-    // check if it is really a page
-    if ($pageId != null) {
-      $object = get_post($pageId);
-
-      // reset the pageId if it isn't a page
-      if ($object->post_type != 'page') {
-        $pageId = null;
-      }
-    }
-
-    // check the template slug if the page id is found
-    if ($pageId != null || (is_admin() && get_current_screen() != null && get_current_screen()->post_type == 'page')) {
+    // check the template slug if the post id is found
+    if ($postId != null || (is_admin() && get_current_screen() != null)) {
       // check the slug
-      if (get_post_meta($pageId, '_wp_page_template', true) === $slug) {
+      if (get_post_meta($postId, '_wp_page_template', true) === $slug) {
         $result = true;
       }
     }

@@ -141,10 +141,12 @@ class Search
   /**
    * Prints the search results
    */
-  public static function printGoogleSiteSearchResults()
+  public static function printGoogleSiteSearchResults($args)
   {
     // Get the config
     $config = LbwpCore::getInstance()->getConfig();
+    // Use shortcode config, if given
+    $targetSelf = (isset($args['results_in_new_tab']) && $args['results_in_new_tab'] == 1);
 
     // Display all the needed mambo jambo
     echo self::getGoogleSiteSearchApi();
@@ -159,6 +161,9 @@ class Search
         var customSearchControl = new google.search.CustomSearchControl('<?php echo $config['Various:GoogleEngineId']; ?>', customSearchOptions);
         var options = new google.search.DrawOptions();
         customSearchControl.setResultSetSize(google.search.Search.FILTERED_CSE_RESULTSET);
+        <?php if ($targetSelf) : ?>
+          customSearchControl.setLinkTarget(google.search.Search.LINK_TARGET_SELF);
+        <?php endif ?>
         options.enableSearchResultsOnly();
         customSearchControl.draw('cse', options);
         customSearchControl.execute(sitesearch_getURLParameter('q'));

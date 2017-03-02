@@ -8,6 +8,7 @@ use LBWP\Newsletter\Service\Base;
 use LBWP\Newsletter\Service\Definition;
 use LBWP\Core as LbwpCore;
 use LBWP\Theme\Feature\LocalMailService;
+use LBWP\Util\ArrayManipulation;
 use LBWP\Util\Multilang;
 use LBWP\Util\Strings;
 
@@ -94,27 +95,36 @@ class Implementation extends Base implements Definition
   }
 
   /**
-   * @param string $selectedKey
+   * @param array $selectedKey
    * @param string $fieldKey
    * @return array list of options to use in a dropdown
    */
-  public function getListOptions($selectedKey = '', $fieldKey = 'listId')
+  public function getListOptions($selectedKeys = array(), $fieldKey = 'listId')
   {
     // Grab lists from API
-    $html = '<option value="">Bitte wählen Sie eine Liste aus</option>';
+    $html = '';
     $lists = $this->api->getLists();
     $currentListId = $this->getSetting($fieldKey);
+    $selectedKeys = ArrayManipulation::forceArrayAndInclude($selectedKeys);
 
     // Display a list if possible
     if (is_array($lists) && count($lists) > 0) {
       foreach ($lists as $id => $list) {
         $listKey = $id . '$$' . $list;
+
         // Preselect with id or key
-        if (strlen($selectedKey) == 0) {
-          $selected = selected($currentListId, $id, false);
-        } else {
-          $selected = selected($selectedKey, $listKey, false);
+        $selected = '';
+        foreach ($selectedKeys as $selectedKey) {
+          if (strlen($selectedKey) == 0) {
+            $selected = selected($currentListId, $id, false);
+          } else {
+            $selected = selected($selectedKey, $listKey, false);
+          }
+          if (strlen($selected) > 0) {
+            break;
+          }
         }
+
         // Display the entry
         $html .= '
           <option value="' . $listKey . '"' . $selected . '>
@@ -152,8 +162,8 @@ class Implementation extends Base implements Definition
     return self::DELIVERY_METHOD_SEND;
   }
 
-  /** TODO
-   * @param string $listId the list ID to use on the api
+  /**
+   * @param array $targets the list IDs to use on the api
    * @param string $html the html code for the newsletter
    * @param string $text the text version of the newsletter
    * @param string $subject the subject
@@ -163,36 +173,46 @@ class Implementation extends Base implements Definition
    * @param string $language internal language code to be mapped to emarsys
    * @return string|int the mailing id from the service
    */
-  public function createMailing($listId, $html, $text, $subject, $senderEmail, $senderName, $originalTarget, $language)
+  public function createMailing($targets, $html, $text, $subject, $senderEmail, $senderName, $originalTarget, $language)
   {
     // Create the mailing ID as a resilt of list and content
-    $mailingId = md5($html . $subject . $listId) . '-' . $listId;
+    $mailingId = md5($html . $subject . $targets[0]) . '-' . $targets[0];
 
     // Create an unfinished mailing in our option array
     $this->api->setMailing($mailingId, 'creating');
 
     // Get the list and loop trough it to create the actual mailing object
     $mails = array();
-    $list = get_post_meta($listId, 'list-data', true);
-    if (is_array($list) && count($list)) {
-      foreach ($list as $memberId => $recipient) {
-        // First, add an unsubscribe object to the recipient
-        $recipient['unsubscribe'] = $this->api->getUnsubscribeLink($memberId, $listId, $language);
+    $uniqueAdresses = array();
+    foreach ($targets as $listId) {
+      $list = $this->api->getListData($listId);
+      if (is_array($list) && count($list)) {
+        foreach ($list as $memberId => $recipient) {
+          // Skip, if we already created an email for this recipient
+          if (in_array($recipient['email'], $uniqueAdresses)) {
+            continue;
+          }
 
-        // Personalize the mailing text with user data
-        $personalizedHtml = $html;
-        foreach ($recipient as $field => $value) {
-          $personalizedHtml = str_replace('{' . $field . '}', $value, $personalizedHtml);
+          // First, add an unsubscribe object to the recipient
+          $recipient['unsubscribe'] = $this->api->getUnsubscribeLink($memberId, $listId, $language);
+
+          // Personalize the mailing text with user data
+          $personalizedHtml = $html;
+          foreach ($recipient as $field => $value) {
+            $personalizedHtml = str_replace('{' . $field . '}', $value, $personalizedHtml);
+          }
+
+          // Create a new mailing entry
+          $mails[] = array(
+            'html' => $personalizedHtml,
+            'subject' => $subject,
+            'recipient' => $recipient['email'],
+            'senderEmail' => $senderEmail,
+            'senderName' => $senderName
+          );
+
+          $uniqueAdresses[] = $recipient['email'];
         }
-
-        // Create a new mailing entry
-        $mails[] = array(
-          'html' => $personalizedHtml,
-          'subject' => $subject,
-          'recipient' => $recipient['email'],
-          'senderEmail' => $senderEmail,
-          'senderName' => $senderName
-        );
       }
     }
 

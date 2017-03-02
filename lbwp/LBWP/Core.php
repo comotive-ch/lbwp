@@ -17,7 +17,7 @@ class Core
   /**
    * @var int Revisionnumber of the plugins (not svn revision, only for updates)
    */
-  const REVISION = 166;
+  const REVISION = 170;
   /**
    * @var int CSS/JS file version for cloudfront
    */
@@ -270,12 +270,12 @@ class Core
   protected function update()
   {
     //self::installPlugin();
-    $this->mergeFeatures();
-    $this->mergeConfig();
+    //$this->mergeFeatures();
+    //$this->mergeConfig();
     // Plugin specific hooks
-    Installer::resetWooCommerceCrons();
+    //Installer::resetWooCommerceCrons();
     // Remove monster insights message for 6.0 beta
-    update_option('monsterinsights_60_beta', 1);
+    //update_option('monsterinsights_60_beta', 1);
   }
 
   /**

@@ -9,7 +9,7 @@ use LBWP\Module\Frontend\HTMLCache;
 use LBWP\Util\Strings;
 
 /**
- * This module provides management of memcached keys / information. It is
+ * This module provides management of cache keys / information. It is
  * only loaded while the user is logged in and in admin mode.
  * @author Michael Sebel <michael@comotive.ch>
  */
@@ -22,7 +22,8 @@ class MemcachedAdmin extends \LBWP\Module\Base
   /**
    * @var string the html cache prefix
    */
-  const HTML_CACHE_PREFIX = '_htmlCache';
+  // OLD MEMCACHED const HTML_CACHE_PREFIX = '_htmlCache';
+  const HTML_CACHE_PREFIX = 'htmlCache';
   /**
    * @var bool flushed the html cache? true if already flushed in this request
    */
@@ -181,10 +182,10 @@ class MemcachedAdmin extends \LBWP\Module\Base
   {
     add_submenu_page(
       'tools.php',
-      'Memcached-Admin',
-      'Memcached-Admin',
+      'Cache-Einstellungen',
+      'Cache-Einstellungen',
       'administrator',
-      'memcached-admin',
+      'cache-admin',
       array($this, 'adminForm')
     );
   }
@@ -250,7 +251,7 @@ class MemcachedAdmin extends \LBWP\Module\Base
   }
 
   /**
-   * Displays page contents for memcached admin information
+   * Displays page contents for cache admin information
    */
   public function adminForm()
   {
@@ -263,19 +264,26 @@ class MemcachedAdmin extends \LBWP\Module\Base
       $message = $this->flushCache(self::HTML_CACHE_PREFIX);
     }
 
+    $additional = '';
+    if (LbwpCore::isSuperlogin()) {
+      $additional .= '<td><input type="submit" name="showAllKeys" value="Keys anzeigen" class="button-primary" /></td>';
+      $additional .= '<td><input type="submit" name="checkConsistency" value="Konsistenzprüfung" class="button-primary" /></td>';
+    }
+
     $html = '
 			<div class="wrap">
 				<div id="icon-tools" class="icon32"><br></div>
-				<h2>Memcached Verwaltung</h2>
+				<h2>Cache-Einstellungen</h2>
 				' . $message . '
 				<p>
 				  Falls die Seite nicht korrekt angezeigt wird, können sie den Webseiten Cache, oder den kompletten Cache leeren.<br />
 				</p>
-				<form action="' . get_admin_url() . 'tools.php?page=memcached-admin" method="post">
+				<form action="' . get_admin_url() . 'tools.php?page=cache-admin" method="post">
 					<table>
 						<tr>
 							<td><input type="submit" name="doFlushHtml" value="Webseiten Cache leeren" class="button-primary" /></td>
 							<td><input type="submit" name="doFlushTotal" value="Cache komplett leeren" class="button-primary" /></td>
+							' . $additional . '
 						</tr>
 					</table>
 				</form>
@@ -283,14 +291,80 @@ class MemcachedAdmin extends \LBWP\Module\Base
 
     // If super admin, add some more info
     if (LbwpCore::isSuperlogin()) {
+      global $table_prefix;
+      $buckets = wp_get_cache_bucket();
+
+      // Show all keys
+      if (isset($_POST['showAllKeys']) || isset($_POST['checkConsistency'])) {
+        $lists = $count = $hashes = array();
+        foreach ($buckets as $index => $bucket) {
+          $keys = $bucket->getKeys(CUSTOMER_KEY . ':' . str_replace('_', '', $table_prefix) . ':*');
+          natcasesort($keys);
+          $keys = array_values($keys);
+          $listHtml = '';
+          foreach ($keys as $key) {
+            $listHtml .= '
+            <div>
+              ' . str_replace(CUSTOMER_KEY . ':', '', $key) . '
+              ' . $this->consistencyCheck($key, $buckets, $index) . '
+            </div>';
+          }
+          $hashes[$index] = md5(json_encode($keys));
+          $lists[$index] = $listHtml;
+          $count[$index] = count($keys);
+        }
+
+        $html .= '<p><table class="widefat fixed"><tr>';
+        foreach ($lists as $index => $content) {
+          $info = $buckets[$index]->info();
+          $html .= '
+            <td>
+              <strong>Size total: ' . $info['used_memory_human'] . '</strong><br>
+              <strong>Key count: ' . $count[$index] . '</strong><br>
+              <strong>Server index: ' . $index . ' (' . $info['role'] . ')</strong><br>
+              <strong>Keylist-Hash: ' . $hashes[$index] . '</strong><br>
+              <br>
+              ' . $content . '
+            </td>';
+        }
+        $html .= '</tr></table></p>';
+      }
+
       $html .= '<pre>';
-      $html .= Strings::getVarDump(MC_PERSISTENT_CONNECTION_HASH);
-      $html .= Strings::getVarDump(wp_get_cache_bucket());
+      $html .= Strings::getVarDump($buckets);
       $html .= '</pre>';
     }
 
     // Close the div
     $html .= '</div>';
     echo $html;
+  }
+
+  /**
+   * @param $key
+   * @param $buckets
+   * @param $index
+   */
+  protected function consistencyCheck($key, $buckets, $index)
+  {
+    if ($index == 0 && isset($_POST['checkConsistency'])) {
+      $sizes = $values = array();
+      $info = '(Sizes: ';
+      foreach ($buckets as $index => $bucket) {
+        $values[$index] = serialize($bucket->get($key));
+        $sizes[$index] = strlen($values[$index]);
+      }
+      $info .= implode(', ', $sizes);
+      // Say OK or NOK
+      $ok = '<span style="font-weight:bold; color:#FF0000;">NOK</span>';
+      if (count(array_unique($sizes)) === 1 && count(array_unique($values)) === 1) {
+        $ok = '<span style="font-weight:normal; color:#008000;">OK</span>';
+      }
+      $info .= ', ' . $ok . ')';
+
+      return $info;
+    }
+
+    return '';
   }
 }

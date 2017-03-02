@@ -47,10 +47,10 @@ interface Definition
   public function getVariables();
 
   /**
-   * @param string $selectedKey the selected list item
+   * @param array $selectedKeys the selected list item
    * @return array of selectable lists (with id, value)
    */
-  public function getListOptions($selectedKey = '');
+  public function getListOptions($selectedKeys = array());
 
   /**
    * @return string one of self::DELIVERY_METHOD_*
@@ -74,7 +74,7 @@ interface Definition
   public function unsubscribe($email, $listId = '');
 
   /**
-   * @param string $listId the list ID to use on the api
+   * @param array $targets the list IDs to use
    * @param string $html the html code for the newsletter
    * @param string $text the text version of the newsletter
    * @param string $subject the subject
@@ -84,7 +84,7 @@ interface Definition
    * @param string $language language of the newsletter
    * @return string|int the mailing id from the service
    */
-  public function createMailing($listId, $html, $text, $subject, $senderEmail, $senderName, $originalTarget, $language);
+  public function createMailing($targets, $html, $text, $subject, $senderEmail, $senderName, $originalTarget, $language);
 
   /**
    * Should contain:

@@ -391,9 +391,6 @@ class CmsFeatures extends \LBWP\Module\Base
     if (!isset($types['vcf'])) {
       $types['vcf'] = 'text/vcard';
     }
-    if (!isset($types['svg'])) {
-      $types['svg'] = 'image/svg+xml';
-    }
 
     return $types;
   }

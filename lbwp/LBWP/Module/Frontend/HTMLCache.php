@@ -2,14 +2,13 @@
 
 namespace LBWP\Module\Frontend;
 
-use Comotive\Firewall\Memcached;
 use LBWP\Module\Backend\MemcachedAdmin;
 use LBWP\Util\Strings;
 use LBWP\Core as LbwpCore;
 
 /**
  * HTML Cache module. Caches contents of a html page with a few exceptions.
- * The HTML Cache saves the content into a very fast memcached server.
+ * The HTML Cache saves the content into a very fast cache server.
  * @author Michael Sebel <michael@comotive.ch>
  */
 class HTMLCache extends \LBWP\Module\Base
@@ -81,7 +80,7 @@ class HTMLCache extends \LBWP\Module\Base
         $this->config['HTMLCache:CacheTimeSingle']
       );
       $this->expireTimedCacheAvoids();
-      // set correct memcached group (desktop always))
+      // set correct cache group (desktop always))
       $this->currentCacheGroup = getHtmlCacheGroup();
       // This avoids commenting users to cache an unapproved comment
       add_action('init', array($this, 'avoidCommenterCache'));
@@ -93,10 +92,10 @@ class HTMLCache extends \LBWP\Module\Base
 
       // manually delete cache for one site
       if ($_GET['htmlCache'] == 'invalidate') {
-        // clean memcached_site state from get -> remove
+        // clean invalidation param state from get -> remove
         $siteId = $this->removeGetVar('htmlCache');
         // delete cache
-        $this->clearFullSiteMemcached($siteId);
+        $this->clearHtmlCache($siteId);
       }
     }
   }
@@ -223,14 +222,14 @@ class HTMLCache extends \LBWP\Module\Base
 
     // Get the correct URL. cut domain start by .xxx/
     $siteId = $htmlCache->getUriPath(get_permalink($postId));
-    $htmlCache->clearFullSiteMemcached($siteId);
+    $htmlCache->clearHtmlCache($siteId);
   }
 
   /**
    * Delete a cached site (desktop)
    * @param string $siteId
    */
-  public function clearFullSiteMemcached($siteId)
+  public function clearHtmlCache($siteId)
   {
     self::invalidatePage($siteId);
   }
@@ -250,8 +249,8 @@ class HTMLCache extends \LBWP\Module\Base
   public static function invalidatePage($uri)
   {
     $siteId = md5($uri);
-    wp_cache_delete($siteId, MC_CACHE_GROUP);
-    wp_cache_delete($siteId, MC_CACHE_GROUP_HTTPS);
+    wp_cache_delete($siteId, FRONT_CACHE_GROUP);
+    wp_cache_delete($siteId, FRONT_CACHE_GROUP_HTTPS);
   }
 
   /**
@@ -262,8 +261,8 @@ class HTMLCache extends \LBWP\Module\Base
   {
     foreach ($siteIds as $uri) {
       $siteId = md5($uri);
-      wp_cache_delete($siteId, MC_CACHE_GROUP);
-      wp_cache_delete($siteId, MC_CACHE_GROUP_HTTPS);
+      wp_cache_delete($siteId, FRONT_CACHE_GROUP);
+      wp_cache_delete($siteId, FRONT_CACHE_GROUP_HTTPS);
     }
   }
 
@@ -271,7 +270,7 @@ class HTMLCache extends \LBWP\Module\Base
    * Delete multiple cached sites (desktop)
    * @param array $siteIds
    */
-  public function clearFullSiteMemcachedArray(array $siteIds)
+  public function clearHtmlCacheArray(array $siteIds)
   {
     self::invalidatePageArray($siteIds);
   }
@@ -283,7 +282,7 @@ class HTMLCache extends \LBWP\Module\Base
    */
   public function removeGetVar($var)
   {
-    // remove memcached_site varibale
+    // remove variable
     $newGetStr = '';
     foreach ($_GET as $key => $value) {
       if ($key !== $var) {
@@ -293,7 +292,7 @@ class HTMLCache extends \LBWP\Module\Base
     // cut last &
     $newGetStr = substr($newGetStr, 0, -1);
 
-    $arrRequestUri = explode('?', $this->getMemcachedSiteId());
+    $arrRequestUri = explode('?', $this->getCacheSiteId());
     if (!$newGetStr) {
       return $arrRequestUri[0];
     } else {
@@ -337,7 +336,7 @@ class HTMLCache extends \LBWP\Module\Base
       // Save cacheVal to cache only if there is content or headers
       if (strlen($output) > 0 || $hasLocationHeader) {
         wp_cache_set(
-          md5($this->getMemcachedSiteId()),
+          md5($this->getCacheSiteId()),
           $cacheVal,
           $this->currentCacheGroup,
           $expireTime
@@ -424,7 +423,7 @@ class HTMLCache extends \LBWP\Module\Base
   }
 
   /**
-   * Get the timestamp for expires date for memcached
+   * Get the timestamp for expires date for the cache key
    * @return int timestamp until cache must be refreshed
    */
   protected function getCacheTime()
@@ -440,7 +439,7 @@ class HTMLCache extends \LBWP\Module\Base
    * Generate the ID for the cache object (per site)
    * @return string ID
    */
-  public function getMemcachedSiteId()
+  public function getCacheSiteId()
   {
     return $_SERVER['REQUEST_URI'];
   }
@@ -452,7 +451,7 @@ class HTMLCache extends \LBWP\Module\Base
   {
     global $wp_admin_bar;
     // create cache flush link
-    $link = $this->getMemcachedSiteId();
+    $link = $this->getCacheSiteId();
     if (stristr($link,'?') === false) {
       $link .= '?';
     } else {

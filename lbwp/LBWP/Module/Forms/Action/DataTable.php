@@ -2,6 +2,8 @@
 
 namespace LBWP\Module\Forms\Action;
 
+use LBWP\Core as LbwpCore;
+use LBWP\Module\Events\Core as EventCore;
 use LBWP\Module\Frontend\HTMLCache;
 use LBWP\Util\Date;
 use LBWP\Util\ArrayManipulation;
@@ -38,9 +40,9 @@ class DataTable extends Base
         'type' => 'textfield'
       ),
       'max' => array(
-        'name' => 'Maximale Anzahl Datensätze (0 = unendlich)',
+        'name' => 'Maximale Anzahl Anmeldungen (0 = unendlich)',
         'type' => 'textfield',
-        'help' => 'Nützlich für Event-Anmeldungen wo z.B. nur für 80 Personen Platz ist.'
+        'help' => 'Nützlich für Event-Anmeldungen wo z.B. nur für 80 Personen Platz ist. Berechnung kann mit Zuweisung der Event-Felder unten optimiert werden.'
       ),
       'max_error' => array(
         'name' => 'Text, wenn die maximale Anzahl erreicht ist',
@@ -48,6 +50,16 @@ class DataTable extends Base
         'help' => 'Anstelle des Formulars, wird dieser Text angezeigt, wenn die maximale Anzahl Datensätze erreicht ist.'
       ),
     ));
+
+    // Allow assignment of an event, if module is active
+    if (LbwpCore::isModuleActive('Events')) {
+      $this->paramConfig['event_id'] = array(
+        'name' => 'Text, wenn die maximale Anzahl erreicht ist',
+        'type' => 'dropdown',
+        'values' => $this->getAssignableEvents(),
+        'help' => 'Damit können Event-Informationen direkt im Datenspeicher angezeigt werden.'
+      );
+    }
   }
 
   /**
@@ -154,5 +166,27 @@ class DataTable extends Base
     );
 
     return $data;
+  }
+
+  /**
+   * @return array list of selectable events
+   */
+  protected function getAssignableEvents()
+  {
+    $values = array(0 => 'Nicht zugewiesen');
+
+    // Get the next events as configured
+    $frontend = EventCore::getInstance()->getFrontendComponent();
+    $config = EventCore::getInstance()->getShortcodeComponent()->getListConfiguration(array());
+    // Only query for future events as of right now and two months into the future
+    $config['from'] = current_time('timestamp');
+    $config['to'] = $config['from'] + (86400 * 180);
+    $events = $frontend->queryEvents($config);
+
+    foreach ($events as $event) {
+      $values[$event->ID] = $event->post_title;
+    }
+
+    return $values;
   }
 } 

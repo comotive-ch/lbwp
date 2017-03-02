@@ -100,6 +100,20 @@ class ArrayManipulation
   }
 
   /**
+   * forces the $value to be an array, if not it returns an empty array
+   * @param mixed $value input value
+   * @return array $value if array, or an empty array
+   */
+  public static function forceArrayAndInclude($value)
+  {
+    if (!is_array($value)) {
+      $value = array($value);
+    }
+
+    return $value;
+  }
+
+  /**
    * @param $array
    * @param array $params
    * @param callable $method

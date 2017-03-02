@@ -73,10 +73,11 @@ class OutputFilter extends \LBWP\Module\Base
 
     // Filter for header/footer information
     if ($this->features['OutputFilterFeatures']['HeaderFooterFilter'] == 1) {
+      add_action('wp_head', array($this, 'addFeedMetaInfo'), 20);
       add_action('wp_head', array($this, 'headerFilter'), 20);
       add_action('wp_footer', array($this, 'footerFilter'), 20);
       // Google search engine (and possibly other) thumbnail info
-      add_filter('wp_head', array($this, 'addPageThumbnail'), 20);
+      add_action('wp_head', array($this, 'addPageThumbnail'), 20);
     }
 
     // Set a thumbnail id to a post, if not given
@@ -114,6 +115,18 @@ class OutputFilter extends \LBWP\Module\Base
   {
     $classes[] = 'lang-' . Multilang::getCurrentLang();
     return $classes;
+  }
+
+  /**
+   * Adds default feed meta info
+   */
+  public function addFeedMetaInfo()
+  {
+    echo '
+      <link rel="alternate" type="text/xml" title="' . LBWP_HOST . ' - RSS Feed" href="'.  get_bloginfo('rss_url') .'" />
+      <link rel="alternate" type="application/atom+xml" title="' . LBWP_HOST . ' - Atom Feed" href="'.  get_bloginfo('atom_url') .'" />
+      <link rel="alternate" type="application/rss+xml" title="' . LBWP_HOST . ' - RSS Feed" href="'.  get_bloginfo('rss2_url') .'" />
+    ';
   }
 
   /**

@@ -837,8 +837,15 @@ class Metabox
   public function addTaxonomyDropdown($key, $boxId, $title, $taxonomy, $args = array())
   {
     $args['taxonomy'] = $taxonomy;
-    $terms = get_terms($args);
+
     $args['items'] = array();
+    // Add a first default item, if set
+    if (isset($args['default'])) {
+      $args['items'][$args['default']['key']] = $args['default']['value'];
+    }
+
+    // Query and add terms
+    $terms = get_terms($args);
     foreach ($terms as $term) {
       $args['items'][$term->slug] = $term->name;
     }

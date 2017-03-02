@@ -631,6 +631,21 @@ class WordPress
   }
 
   /**
+   * @param int $postId the post id
+   * @param string $taxonomy the taxonomy
+   * @return string name of the first found assigned term in that taxonomy, or empty string, if none
+   */
+  public static function getFirstTermName($postId, $taxonomy = 'category')
+  {
+    $terms = wp_get_post_terms($postId, $taxonomy);
+    if (is_array($terms) && count($terms) > 0) {
+      return $terms[0]->name;
+    }
+
+    return '';
+  }
+
+  /**
    * This just "removes" a menu. Only use, if security is not the most imporant thing here.
    * @param string $menuItemId one of the MENU_ID_* constants
    * @param array $menu the global $menu
