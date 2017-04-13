@@ -61,7 +61,7 @@ class Posttype extends Base
       'show_in_menu' => 'listings',
       'publicly_queryable' => false,
       'exclude_from_search' => true,
-      'supports' => array('title', 'editor')
+      'supports' => array('title', 'editor', 'thumbnail')
     ), 'n');
   }
 

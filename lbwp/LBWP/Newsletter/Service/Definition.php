@@ -74,6 +74,11 @@ interface Definition
   public function unsubscribe($email, $listId = '');
 
   /**
+   * @return bool true/false if there are dynamic targets supported by filtering
+   */
+  public function hasDynamicTargets();
+
+  /**
    * @param array $targets the list IDs to use
    * @param string $html the html code for the newsletter
    * @param string $text the text version of the newsletter
@@ -82,9 +87,10 @@ interface Definition
    * @param string $senderName the sender name alias
    * @param string $originalTarget full target name (which may contain additional send info)
    * @param string $language language of the newsletter
+   * @param \ComotiveNL\Newsletter\Newsletter\Newsletter $newsletter the actual object
    * @return string|int the mailing id from the service
    */
-  public function createMailing($targets, $html, $text, $subject, $senderEmail, $senderName, $originalTarget, $language);
+  public function createMailing($targets, $html, $text, $subject, $senderEmail, $senderName, $originalTarget, $language, $newsletter);
 
   /**
    * Should contain:

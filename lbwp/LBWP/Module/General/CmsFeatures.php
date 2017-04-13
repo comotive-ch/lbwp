@@ -93,6 +93,8 @@ class CmsFeatures extends \LBWP\Module\Base
       add_filter('wp_title_rss', array($this, 'fixMultilangFeedTitle')); //[&#8230;]
       // Option bridge, to have multilang capable options
       OptionBridge::getInstance()->addDefaultOptions();
+      // Allow to use the "language" parameter on WP REST API
+      add_action('rest_api_init', array($this, 'addPolylangRestApiParams'));
     }
 
     // General features
@@ -554,6 +556,25 @@ class CmsFeatures extends \LBWP\Module\Base
     }
 
     return $link;
+  }
+
+  /**
+   * Add support for polylang to work with REST API
+   */
+  public function addPolylangRestApiParams()
+  {
+    global $polylang;
+
+    $default = pll_default_language();
+    $langs = pll_languages_list();
+
+    $paramLang = $_GET['lang'];
+    if (!in_array($paramLang, $langs)) {
+      $paramLang = $default;
+    }
+
+    $polylang->curlang = $polylang->model->get_language($paramLang);
+    $GLOBALS['text_direction'] = $polylang->curlang->is_rtl ? 'rtl' : 'ltr';
   }
 
   /**

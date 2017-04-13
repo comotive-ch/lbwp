@@ -1,9 +1,12 @@
 <?php
 
 namespace LBWP\Theme\Feature;
+
 use LBWP\Helper\Cronjob;
 use LBWP\Helper\Import\Csv;
 use LBWP\Helper\Metabox;
+use LBWP\Helper\Mail\Base as MailService;
+use LBWP\Module\Events\Component\EventType;
 use LBWP\Util\ArrayManipulation;
 use LBWP\Util\Date;
 use LBWP\Util\External;
@@ -19,10 +22,6 @@ use LBWP\Newsletter\Core as NLCore;
  */
 class LocalMailService
 {
-  /**
-   * @var array configuration defaults
-   */
-  protected $config = array();
   /**
    * @var LocalMailService the instance
    */
@@ -40,17 +39,27 @@ class LocalMailService
    */
   const LIST_TYPE_NAME = 'lbwp-mailing-list';
   /**
-   * Maximum number of rows in list data shown
+   * @var array configuration defaults
    */
-  const MAX_ROWS_DISPLAYED = 300;
+  protected $config = array(
+    'mailServiceId' => 'localmail',
+    'mailServiceConfig' => array(),
+    'maxRowsDisplayInBackend' => 500,
+    'maxMailsPerSendPeriod' => 50,
+    'unsubscribeSalt' => '9t2hoeg24tgrhg'
+  );
+
   /**
-   * Maximum number of emails to be send per cron call
+   * @var array list of useable mail services
    */
-  const MAX_MAILS_PER_SEND_PERIOD = 50;
-  /**
-   * Salt to be used as validator for unsubscribes
-   */
-  const UNSUB_SALT = '9t2hoeg24tgrhg';
+  protected $services = array(
+    'localmail' => array(
+      'class' => '\LBWP\Helper\Mail\Local'
+    ),
+    'amazon-ses' => array(
+      'class' => '\LBWP\Helper\Mail\AmazonSES'
+    )
+  );
 
   /**
    * Can only be called within init
@@ -98,6 +107,7 @@ class LocalMailService
     add_filter('lbwpFormActions', array(NLCore::getInstance(), 'addFormActions'));
     add_action('cron_job_localmail_sending', array($this, 'tryAndSendMails'));
     add_filter('standard-theme-modify-data', array($this, 'replaceDefaultVariables'));
+    add_filter('cs_wordpress_filter_post_data', array($this, 'filterEventNewsletterItem'), 10, 3);
   }
 
   /**
@@ -227,8 +237,22 @@ class LocalMailService
       // Make a local file to actually import data
       $fileUrl = wp_get_attachment_url($selectedList);
       $fileName = File::getFileOnly($fileUrl);
-      $tempFile = get_temp_dir() . $fileName;
-      file_put_contents($tempFile, file_get_contents($fileUrl));
+      $tempFile = File::getNewUploadFolder() . $fileName;
+      $fileData = '';
+
+      // If there is a local file system, try getting the file locally for temporary input
+      if (CDN_TYPE == CDN_TYPE_NONE) {
+        $filePath = get_attached_file($selectedList, true);
+        $fileData = file_get_contents($filePath);
+      }
+
+      // If no data was read, try getting it from url
+      if (strlen($fileData) == 0 ) {
+        $fileData = file_get_contents($fileUrl);
+      }
+
+      // Put file data into the local temp file
+      file_put_contents($tempFile, $fileData);
       $data = Csv::getArray($tempFile);
       // Now do the actual list data import, if possible
       if (is_array($data) && count($data) > 0 && count($data[0]) >= count($fields)) {
@@ -290,8 +314,8 @@ class LocalMailService
     // First, display how many items are in the table
     $listData = $this->getListData($listId);
     $rowCount = count($listData);
-    if ($rowCount > self::MAX_ROWS_DISPLAYED) {
-      $html .= 'Es sind aktuell ' . $rowCount . ' Datensätze vorhanden. Es werden nur ' . self::MAX_ROWS_DISPLAYED . ' davon angezeigt';
+    if ($rowCount > $this->config['maxRowsDisplayInBackend']) {
+      $html .= 'Es sind aktuell ' . $rowCount . ' Datensätze vorhanden. Es werden nur ' . $this->config['maxRowsDisplayInBackend'] . ' davon angezeigt';
     } else {
       $html .= 'Es sind aktuell ' . $rowCount . ' Datensätze vorhanden.';
     }
@@ -316,7 +340,7 @@ class LocalMailService
     $html .= '</tr>';
 
     // Display maximum number of records
-    array_slice($listData, 0, self::MAX_ROWS_DISPLAYED, true);
+    array_slice($listData, 0, $this->config['maxRowsDisplayInBackend'], true);
 
     foreach ($listData as $key => $record) {
       $html .= '<tr>';
@@ -460,6 +484,9 @@ class LocalMailService
       $data[$list->ID] = $list->post_title;
     }
 
+    // Also allow developers to add dynamic segments
+    $data = apply_filters('ComotiveNL_dynamic_target_get_list', $data);
+
     return $data;
   }
 
@@ -471,7 +498,7 @@ class LocalMailService
     if (isset($_GET['lm_unsub'])) {
       list($recordId, $checkId, $listId) = explode('-', $_GET['lm_unsub']);
       $listId = intval($listId);
-      $recordHash = md5(self::UNSUB_SALT . $recordId);
+      $recordHash = md5($this->config['unsubscribeSalt'] . $recordId);
       // Unsubscribe, if check is valid and list is valid
       if ($listId > 0 && $recordHash == $checkId) {
         $this->unsubscribe($recordId, $listId);
@@ -556,6 +583,12 @@ class LocalMailService
       return;
     }
 
+    // Create an instance of the sending service and configure it
+    $class = $this->services[$this->config['mailServiceId']]['class'];
+    /** @var MailService $service the service instance of Base */
+    $service = new $class();
+    $service->configure($this->config['mailServiceConfig']);
+
     // Loop trough all mailings. This will eventually go over the limit, but happens rarely
     foreach ($mailings as $mailingId => $status) {
       // Only proceed if the mailing is read to send
@@ -569,20 +602,21 @@ class LocalMailService
       // Send maximum number of mails
       $mailsSent = 0;
       foreach ($mails as $id => $mail) {
-        // Prepare and send the mailing
-        $phpMail = External::PhpMailer();
-        $phpMail->Subject = $mail['subject'];
-        $phpMail->Body = $mail['html'];
-        $phpMail->FromName = $mail['senderName'];
-        $phpMail->addReplyTo($mail['senderEmail']);
-        $phpMail->addAddress($mail['recipient']);
-        $phpMail->send();
+        // Use the service to send the mail, tag it and reset after sending
+        $service->setSubject($mail['subject']);
+        $service->setBody($mail['html']);
+        $service->setFrom($mail['senderEmail'], $mail['senderName']);
+        $service->addReplyTo($mail['senderEmail']);
+        $service->addAddress($mail['recipient']);
+        $service->setTag($mailingId);
+        $service->send();
+        $service->reset();
 
         // Unset from the array so it's not sent again
         unset($mails[$id]);
 
         // Check if we need to take a break
-        if (++$mailsSent >= self::MAX_MAILS_PER_SEND_PERIOD) {
+        if (++$mailsSent >= $this->config['maxMailsPerSendPeriod']) {
           break;
         }
       }
@@ -624,6 +658,26 @@ class LocalMailService
   }
 
   /**
+   * @param array $data the data array for the content source
+   * @param int $eventId the event id
+   * @param \WP_Post $event the event object (post native, no meta info)
+   * @return array $data array slightly changed
+   */
+  public function filterEventNewsletterItem($data, $eventId, $event)
+  {
+    // Only change something, if it is an event
+    if ($event->post_type == EventType::EVENT_TYPE) {
+      // Attach list and email id to the link in newsletter
+      $data['link'] = Strings::attachParam('list', '_listId', $data['link']);
+      $data['link'] = Strings::attachParam('ml', '_emailId', $data['link']);
+      // Create empty event meta data array, if not already given
+      add_post_meta($eventId, 'subscribeInfo', array(), true);
+    }
+
+    return $data;
+  }
+
+  /**
    * @param string $id the mailing status
    * @param string $status the mailing status
    */
@@ -655,7 +709,7 @@ class LocalMailService
    */
   public function getUnsubscribeLink($memberId, $listId, $language)
   {
-    $unsubscribeCode = $memberId . '-' . md5(self::UNSUB_SALT . $memberId) . '-' . $listId;
+    $unsubscribeCode = $memberId . '-' . md5($this->config['unsubscribeSalt'] . $memberId) . '-' . $listId;
     return $this->config['unsubscribeUrl_' . $language] . '?lm_unsub=' . $unsubscribeCode;
   }
 

@@ -19,6 +19,7 @@ class PiwikIntegration extends \LBWP\Module\Base
    * @var array basic integration settings, can be filtered in a future release, if needed
    */
   protected $integration = array(
+    'protocol' => 'https',
     'domain' => 'stats.comotive.ch'
   );
   /**
@@ -226,7 +227,7 @@ class PiwikIntegration extends \LBWP\Module\Base
         _paq.push(["trackPageView"]);
         _paq.push(["enableLinkTracking"]);
         (function() {
-          var u="//' . $this->integration['domain'] . '/";
+          var u="' . $this->integration['protocol'] . '://' . $this->integration['domain'] . '/";
           _paq.push(["setTrackerUrl", u + "piwik.php"]);
           _paq.push(["setSiteId", ' . $siteId . ']);
           var d=document, g=d.createElement("script"), s=d.getElementsByTagName("script")[0];
@@ -234,7 +235,7 @@ class PiwikIntegration extends \LBWP\Module\Base
         })();
       </script>
       <noscript>
-        <p><img src="//' . $this->integration['domain'] . '/piwik.php?idsite=' . $siteId . '" style="border:0;" alt="" /></p>
+        <p><img src="' . $this->integration['protocol'] . '://' . $this->integration['domain'] . '/piwik.php?idsite=' . $siteId . '" style="border:0;" alt="" /></p>
       </noscript>
     ';
   }

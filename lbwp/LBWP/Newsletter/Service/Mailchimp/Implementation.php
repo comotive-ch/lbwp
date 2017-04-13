@@ -252,7 +252,7 @@ class Implementation extends Base implements Definition
       $lists = $this->getApi()->get('lists', array(
         'start' => 0,
         'limit' => $maxLists,
-        'sort_field' => 'web',
+        'sort_field' => 'date_created',
         'sort_order' => 'ASC'
       ));
 
@@ -284,9 +284,10 @@ class Implementation extends Base implements Definition
    * @param string $senderName the sender name alias
    * @param string $originalTarget not used
    * @param string $language not used
+   * @param \ComotiveNL\Newsletter\Newsletter\Newsletter $newsletter the actual object
    * @return string|int the mailing id from the service
    */
-  public function createMailing($targets, $html, $text, $subject, $senderEmail, $senderName, $originalTarget, $language)
+  public function createMailing($targets, $html, $text, $subject, $senderEmail, $senderName, $originalTarget, $language, $newsletter)
   {
     foreach ($targets as $listId) {
       // This would be returned if anything bad happens
@@ -299,7 +300,7 @@ class Implementation extends Base implements Definition
           'list_id' => $listId,
         ),
         'settings' => array(
-          'subject_line' => html_entity_decode($subject, ENT_QUOTES, 'UTF-8'),
+          'subject_line' => $subject,
           'reply_to' => $senderEmail,
           'from_name' => $senderName
         ),
@@ -479,5 +480,13 @@ class Implementation extends Base implements Definition
   protected function getApi()
   {
     return new MailchimpV3($this->getSetting('apiKey'));
+  }
+
+  /**
+   * @return bool false: no dynamic targets
+   */
+  public function hasDynamicTargets()
+  {
+    return false;
   }
 } 

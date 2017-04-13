@@ -563,7 +563,7 @@ abstract class CoreV2
     }
 
     // check the template slug if the post id is found
-    if ($postId != null || (is_admin() && get_current_screen() != null)) {
+    if (($postId != null && is_singular()) || is_admin()) {
       // check the slug
       if (get_post_meta($postId, '_wp_page_template', true) === $slug) {
         $result = true;

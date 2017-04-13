@@ -1,0 +1,70 @@
+// Default variables
+$lbwpSlickSliderMargin: null !default;
+$lbwpSlickArrowDefaults: false !default;
+$lbwpSlickArrowHeight: null !default;
+$lbwpSlickArrowWidth: null !default;
+$lbwpSlickArrowColor: null !default;
+$lbwpSlickPrintDefaults: false !default;
+
+@mixin lbwpSlickArrows($direction: null) {
+	$directionClass: '';
+	@if ($direction != null) {
+		@if ($direction == right) {
+			$directionClass: '.slick-next';
+		} @else if ($direction == left) {
+			$directionClass: '.slick-prev';
+		}
+	}
+	.slick-arrow#{$directionClass} {
+		@content;
+	}
+}
+
+@mixin lbwpSlickSetArrowSize($h, $w) {
+	@include lbwpSlickArrows() {
+		height: $h;
+		width: $w;
+	}
+}
+
+@include lbwpSlickSetArrowSize($lbwpSlickArrowHeight, $lbwpSlickArrowWidth);
+
+@include lbwpSlickArrows {
+	color: $lbwpSlickArrowColor;
+	&:before {
+		color: $lbwpSlickArrowColor;
+	}
+}
+
+.slick-slider {
+	margin: $lbwpSlickSliderMargin;
+}
+
+@if ($lbwpSlickArrowDefaults == true) {
+	.slick-arrow {
+    font-size: 0;
+    line-height: 0;
+    position: absolute;
+    top: 50%;
+    display: block;
+    padding: 0;
+		@include transform(translate(0, -50%));
+    cursor: pointer;
+    color: transparent;
+    border: none;
+    outline: none;
+    background: transparent;
+		z-index: 1;
+	}
+	.slick-next {
+		right: 0;
+	}
+}
+
+@if ($lbwpSlickPrintDefaults) {
+	@media print {
+		.slick-dots, .slick-arrow {
+			display: none !important;
+		}
+	}
+}

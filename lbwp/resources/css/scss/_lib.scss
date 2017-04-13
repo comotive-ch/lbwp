@@ -26,3 +26,7 @@ $wpBackendColorInputFocusBorder: #5b9dd9;
 	border-color: $wpBackendColorInputFocusBorder;
 	@include box-shadow(0 0 2px rgba(30,140,190,.8));
 }
+
+@mixin wpBackendBold() {
+	font-weight: 600;
+}

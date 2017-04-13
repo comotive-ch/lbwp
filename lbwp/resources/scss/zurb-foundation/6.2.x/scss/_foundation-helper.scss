@@ -16,3 +16,9 @@
 		@return null;
 	}
 }
+
+@mixin foundationHelperResetDefaults() {
+	figure {
+		margin: 0;
+	}
+}

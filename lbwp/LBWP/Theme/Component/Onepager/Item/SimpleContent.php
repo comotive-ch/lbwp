@@ -41,7 +41,10 @@ class SimpleContent extends Base
     // Show the post title if the option allows to
     $showTitle = (get_post_meta($this->post->ID, 'hide-post-title', true) == 'on') ? false : true;
     if ($showTitle) {
-      $html = '<h2>' . $this->post->post_title . '</h2>';
+      $html = '
+        <header>
+          <h2>' . $this->post->post_title . '</h2>
+        </header>';
     }
 
     // Append editor content

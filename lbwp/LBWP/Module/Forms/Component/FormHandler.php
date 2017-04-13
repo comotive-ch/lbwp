@@ -86,6 +86,10 @@ class FormHandler extends Base
    */
   protected $formErrorMessage = '';
   /**
+   * @var string content to add at the bottom of a form
+   */
+  protected $bottomContent = '';
+  /**
    * @var bool tells if the resources were printed once
    */
   protected $addedAssets = false;
@@ -307,7 +311,7 @@ class FormHandler extends Base
     ';
 
     // Close the html tags
-    $html .= $security . '</form></div>';
+    $html .= $this->bottomContent . $security . '</form></div>';
 
     // allow general modification
     $html = apply_filters('lbwpForm', $html);
@@ -406,6 +410,14 @@ class FormHandler extends Base
     }
 
     return $fields;
+  }
+
+  /**
+   * @param string $content the bottom content
+   */
+  public function addBottomContent($content)
+  {
+    $this->bottomContent .= $content;
   }
 
   /**
@@ -968,6 +980,30 @@ class FormHandler extends Base
   }
 
   /**
+   * @param int $formId the form to filter
+   * @param string $type action type (class name)
+   * @return BaseAction[]|BaseAction action array or single action, if reduce=true
+   */
+  public function getActionsOfType($formId, $type, $reduce)
+  {
+    $actions = array();
+    $this->loadForm(array('id' => $formId));
+    // Loop current actions from loading the form
+    foreach ($this->currentActions as $action) {
+      if (Strings::endsWith(get_class($action), '\\' . $type)) {
+        $actions[] = $action;
+      }
+    }
+
+    // Redurect to single action if desired
+    if ($reduce) {
+      $actions = $actions[0];
+    }
+
+    return $actions;
+  }
+
+  /**
    * @return int the next new form item id
    */
   public function getNextId()
@@ -976,7 +1012,15 @@ class FormHandler extends Base
   }
 
   /**
-   * @return array the list of items (already filtered, if called after init)
+   * @return BaseItem[] the currently executing items (only set after a form is loaded)
+   */
+  public function getCurrentItems()
+  {
+    return $this->currentItems;
+  }
+
+  /**
+   * @return BaseItem[] the list of items (already filtered, if called after init)
    */
   public function getItems()
   {

@@ -186,6 +186,20 @@ class Multilang
   }
 
   /**
+   * @param string $lang
+   * @param array $args
+   * @return int
+   */
+  public static function countPosts($lang, $args = array())
+  {
+    if (self::isActive()) {
+      return pll_count_posts($lang, $args);
+    }
+
+    return 0;
+  }
+
+  /**
    * @param string $location base name
    * @param string $lang translation that is needed
    * @return string location name in requested language

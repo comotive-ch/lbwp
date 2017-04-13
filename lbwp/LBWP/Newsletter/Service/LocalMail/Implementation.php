@@ -2,8 +2,10 @@
 
 namespace LBWP\Newsletter\Service\LocalMail;
 
+use ComotiveNL\Newsletter\Renderer\NewsletterRenderer;
 use LBWP\Helper\Cronjob;
 use LBWP\Helper\MasterApi;
+use LBWP\Module\Events\Component\EventType;
 use LBWP\Newsletter\Service\Base;
 use LBWP\Newsletter\Service\Definition;
 use LBWP\Core as LbwpCore;
@@ -171,9 +173,10 @@ class Implementation extends Base implements Definition
    * @param string $senderName the sender name alias
    * @param string $originalTarget used to determine if list or segment is being sent
    * @param string $language internal language code to be mapped to emarsys
+   * @param \ComotiveNL\Newsletter\Newsletter\Newsletter $newsletter the actual object
    * @return string|int the mailing id from the service
    */
-  public function createMailing($targets, $html, $text, $subject, $senderEmail, $senderName, $originalTarget, $language)
+  public function createMailing($targets, $html, $text, $subject, $senderEmail, $senderName, $originalTarget, $language, $newsletter)
   {
     // Create the mailing ID as a resilt of list and content
     $mailingId = md5($html . $subject . $targets[0]) . '-' . $targets[0];
@@ -185,7 +188,14 @@ class Implementation extends Base implements Definition
     $mails = array();
     $uniqueAdresses = array();
     foreach ($targets as $listId) {
-      $list = $this->api->getListData($listId);
+      // Decide if a dynamic target or a "common" target is used
+      if (Strings::startsWith($listId, 'dynamicTarget_')) {
+        $map = $newsletter->getDynamicTargetMap();
+        $list = apply_filters('ComotiveNL_dynamic_target_get_list_data', array(), $listId, $map[$listId], $map[$listId . '_fallback']);
+      } else {
+        $list = $this->api->getListData($listId);
+      }
+
       if (is_array($list) && count($list)) {
         foreach ($list as $memberId => $recipient) {
           // Skip, if we already created an email for this recipient
@@ -202,6 +212,10 @@ class Implementation extends Base implements Definition
             $personalizedHtml = str_replace('{' . $field . '}', $value, $personalizedHtml);
           }
 
+          // Replace some custom code fields
+          $personalizedHtml = str_replace('_listId', $listId, $personalizedHtml);
+          $personalizedHtml = str_replace('_emailId', $memberId, $personalizedHtml);
+
           // Create a new mailing entry
           $mails[] = array(
             'html' => $personalizedHtml,
@@ -211,7 +225,7 @@ class Implementation extends Base implements Definition
             'senderName' => $senderName
           );
 
-          $uniqueAdresses[] = $recipient['email'];
+          $uniqueAdresses[$memberId] = $recipient['email'];
         }
       }
     }
@@ -222,6 +236,21 @@ class Implementation extends Base implements Definition
     // Create a cron that is checking for local mail sendings and actually starts sending
     $this->api->setMailing($mailingId, 'sending');
     $this->api->scheduleSendingCron();
+
+    // Create the subscriber infos, if there were events
+    $map = NewsletterRenderer::getLastItemMap();
+    if (isset($map[EventType::EVENT_TYPE]) && count($map[EventType::EVENT_TYPE]) > 0) {
+      foreach ($map[EventType::EVENT_TYPE] as $eventId) {
+        foreach ($uniqueAdresses as $id => $email) {
+          EventType::setSubscribeInfo($eventId, $id, array(
+            'email' => $email,
+            'filled' => false,
+            'subscribed' => false,
+            'subscribers' => 0
+          ));
+        }
+      }
+    }
 
     return $mailingId;
   }
@@ -304,5 +333,13 @@ class Implementation extends Base implements Definition
     // Tell the API to remove that man or woman
     $recordId = md5($email);
     return $this->api->unsubscribe($recordId, $listId);
+  }
+
+  /**
+   * @return bool true: we have dynamic targets here
+   */
+  public function hasDynamicTargets()
+  {
+    return true;
   }
 } 

@@ -22,6 +22,21 @@ $lbwpSlickArrowButtonHorizontallyPosition: null !default;
 $lbwpSlickArrowButtonHorizontallyPositionMobile: null !default;
 $lbwpSlickPrintDefaults: true !default;
 
+@mixin lbwpSlickArrows($direction: null) {
+	$directionClass: '';
+	@if ($direction != null) {
+		@if ($direction == right) {
+			$directionClass: '.slick-next';
+		} @else if($direction == left) {
+			$directionClass: '.slick-prev';
+		}
+	}
+	button.slick-arrow#{$directionClass} {
+		@content;
+	}
+}
+
+
 .slick-slider {
 	margin: $lbwpSlickSliderMargin;
 }

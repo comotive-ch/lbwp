@@ -6,7 +6,9 @@ use ComotiveNL\Standard\ContentSource\WordPressContentSource;
 use ComotiveNL\Newsletter\Editor\EditorDynamicSection;
 use ComotiveNL\Newsletter\Editor\Editor;
 use ComotiveNL\Starter\Newsletter\LayoutElement\StarterContentLayoutElement;
+use ComotiveNL\Starter2\Newsletter\LayoutElement\StarterContentLayoutElement as StarterContentLayoutElement2;
 use ComotiveNL\Starter\Newsletter\LayoutElement\StarterMultiColumnsContentLayoutElement;
+use ComotiveNL\Starter2\Newsletter\LayoutElement\StarterTwoColumnsLayoutElement;
 
 /**
  * Helpers to add custom sources
@@ -19,9 +21,10 @@ class CustomSource {
    * @param string $type the pos ttype
    * @param string $title title above all items
    * @param int $order ordering
-   * @param bool $addStarterLayouts adds layouts automatically if true
+   * @param bool $addStarter1Layouts adds layouts automatically if true
+   * @param bool $addStarter2Layouts adds layouts automatically if true
    */
-  public static function addPostTypeSource($type, $title, $order, $addStarterLayouts = true)
+  public static function addPostTypeSource($type, $title, $order, $addStarter1Layouts = true, $addStarter2Layouts = false)
   {
     $core = \CMNL::getNewsletterCore();
     // WordPress Posts
@@ -38,7 +41,7 @@ class CustomSource {
     );
     $core->addEditorSection($section);
 
-    if ($addStarterLayouts) {
+    if ($addStarter1Layouts) {
       $layoutElement = new StarterContentLayoutElement();
       $core->registerLayoutElement($layoutElement);
       $core->addLayoutDefinition($layoutElement->getKey(), $customSourceKey);
@@ -48,6 +51,17 @@ class CustomSource {
       $core->registerLayoutElement($layoutElement);
       $core->addLayoutDefinition($layoutElement->getKey(), 'two-columns ' . $customSourceKey);
       $core->addLayoutDefinition($layoutElement->getKey(), 'three-columns ' . $customSourceKey);
+    }
+
+    if ($addStarter2Layouts) {
+      $layoutElement = new StarterContentLayoutElement2();
+      $core->registerLayoutElement($layoutElement);
+      $core->addLayoutDefinition($layoutElement->getKey(), $customSourceKey);
+      $core->addLayoutDefinition($layoutElement->getKey(), 'free-article');
+
+      $layoutElement = new StarterTwoColumnsLayoutElement();
+      $core->registerLayoutElement($layoutElement);
+      $core->addLayoutDefinition($layoutElement->getKey(), 'two-columns ' . $customSourceKey);
     }
   }
 } 

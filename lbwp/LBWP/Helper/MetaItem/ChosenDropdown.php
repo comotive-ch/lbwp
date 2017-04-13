@@ -185,9 +185,19 @@ class ChosenDropdown
 
     // Add a dropdown for a type, if given
     if (isset($args['metaDropdown'])) {
+      // Sort the data array, if needed (
+      if (isset($args['metaDropdown']['sortBy'])) {
+        switch ($args['metaDropdown']['sortBy']) {
+          case 'sort':
+            uasort($args['metaDropdown']['data'], array('\LBWP\Helper\MetaItem\ChosenDropdown', 'sortByNumber'));
+            break;
+        }
+      }
+
+      // Create the dropdown
       $typeDropdown = '<select id="' . $id . '-metaDropdown" name="metaDropdown" class="mbh-type-dropdown-inline" data-key="' . $args['metaDropdown']['key'] . '">';
-      foreach ($args['metaDropdown']['data'] as $key => $value) {
-        $typeDropdown .= '<option value="' . $key . '">' . $value . '</option>';
+      foreach ($args['metaDropdown']['data'] as $key => $item) {
+        $typeDropdown .= '<option value="' . $item['key'] . '">' . $item['name'] . '</option>';
       }
       $typeDropdown .= '</select>';
     }
@@ -201,6 +211,21 @@ class ChosenDropdown
         <a href="javascript:void(0);" class="button"' . $attr . '>Hinzufügen</a>
       </div>
     ';
+  }
+
+  /**
+   * @param $a
+   * @param $b
+   */
+  public static function sortByNumber($a, $b)
+  {
+    if ($a['sort'] > $b['sort']) {
+      return 1;
+    } else if ($a['sort'] < $b['sort']) {
+      return -1;
+    } else {
+      return 0;
+    }
   }
 
   /**

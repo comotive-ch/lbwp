@@ -10,7 +10,7 @@ $itemHtml = get_post_meta($item->ID, 'content-title', true);
 
 // load image
 $imageHtml = '';
-$imageId = get_post_meta($item->ID, 'content-image', true);
+$imageId = get_post_thumbnail_id($item->ID);
 //todo use medium in default template
 $imageUrl = WordPress::getImageUrl($imageId, 'thumbnail');
 if (strlen($imageUrl)) {

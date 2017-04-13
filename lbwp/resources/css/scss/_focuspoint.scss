@@ -1,0 +1,37 @@
+/**
+ * jQuery FocusPoint; version: 1.1.1
+ * Author: http://jonathonmenz.com
+ * Source: https://github.com/jonom/jquery-focuspoint
+ * Copyright (c) 2014 J. Menz; MIT License
+ */
+.lbwp-focuspoint {
+	position: relative; /*Any position but static should work*/
+	overflow: hidden;
+	img {
+		position: absolute;
+		left: 0;
+		top: 0;
+		margin: 0;
+		display: block;
+		/* fill and maintain aspect ratio */
+		width: auto; height: auto;
+		min-width: 100%; min-height: 100%;
+		max-height: none; max-width: none;
+	}
+}
+
+// Use this container to display an image with a fixed ratio
+// Do extend the selector always with a value for padding-bottom
+.lbwp-focuspoint-container {
+	position: relative;
+	overflow: hidden;
+	width: 100%;
+	height: auto;
+	.lbwp-focuspoint {
+		position: absolute;
+		top: 0;
+		right: 0;
+		bottom: 0;
+		left: 0;
+	}
+}

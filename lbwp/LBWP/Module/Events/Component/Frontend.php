@@ -27,6 +27,10 @@ class Frontend extends Base
   {
     // Register JSON LD output for posts
     add_action('wp_head_single_' . EventType::EVENT_TYPE, array('\LBWP\Helper\Tracking\MicroData', 'printEventData'));
+    // Download ICS file, if needed
+    if (isset($_GET['download']) && $_GET['download'] == 'ics') {
+      add_action('wp', array($this, 'downloadCalendarFile'));
+    }
   }
 
   /**
@@ -164,12 +168,22 @@ class Frontend extends Base
   /**
    * @param \stdClass $event the event object to be displayed
    * @param string $textdomain the text domain for labels
+   * @param array $display display configuration
+   * @param array $override for the $config array
    * @return string html to represent the event information
    */
-  public function getDataListHtml($event, $textdomain)
+  public function getDataListHtml($event, $textdomain = 'lbwp', $display = array(), $override = array())
   {
     $config = $this->getFilteredConfiguration();
+    $config = array_merge($config, $override);
     $currentTime = current_time('timestamp');
+    // Merge display configuration with defaults
+    $display = array_merge(array(
+      'showDates' => true,
+      'showSubscriptionInfo' => true,
+      'showLocation' => true,
+      'showCalendarDownload' => false
+    ), $display);
 
     // Initialize data list and let developers add data
     $html = '<dl class="event-data-list">';
@@ -177,7 +191,7 @@ class Frontend extends Base
 
     // Handle the various date/time from/to combinations
     $event->endTime = intval($event->endTime);
-    if ($event->startTime > 0 && $event->endTime > 0) {
+    if ($event->startTime > 0 && $event->endTime > 0 && $display['showDates']) {
       // Start and end given, first, get all the parts
       $startDate = date_i18n($config['date_format'], $event->startTime);
       $endDate = date_i18n($config['date_format'], $event->endTime);
@@ -216,7 +230,7 @@ class Frontend extends Base
         ';
       }
 
-    } else if ($event->startTime > 0 && $event->endTime == 0) {
+    } else if ($event->startTime > 0 && $event->endTime == 0 && $display['showDates']) {
       // Only a start date is given, show the date
       $html .= '
         <dt>' . __('Datum', 'lbwp') . '</dt>
@@ -233,7 +247,7 @@ class Frontend extends Base
     }
 
     // Add location, if available
-    if (strlen($event->location) > 0) {
+    if (strlen($event->location) > 0 && $display['showLocation']) {
       $html .= '
         <dt>' . __('Ort', 'lbwp') . '</dt>
         <dd>' . $event->location . '</dd>
@@ -241,10 +255,18 @@ class Frontend extends Base
     }
 
     // Add event subcribe info, if available
-    if ($this->hasEventSubscription($event, $currentTime)) {
+    if ($this->hasEventSubscription($event, $currentTime) && $display['showSubscriptionInfo']) {
       $html .= '
         <dt>' . __('Anmeldung bis', 'lbwp') . '</dt>
         <dd>' . $this->getDateTimeString($event->subscribeEnd, $config, $textdomain) . '</dd>
+      ';
+    }
+
+    // Display a calendar file download for outlook etc.
+    if ($display['showCalendarDownload']) {
+      $html .= '
+        <dt>' . __('Download', 'lbwp') . '</dt>
+        <dd>' . $this->getCalendarFileDownloadLink($event->ID, __('Termin im Kalender speichern', 'lbwp')) . '</dd>
       ';
     }
 
@@ -253,6 +275,55 @@ class Frontend extends Base
     $html .= '</dl>';
 
     return $html;
+  }
+
+  /**
+   * @param int $eventId the event id to download
+   * @param string $text the text for the link
+   * @return string
+   */
+  protected function getCalendarFileDownloadLink($eventId, $text)
+  {
+    return '
+      <a href="' . get_permalink($eventId) . '?download=ics" target="_blank">' . $text . '</a>
+    ';
+  }
+
+  /**
+   * Downloads an ICS calendar file suiteable for all apps or outlook
+   */
+  public function downloadCalendarFile()
+  {
+    $event = $this->getQueriedEvent();
+    // Continue, if there is valid data
+    if ($event->ID > 0 && isset($event->startTime) && $event->startTime > 0) {
+      // Set the email
+      $email = $event->subscribeEmail;
+      if (!Strings::checkEmail($email)) {
+        $email = get_user_by('id', $event->post_author)->user_email;
+      }
+      // Print the needed mime header
+      header('Content-Type: text/calendar');
+      // Print the calendar minimal output
+      echo 'BEGIN:VCALENDAR' . PHP_EOL;
+      echo 'VERSION:2.0' . PHP_EOL;
+      echo 'PRODID:' . get_bloginfo('url') . PHP_EOL;
+      echo 'METHOD:PUBLISH' . PHP_EOL;
+      echo 'BEGIN:VEVENT' . PHP_EOL;
+      echo 'UID:' . $email . PHP_EOL;
+      echo 'ORGANIZER;CN="' . get_bloginfo('name') . '":MAILTO:' . $email . PHP_EOL;
+      echo 'LOCATION:' . $event->location . PHP_EOL;
+      echo 'SUMMARY:' . trim(preg_replace('/\s\s+/', ' ', $event->post_excerpt)) . PHP_EOL;
+      echo 'DESCRIPTION:' . strip_tags(trim(preg_replace('/\s\s+/', ' ', $event->post_content))) . PHP_EOL;
+      echo 'CLASS:PUBLIC' . PHP_EOL;
+      echo 'DTSTART:' . date(Date::ICS_DATE, $event->startTime) . PHP_EOL;
+      if (isset($event->endTime) && $event->endTime > 0) {
+        echo 'DTEND:' . date(Date::ICS_DATE, $event->endTime) . PHP_EOL;
+      }
+      echo 'END:VEVENT' . PHP_EOL;
+      echo 'END:VCALENDAR';
+      exit;
+    }
   }
 
   /**

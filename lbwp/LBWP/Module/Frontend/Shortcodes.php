@@ -27,7 +27,7 @@ class Shortcodes extends \LBWP\Module\Base
   {
     add_shortcode('forward', array($this, 'forwardShortcode'));
     add_shortcode('lbwp:gss_results', array('\LBWP\Theme\Feature\Search', 'printGoogleSiteSearchResults'));
-    add_shortcode('lbwp:gss_xml_results', array('\LBWP\Theme\Feature\Search', 'printGoogleXmlResults'));
+    add_shortcode('lbwp:gss_api_results', array('\LBWP\Theme\Feature\Search', 'printApiSearchResults'));
 	}
 
   /**

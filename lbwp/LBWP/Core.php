@@ -7,6 +7,7 @@ use LBWP\Module\Base;
 use LBWP\Util\Cookie;
 use LBWP\Module\Config\Feature;
 use LBWP\Module\Config\Settings;
+use LBWP\Util\WordPress;
 
 /**
  * Main class for LBWP features
@@ -17,7 +18,7 @@ class Core
   /**
    * @var int Revisionnumber of the plugins (not svn revision, only for updates)
    */
-  const REVISION = 170;
+  const REVISION = 174;
   /**
    * @var int CSS/JS file version for cloudfront
    */
@@ -272,10 +273,7 @@ class Core
     //self::installPlugin();
     //$this->mergeFeatures();
     //$this->mergeConfig();
-    // Plugin specific hooks
     //Installer::resetWooCommerceCrons();
-    // Remove monster insights message for 6.0 beta
-    //update_option('monsterinsights_60_beta', 1);
   }
 
   /**

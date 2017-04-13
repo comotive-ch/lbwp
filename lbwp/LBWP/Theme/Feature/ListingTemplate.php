@@ -61,7 +61,6 @@ class ListingTemplate
         $helper->addMetabox($boxId, __(sprintf('Einstellungen "%s"', 'Inhalt mit Bild'), 'lbwp'));
         $helper->addInputText('content-title', $boxId, __('Titel', 'lbwp'));
         $helper->addEditor('content-text', $boxId, __('Inhalt', 'lbwp'), 10);
-        $helper->addMediaUploadField('content-image', $boxId, __('Bild', 'lbwp'));
         //todo add "alignright" to template
         $helper->addDropdown('image-position', $boxId, __('Bild-Position', 'lbwp'), array(
           'multiple' => false,
@@ -105,7 +104,6 @@ class ListingTemplate
         $helper->addInputText('role', $boxId, __('Funktion/Rolle', 'lbwp'));
         $helper->addInputText('email', $boxId, __('E-Mail-Adresse', 'lbwp'));
         $helper->addEditor('description', $boxId, __('Beschreibung', 'lbwp'), 10);
-        $helper->addMediaUploadField('avatar', $boxId, __('Bild', 'lbwp'));
       });
 
       // Return the metabox id for further use
@@ -133,7 +131,6 @@ class ListingTemplate
         $helper = ListingCore::getInstance()->getHelper();
         $helper->addMetabox($boxId, __(sprintf('Einstellungen "%s"', 'Logo'), 'lbwp'));
         $helper->addInputText('logo-title', $boxId, __('Logo Titel', 'lbwp'));
-        $helper->addMediaUploadField('logo-image', $boxId, __('Logo Bild', 'lbwp'));
         $helper->addInputText('logo-link', $boxId, __('Ziel-Link', 'lbwp'), array(
           'placeholder' => 'http://'
         ));

@@ -1,0 +1,23 @@
+/*
+* deprecated, use "lbwpHamburgerIcon"
+*/
+@mixin lbwp-hamburger-icon($closed:false, $width:35px, $color:white, $lineHeight:5px, $lineSpacing:10px) {
+	@include lbwpHamburgerIcon($closed, $width, $color, $lineHeight, $lineSpacing);
+}
+
+/*
+* deprecated, use "lbwpLinkStyle"
+*/
+@mixin link-style($color, $colorHover:$color) {
+	@include lbwpLinkStyle($color, $colorHover);
+}
+
+// deprecated, use lbwpClearfixPseudoele
+@mixin lbwp-clearfix-pseudoele() {
+	@include lbwpClearfixPseudoele;
+}
+
+// deprecated, use lbwpClearfix
+@mixin lbwp-clearfix() {
+	@include lbwpClearfix;
+}

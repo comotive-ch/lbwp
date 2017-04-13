@@ -27,7 +27,7 @@ class Fetch
    * @param bool $ignore404 uf set to true, 4xx Errors will be ignored
    * @return string HTML Code that was fetched
    */
-  public static function getContent($url = '', $ignore404 = false)
+  public static function getContent($url = '', $ignore404 = false, $useProxy = false)
   {
     // The URL is set, try to get the contents with curl so we get HTTP Status too
     $options = array(
@@ -43,6 +43,13 @@ class Fetch
       CURLOPT_MAXREDIRS => 10,
       CURLOPT_COOKIEJAR => 'tempCookie',
     );
+
+    // If required, go via the comotive proxy
+    if ($useProxy) {
+      $options[CURLOPT_PROXY] = 'http://46.101.12.125';
+      $options[CURLOPT_PROXYPORT] = '3128';
+      $options[CURLOPT_PROXYUSERPWD] = 'comotive:Kv8gnr9qd5erSquid';
+    }
 
     // Use basic auth if requested
     if (strlen(self::$username) > 0) {

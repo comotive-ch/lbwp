@@ -17,7 +17,7 @@
   clear: both;
 }
 .mbh-title {
-  font-weight: bold;
+  @include wpBackendBold;
 }
 .mbh-title label a {
   font-weight: normal;

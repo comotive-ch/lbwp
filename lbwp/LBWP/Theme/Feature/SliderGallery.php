@@ -6,11 +6,10 @@ use LBWP\Util\File;
 use LBWP\Core as LbwpCore;
 
 /**
- * TODO container and template helpers are not yet built
  * Servers as a container for slider galleries and frameworks. Helps
  * with including frameworks and make galleries with theme code.
  * @package LBWP\Theme\Feature
- * @author Michael Sebel <michael.sebel@blogwerk.com>
+ * @author Michael Sebel <michael@comotive.ch>
  */
 class SliderGallery
 {
@@ -24,7 +23,8 @@ class SliderGallery
   protected $config = array(
     'framework' => 'slick-1.5',
     'container' => 'slick-gallery',
-    'template' => ''
+    'template' => '',
+    'omitThemeCss' => false
   );
 
   /**
@@ -109,7 +109,16 @@ class SliderGallery
       case 'slick-1.5':
         wp_enqueue_script('slick-1.5', $path . '/js/slick-carousel/1.5.x/slick.min.js', array('jquery'), LbwpCore::REVISION, true);
         wp_enqueue_style('slick-1.5-base', $path . '/js/slick-carousel/1.5.x/slick.css', array(), LbwpCore::REVISION, 'all');
-        wp_enqueue_style('slick-1.5-theme', $path . '/js/slick-carousel/1.5.x/slick-theme.css', array(), LbwpCore::REVISION, 'all');
+        if ($this->config['omitThemeCss'] == false) {
+          wp_enqueue_style('slick-1.5-theme', $path . '/js/slick-carousel/1.5.x/slick-theme.css', array(), LbwpCore::REVISION, 'all');
+        }
+        break;
+      case 'slick-1.6':
+        wp_enqueue_script('slick-1.6', $path . '/js/slick-carousel/1.6.x/slick.min.js', array('jquery'), LbwpCore::REVISION, true);
+        wp_enqueue_style('slick-1.6-base', $path . '/js/slick-carousel/1.6.x/slick.css', array(), LbwpCore::REVISION, 'all');
+        if ($this->config['omitThemeCss'] == false) {
+          wp_enqueue_style('slick-1.6-theme', $path . '/js/slick-carousel/1.6.x/slick-theme.css', array(), LbwpCore::REVISION, 'all');
+        }
         break;
     }
   }

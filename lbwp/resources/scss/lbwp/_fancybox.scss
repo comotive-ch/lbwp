@@ -83,9 +83,10 @@ $lbwpFancyBoxArrowHeight: null !default;
 @include lbwpFancyBoxSkin {
 	background: $lbwpFancyBoxSkinBgColor;
 	@include border-radius($lbwpFancyBoxSkinBorderRadius);
-	.fancybox-opened & {
-		@include box-shadow($lbwpFancyBoxSkinShadow);
-	}
+}
+
+.fancybox-opened div.fancybox-skin {
+	@include box-shadow($lbwpFancyBoxSkinShadow);
 }
 
 @mixin lbwpFancyBoxArrows() {

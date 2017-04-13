@@ -40,11 +40,14 @@ abstract class FetchComponent extends Component
    * @var string the url to replace links
    */
   protected $replaceUrl = '';
-
   /**
    * @var array $fetchFilters
    */
   protected $fetchFilters = array();
+  /**
+   * @var bool $useProxy use the squid proxy
+   */
+  protected $useProxy = false;
 
   /**
    * execute the fetch with all registered fetch filters
@@ -62,7 +65,7 @@ abstract class FetchComponent extends Component
 
         if (isset($urls[$language])) {
           // fetch the html of the section
-          $sectionContent = Fetch::getContent($urls[$language], false);
+          $sectionContent = Fetch::getContent($urls[$language], false, $this->useProxy);
 
           // do not abort, unless a fetch filter returns false
           $abort = false;
@@ -81,6 +84,7 @@ abstract class FetchComponent extends Component
                 if ($newSectionContent) {
                   $sectionContent = $newSectionContent;
                 } elseif ($newSectionContent === false) {
+                  echo 'Fetch.' . $callback[1] . ' returned an error in section ' . $section . '.' . $language . '<br>';
                   $abort = true;
                   // break out of two foreaches
                   break 2;

@@ -27,6 +27,7 @@ abstract class Core extends BaseComponent
   protected $items = array(
     'simple-content' => array(
       'name' => 'Standardtemplate (Editor)',
+      'sort' => 10,
       'class' => '\LBWP\Theme\Component\Onepager\Item\SimpleContent'
     )
   );
@@ -213,7 +214,8 @@ abstract class Core extends BaseComponent
             'itemHtmlCallback' => $this->getNewItemCallback(),
             'metaDropdown' => array(
               'key' => 'element-type',
-              'data' => $this->getNamedKeys()
+              'sortBy' => 'sort',
+              'data' => $this->getTemplateList()
             )
           );
 
@@ -302,11 +304,15 @@ abstract class Core extends BaseComponent
   /**
    * @return array a named array of item keys
    */
-  protected function getNamedKeys()
+  protected function getTemplateList()
   {
     $result = array();
     foreach ($this->items as $key => $data) {
-      $result[$key] = $data['name'];
+      $result[$key] = array(
+        'key' => $key,
+        'name' => $data['name'],
+        'sort' => intval($data['sort']) >0 ? intval($data['sort']) : 100
+      );
     }
 
     return $result;

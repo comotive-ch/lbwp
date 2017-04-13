@@ -2,6 +2,7 @@
 
 namespace LBWP\Module\Forms\Action;
 
+use LBWP\Module\Forms\Item\Hiddenfield;
 use LBWP\Module\Forms\Item\Textfield;
 use LBWP\Util\External;
 use LBWP\Util\File;
@@ -80,7 +81,7 @@ class SendMail extends Base
       'content' => array(
         'name' => 'E-Mail Inhalt überschreiben (Optional)',
         'type' => 'textarea',
-        'help' => 'Hier können Sie Ihren eigenen E-Mail Inhalte definieren. Bleibt das Feld leer, wird eine Tabelle der Formulardaten in der E-Mail angezegit. Wenn Sie die Formulardaten in Ihrem Inhalt verwenden möchten, setzen Sie den Platzhalter {lbwp:formContent} ein. Sie können auch Formularfelder verwenden indem Sie die Feld-ID z.B. wie folgt verwenden: {email_adresse}.'
+        'help' => 'Hier können Sie Ihren eigenen E-Mail Inhalt definieren. Bleibt das Feld leer, wird eine Tabelle der Formulardaten in der E-Mail angezegit. Wenn Sie die Formulardaten in Ihrem Inhalt verwenden möchten, setzen Sie den Platzhalter {lbwp:formContent} ein. Sie können auch Formularfelder verwenden indem Sie die Feld-ID z.B. wie folgt verwenden: {email_adresse}.'
       ),
     ));
 
@@ -203,27 +204,8 @@ class SendMail extends Base
    */
   protected function appendMailBody($data, &$mail, $replyTo)
   {
-    // Table beginning
-    $table = '<table width="100%" cellpadding="5" cellspacing="0" border="0">';
+    $table = self::getDataHtmlTable($data);
 
-    // Loop trought the fields data
-    foreach ($data as $field) {
-      // Check the value
-      if (!isset($field['value']) || strlen($field['value']) == 0) {
-        $field['value'] = __('Nicht ausgefüllt', 'lbwp');
-      }
-
-      // Print the field
-      $table .= '
-        <tr>
-          <td width="25%">' . $field['name'] . ':</td>
-          <td width="75%">' . $field['value'] . '</td>
-        </tr>
-      ';
-    }
-
-    // Close the table and add to body
-    $table .= '</table>';
     $html = '
       <p>' . __('Ein Formular auf Ihrer Webseite wurde ausgefüllt', 'lbwp') . ':</p>
       <br />
@@ -260,6 +242,47 @@ class SendMail extends Base
     }
 
     $mail->Body = $this->getEmailTemplateBody($email);
+  }
+
+  /**
+   * Create a very simple html table from input data
+   * @param array $data list of data fields
+   * @return string html table
+   */
+  public static function getDataHtmlTable($data)
+  {
+    $table = '<table width="100%" cellpadding="5" cellspacing="0" border="0">';
+
+    // Loop trought the fields data
+    foreach ($data as $field) {
+      // There are some field id's that can be skipped
+      if (
+        $field['name'] == 'tsid' ||
+        $field['name'] == 'user-ip-adresse' ||
+        $field['name'] == 'zeitstempel' ||
+        $field['name'] == 'Ursprungsformular' ||
+        $field['item'] instanceof Hiddenfield
+      ) {
+        continue;
+      }
+
+      // Check the value
+      if (!isset($field['value']) || strlen($field['value']) == 0) {
+        $field['value'] = __('Nicht ausgefüllt', 'lbwp');
+      }
+
+      // Print the field
+      $table .= '
+        <tr>
+          <td width="25%">' . $field['name'] . ':</td>
+          <td width="75%">' . $field['value'] . '</td>
+        </tr>
+      ';
+    }
+
+    // Close the table and return
+    $table .= '</table>';
+    return $table;
   }
 
   /**

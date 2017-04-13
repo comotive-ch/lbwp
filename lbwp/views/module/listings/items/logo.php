@@ -7,7 +7,7 @@ $item = ListingCore::getCurrentListElementItem();
 $itemHtml = get_post_meta($item->ID, 'logo-title', true);
 
 // load image
-$imageId = get_post_meta($item->ID, 'logo-image', true);
+$imageId = get_post_thumbnail_id($item->ID);
 $imageUrl = WordPress::getImageUrl($imageId, 'medium');
 if (strlen($imageUrl)) {
   $itemHtml = '<img src="' . $imageUrl . '" alt="' . WordPress::getImageAltText($imageId) . '" />';

@@ -59,6 +59,7 @@ class MemcachedAdmin extends \LBWP\Module\Base
       add_action('transition_comment_status', array($this, 'onCommentStatusChangeFlush'), 200, 3);
       add_action('wp_insert_comment', array($this, 'onNewApprovedCommentFlush'), 200, 2);
       add_action('edit_comment', array($this, 'onEditApprovedCommentFlush'), 200, 1);
+      add_action('cron_job_flush_html_cache', array($this, 'checkPublishablePosts'), 180);
       add_action('cron_job_flush_html_cache', array($this, 'onChangeImmediateFlush'), 200);
       add_action('customize_save_after', array($this, 'onChangeImmediateFlush'), 200);
       add_action('profile_update', array($this, 'onChangeImmediateFlush'), 200);
@@ -119,6 +120,26 @@ class MemcachedAdmin extends \LBWP\Module\Base
     // Making it easy: always flush if a status changes
     if ($newStatus != $oldStatus) {
       $this->flushFrontendCache(false);
+    }
+  }
+
+  /**
+   * Get all future posts and see if they are indeed from the future and need to be published
+   */
+  public function checkPublishablePosts()
+  {
+    global $wpdb;
+
+    // Get future posts that need to be published
+		$now = gmdate('Y-m-d H:i:59');
+		$posts = $wpdb->get_col('
+      SELECT ID FROM ' . $wpdb->posts . '
+      WHERE post_status = "future" AND post_date_gmt <= "' . $now . '"
+    ');
+
+    // Publish all the posts
+    foreach ($posts as $postId) {
+      wp_publish_post($postId);
     }
   }
 
@@ -344,6 +365,7 @@ class MemcachedAdmin extends \LBWP\Module\Base
    * @param $key
    * @param $buckets
    * @param $index
+   * @return string
    */
   protected function consistencyCheck($key, $buckets, $index)
   {

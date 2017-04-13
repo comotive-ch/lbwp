@@ -5,7 +5,7 @@ body.modal-backend {
 	margin-top:-32px;
 	// Remove some elements
 	#wpadminbar, #adminmenuback, #adminmenuwrap, .page-title-action, #wpfooter,
-	#view-post-btn, #delete-action, #minor-publishing-actions {
+	#view-post-btn, #delete-action {
 		display:none;
 	}
 	// Remove the preview link from messages
@@ -71,6 +71,30 @@ ul.wp-submenu li a img { display:none; }
 }
 #poststuff h2.nav-tab-wrapper { padding:0px; margin:15px 0px 0px 0px; }
 #poststuff h2.nav-tab-wrapper a { cursor:pointer; }
+
+#focuspoint-dialog, .pointer-template, .focuspoint-image-template {
+	display:none;
+}
+#focuspoint-image {
+	position:relative;
+	margin:auto;
+}
+#focuspoint-image img {
+	display: block;
+	max-width: 100%;
+	height: auto;
+}
+.focuspoint-pointer {
+	position:absolute;
+	-webkit-transform: translate(-50%, -50%);
+	-ms-transform: translate(-50%, -50%);
+	transform: translate(-50%, -50%);
+	top: 50%;
+	left: 50%;
+	transition: all 500ms ease-in-out;
+	-webkit-transition: all 500ms ease-in-out;
+	-moz-transition: all 500ms ease-in-out;
+}
 
 #dashboard-widgets .new-item {
 	padding:2px 8px 2px 8px;

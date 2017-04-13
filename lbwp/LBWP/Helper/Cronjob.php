@@ -48,7 +48,7 @@ class Cronjob
   public static function masterCallback($jobs, $host)
   {
     // If DB_MASTER is not set, nothing can be done. This method
-    // is only called by the API register-job.php and hence executed on master
+    // is only called by the API register-jobs.php and hence executed on master
     if (defined('EXTERNAL_LBWP')) {
       return false;
     }
@@ -63,16 +63,23 @@ class Cronjob
         continue;
       }
 
+      // Split identifier and data, if needed
+      $data = '';
+      if (stristr($identifier, '::') !== false) {
+        list($identifier, $data) = explode('::', $identifier);
+      }
+
       // Use server time difference for the jobs
       $sql = '
-        INSERT INTO jobs (job_site, job_time, job_identifier)
-        VALUES ({siteUrl}, {timestamp}, {identifier})
+        INSERT INTO jobs (job_site, job_time, job_identifier, job_data)
+        VALUES ({siteUrl}, {timestamp}, {identifier}, {data})
       ';
 
       mysqli_query($conn, Strings::prepareSql($sql, array(
         'siteUrl' => $host,
         'timestamp' => $timestamp + (time() - current_time('timestamp')),
-        'identifier' => $identifier
+        'identifier' => $identifier,
+        'data' => $data
       )));
     }
 

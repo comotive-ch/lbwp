@@ -4,6 +4,7 @@ namespace LBWP\Module\Events\Component;
 
 use LBWP\Core as LbwpCore;
 use LBWP\Helper\Metabox;
+use LBWP\Util\ArrayManipulation;
 use LBWP\Util\WordPress;
 use LBWP\Module\Forms\Component\Posttype as FormType;
 use DateTime;
@@ -132,5 +133,65 @@ class EventType extends Base
     foreach ($events as $event) {
       wp_delete_post($event->ID, true);
     }
+  }
+
+  /**
+   * @param int $eventId the id of the event
+   * @param string $id unique id for the data set
+   * @param array $data the data set to write minimum: email, filled, subscribed, subscribers
+   * @param bool $override if set to true, override with id is forced
+   */
+  public static function setSubscribeInfo($eventId, $id, $data, $override = false)
+  {
+    $info = ArrayManipulation::forceArray(get_post_meta($eventId, 'subscribeInfo', true));
+
+    if (isset($info[$id])) {
+      $record = $info[$id];
+      // See if not yet filled
+      if (!isset($record['filled']) || !$record['filled'] || $override) {
+        // Merge and save as same data set, but filled
+        $record = array_merge($record, $data);
+        $record['filled'] = true;
+        $info[$id] = $record;
+      } else {
+        // Set is already existing and filled, create a new dataset and mark as filled
+        $id .= '-' . uniqid('subd', true);
+        $info[$id] = $data;
+        $info[$id]['filled'] = true;
+      }
+    } else {
+      // New data set, take as given
+      $info[$id] = $data;
+    }
+
+    update_post_meta($eventId, 'subscribeInfo', $info);
+  }
+
+  /**
+   * @param int $eventId the id of the event
+   * @param string $id subscriber id
+   */
+  public static function removeSubscribeInfo($eventId, $id)
+  {
+    $info = ArrayManipulation::forceArray(get_post_meta($eventId, 'subscribeInfo', true));
+    unset($info[$id]);
+    update_post_meta($eventId, 'subscribeInfo', $info);
+  }
+
+  /**
+   * @param int $eventId the id of the event
+   */
+  public static function flushSubscribeInfo($eventId)
+  {
+    update_post_meta($eventId, 'subscribeInfo', array());
+  }
+
+  /**
+   * @param int $eventId the id of the event
+   * @return array the subscribe infos
+   */
+  public static function getSubscribeInfo($eventId)
+  {
+    return ArrayManipulation::forceArray(get_post_meta($eventId, 'subscribeInfo', true));
   }
 } 

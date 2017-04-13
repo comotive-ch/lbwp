@@ -56,4 +56,34 @@ class Templating
 
     return $html;
   }
+
+  /**
+   * @param array $options key value pair of options
+   * @param string $name name of the field
+   * @param string $selectedValue selected value
+   * @param string $first the first element, if needed
+   * @param string|int $firstValue the value of the first option
+   */
+  public static function getSelectItem($options, $name, $selectedValue, $first = '', $firstValue = 0)
+  {
+    $html = '';
+
+    // Initialize the select item
+    $html .= '<select name="' . $name . '">';
+    // First option, if needed
+    if (strlen($first) > 0) {
+      $selected = selected($firstValue, $selectedValue, false);
+      $html .= '<option value="' . $firstValue . '" ' . $selected . '>' . $first . '</option>';
+    }
+
+    // Add all the options, preselect given
+    foreach ($options as $key => $value) {
+      $selected = selected($key, $selectedValue, false);
+      $html .= '<option value="' . $key . '" ' . $selected . '>' . $value . '</option>';
+    }
+
+    $html .= '</select>';
+
+    return $html;
+  }
 }

@@ -4,7 +4,7 @@ body.modal-backend {
 }
 /* line 7, scss/backend.scss */
 body.modal-backend #wpadminbar, body.modal-backend #adminmenuback, body.modal-backend #adminmenuwrap, body.modal-backend .page-title-action, body.modal-backend #wpfooter,
-body.modal-backend #view-post-btn, body.modal-backend #delete-action, body.modal-backend #minor-publishing-actions {
+body.modal-backend #view-post-btn, body.modal-backend #delete-action {
   display: none;
 }
 /* line 12, scss/backend.scss */
@@ -200,6 +200,37 @@ ul.wp-submenu li a img {
 }
 
 /* line 75, scss/backend.scss */
+#focuspoint-dialog, .pointer-template {
+  display: none;
+}
+
+/* line 78, scss/backend.scss */
+#focuspoint-image {
+  position: relative;
+  margin: auto;
+}
+
+/* line 82, scss/backend.scss */
+#focuspoint-image img {
+  display: block;
+  max-width: 100%;
+  height: auto;
+}
+
+/* line 87, scss/backend.scss */
+.focuspoint-pointer {
+  position: absolute;
+  -webkit-transform: translate(-50%, -50%);
+  -ms-transform: translate(-50%, -50%);
+  transform: translate(-50%, -50%);
+  top: 50%;
+  left: 50%;
+  transition: all 500ms ease-in-out;
+  -webkit-transition: all 500ms ease-in-out;
+  -moz-transition: all 500ms ease-in-out;
+}
+
+/* line 99, scss/backend.scss */
 #dashboard-widgets .new-item {
   padding: 2px 8px 2px 8px;
   float: right;
@@ -212,18 +243,18 @@ ul.wp-submenu li a img {
 }
 
 /* Disable all custom sidebars pro feature ads */
-/* line 87, scss/backend.scss */
+/* line 111, scss/backend.scss */
 .csb-pro-layer, .wpmui-tabs a[href="#tab-aut"], .cs-action.btn-export {
   display: none;
 }
 
 /* Disable Yoast and other plugins crappy messages */
-/* line 89, scss/backend.scss */
+/* line 113, scss/backend.scss */
 .wpseo_content_cell #sidebar, .wpseo_content_cell #i18n_promo_box {
   display: none;
 }
 
-/* line 90, scss/backend.scss */
+/* line 114, scss/backend.scss */
 .yoast-ga-banners, .yoast-ga-content #i18n_promo_box, #onpage-tab, #wpseo-dismiss-about,
 .yoast-ga-content #customdimensions-tab, #wpseo-dismiss-recalculate,
 .yoast-ga-content #debugmode-tab, #nav-tab-lingotek, .wpseo-tab-add-keyword,
@@ -239,30 +270,30 @@ ul.wp-submenu li a img {
 }
 
 /* Disable and fix nextscripts crap */
-/* line 104, scss/backend.scss */
+/* line 128, scss/backend.scss */
 ul.nsx_tabs {
   margin-top: 20px !important;
 }
 
 /* menu manager */
-/* line 107, scss/backend.scss */
+/* line 131, scss/backend.scss */
 .parent_page {
   font-weight: 700;
 }
 
-/* line 108, scss/backend.scss */
+/* line 132, scss/backend.scss */
 .parent_page select {
   width: 100%;
   margin-top: 5px;
   font-weight: 100;
 }
 
-/* line 109, scss/backend.scss */
+/* line 133, scss/backend.scss */
 .show_in_menu {
   padding: 10px 0;
 }
 
-/* line 110, scss/backend.scss */
+/* line 134, scss/backend.scss */
 .sibling_list {
   -moz-border-radius: 5px;
   -webkit-border-radius: 5px;
@@ -272,29 +303,29 @@ ul.nsx_tabs {
   position: relative;
 }
 
-/* line 111, scss/backend.scss */
+/* line 135, scss/backend.scss */
 .sibling_list ul.menu {
   padding: 0 !important;
 }
 
-/* line 112, scss/backend.scss */
+/* line 136, scss/backend.scss */
 .sibling_list .menu-item-handle {
   width: auto !important;
 }
 
-/* line 113, scss/backend.scss */
+/* line 137, scss/backend.scss */
 .sibling_list .menu-item-settings {
   width: auto !important;
   padding: 6px 6px 8px 10px !important;
 }
 
-/* line 114, scss/backend.scss */
+/* line 138, scss/backend.scss */
 .sibling_list p.description-thin {
   width: 100% !important;
   margin: 0 !important;
 }
 
-/* line 115, scss/backend.scss */
+/* line 139, scss/backend.scss */
 .sibling_list .menu-item-handle .item-title {
   margin-right: 75px !important;
 }

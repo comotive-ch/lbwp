@@ -41,6 +41,11 @@ class Date
 	 */
 	const EU_CLOCK		= 'H:i';
 	/**
+	 * Formattyp für Verwendung als ICS Kalender Datei
+	 * @var string
+	 */
+	const ICS_DATE		= 'Ymd\THis\Z';
+	/**
 	 * Formattyp für ein korrektes Datum nach RFC 822
 	 * @var string
 	 */

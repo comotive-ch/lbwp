@@ -14,14 +14,14 @@ $title = trim(implode(' ', array(
 
 // load image
 $image = '';
-$imageId = get_post_meta($item->ID, 'avatar', true);
+$imageId = get_post_thumbnail_id($item->ID);
 $imageUrl = WordPress::getImageUrl($imageId, 'medium');
 $imageAlt = WordPress::getImageAltText($imageId);
 if (strlen($imageAlt) == 0) {
   $imageAlt = sprintf(__('Personenfoto von %s','lbwp'), $title);
 }
 if (strlen($imageUrl)) {
-  $image = '<img src="' . $imageUrl . '" alt="' . $imageAlt . '" />';
+  $image = '<img src="' . $imageUrl . '" alt="' . $imageAlt . '" pagespeed_no_transform />';
 }
 
 // e-mail
