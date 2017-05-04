@@ -580,6 +580,7 @@ class DataTable extends Base
     // Loop trough tables, do see if there is one with a specified config
     foreach ($tables as $formId => $name) {
       $action = $handler->getActionsOfType($formId, 'DataTable', true);
+      if ($action == NULL) continue;
       $table = $this->getTable($formId);
       if (count($table['data']) > 0 && $action->get('use_segments') == 1) {
         $prefix = 'dynamicTarget_dataTable_' . $formId . '_';
@@ -718,9 +719,12 @@ class DataTable extends Base
       foreach ($eventData as $subscription) {
         if (isset($subscription[$field]) && $subscription[$field] == $value) {
           $row = $this->getRowById($table['data'], $subscription['tsid']);
-          if (is_array($row)) {
-            $this->addToDynamicList($data, $row, $map, $fallback);
+          // If there is no email, try getting it from subscription data
+          if (!isset($row[$map['email']])) {
+            $row[$map['email']] = $subscription['email'];
           }
+          // No add the row to the list if possible
+          $this->addToDynamicList($data, $row, $map, $fallback);
         }
       }
     }
@@ -740,7 +744,7 @@ class DataTable extends Base
       }
     }
 
-    return false;
+    return array();
   }
 
   /**

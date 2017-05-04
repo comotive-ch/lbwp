@@ -574,8 +574,9 @@ abstract class Core extends BaseComponent
       $elements = get_post_meta($id, 'elements');
       // Load data of each element, but only execute published ones
       foreach ($elements as $postId) {
+        $postId = intval($postId);
         $postObject = get_post($postId);
-        if ($postObject->post_status == 'publish' || current_user_can('edit_posts')) {
+        if ($postId > 0 && ($postObject->post_status == 'publish' || current_user_can('edit_posts'))) {
           $type = get_post_meta($postId, 'item-type', true);
           /** @var BaseItem $element */
           $class = $this->items[$type]['class'];

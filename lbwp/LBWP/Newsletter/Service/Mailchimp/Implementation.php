@@ -118,7 +118,7 @@ class Implementation extends Base implements Definition
     // If the API key is set, display the lists dropdown
     if (strlen($this->getSetting('apiKey')) > 0) {
       // Create input and description
-      $input = '<select name="listId">' . $this->getListOptions('', 'listId') . '</select>';
+      $input = '<select name="listId">' . $this->getListOptions('', 'listId', false) . '</select>';
       $description = 'Diese Liste wird für An-/Abmeldungen und den Versand verwendet.';
 
       // Create the form field from template
@@ -128,7 +128,7 @@ class Implementation extends Base implements Definition
       $fields = str_replace('{fieldId}', 'listId', $fields);
 
       // Create input and description
-      $input = '<select name="testId">' . $this->getListOptions('', 'testId') . '</select>';
+      $input = '<select name="testId">' . $this->getListOptions('', 'testId', true) . '</select>';
       $description = 'Diese Versandliste wird für den Testversand verwendet.';
 
       // Create the form field from template
@@ -161,6 +161,10 @@ class Implementation extends Base implements Definition
       $this->updateSetting('trackOpens', intval($_POST['trackOpens']));
       $this->updateSetting('trackLinks', intval($_POST['trackLinks']));
 
+      // First, preset nothing for the test ids
+      $this->updateSetting('listName', '');
+      $this->updateSetting('testName', '');
+
       // List data
       if (strlen($_POST['listId']) > 0) {
         $listData = explode('$$', $_POST['listId']);
@@ -192,15 +196,22 @@ class Implementation extends Base implements Definition
 
   /**
    * @param array $selectedKeys
+   * @param string $fieldKey
+   * @param bool $includeNoSelection
    * @return array list of options to use in a dropdown
    */
-  public function getListOptions($selectedKeys = array(), $fieldKey = 'listId')
+  public function getListOptions($selectedKeys = array(), $fieldKey = 'listId', $includeNoSelection = false)
   {
     // Grab lists from API
     $html = '';
     $lists = $this->getLists();
     $currentListId = $this->getSetting($fieldKey);
     $selectedKeys = ArrayManipulation::forceArrayAndInclude($selectedKeys);
+
+    // If no selection is allowed
+    if ($includeNoSelection) {
+      $html .= '<option value="">-- Keine Vorauswahl treffen</option>';
+    }
 
     // Display a list if possible
     if (is_array($lists['lists']) && count($lists['lists']) > 0) {

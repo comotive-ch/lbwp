@@ -27,16 +27,39 @@ class RestApi
         RestApi::addCommentCountField();
       }
 
+      // Add basic author info, if needed
+      if (isset($config['author_info']) && $config['author_info']) {
+        RestApi::addAuthorInfoField();
+      }
+
       // Add all data for a featured image
       if (isset($config['include_featured_image'])) {
         RestApi::addFeaturedImage($config['include_featured_image']);
       }
+
+      // Handle all sorts of specific http headers
+      RestApi::handleHttpHeaders($config);
 
       // Execute callable, if available
       if (is_callable($callback)) {
         call_user_func($callback, $config);
       }
     });
+  }
+
+  /**
+   * @param array $config the config
+   */
+  protected function handleHttpHeaders($config)
+  {
+    // Add specific or wildcard cors header
+    if (isset($config['cors_header'])) {
+      if (is_array($config['cors_header'])) {
+        header('Access-Control-Allow-Origin: ' . implode(', ', $config['cors_header']));
+      } else {
+        header('Access-Control-Allow-Origin: *');
+      }
+    }
   }
 
   /**
@@ -47,6 +70,24 @@ class RestApi
     register_rest_field('post', 'comment_count', array(
       'get_callback' => function($post) {
         return wp_count_comments($post['id']);
+      }
+    ));
+  }
+
+  /**
+   * Adds the comment count to each post list element
+   */
+  protected static function addAuthorInfoField()
+  {
+    register_rest_field('post', 'author_info', array(
+      'get_callback' => function($post) {
+        $userId = intval($post['author']);
+        return array(
+          'last_name' => get_the_author_meta('last_name', $userId),
+          'first_name' => get_the_author_meta('first_name', $userId),
+          'display_name' => get_the_author_meta('display_name', $userId),
+          'archive_url' => get_author_posts_url($userId)
+        );
       }
     ));
   }

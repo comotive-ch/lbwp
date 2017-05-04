@@ -1,6 +1,7 @@
 <?php
 
 namespace LBWP\Helper\Mail;
+use LBWP\Module\General\Cms\SystemLog;
 
 
 /**
@@ -18,6 +19,21 @@ abstract class Base
    * @var bool override with true, if there are statistics
    */
   protected $hasStatistics = false;
+
+  /**
+   * Log to an option array what happened with bounces
+   * @param string $type
+   * @param string $email
+   * @param string $subject
+   * @param string $reason message from service
+   */
+  protected function log($type, $email, $subject, $reason)
+  {
+    SystemLog::add($type, 'error', $reason, array(
+      'email' => $email,
+      'subject' => $subject
+    ));
+  }
 
   /**
    * Used to create instance and configure the instance

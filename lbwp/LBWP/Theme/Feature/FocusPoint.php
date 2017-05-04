@@ -23,7 +23,8 @@ class FocusPoint
    * @var array configuration defaults
    */
   protected $config = array(
-    'autoRegisterLibrary' => true
+    'autoRegisterLibrary' => true,
+    'functionSelector' => '.lbwp-focuspoint'
   );
 
   /**
@@ -56,23 +57,33 @@ class FocusPoint
    */
   public function initialize()
   {
-    $path = File::getResourceUri();
     // load the library if needed
     if ($this->config['autoRegisterLibrary']) {
-      wp_enqueue_script('lbwp-focuspoint', $path . '/js/focuspoint/jquery.focuspoint.min.js', array('jquery'), LbwpCore::REVISION, true);
+      wp_enqueue_script('lbwp-focuspoint', File::getResourceUri() . '/js/focuspoint/jquery.focuspoint.min.js', array('jquery'), LbwpCore::REVISION, false);
+      add_action('wp_head', array($this, 'printJsonConfiguration'));
     }
 
     // In admin, load the specific scripts and filters
-    /*
     if (is_admin()) {
       add_filter('attachment_fields_to_edit', array($this, 'addAttachmentField'), 10, 2);
       add_action('admin_footer', array($this, 'printBasicModalTemplate'));
-      // Add a script to handle the backend
-      wp_enqueue_script('lbwp-focuspoint-be', $path . '/js/focuspoint/focuspoint.backend.js', array('jquery'), LbwpCore::REVISION, true);
+      add_action('wp_ajax_saveFocuspointMeta', array($this, 'saveFocuspoint'));
+      add_action('admin_enqueue_scripts', array($this, 'enqueueBackendAssets'));
+    }
+  }
+
+  /**
+   * Enqueue assets, if they are needed in context
+   */
+  public function enqueueBackendAssets()
+  {
+    $screen = get_current_screen();
+    // Only on upload and post detail screen
+    if ($screen->base == 'upload' || $screen->base = 'post') {
+      wp_enqueue_script('lbwp-focuspoint-be', File::getResourceUri() . '/js/focuspoint/focuspoint.backend.js', array('jquery'), LbwpCore::REVISION, true);
       wp_enqueue_script('jquery-ui-dialog');
-      wp_enqueue_style('jquery-ui');
-      wp_enqueue_style('jquery-ui-dialog');
-    }*/
+      wp_enqueue_style('jquery-ui-theme-lbwp');
+    }
   }
 
   /**
@@ -96,6 +107,29 @@ class FocusPoint
   }
 
   /**
+   * Save the focus point to attachment meta
+   */
+  public function saveFocuspoint()
+  {
+    // Get the current meta
+    $attachmentId = intval($_POST['attachmentId']);
+    $meta = wp_get_attachment_metadata($attachmentId);
+
+    // Extend/Override with focuspoint data
+    $meta['focusPoint'] = array(
+      'x' => (float) $_POST['focusX'],
+      'y' => (float) $_POST['focusY'],
+    );
+
+    // Save back into db, also return success for the ajax caller
+    wp_update_attachment_metadata($attachmentId, $meta);
+
+    WordPress::sendJsonResponse(array(
+      'success' => true
+    ));
+  }
+
+  /**
    * @param array $fields the fields
    * @param \WP_Post $attachment the attachment object
    * @return array $fields
@@ -105,10 +139,6 @@ class FocusPoint
     if (stristr($attachment->post_mime_type, 'image') !== false) {
       $meta = wp_get_attachment_metadata($attachment->ID);
       $src =  WordPress::getImageUrl($attachment->ID, 'large');
-      $meta['focusPoint'] = array(
-        'x' => mt_rand(-10, 10) / 10,
-        'y' => mt_rand(-10, 10) / 10,
-      );
       $html = '
         <a href="#" class="focus-point-frame"
           data-x="' . (float) $meta['focusPoint']['x'] . '"
@@ -124,6 +154,24 @@ class FocusPoint
     }
 
     return $fields;
+  }
+
+  /**
+   * Print the json config, and do the registration inline as well.
+   * We do two echoes here, so that we're easly able to move the inline script to a file in the future.
+   */
+  public function printJsonConfiguration()
+  {
+    // The configurartion
+    echo '<script type="text/javascript">var focusPointConfig = ' . json_encode($this->config) . ';</script>';
+    // Simple auto init script, for the moment inline
+    echo '
+      <script type="text/javascript">
+        jQuery(function() {
+          jQuery(focusPointConfig.functionSelector).focusPoint();
+        });
+      </script>
+    ';
   }
 
   /**

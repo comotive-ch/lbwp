@@ -47,16 +47,16 @@ div.drag-target {
   text-align: center;
 }
 @media only screen and (max-width: 1078px) {
-  /* line 78, ../../scss/lbwp/_lbwp-forms.scss */
+  /* line 79, ../../scss/lbwp/_lbwp-forms.scss */
   .form-editor-tab .lbwp-form {
     display: block;
     width: auto;
   }
-  /* line 88, ../../scss/lbwp/_lbwp-forms.scss */
+  /* line 89, ../../scss/lbwp/_lbwp-forms.scss */
   .form-editor-tab .lbwp-form .forms-item {
     display: block;
   }
-  /* line 97, ../../scss/lbwp/_lbwp-forms.scss */
+  /* line 98, ../../scss/lbwp/_lbwp-forms.scss */
   .form-editor-tab .lbwp-form .default-label {
     display: block;
     margin: 10px 0 5px;
@@ -64,7 +64,7 @@ div.drag-target {
     padding: 0;
     width: auto;
   }
-  /* line 114, ../../scss/lbwp/_lbwp-forms.scss */
+  /* line 115, ../../scss/lbwp/_lbwp-forms.scss */
   .form-editor-tab .lbwp-form .default-label[for^="textarea"],
   .form-editor-tab .lbwp-form .default-label[for^="comment"],
   .form-editor-tab .lbwp-form .checkbox-field .default-label,
@@ -72,17 +72,17 @@ div.drag-target {
   .form-editor-tab .lbwp-form .number-field .default-label {
     vertical-align: baseline;
   }
-  /* line 127, ../../scss/lbwp/_lbwp-forms.scss */
+  /* line 128, ../../scss/lbwp/_lbwp-forms.scss */
   .form-editor-tab .lbwp-form .default-container {
     display: block;
     padding: 0;
     width: inherit;
   }
-  /* line 140, ../../scss/lbwp/_lbwp-forms.scss */
+  /* line 141, ../../scss/lbwp/_lbwp-forms.scss */
   .form-editor-tab .lbwp-form .send-button .default-container {
     margin: 20px 0 0;
   }
-  /* line 149, ../../scss/lbwp/_lbwp-forms.scss */
+  /* line 150, ../../scss/lbwp/_lbwp-forms.scss */
   .form-editor-tab .lbwp-form .number-field input {
     width: 100%;
   }

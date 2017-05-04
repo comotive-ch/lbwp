@@ -36,7 +36,11 @@ class JacoUserSession
     $this->config = array_merge($this->config, $options);
     // Register the main filter to make the layouting (very late)
     if ($this->isTrackable()) {
-      add_action('wp_head', array($this, 'addTrackingScript'));
+      if (!did_action('wp_head')) {
+        add_action('wp_head', array($this, 'addTrackingScript'));
+      } else {
+        add_action('wp_footer', array($this, 'addTrackingScript'));
+      }
       // Also include in backend, if tracking is allowed
       if ($this->config['user']['track_backend']) {
         add_action('admin_head', array($this, 'addTrackingScript'));

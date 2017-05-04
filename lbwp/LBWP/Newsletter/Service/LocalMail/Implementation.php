@@ -66,18 +66,36 @@ class Implementation extends Base implements Definition
   public function displaySettings()
   {
     $html = '';
-    $tplDesc = LbwpCore::getModule('LbwpConfig')->getTplDesc();
-    $tplNoDesc = LbwpCore::getModule('LbwpConfig')->getTplNoDesc();
+    $template = LbwpCore::getModule('LbwpConfig')->getTplDesc();
 
     // Set a subheader
-    $html .= '
-      <h3>Einstellungen für den lokalen Versand</h3>
-      
-    ';
+    $html .= '<h3>Einstellungen für den lokalen Versand</h3>';
 
     // Add settings only if the service is working (configured)
     if ($this->isWorking()) {
-      $html .= '<p style="clear:both">Der lokale Mailversand kann genutzt werden. Klicken Sie auf "Speichern" um Ihn zu aktivieren.</p>';
+      $this->initializeApi();
+      // Create input and description
+      $fields = '';
+      $input = '<select name="listId">' . $this->getListOptions('', 'listId', true) . '</select>';
+      $description = 'Diese Liste wird für An-/Abmeldungen und den Versand verwendet.';
+
+      // Create the form field from template
+      $fields .= str_replace('{title}', 'Empfängerliste', $template);
+      $fields = str_replace('{input}', $input, $fields);
+      $fields = str_replace('{description}', $description, $fields);
+      $fields = str_replace('{fieldId}', 'listId', $fields);
+
+      // Create input and description
+      $input = '<select name="testId">' . $this->getListOptions('', 'testId', true) . '</select>';
+      $description = 'Diese Versandliste wird für den Testversand verwendet.';
+
+      // Create the form field from template
+      $fields .= str_replace('{title}', 'Testliste', $template);
+      $fields = str_replace('{input}', $input, $fields);
+      $fields = str_replace('{description}', $description, $fields);
+      $fields = str_replace('{fieldId}', 'listId', $fields);
+
+      $html .= '<p style="clear:both">Der lokale Mailversand kann genutzt werden. Klicken Sie auf "Speichern" um Ihn zu aktivieren.</p>' . $fields;
     } else {
       $html .= '<p style="clear:both">Der lokale Mailversand ist für Ihre Installation nicht freigeschaltet.</p>';
     }
@@ -90,24 +108,51 @@ class Implementation extends Base implements Definition
    */
   public function saveSettings()
   {
-    $message = '<div class="updated"><p>Der lokale Mailversand wurde aktiviert.</p></div>';
+    $message = '<div class="updated"><p>Der lokale Mailversand wurde aktiviert und gespeichert.</p></div>';
+
+    // First, preset nothing for the list/test ids
+    $this->updateSetting('listId', '');
+    $this->updateSetting('testId', '');
+    $this->updateSetting('listName', '');
+    $this->updateSetting('testName', '');
+
+    // List data
+    if (strlen($_POST['listId']) > 0) {
+      $listData = explode('$$', $_POST['listId']);
+      $this->updateSetting('listId', $listData[0]);
+      $this->updateSetting('listName', $listData[1]);
+    }
+
+    // Test list data
+    if (strlen($_POST['testId']) > 0) {
+      $listData = explode('$$', $_POST['testId']);
+      $this->updateSetting('testId', $listData[0]);
+      $this->updateSetting('testName', $listData[1]);
+    }
+
     $this->core->getSettings()->saveServiceClass($this);
 
     return $message;
   }
 
   /**
-   * @param array $selectedKey
+   * @param array $selectedKeys
    * @param string $fieldKey
+   * @param bool $includeNoSelection
    * @return array list of options to use in a dropdown
    */
-  public function getListOptions($selectedKeys = array(), $fieldKey = 'listId')
+  public function getListOptions($selectedKeys = array(), $fieldKey = 'listId', $includeNoSelection = false)
   {
     // Grab lists from API
     $html = '';
     $lists = $this->api->getLists();
     $currentListId = $this->getSetting($fieldKey);
     $selectedKeys = ArrayManipulation::forceArrayAndInclude($selectedKeys);
+
+    // If no selection is allowed
+    if ($includeNoSelection) {
+      $html .= '<option value="">-- Keine Vorauswahl treffen</option>';
+    }
 
     // Display a list if possible
     if (is_array($lists) && count($lists) > 0) {

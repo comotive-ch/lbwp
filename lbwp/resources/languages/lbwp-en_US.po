@@ -2,7 +2,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: LBWP\n"
 "POT-Creation-Date: 2015-08-03 11:05+0100\n"
-"PO-Revision-Date: 2017-02-20 15:57+0100\n"
+"PO-Revision-Date: 2017-05-01 22:02+0200\n"
 "Last-Translator: \n"
 "Language-Team: comotive <info@comotive.ch>\n"
 "Language: en_US\n"
@@ -551,3 +551,9 @@ msgstr "Search term"
 
 msgid "Ihre Nachricht wurde erfolgreich gesendet."
 msgstr "Your message has been sent."
+
+msgid "Weitere Suchergebnisse"
+msgstr "More search results"
+
+msgid "Suchergebnisse werden geladen..."
+msgstr "Loading search results..."

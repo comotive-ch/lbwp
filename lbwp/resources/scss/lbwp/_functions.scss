@@ -1,11 +1,39 @@
-/*
-	Setter for focus point image ratio
-	$ratio (percent): Display ratio
-*/
-@mixin lbwpSetFocusPointRatio($ratio:56.25%) {
+///	Top offset for ancors. Often used for ancors in layouts with a fixed header bar
+/// @param {size} $offset - Offset size
+@mixin lbwpAncorPositionOffset($offset, $asPseudoElement:false) {
+	@if $asPseudoElement {
+		content: '';
+	}
+	display: block;
+	visibility: hidden;
+	height: $offset;
+	margin-top: $offset * -1;
+}
+
+///	Settings for focuspoint images
+/// @param {percent} $ratioInPercent - Ratio in percent
+/// @param {boolean} $delayedDisplay - Delay the display of the image, until the image position is set
+/// @param {number} $displayTransition - Display transition time (seconds)
+@mixin lbwpFocusPointSettings(
+	$ratioInPercent: null,
+	$delayedDisplay: false,
+	$displayTransition: 0
+) {
 	.lbwp-focuspoint-container {
-		padding-bottom: $ratio;
-		@content;
+		padding-bottom: $ratioInPercent;
+	}
+	.lbwp-focuspoint {
+		@if ($delayedDisplay == true) {
+			img {
+				@include opacity(0);
+				@if (type-of($displayTransition) == 'number') and ($displayTransition > 0) {
+					@include transition(opacity #{$displayTransition}s ease-in-out);
+				}
+				&[style] {
+					@include opacity(1);
+				}
+			}
+		}
 	}
 }
 

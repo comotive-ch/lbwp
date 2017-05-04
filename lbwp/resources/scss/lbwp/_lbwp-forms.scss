@@ -64,6 +64,7 @@ $lbwpFormInputFields: "select, input[type=text], input[type=email], input[type=n
 	@include lbwpFormAnchor {
 		height: $topGap;
 		margin-top: $topGap * -1;
+		@content;
 	}
 }
 

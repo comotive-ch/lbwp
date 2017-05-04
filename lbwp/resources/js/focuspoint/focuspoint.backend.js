@@ -3,6 +3,11 @@
  * @author Michael Sebel <michael@comotive.ch>
  */
 var FocusPointBackend = {
+	/**
+	 * Caches focus point information by attachment id, so we can load it from
+	 * here if an image is called multiple times (and especially saved)
+	 */
+	pointCache : [],
 
 	/**
 	 * Fired on dom ready
@@ -31,29 +36,49 @@ var FocusPointBackend = {
 	 */
 	openDialog : function(event)
 	{
+		// Preset all data
+		var details = FocusPointBackend.getCurrentDetails();
+		var attId = details.data('id');
+		jQuery('#focuspointAttachmentId').val(attId);
+		// Get information from link, or cache, if given
+		if (typeof(FocusPointBackend.pointCache[attId]) == 'object') {
+			var point = FocusPointBackend.pointCache[attId];
+			jQuery('#focuspointX').val(point.x);
+			jQuery('#focuspointY').val(point.y);
+		} else {
+			var focusLink = details.next().find('.focus-point-frame');
+			jQuery('#focuspointX').val(focusLink.data('x'));
+			jQuery('#focuspointY').val(focusLink.data('y'));
+		}
+
+		// Now, open the dialog
 		jQuery('#focuspoint-dialog').dialog({
       resizable: false,
       modal: true,
-      height: 'auto',
+      height: 535,
       width: 600,
 			open : FocusPointBackend.prepareDialog,
+			close : FocusPointBackend.closeAndResetDialog,
       buttons: {
         "Speichern": FocusPointBackend.saveDialog,
-        "Abbrechen" : function() {
-          jQuery(this).dialog('close');
-        }
+        "Abbrechen" : FocusPointBackend.closeAndResetDialog
       }
     });
+	},
 
-		// Set the attachment ID to the hidden field of our dialog
-		setTimeout(function() {
-			var attId = jQuery('.attachment-details').data('id');
-			jQuery('#focuspointAttachmentId').val(attId);
-			var focusLink = jQuery('.focus-point-frame');
-			jQuery('#focuspointX').val(focusLink.data('x'));
-			jQuery('#focuspointY').val(focusLink.data('y'));
-			// Also,
-		}, 500);
+	/**
+	 * Depening on current context, get the attachment details
+	 */
+	getCurrentDetails : function()
+	{
+		var details = false;
+		jQuery('.attachment-details').each(function() {
+			if (jQuery(this).is(':visible')) {
+				details =  jQuery(this);
+			}
+		});
+
+		return details;
 	},
 
 	/**
@@ -64,19 +89,20 @@ var FocusPointBackend = {
 	{
 		var container = jQuery(event.target);
 		var dialog = container.closest('.ui-dialog');
+		var details = FocusPointBackend.getCurrentDetails();
 
 		// Get (copy) the image into the dialog in its wfull size
-		var clonedImage = jQuery('.focuspoint-image-template').clone();
+		var clonedImage = details.next().find('.focuspoint-image-template').clone();
 		var pointerImage = jQuery('.pointer-template').clone();
 		clonedImage.addClass('focus-point-edit-image');
 		clonedImage.removeClass('focuspoint-image-template');
 		pointerImage.removeClass('pointer-template');
-		clonedImage.css('max-width', '100%');
 		// Flush content of container, add pointer, cloned image and resize the div containing the image
 		jQuery('#focuspoint-image').html('')
 			.append(pointerImage)
 			.append(clonedImage)
-			.width(clonedImage.width());
+			.css('width', clonedImage.width() + 'px')
+			.css('height', clonedImage.height() + 'px');
 
 		// Register a click on the image to adjust the focus point
 		clonedImage.click(FocusPointBackend.handleFocusChange);
@@ -142,10 +168,35 @@ var FocusPointBackend = {
 	 */
 	saveDialog : function(event)
 	{
-		console.log('save focus point');
+		var attId = jQuery('#focuspointAttachmentId').val();
+		// Set the data array to be sent back to the server
+		var data = {
+			action : 'saveFocuspointMeta',
+			attachmentId : attId,
+			focusX : jQuery('#focuspointX').val(),
+			focusY : jQuery('#focuspointY').val(),
+		};
+
+		// Just post and assume its saved
+		jQuery.post(ajaxurl, data);
+
+		// Save the point in pointCache for this attachment ID
+		FocusPointBackend.pointCache[attId] = {
+			x : data.focusX,
+			y : data.focusY
+		};
 
 		// Finished, close the dialog
-		jQuery(this).dialog('close');
+		FocusPointBackend.closeAndResetDialog();
+	},
+
+	/**
+	 * Close and reset the dialog
+	 */
+	closeAndResetDialog : function()
+	{
+		jQuery('#focuspoint-image').removeAttr('style');
+		jQuery('#focuspoint-dialog').dialog('close');
 	}
 };
 

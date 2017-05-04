@@ -40,7 +40,19 @@ class Local extends Base
    */
   public function send()
   {
-    return $this->instance->send();
+    $sent = $this->instance->send();
+
+    // Log errors
+    if (!$sent) {
+      $this->log(
+        'LocalMail_PHPMailer',
+        $this->instance->getToAddresses()[0],
+        $this->instance->Subject,
+        'Bounce, reject or error: ' . $this->instance->ErrorInfo
+      );
+    }
+
+    return $sent;
   }
 
   /**

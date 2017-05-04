@@ -80,6 +80,7 @@ class Breadcrumb
         'attachment' => true,
         'taxonomy_before_single' => '', //possible: any registered tax or empty for no element in between.
       ),
+      'item_slug_blacklist' => array(),
       'separator_html' => '&raquo;',
       'skip_separators' => false,
       'title' => array(
@@ -332,6 +333,14 @@ class Breadcrumb
    */
   public function addElement($type, $title, $link)
   {
+    // Skip, if on blacklist
+    foreach ($this->options['item_slug_blacklist'] as $slug) {
+      if (Strings::endsWith($link, '/' . $slug . '/')) {
+        return;
+      }
+    }
+
+    // Strip tags, if configured so
     if ($this->options['title']['strip_tags']) {
       $title = strip_tags($title);
     }

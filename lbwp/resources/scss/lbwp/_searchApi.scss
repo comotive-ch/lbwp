@@ -1,0 +1,109 @@
+// SCSS component
+// Component «SearchApi»
+// «LBWP» by comotive
+// www.comotive.ch
+
+/// General access to override css for this component.
+///
+@mixin lbwpSearchApi() {
+	.lbwp-gss-results {
+		@content;
+	}
+}
+
+/// Reset CSS for this component.
+///
+@mixin lbwpSearchApiSetDefaults() {
+	.lbwp-gss-results {
+		p {
+			margin-bottom: 0;
+		}
+
+		h2 {
+			margin: 0;
+			padding: 0;
+		}
+	}
+}
+
+/// Set the spacing between search result items.
+///
+/// @param (number) $spacing - The spacing size
+@mixin lbwpSearchApiBetweenItemSpacing($spacing) {
+	.lbwp-gss-results article {
+		&:not(:first-child) {
+			// Define the spacing with padding AND margin. Allows to place a vertically centered divider between
+			@if ($spacing != null) {
+				margin-top: $spacing * 0.5;
+				padding-top: $spacing * 0.5;
+			}
+		}
+	}
+}
+
+/// Divider things.
+///
+@mixin lbwpSearchApiItemDivider() {
+	.lbwp-gss-results article {
+		&:not(:first-child) {
+			@content;
+		}
+	}
+}
+
+/// Override image styles.
+///
+@mixin lbwpSearchApiItemImage() {
+	.lbwp-gss-results article .img {
+		@content;
+	}
+}
+
+/// The listing template. Shows image and text in a column layout
+///
+///TODO @param
+/// @param (color) $itemBetweenDividerColor - Color value for a divider line between items
+@mixin lbwpSearchApiListingTemplate(
+	$imageWidth: 20%,
+	$itemHeadingFontSize: null,
+	$itemHeadingLineHeight: null,
+	$itemDividerColor: null,
+	$containerMarginBottom: 50px,
+	$itemBetweenItemSpacing: 50px
+) {
+
+	.lbwp-gss-results {
+		margin-bottom: $containerMarginBottom;
+		h2 {
+			font-size: $itemHeadingFontSize;
+			line-height: $itemHeadingLineHeight;
+		}
+
+		@if ($imageWidth != null) {
+			article {
+				@include lbwpClearfix;
+				.img {
+					float: left;
+					margin-right: 10px;
+					width: $imageWidth;
+
+					@if ($itemHeadingLineHeight != null and $itemHeadingLineHeight != null) {
+						margin-top: ($itemHeadingLineHeight - $itemHeadingFontSize) / 2;
+					}
+				}
+			}
+		}
+	}
+
+	// Set spacing between items
+	@include lbwpSearchApiBetweenItemSpacing($itemBetweenItemSpacing);
+
+	@if ($itemDividerColor != null) {
+		@include lbwpSearchApiItemDivider() {
+			border-top-width: 1px;
+			border-top-style: solid;
+			border-top-color: $itemDividerColor;
+		}
+	}
+
+}

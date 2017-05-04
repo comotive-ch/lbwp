@@ -78,11 +78,14 @@ ul.wp-submenu li a img { display:none; }
 #focuspoint-image {
 	position:relative;
 	margin:auto;
+	overflow:hidden;
+	height:360px;
 }
 #focuspoint-image img {
 	display: block;
-	max-width: 100%;
-	height: auto;
+}
+.focus-point-edit-image {
+	max-height:100%;
 }
 .focuspoint-pointer {
 	position:absolute;
@@ -94,6 +97,9 @@ ul.wp-submenu li a img { display:none; }
 	transition: all 500ms ease-in-out;
 	-webkit-transition: all 500ms ease-in-out;
 	-moz-transition: all 500ms ease-in-out;
+}
+.compat-field-focusPoint .field {
+	margin-top:6px;
 }
 
 #dashboard-widgets .new-item {

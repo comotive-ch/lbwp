@@ -1,13 +1,10 @@
-// Default variables
-$lbwpSlickSliderMargin: null !default;
-$lbwpSlickArrowDefaults: false !default;
-$lbwpSlickArrowHeight: null !default;
-$lbwpSlickArrowWidth: null !default;
-$lbwpSlickArrowColor: null !default;
-$lbwpSlickPrintDefaults: false !default;
+// SCSS component
+// Component «SearchApi»
+// «LBWP» by comotive
+// www.comotive.ch
 
 @mixin lbwpSlickArrows($direction: null) {
-	$directionClass: '';
+	$directionClass: '.slick-arrow';
 	@if ($direction != null) {
 		@if ($direction == right) {
 			$directionClass: '.slick-next';
@@ -15,33 +12,33 @@ $lbwpSlickPrintDefaults: false !default;
 			$directionClass: '.slick-prev';
 		}
 	}
-	.slick-arrow#{$directionClass} {
+	#{$directionClass} {
 		@content;
 	}
 }
 
-@mixin lbwpSlickSetArrowSize($h, $w) {
+@mixin lbwpSlickSetPosition($position) {
+	@include lbwpSlickArrows('left') {
+		left: $position;
+	}
+	@include lbwpSlickArrows('right') {
+		right: $position;
+	}
+}
+
+@mixin lbwpSlickSetArrowSize($h, $w, $iconSize:null) {
 	@include lbwpSlickArrows() {
 		height: $h;
 		width: $w;
+		&:before {
+			line-height: $h;
+			font-size: $iconSize;
+		}
 	}
 }
 
-@include lbwpSlickSetArrowSize($lbwpSlickArrowHeight, $lbwpSlickArrowWidth);
-
-@include lbwpSlickArrows {
-	color: $lbwpSlickArrowColor;
-	&:before {
-		color: $lbwpSlickArrowColor;
-	}
-}
-
-.slick-slider {
-	margin: $lbwpSlickSliderMargin;
-}
-
-@if ($lbwpSlickArrowDefaults == true) {
-	.slick-arrow {
+@mixin lbwpSlickArrowDefaults() {
+		.slick-arrow {
     font-size: 0;
     line-height: 0;
     position: absolute;
@@ -50,10 +47,8 @@ $lbwpSlickPrintDefaults: false !default;
     padding: 0;
 		@include transform(translate(0, -50%));
     cursor: pointer;
-    color: transparent;
     border: none;
     outline: none;
-    background: transparent;
 		z-index: 1;
 	}
 	.slick-next {
@@ -61,7 +56,7 @@ $lbwpSlickPrintDefaults: false !default;
 	}
 }
 
-@if ($lbwpSlickPrintDefaults) {
+@mixin lbwpSlickPrintDefaults() {
 	@media print {
 		.slick-dots, .slick-arrow {
 			display: none !important;

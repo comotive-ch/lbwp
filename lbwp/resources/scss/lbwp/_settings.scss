@@ -1,4 +1,8 @@
 // Global lbwp settings/variables
 $lbwpAdminBarHeight: 32px;
+$lbwpAdminBarHeightMobile: 46px;
+$lbwpAdminBarHeightMobileBreakpoint: 'screen and (max-width:782px)';
 $lbwpWpColorMain: #0073aa;
 $lbwpWpFontFamily: -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Oxygen-Sans,Ubuntu,Cantarell,"Helvetica Neue",sans-serif;
+
+$lbwpImageFileExtensions: '.jpg' '.jpeg' '.png' '.svg';

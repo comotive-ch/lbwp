@@ -68,7 +68,14 @@ class AmazonSES extends Base
       )
     );
 
-    var_dump($response);
+    if ($response->status != 200) {
+      $this->log(
+        'AmazonSES',
+        $this->data['recipients'][0],
+        $this->data['subject'],
+        'Bounce, reject or error'
+      );
+    }
 
     return $response->status == 200;
   }

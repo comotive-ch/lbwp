@@ -119,9 +119,11 @@ class Frontend extends Base
 
       // Remove a past event, if past events should be removed
       if ($removePastEvents && $eventEnd > 0 && $eventEnd <= $currentTime) {
-        unset($events[$id]); continue;
+        unset($events[$id]);
+        continue;
       } else if ($removePastEvents && $eventEnd == 0 && $eventStart <= $currentTime) {
-        unset($events[$id]); continue;
+        unset($events[$id]);
+        continue;
       }
 
       // From here on, only visible events are populated
@@ -186,7 +188,7 @@ class Frontend extends Base
     ), $display);
 
     // Initialize data list and let developers add data
-    $html = '<dl class="event-data-list">';
+    $html = '<div class="event-data-list">';
     $html .= apply_filters('lbwpEvents_detail_data_list_prepend', '', $event);
 
     // Handle the various date/time from/to combinations
@@ -199,8 +201,10 @@ class Frontend extends Base
       // If same day, display like below, but with time from/to
       if ($startDate == $endDate) {
         $html .= '
-          <dt>' . __('Datum', 'lbwp') . '</dt>
-          <dd>' . $startDate . '</dd>
+          <dl>
+            <dt>' . __('Datum', 'lbwp') . '</dt>
+            <dd>' . $startDate . '</dd>
+          </dl>
         ';
 
         // Show time if given
@@ -210,38 +214,50 @@ class Frontend extends Base
           $startTime = date_i18n($config['time_format'], $event->startTime);
           $endTime = date_i18n($config['time_format'], $event->endTime);
           $html .= '
-            <dt>' . __('Uhrzeit', 'lbwp') . '</dt>
-            <dd>' . sprintf(__('Von %s bis %s', 'lbwp'), $startTime, $endTime). '</dd>
+            <dl>
+              <dt>' . __('Uhrzeit', 'lbwp') . '</dt>
+              <dd>' . sprintf(__('Von %s bis %s', 'lbwp'), $startTime, $endTime) . '</dd>
+            </dl>
           ';
         } else if ($hasStartTime && !$hasEndTime) {
           $html .= '
-            <dt>' . __('Uhrzeit', 'lbwp') . '</dt>
-            <dd>' . sprintf(__('%s', $textdomain), date_i18n($config['time_format'], $event->startTime)) . '</dd>
+            <dl>
+              <dt>' . __('Uhrzeit', 'lbwp') . '</dt>
+              <dd>' . sprintf(__('%s', $textdomain), date_i18n($config['time_format'], $event->startTime)) . '</dd>
+            </dl>
           ';
         }
         //
       } else {
         // Not equal, display start and end with possible time
         $html .= '
-          <dt>' . __('Beginn', 'lbwp') . '</dt>
-          <dd>' . $this->getDateTimeString($event->startTime, $config, $textdomain) . '</dd>
-          <dt>' . __('Ende', 'lbwp') . '</dt>
-          <dd>' . $this->getDateTimeString($event->endTime, $config, $textdomain) . '</dd>
+          <dl>
+            <dt>' . __('Beginn', 'lbwp') . '</dt>
+            <dd>' . $this->getDateTimeString($event->startTime, $config, $textdomain) . '</dd>
+          </dl>
+          <dl>
+            <dt>' . __('Ende', 'lbwp') . '</dt>
+            <dd>' . $this->getDateTimeString($event->endTime, $config, $textdomain) . '</dd>
+          </dl>
         ';
       }
 
     } else if ($event->startTime > 0 && $event->endTime == 0 && $display['showDates']) {
       // Only a start date is given, show the date
       $html .= '
-        <dt>' . __('Datum', 'lbwp') . '</dt>
-        <dd>' . date_i18n($config['date_format'], $event->startTime) . '</dd>
+        <dl>
+          <dt>' . __('Datum', 'lbwp') . '</dt>
+          <dd>' . date_i18n($config['date_format'], $event->startTime) . '</dd>
+        </dl>
       ';
 
       // If time given, show the time
       if ($this->hasTime($event->startTime)) {
         $html .= '
-          <dt>' . __('Uhrzeit', 'lbwp') . '</dt>
-          <dd>' . sprintf(__('%s', $textdomain), date_i18n($config['time_format'], $event->startTime)) . '</dd>
+          <dl>
+            <dt>' . __('Uhrzeit', 'lbwp') . '</dt>
+            <dd>' . sprintf(__('%s', $textdomain), date_i18n($config['time_format'], $event->startTime)) . '</dd>
+          </dl>
         ';
       }
     }
@@ -249,30 +265,36 @@ class Frontend extends Base
     // Add location, if available
     if (strlen($event->location) > 0 && $display['showLocation']) {
       $html .= '
-        <dt>' . __('Ort', 'lbwp') . '</dt>
-        <dd>' . $event->location . '</dd>
+        <dl>
+          <dt>' . __('Ort', 'lbwp') . '</dt>
+          <dd>' . $event->location . '</dd>
+        </dl>
       ';
     }
 
     // Add event subcribe info, if available
     if ($this->hasEventSubscription($event, $currentTime) && $display['showSubscriptionInfo']) {
       $html .= '
-        <dt>' . __('Anmeldung bis', 'lbwp') . '</dt>
-        <dd>' . $this->getDateTimeString($event->subscribeEnd, $config, $textdomain) . '</dd>
+        <dl>
+          <dt>' . __('Anmeldung bis', 'lbwp') . '</dt>
+          <dd>' . $this->getDateTimeString($event->subscribeEnd, $config, $textdomain) . '</dd>
+        </dl>
       ';
     }
 
     // Display a calendar file download for outlook etc.
     if ($display['showCalendarDownload']) {
       $html .= '
-        <dt>' . __('Download', 'lbwp') . '</dt>
-        <dd>' . $this->getCalendarFileDownloadLink($event->ID, __('Termin im Kalender speichern', 'lbwp')) . '</dd>
+        <dl>
+          <dt>' . __('Download', 'lbwp') . '</dt>
+          <dd>' . $this->getCalendarFileDownloadLink($event->ID, __('Termin im Kalender speichern', 'lbwp')) . '</dd>
+        </dl>
       ';
     }
 
     // Once again, let developer add data, close list and return
     $html .= apply_filters('lbwpEvents_detail_data_list_append', '', $event);
-    $html .= '</dl>';
+    $html .= '</div>';
 
     return $html;
   }
@@ -338,7 +360,7 @@ class Frontend extends Base
     $shortcode = get_post($event->subscribeFormId)->post_content;
 
     // Bolster up the shortcode, on loading so everything is correctly handled
-    add_filter('lbwpForms_load_form_shortcode', function($shortcode, $form) use ($event) {
+    add_filter('lbwpForms_load_form_shortcode', function ($shortcode, $form) use ($event) {
       // Check if there is a subscribe email and the form is actually from the event
       if (!Strings::checkEmail($event->subscribeEmail) || $form->ID != $event->subscribeFormId) {
         return $shortcode;
@@ -358,7 +380,7 @@ class Frontend extends Base
         'key' => 'sendmail',
         'email' => $event->subscribeEmail,
         'betreff' => sprintf(
-          __('Anmeldung: %s / %s','lbwp'),
+          __('Anmeldung: %s / %s', 'lbwp'),
           $event->post_title,
           Date::getTime(Date::EU_DATETIME, $event->startTime)
         )

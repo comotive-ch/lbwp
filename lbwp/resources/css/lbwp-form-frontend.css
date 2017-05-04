@@ -1,4 +1,4 @@
-/* line 167, ../scss/lbwp/_lbwp-forms.scss */
+/* line 168, ../scss/lbwp/_lbwp-forms.scss */
 .lbwp-form .validate-message.lbwp-form-error label {
   color: red;
 }
@@ -60,16 +60,16 @@
 }
 
 @media only screen and (min-width: 641px) {
-  /* line 78, ../scss/lbwp/_lbwp-forms.scss */
+  /* line 79, ../scss/lbwp/_lbwp-forms.scss */
   .lbwp-form {
     display: table;
     width: 100%;
   }
-  /* line 88, ../scss/lbwp/_lbwp-forms.scss */
+  /* line 89, ../scss/lbwp/_lbwp-forms.scss */
   .lbwp-form .forms-item {
     display: table-row;
   }
-  /* line 97, ../scss/lbwp/_lbwp-forms.scss */
+  /* line 98, ../scss/lbwp/_lbwp-forms.scss */
   .lbwp-form .default-label {
     display: table-cell;
     margin: 0;
@@ -77,7 +77,7 @@
     padding: 10px 5px 10px 0;
     width: 30%;
   }
-  /* line 114, ../scss/lbwp/_lbwp-forms.scss */
+  /* line 115, ../scss/lbwp/_lbwp-forms.scss */
   .lbwp-form .default-label[for^="textarea"],
   .lbwp-form .default-label[for^="comment"],
   .lbwp-form .checkbox-field .default-label,
@@ -85,33 +85,33 @@
   .lbwp-form .number-field .default-label {
     vertical-align: top;
   }
-  /* line 127, ../scss/lbwp/_lbwp-forms.scss */
+  /* line 128, ../scss/lbwp/_lbwp-forms.scss */
   .lbwp-form .default-container {
     display: table-cell;
     padding: 10px 0 10px 5px;
     width: inherit;
   }
-  /* line 140, ../scss/lbwp/_lbwp-forms.scss */
+  /* line 141, ../scss/lbwp/_lbwp-forms.scss */
   .lbwp-form .send-button .default-container {
     margin: 0;
   }
-  /* line 149, ../scss/lbwp/_lbwp-forms.scss */
+  /* line 150, ../scss/lbwp/_lbwp-forms.scss */
   .lbwp-form .number-field input {
     width: 20%;
     display: block;
   }
 }
 @media only screen {
-  /* line 78, ../scss/lbwp/_lbwp-forms.scss */
+  /* line 79, ../scss/lbwp/_lbwp-forms.scss */
   .lbwp-form-widget .lbwp-form {
     display: block;
     width: auto;
   }
-  /* line 88, ../scss/lbwp/_lbwp-forms.scss */
+  /* line 89, ../scss/lbwp/_lbwp-forms.scss */
   .lbwp-form-widget .lbwp-form .forms-item {
     display: block;
   }
-  /* line 97, ../scss/lbwp/_lbwp-forms.scss */
+  /* line 98, ../scss/lbwp/_lbwp-forms.scss */
   .lbwp-form-widget .lbwp-form .default-label {
     display: block;
     margin: 10px 0 5px;
@@ -119,7 +119,7 @@
     padding: 0;
     width: auto;
   }
-  /* line 114, ../scss/lbwp/_lbwp-forms.scss */
+  /* line 115, ../scss/lbwp/_lbwp-forms.scss */
   .lbwp-form-widget .lbwp-form .default-label[for^="textarea"],
   .lbwp-form-widget .lbwp-form .default-label[for^="comment"],
   .lbwp-form-widget .lbwp-form .checkbox-field .default-label,
@@ -127,17 +127,17 @@
   .lbwp-form-widget .lbwp-form .number-field .default-label {
     vertical-align: baseline;
   }
-  /* line 127, ../scss/lbwp/_lbwp-forms.scss */
+  /* line 128, ../scss/lbwp/_lbwp-forms.scss */
   .lbwp-form-widget .lbwp-form .default-container {
     display: block;
     padding: 0;
     width: inherit;
   }
-  /* line 140, ../scss/lbwp/_lbwp-forms.scss */
+  /* line 141, ../scss/lbwp/_lbwp-forms.scss */
   .lbwp-form-widget .lbwp-form .send-button .default-container {
     margin: 20px 0 0;
   }
-  /* line 149, ../scss/lbwp/_lbwp-forms.scss */
+  /* line 150, ../scss/lbwp/_lbwp-forms.scss */
   .lbwp-form-widget .lbwp-form .number-field input {
     width: 100%;
   }
@@ -162,14 +162,10 @@
 
 /* line 58, ../scss/lbwp/_lbwp-forms.scss */
 .lbwp-form-anchor {
-  display: block;
-  visibility: hidden;
-}
-
-/* line 58, ../scss/lbwp/_lbwp-forms.scss */
-.lbwp-form-anchor {
   height: 20px;
   margin-top: -20px;
+  display: block;
+  visibility: hidden;
 }
 
 /* line 25, ../scss/lbwp/_lbwp-forms.scss */
@@ -178,7 +174,7 @@
 }
 
 /* Fix for the highwind theme that uses EM for paddings */
-/* line 128, scss/lbwp-form-frontend.scss */
+/* line 127, scss/lbwp-form-frontend.scss */
 .outer-wrap .content-wrapper .lbwp-form-override input[type="text"],
 .outer-wrap .content-wrapper .lbwp-form-override input[type="password"],
 .outer-wrap .content-wrapper .lbwp-form-override input[type="email"],

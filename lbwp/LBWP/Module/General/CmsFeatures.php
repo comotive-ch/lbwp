@@ -60,6 +60,7 @@ class CmsFeatures extends \LBWP\Module\Base
       add_action('media_view_settings', array($this, 'overrideGallerySettings'));
       // Sub module singletons (calling getInstance runs them at the specified filter)
       add_action('sidebar_admin_setup', array('LBWP\Module\General\Cms\WidgetEditor', 'getInstance'));
+      add_action('admin_menu', array('LBWP\Module\General\Cms\SystemLog', 'getInstance'));
       add_filter('admin_body_class', array($this, 'addAdminBodyClasses'));
       add_filter('mce_external_plugins', array($this, 'loadEditorPlugins'));
       add_filter('option_wpseo_titles', array($this, 'mergeYoastTitleDefaults'));

@@ -23,36 +23,44 @@ class Search
    */
   protected static $apiConf = array(
     // Template configuration
-    'containerTemplate' => '<div class="{containerClasses}">{items}</div>',
-    'imageTemplate' => '<div><a href="{url}">{image}</a></div>',
+    'containerTemplate' => '
+      <div class="{containerClasses}">{loadingText}</div>
+      <input type="submit" id="getApiResults" class="{buttonClasses}" value="{buttonText}" />
+    ',
+    'imageTemplate' => '<div class="img"><a href="{url}" target="{target}">{image}</a></div>',
     'metaTemplate' => '<em>{meta}</em> &ndash; ',
     'itemTemplate' => '
       <article class="{classes}">
         {imageTemplate}
-        <div>
-          <h2><a href="{url}">{title}</a></h2>
-          <p>{metaTemplate} {description}</p>
-        </div>
+        <h2><a href="{url}" target="{target}">{title}</a></h2>
+        <p>{metaTemplate} {description}</p>
       </article>
     ',
     // Settings for search API
     'errorMessage' => '',                         // The error message if there are no search results
-    'apiKey' => '',                               // The API key for google search api
+    'loadingText' => '',                          // The text that is displayed when loading
+    'buttonText' => '',                           // The text that is displayed in the "more results" button
+    'buttonClasses' => 'lbwp-button',             // "more results" button class, can be multiple (sep. by space), if needed
+    'apiKey' => 'AIzaSyDcRBXI37rJlgSUCx1X0qy0cL_XVKKKFUE',  // Defaults to our main key
     'containerClasses' => 'lbwp-gss-results',     // Container class, can be multiple (sep. by space), if needed
     'filterResults' => false,                     // true filters the results (if post) for search term existens
     'displayImages' => true,                      // Display images, if available
     'displayFiles' => false,                      // Skip file search results completely
     'rawResultFallback' => false,                 // Fallback to a raw result, if postType matching didn't work
+    'rawResultFallbackUseImages' => true,         // Wheter to use google defined images for raw result fallback
     'imageFallback' => '<div></div>',             // Fallback html, if no image can be displayed
     'postTypes' => array('post', 'page'),         // Types that can be actually found and are not filtered
+    'postTypesImgFallback' => array('page'),      // Types where a fallback to googles image is allowed
+    'postTypesShowDate' => array('post'),         // Types where the date is showed as meta
     'textFieldType' => 'text',                    // Type of the text field for search input
-    'textFieldId' => 'gss_query',                // ID of the search input field
+    'textFieldClass' => '',                       // A class to be set onto the text field
+    'textFieldId' => 'gss_query',                 // ID of the search input field
     'textFieldPlaceHolder' => '',                 // Search placeholder for input field
   );
   /**
    * The endpoint for xml requests
    */
-  const JSON_ENDPOINT = 'https://www.googleapis.com/customsearch/v1?cx={searchEngineId}&key={apiKey}&q={searchTerm}';
+  const JSON_ENDPOINT = 'https://www.googleapis.com/customsearch/v1?cx={searchEngineId}&key={apiKey}&q={searchTerm}&gl={language}';
   /**
    * Maximum results via XML search
    */
@@ -67,79 +75,126 @@ class Search
    */
   public static function setApiConfig($config)
   {
-    self::$apiConf = array_merge(self::$apiConf, $config);
+    self::$apiConf = array_merge(self::$apiConf, self::getDefaultTexts(), $config);
+    // Register the api function to be called from printed scripts
+    add_action('wp_ajax_getApiSearchResults', array('\LBWP\Theme\Feature\Search', 'getApiSearchResults'));
+    add_action('wp_ajax_nopriv_getApiSearchResults', array('\LBWP\Theme\Feature\Search', 'getApiSearchResults'));
+  }
+
+  /**
+   * @return array default texts array
+   */
+  public static function getDefaultTexts()
+  {
+    return array(
+      'errorMessage' => __('Ihre Suche ergab keine Ergebnisse.', 'lbwp'),
+      'buttonText' => __('Weitere Suchergebnisse', 'lbwp'),
+      'loadingText' => __('Suchergebnisse werden geladen...', 'lbwp'),
+    );
+  }
+
+  /**
+   * Print HTML container and add JS to footer to actually get results by xhr
+   */
+  public static function printApiSearchResults()
+  {
+    // Print the container that will be filled (it also contains the button
+    echo Templating::getBlock(self::$apiConf['containerTemplate'], array(
+      '{containerClasses}' => self::$apiConf['containerClasses'],
+      '{buttonText}' => self::$apiConf['buttonText'],
+      '{buttonClasses}' => self::$apiConf['buttonClasses'],
+      '{loadingText}' => self::$apiConf['loadingText']
+    ));
+
+    // Add a JS that does the actual search request
+    wp_enqueue_script('lbwp-search-api', File::getResourceUri() . '/js/lbwp-search-api.js', array('jquery'), LbwpCore::REVISION, true);
   }
 
   /**
    * Prints the search results with a template and by using xml results
    */
-  public static function printApiSearchResults()
+  public static function getApiSearchResults()
   {
-    // First off, prevent caching as of now
-    HTMLCache::avoidCache();
     // Get the config and init the result array
     $config = LbwpCore::getInstance()->getConfig();
     $results = array();
-    $terms = array_map('trim', explode(' ', $_GET['q']));
+    $terms = array_map('trim', explode(' ', $_POST['search']));
 
     // Prepare the url to be called
     $url = self::JSON_ENDPOINT;
     $url = str_replace('{searchEngineId}', $config['Various:GoogleEngineId'], $url);
-    $url = str_replace('{searchTerm}', urlencode($_GET['q']), $url);
+    $url = str_replace('{searchTerm}', urlencode($_POST['search']), $url);
     $url = str_replace('{apiKey}', self::$apiConf['apiKey'], $url);
+    // Set the language, defaulting to wordpress locale
+    $language = substr(get_locale(), 0, 2);
+    if (Multilang::isActive()) {
+      $language = Multilang::getCurrentLang();
+    }
+    $url = str_replace('{language}', $language, $url);
 
     // Add start / num parameters
-    $page = (intval($_GET['rp']) > 0) ? intval($_GET['rp']) : 1;
+    $page = (intval($_POST['page']) > 0) ? intval($_POST['page']) : 1;
     $start = ($page > 1) ? ($page - 1) * self::RESULTS_PER_PAGE : 1;
     $url .= '&start=' . $start . '&num=' . self::RESULTS_PER_PAGE . '';
+
     // Make a simple call and convert the xml doc to an array
-    $data = json_decode(file_get_contents($url), true);
+    $key = md5($url);
+    $cachedResult = wp_cache_get($key, 'SearchApi');
 
-    // See if we need to generate a paging output
-    $pagingHtml = '';
-    $totalResults = intval($data['searchInformation']['totalResults']);
-    if ($totalResults > self::RESULTS_PER_PAGE) {
-      $pagingHtml = self::getApiResultPaging($totalResults, $page, self::RESULTS_PER_PAGE, self::RESULTS_PAGES_IN_NAV);
-    }
+    // If not in cache, make the request and cache the ajax resonse
+    if (!is_array($cachedResult)) {
+      $data = json_decode(file_get_contents($url), true);
+      $nativeResultCount = count($data['items']);
+      // Filter the results as of config
+      $results = self::prepareAndFilterResults($data, $terms);
 
-    // Filter the results as of config
-    $results = self::prepareAndFilterResults($data, $terms);
+      // Show the results or print the error message
+      if (count($results) > 0) {
+        $itemHtml = '';
+        foreach ($results as $result) {
+          // Replace all the variables for the item
+          $itemHtml .= Templating::getBlock(self::$apiConf['itemTemplate'], array(
+            '{url}' => $result['url'],
+            '{classes}' => $result['classes'],
+            '{imageTemplate}' => (self::$apiConf['displayImages']) ? $result['imageHtml'] : '',
+            '{title}' => $result['title'],
+            '{target}' => $result['target'],
+            '{metaTemplate}' => self::getMetaTemplate($result),
+            '{description}' => $result['description']
+          ));
+        }
 
-    // Show the results or print the error message
-    if (count($results) > 0) {
-      $itemHtml = '';
-      foreach ($results as $result) {
-        // Replace all the variables for the item
-        $itemHtml .= Templating::getBlock(self::$apiConf['itemTemplate'], array(
-          '{url}' => $result['url'],
-          '{classes}' => $result['classes'],
-          '{imageTemplate}' => (self::$apiConf['displayImages']) ? $result['imageHtml'] : '',
-          '{title}' => $result['title'],
-          '{metaTemplate}' => self::getMetaTemplate($result),
-          '{description}' => $result['description']
-        ));
+        $cachedResult = array(
+          'resultCount' => count($results),
+          'nativeCount' => $nativeResultCount,
+          'html' => $itemHtml,
+          'cached' => false
+        );
+      } else {
+        $cachedResult = array(
+          'resultCount' => 0,
+          'nativeCount' => $nativeResultCount,
+          'html' => '<p>' . self::$apiConf['errorMessage'] . '</p>',
+          'cached' => false
+        );
       }
 
-      // Wrap the items into the template
-      echo Templating::getBlock(self::$apiConf['containerTemplate'], array(
-        '{items}' => $itemHtml,
-        '{containerClasses}' => self::$apiConf['containerClasses']
-      ));
-
-      // Display the paging html, if available
-      echo $pagingHtml;
+      // Set the result to cache
+      wp_cache_set($key, $cachedResult, 'SearchApi', 86400);
     } else {
-      echo '
-        <div class="' . self::$apiConf['containerClasses'] . ' search-error">
-          <p>' . self::$apiConf['errorMessage'] . '</p>
-        </div>
-      ';
+      $cachedResult['cached'] = true;
     }
+
+    WordPress::sendJsonResponse($cachedResult);
   }
 
+  /**
+   * @param array $result a search result
+   * @return string the meta template, if meta is given and valid
+   */
   protected static function getMetaTemplate($result)
   {
-    if (isset($result['meta'])) {
+    if (isset($result['meta']) && strlen($result['meta']) > 0) {
       return Templating::getBlock(self::$apiConf['metaTemplate'], array(
         '{meta}' => $result['meta']
       ));
@@ -150,9 +205,10 @@ class Search
 
   /**
    * @param \WP_Post $post result object
+   * @param array $raw the engine result
    * @return string the image html or empty string
    */
-  protected static function getPostImageHtml($post)
+  protected static function getPostImageHtml($post, $raw)
   {
     $imageHtml = '';
     $thumbnailId = get_post_thumbnail_id($post->ID);
@@ -161,7 +217,19 @@ class Search
       if (Strings::isURL($url)) {
         return Templating::getBlock(self::$apiConf['imageTemplate'], array(
           '{url}' => get_permalink($post->ID),
+          '{target}' => '_self',
           '{image}' => '<img src="' . $url . '" alt="' . $post->post_title . '">'
+        ));
+      }
+    }
+
+    // Use the engine fallback, if allowed and available
+    if (in_array($post->post_type, self::$apiConf['postTypesImgFallback'])) {
+      if (isset($raw['pagemap']['cse_image'][0]) && Strings::checkURL($raw['pagemap']['cse_image'][0]['src'])) {
+        $imageHtml = Templating::getBlock(self::$apiConf['imageTemplate'], array(
+          '{url}' => $raw['link'],
+          '{target}' => '_self',
+          '{image}' => '<img src="' . $raw['pagemap']['cse_image'][0]['src'] . '" alt="' . $raw['title'] . '">'
         ));
       }
     }
@@ -171,23 +239,26 @@ class Search
 
   /**
    * @param \WP_Post $post result object
+   * @param array $raw the engine result, used for fallbacks
    * @return string a description for the object
    */
-  protected static function getPostDescription($post)
+  protected static function getPostDescription($post, $raw)
   {
     $description = get_post_meta($post->ID, '_yoast_wpseo_metadesc', true);
     if (strlen($description) == 0)
       $description = get_post_meta($post->ID, '_wpseo_edit_description', true);
     if (strlen($description) == 0)
       $description = strip_tags($post->post_excerpt);
-    if (strlen($description) == 0)
+    if (strlen($description) == 0 && ($post->post_type == 'post' || $post->post_type == 'page'))
       $description = Strings::chopToWords(strip_tags(strip_shortcodes($post->post_content)), 40, true);
+    if (strlen($description) == 0)
+      $description = $raw['snippet'];
 
     return $description;
   }
 
   /**
-   * @param array $data full google search item results
+   * @param array $data full engine search item results
    * @param array $terms the search terms given in
    * @return array $results
    */
@@ -207,10 +278,13 @@ class Search
           $results[] = array(
             'url' => get_permalink($postObject->ID),
             'classes' => implode(' ', get_post_class('result-item', $postObject->ID)),
-            'imageHtml' => self::getPostImageHtml($postObject),
+            'imageHtml' => self::getPostImageHtml($postObject, $item),
             'title' => $postObject->post_title,
-            'meta' => date_i18n(get_option('date_format'), strtotime($postObject->post_date)),
-            'description' =>self::getPostDescription($postObject),
+            'meta' => (in_array($postObject->post_type, self::$apiConf['postTypesShowDate']))
+              ? date_i18n(get_option('date_format'), strtotime($postObject->post_date))
+              : '',
+            'description' =>self::getPostDescription($postObject, $item),
+            'target' => '_self',
             'type' => 'content'
           );
         } else if (self::$apiConf['displayFiles'] && isset($item['fileFormat'])) {
@@ -222,16 +296,28 @@ class Search
             'title' => $item['title'],
             'meta' => $item['fileFormat'],
             'description' => $item['snippet'],
+            'target' => '_blank',
             'type' => 'file'
           );
         } else if (self::$apiConf['rawResultFallback']) {
-          // Insert file data into our structure
+          // Get an image, if possible, else fallback
+          $imageHtml = self::$apiConf['imageFallback'];
+          if (self::$apiConf['rawResultFallbackUseImages'] && isset($item['pagemap']['cse_image'][0]) && Strings::checkURL($item['pagemap']['cse_image'][0]['src'])) {
+            $imageHtml = Templating::getBlock(self::$apiConf['imageTemplate'], array(
+              '{url}' => $item['link'],
+              '{target}' => '_self',
+              '{image}' => '<img src="' . $item['pagemap']['cse_image'][0]['src'] . '" alt="' . $item['title'] . '">'
+            ));
+          }
+
+          // Insert data into our structure
           $results[] = array(
             'url' => $item['link'],
             'classes' => 'result-raw',
-            'imageHtml' => self::$apiConf['imageFallback'],
+            'imageHtml' => $imageHtml,
             'title' => $item['title'],
             'description' => $item['snippet'],
+            'target' => '_self',
             'type' => 'raw'
           );
         }
@@ -267,73 +353,27 @@ class Search
   }
 
   /**
-   * @param int $total results
-   * @param int $page the current page
-   * @param int $perPage results per page
-   * @param int $maxNav max nav menu entries
-   * @return string html to represent the navigation
-   */
-  public static function getApiResultPaging($total, $page, $perPage = 10, $maxNav = 10)
-  {
-    $html = '';
-    $pageList = array();
-    $pages = ceil($total / $perPage);
-    for ($i = 1; $i < $pages; ++$i) {
-      if ($i+1 >= $page) $pageList[] = $i;
-    }
-    // Cut that array after max shown pages
-    $pageList = array_slice($pageList, 0, $maxNav);
-    if (count($pageList) < $maxNav) {
-      // Fill backwards, if smaller
-      for ($i = $pageList[0] - 1; $i >= 1 && count($pageList) < $maxNav; $i--) {
-        array_unshift($pageList, $i);
-      }
-    }
-
-    // Generate HTML output
-    if (count($pageList) > 0) {
-      // Define base url
-      unset($_GET['rp']);
-      $query = http_build_query($_GET);
-
-      $html .= '<div id="pagenav"><ul class="nav page" role="contentinfo">';
-      foreach ($pageList as $pageNr) {
-        if ($pageNr == $page) {
-        $html .= '
-          <li class="pagenr pagenronly current" role="menuitem">
-            <span class="pagecur">' . $pageNr . '</span>
-          </li>
-        ';
-        } else {
-          $html .= '
-          <li class="pagenr pagenronly" role="menuitem">
-            <a href="?' . $query . '&rp=' . $pageNr . '">' . $pageNr . '</a>
-          </li>
-        ';
-        }
-      }
-      $html .= '</ul></div>';
-    }
-
-    return $html;
-  }
-
-  /**
    * Get a frontend API search input (remember to always use GET)
-   * @return string the google search input
+   * @return string the engine search input
    */
   public static function getApiSearchInput()
   {
+    $attributes = '';
+
     // Set a placeholder if given
-    $placeholder = '';
     if (strlen(self::$apiConf['textFieldPlaceHolder']) > 0) {
-      $placeholder = ' placeholder="' . self::$apiConf['textFieldPlaceHolder'] . '"';
+      $attributes .= ' placeholder="' . self::$apiConf['textFieldPlaceHolder'] . '"';
+    }
+
+    // Set a class if given
+    if (strlen(self::$apiConf['textFieldClass']) > 0) {
+      $attributes .= ' class="' . self::$apiConf['textFieldClass'] . '"';
     }
 
     // Print the script and form input code
     return '
       <input
-        type="' . self::$apiConf['textFieldType'] . '"' . $placeholder . '
+        type="' . self::$apiConf['textFieldType'] . '"' . $attributes . '
         name="q" id="' . self::$apiConf['textFieldId'] . '"
         value="' . htmlspecialchars(strip_tags(stripslashes($_REQUEST['q']))) . '"
       />

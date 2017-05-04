@@ -1,6 +1,6 @@
-$lbwpPrintUseDefaults: true !default;
+$lbwpPrintUseDefaults: false !default;
 
-// Hide generall non-printing elements
+// Hide general non-printing elements
 @mixin lbwpPrintDefaults() {
 	@media print {
 		nav,
@@ -12,10 +12,10 @@ $lbwpPrintUseDefaults: true !default;
 		.widget_categories,
 		.lbwp-form-widget,
 		.lbwp-hide-for-print {
-			display: none;
+			display: none !important;
 		}
 
-		// hide standard (foundation) elements
+		// Hide standard (foundation) elements
 		.left-off-canvas-toggle,
 		.right-off-canvas-toggle {
 			display: none !important;
