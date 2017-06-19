@@ -215,12 +215,13 @@ abstract class FetchComponent extends Component
 
     // Define tags to remove, let user filter it
     $removedMetaTags = apply_filters('fetchComponent_removeCoreMetaTags', array(
-      'generator', 'title', 'description', 'keywords', 'og:(.+?)', 'robots'
+      'generator', 'title', 'description', 'keywords', 'og:(.+?)', 'twitter:(.+?)', 'robots'
     ));
 
     // Replace all found elements with "nothing"
     foreach ($removedMetaTags as $metaName) {
       $html = preg_replace('/<[\s]*meta[\s]*name="' . $metaName . '"?[\s](.+?)?[\s]*[\/]?[\s]*>/si', '', $html);
+      $html = preg_replace('/<[\s]*meta[\s]*property="' . $metaName . '"?[\s](.+?)?[\s]*[\/]?[\s]*>/si', '', $html);
     }
 
     // Remove resulting blank lines

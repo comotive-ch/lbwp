@@ -82,6 +82,10 @@ class EventType extends Base
       'items' => $this->getFormDropdownItems(),
       'description' => 'Anmeldeforumlare können unter "Forumlare" erstellt und konfiguriert werden.'
     ));
+    // Subscribe text, if subscription end is reached
+    $helper->addTextarea('subscribe-end-alternate-text', 'event-subscribe', 'Text nach Anmeldeschluss', 65, array(
+      'description' => 'Text, der angezeigt wird, wenn der Anmeldeschluss abgelaufen ist (Leer lassen, wenn kein Text angezeigt werden soll).'
+    ));
   }
 
   /**
@@ -151,7 +155,10 @@ class EventType extends Base
       if (!isset($record['filled']) || !$record['filled'] || $override) {
         // Merge and save as same data set, but filled
         $record = array_merge($record, $data);
-        $record['filled'] = true;
+        // Only set filled, if not given in $data
+        if (!$override || !isset($data['filled'])) {
+          $record['filled'] = true;
+        }
         $info[$id] = $record;
       } else {
         // Set is already existing and filled, create a new dataset and mark as filled

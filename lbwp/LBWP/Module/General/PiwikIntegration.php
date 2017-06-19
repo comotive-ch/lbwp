@@ -45,10 +45,20 @@ class PiwikIntegration extends \LBWP\Module\Base
 
     // Actually activate the features, if a site id is set. This is the minimum for tracking
     if (isset($this->settings['siteId']) && intval($this->settings['siteId']) > 0) {
+      add_filter('wp_head', array($this, 'addDnsPrefetch'), 5);
       add_action('wp_footer', array($this, 'addTrackingCode'));
       add_action('wp_dashboard_setup', array($this, 'addDashboardWidget'), 20);
     }
   }
+
+  /**
+   * Add a prefetch info for the cookieless domain
+   */
+  public function addDnsPrefetch()
+  {
+    echo '<link rel="dns-prefetch" href="//' . $this->integration['domain'] . '" />' . PHP_EOL;
+  }
+
 
   /**
    * Adds the login and stats dashboard item

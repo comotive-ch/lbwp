@@ -1,3 +1,33 @@
+@import "functions.type-checking";
+
+/// Triangle helper mixin
+/// @author Hugo Giraudel
+/// @param {Direction} $direction - Triangle direction, either `top`, `right`, `bottom` or `left`
+/// @param {Color} $color - Triangle color
+/// @param {Length} $size - Triangle size
+/// @param {Length} $edgeRatio - Edge ratio
+@mixin lbwpTriangle($direction, $color, $size, $edgeRatio: 1) {
+  @if not index(top right bottom left, $direction) {
+    @error "Direction must be either `top`, `right`, `bottom` or `left`.";
+  }
+
+  width: 0;
+  height: 0;
+  content: '';
+  z-index: 2;
+  border-#{opposite-position($direction)}: ($size * $edgeRatio) solid $color;
+
+  $perpendicular-borders: $size solid transparent;
+
+  @if $direction == top or $direction == bottom {
+    border-left:   $perpendicular-borders;
+    border-right:  $perpendicular-borders;
+  } @else if $direction == right or $direction == left {
+    border-bottom: $perpendicular-borders;
+    border-top:    $perpendicular-borders;
+  }
+}
+
 ///	Top offset for ancors. Often used for ancors in layouts with a fixed header bar
 /// @param {size} $offset - Offset size
 @mixin lbwpAncorPositionOffset($offset, $asPseudoElement:false) {

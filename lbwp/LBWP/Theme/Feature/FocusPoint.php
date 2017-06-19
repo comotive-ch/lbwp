@@ -79,7 +79,7 @@ class FocusPoint
   {
     $screen = get_current_screen();
     // Only on upload and post detail screen
-    if ($screen->base == 'upload' || $screen->base = 'post') {
+    if ($screen->base == 'upload' || $screen->base == 'post') {
       wp_enqueue_script('lbwp-focuspoint-be', File::getResourceUri() . '/js/focuspoint/focuspoint.backend.js', array('jquery'), LbwpCore::REVISION, true);
       wp_enqueue_script('jquery-ui-dialog');
       wp_enqueue_style('jquery-ui-theme-lbwp');

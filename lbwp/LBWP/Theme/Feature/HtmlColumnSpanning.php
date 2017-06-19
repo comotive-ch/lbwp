@@ -41,7 +41,7 @@ class HtmlColumnSpanning
   public static function init($options = array())
   {
     $defaults = array(
-      'container_begin' => '<div class="lbwp-container lbwp-colums-{total}">',
+      'container_begin' => '<div class="lbwp-container lbwp-columns-{total}">',
       'container_end' => '</div>',
       'element_begin' => '<div class="lbwp-col-{number}">',
       'element_end' => '</div>',

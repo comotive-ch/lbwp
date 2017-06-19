@@ -285,7 +285,7 @@ class DataTable extends Base
     // Eventually add the edit link
     if ($this->params['notify_mail_setting'] == 2) {
       $url = Strings::attachParam('tsid', $tsid, $url);
-      $content .= '<br/><br/>Sie können Ihre <a href="' . $url . '">Daten jederzeit bearbeiten</a>.';
+      $content .= '<br/><br/>Sie können Ihre <a href="' . $url . '">Daten hier bearbeiten.</a>';
     }
 
     // Send the email to the recipient

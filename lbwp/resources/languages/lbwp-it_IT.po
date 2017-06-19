@@ -2,7 +2,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: LBWP\n"
 "POT-Creation-Date: 2015-08-03 11:05+0100\n"
-"PO-Revision-Date: 2017-05-01 22:02+0200\n"
+"PO-Revision-Date: 2017-05-22 13:33+0200\n"
 "Last-Translator: \n"
 "Language-Team: comotive <info@comotive.ch>\n"
 "Language: it_IT\n"
@@ -490,6 +490,9 @@ msgstr "Fine"
 #: general
 msgid "Anmeldung bis"
 msgstr "Iscrizioni fino a"
+
+msgid "Anmeldeinformation"
+msgstr "Info sulle Iscrizioni"
 
 #: general
 msgid "Alle anzeigen"

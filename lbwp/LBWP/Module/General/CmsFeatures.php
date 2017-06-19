@@ -6,6 +6,7 @@ use LBWP\Core;
 use LBWP\Helper\Cronjob;
 use LBWP\Module\Backend\MemcachedAdmin;
 use LBWP\Module\General\Multilang\OptionBridge;
+use LBWP\Module\General\Cms\PageSpeed;
 use LBWP\Core as LbwpCore;
 use LBWP\Util\ArrayManipulation;
 use LBWP\Util\File;
@@ -74,6 +75,8 @@ class CmsFeatures extends \LBWP\Module\Base
       add_action('rss2_item', array($this, 'addRssMediaItems'));
       add_action('rss2_ns', array($this, 'addRssNamespace'));
       add_filter('the_excerpt_rss', array($this, 'fixFeedExcerpt'));
+      // Create a page speed instance with default settings
+      PageSpeed::getInstance();
       // Print acme challenge for ssl domain validation, if given
       if (is_array(get_option('letsEncryptAcmeChallenge')) && stristr($_SERVER['REQUEST_URI'], '/acme-challenge/') !== false) {
         $this->printAcmeChallenge();

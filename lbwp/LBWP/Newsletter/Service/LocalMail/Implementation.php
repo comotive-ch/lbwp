@@ -229,14 +229,19 @@ class Implementation extends Base implements Definition
     // Create an unfinished mailing in our option array
     $this->api->setMailing($mailingId, 'creating');
 
-    // Get the list and loop trough it to create the actual mailing object
+    // Prepare some helping vars and arrays
+    $overrideSubscriberInfo = false;
     $mails = array();
     $uniqueAdresses = array();
+    $listIdMap = array();
+
+    // Get the list and loop trough it to create the actual mailing object
     foreach ($targets as $listId) {
       // Decide if a dynamic target or a "common" target is used
       if (Strings::startsWith($listId, 'dynamicTarget_')) {
         $map = $newsletter->getDynamicTargetMap();
         $list = apply_filters('ComotiveNL_dynamic_target_get_list_data', array(), $listId, $map[$listId], $map[$listId . '_fallback']);
+        $overrideSubscriberInfo = true;
       } else {
         $list = $this->api->getListData($listId);
       }
@@ -248,8 +253,14 @@ class Implementation extends Base implements Definition
             continue;
           }
 
+          $emailListId = $listId;
+          // If the data set has another list id (for dynamic lists), override it now
+          if (isset($recipient['list-id']) && !empty($recipient['list-id'])) {
+            $emailListId = $recipient['list-id'];
+          }
+
           // First, add an unsubscribe object to the recipient
-          $recipient['unsubscribe'] = $this->api->getUnsubscribeLink($memberId, $listId, $language);
+          $recipient['unsubscribe'] = $this->api->getUnsubscribeLink($memberId, $emailListId, $language);
 
           // Personalize the mailing text with user data
           $personalizedHtml = $html;
@@ -258,7 +269,7 @@ class Implementation extends Base implements Definition
           }
 
           // Replace some custom code fields
-          $personalizedHtml = str_replace('_listId', $listId, $personalizedHtml);
+          $personalizedHtml = str_replace('_listId', $emailListId, $personalizedHtml);
           $personalizedHtml = str_replace('_emailId', $memberId, $personalizedHtml);
 
           // Create a new mailing entry
@@ -270,6 +281,7 @@ class Implementation extends Base implements Definition
             'senderName' => $senderName
           );
 
+          $listIdMap[$memberId] = $emailListId;
           $uniqueAdresses[$memberId] = $recipient['email'];
         }
       }
@@ -289,10 +301,11 @@ class Implementation extends Base implements Definition
         foreach ($uniqueAdresses as $id => $email) {
           EventType::setSubscribeInfo($eventId, $id, array(
             'email' => $email,
+            'list-id' => $listIdMap[$id],
             'filled' => false,
             'subscribed' => false,
             'subscribers' => 0
-          ));
+          ), $overrideSubscriberInfo);
         }
       }
     }

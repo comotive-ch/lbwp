@@ -266,7 +266,7 @@ class FormHandler extends Base
     }
 
     // If there are additional classes
-    if (isset($args['css_classes']) && strlen($args['css_classes'])) {
+    if (isset($args['css_classes']) && strlen($args['css_classes']) && !self::$isBackendForm) {
       $formclass .= ' ' . strip_tags(($args['css_classes']));
     }
 

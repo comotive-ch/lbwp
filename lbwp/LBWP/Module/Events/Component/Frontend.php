@@ -131,6 +131,7 @@ class Frontend extends Base
       $event->endTime = $eventEnd;
       $event->location = get_post_meta($event->ID, 'event-location', true);
       $event->subscribeActive = get_post_meta($event->ID, 'subscribe-active', true) == 'on';
+      $event->subscribeAltText = get_post_meta($event->ID, 'subscribe-end-alternate-text', true);
 
       // Add subscribe data, if active
       if ($event->subscribeActive) {
@@ -278,6 +279,13 @@ class Frontend extends Base
         <dl>
           <dt>' . __('Anmeldung bis', 'lbwp') . '</dt>
           <dd>' . $this->getDateTimeString($event->subscribeEnd, $config, $textdomain) . '</dd>
+        </dl>
+      ';
+    } else if ($event->subscribeActive && strlen($event->subscribeAltText) > 0) {
+      $html .= '
+        <dl>
+          <dt>' . __('Anmeldeinformation', 'lbwp') . '</dt>
+          <dd>' . $event->subscribeAltText . '</dd>
         </dl>
       ';
     }

@@ -70,13 +70,13 @@ $lbwpFormInputFields: "select, input[type=text], input[type=email], input[type=n
 
 // LBWP forms are displayed with a table layout, except on small screens (mobile).
 // You can use this mixin to overwrite/reset the table layout (reset=true)
-// -> param reset: reset the table layout
-// -> use it in a media query!
-@mixin lbwpFormTableLayout($reset:false) {
+// -> param $reset: reset the table layout
+// -> param $rootSelector: selector for form, default: .lbwp-form
+@mixin lbwpFormTableLayout($reset:false, $rootSelector: '.lbwp-form') {
 
 	$tableLayout: not($reset);
 
-	.lbwp-form {
+	#{$rootSelector} {
 		@if $tableLayout {
 			display: table;
 			width: 100%;

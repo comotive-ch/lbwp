@@ -37,6 +37,11 @@ class RestApi
         RestApi::addFeaturedImage($config['include_featured_image']);
       }
 
+      // Add an unrendered excerpt
+      if (isset($config['excerpt_unrendered'])) {
+        RestApi::addUnrenderedExcerpt($config['excerpt_unrendered']);
+      }
+
       // Handle all sorts of specific http headers
       RestApi::handleHttpHeaders($config);
 
@@ -88,6 +93,30 @@ class RestApi
           'display_name' => get_the_author_meta('display_name', $userId),
           'archive_url' => get_author_posts_url($userId)
         );
+      }
+    ));
+  }
+
+  /**
+   * Adds various types of unrendered excerpts without html
+   */
+  protected static function addUnrenderedExcerpt($type)
+  {
+    register_rest_field('post', 'excerpt', array(
+      'get_callback' => function($post) use ($type) {
+        $unrendered = '';
+        $postObject = get_post($post['id']);
+        // By type, decide what to actually render
+        switch ($type) {
+          case 'field':
+          default:
+            $unrendered = strip_tags($postObject->post_excerpt);
+            break;
+        }
+
+        return array_merge($post['excerpt'], array(
+          'unrendered' => $unrendered
+        ));
       }
     ));
   }

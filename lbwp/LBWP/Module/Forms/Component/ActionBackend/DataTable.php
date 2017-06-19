@@ -6,6 +6,7 @@ use LBWP\Module\Events\Component\EventType;
 use LBWP\Module\Forms\Action\DataTable as DataTableAction;
 use LBWP\Module\Forms\Component\Base;
 use LBWP\Module\Forms\Core as FormCore;
+use LBWP\Theme\Feature\LocalMailService;
 use LBWP\Util\ArrayManipulation;
 use LBWP\Util\Strings;
 use LBWP\Util\WordPress;
@@ -715,10 +716,17 @@ class DataTable extends Base
 
     // Now, if there is an event, get its data
     if ($eventId > 0) {
-      $eventData = EventType::getSubscribeInfo($eventId);
-      foreach ($eventData as $subscription) {
+      $subscribeInfo = EventType::getSubscribeInfo($eventId);
+      foreach ($subscribeInfo as $id => $subscription) {
         if (isset($subscription[$field]) && $subscription[$field] == $value) {
-          $row = $this->getRowById($table['data'], $subscription['tsid']);
+          if (isset($subscription['tsid']) && strlen($subscription['tsid']) > 0) {
+            $row = $this->getRowById($table['data'], $subscription['tsid']);
+          } else if (isset($subscription['list-id']) && strlen($subscription['list-id']) > 0) {
+            // Fill the fallback with our actual keys from the list (which should always work nicely)
+            $row = $this->getListDataSet($subscription['list-id'], $id);
+            // Also, make sure to add the list again
+            $row['list-id'] = $subscription['list-id'];
+          }
           // If there is no email, try getting it from subscription data
           if (!isset($row[$map['email']])) {
             $row[$map['email']] = $subscription['email'];
@@ -728,6 +736,30 @@ class DataTable extends Base
         }
       }
     }
+  }
+
+  /**
+   * Get data row for dynamic newsletter segment directly from an original list
+   * @param int|string $listId the list id
+   * @param int|string $memberId the member id to be retrieved
+   * @return array of data or empty array
+   */
+  public function getListDataSet($listId, $memberId)
+  {
+    // Only works with local mail as we have the needed data stored
+    if (LocalMailService::isWorking()) {
+      $service = LocalMailService::getInstance();
+      $data = $service->getListData($listId);
+      // Find the right data set
+      foreach ($data as $id => $row) {
+        if ($memberId == $id) {
+          return $row;
+        }
+      }
+    }
+
+    // Nothing found
+    return array();
   }
 
   /**
@@ -761,9 +793,11 @@ class DataTable extends Base
     $recipient = array();
 
     if (Strings::checkEmail($email)) {
-      foreach (array('email', 'salutation', 'firstname', 'lastname') as $key) {
-        if (isset($row[$map[$key]])) {
+      foreach (array('email', 'salutation', 'firstname', 'lastname', 'list-id') as $key) {
+        if (isset($row[$map[$key]]) && strlen($map[$key]) > 0) {
           $recipient[$key] = $row[$map[$key]];
+        } else if (isset($row[$key]) && strlen($row[$key]) > 0) {
+          $recipient[$key] = $row[$key];
         } else {
           $recipient[$key] = $fallback[$key];
         }

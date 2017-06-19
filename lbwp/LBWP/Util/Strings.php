@@ -598,6 +598,21 @@ class Strings
   }
 
   /**
+   * Replaces a very reduced set of characters that shouldn't be used in file names.
+   * Note that this function doesn't handle a lot of characters
+   * @param string $string the input
+   * @return string the output, fixed string
+   */
+  public static function replaceCommonFileChars($string)
+  {
+    return str_replace(
+      array('ä', 'ö', 'ü', 'Ä', 'Ö', 'Ü', 'é', 'è', 'ê', 'É', 'È', 'â', 'á', 'à', 'ç', ' ', '"', '`', '´', 'Ã¼'),
+      array('a', 'o', 'u', 'A', 'O', 'U', 'e', 'e', 'e', 'E', 'E', 'a', 'a', 'a', 'c', '',  '',  '',  '',  'u'),
+      $string
+    );
+  }
+
+  /**
    * Wildcard search, where a needle can be *searchterm or searchterm* and searchterm
    * Currently *searchterm* is not supported, but in the future maybe?
    * @param string $needle the needle to search for
