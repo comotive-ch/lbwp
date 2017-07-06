@@ -115,9 +115,9 @@ class SliderGallery
         break;
       case 'slick-1.6':
         wp_enqueue_script('slick-1.6', $path . '/js/slick-carousel/1.6.x/slick.min.js', array('jquery'), LbwpCore::REVISION, true);
-        wp_enqueue_style('slick-1.6-base', $path . '/js/slick-carousel/1.6.x/slick.css', array(), LbwpCore::REVISION, 'all');
+        wp_enqueue_style('slick-1.6-base', $path . '/js/slick-carousel/1.6.x/slick.min.css', array(), LbwpCore::REVISION, 'all');
         if ($this->config['omitThemeCss'] == false) {
-          wp_enqueue_style('slick-1.6-theme', $path . '/js/slick-carousel/1.6.x/slick-theme.css', array(), LbwpCore::REVISION, 'all');
+          wp_enqueue_style('slick-1.6-theme', $path . '/js/slick-carousel/1.6.x/slick-theme.min.css', array(), LbwpCore::REVISION, 'all');
         }
         break;
     }

@@ -16,7 +16,7 @@ class SimpleFancybox extends \LBWP\Module\Base
   /**
    * @var int Module version for resource files
    */
-  const VERSION = 20;
+  const VERSION = 22;
   /**
    * @var array configuration array (you can use more additional parameters "maxWidth" and "helpers" without a configured default value)
    */
@@ -68,7 +68,7 @@ class SimpleFancybox extends \LBWP\Module\Base
       add_filter('shortcode_atts_gallery', array($this, 'overrideGalleryAttributes'));
 
       // And some code in the footer
-      wp_enqueue_style('lbwp-fancybox-css', $this->getBasepath() . '/fancybox.css', array(), self::VERSION, 'all');
+      wp_enqueue_style('lbwp-fancybox-css', $this->getBasepath() . '/fancybox.min.css', array(), self::VERSION, 'all');
       wp_enqueue_script('lbwp-fancybox', $this->getBasepath() . '/fancybox.js', array('jquery'), self::VERSION, true);
       wp_enqueue_script('lbwp-auto-fancybox', $this->getBasepath() . '/lbwp-fancybox.js', array('jquery'), self::VERSION, true);
     }

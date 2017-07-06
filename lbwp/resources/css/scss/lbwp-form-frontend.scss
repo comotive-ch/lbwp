@@ -1,8 +1,6 @@
 @import "compass/css3";
 
 $lbwpFormValidationColorError: red;
-$lbwpFormValidationColorWarning: orange;
-$lbwpFormValidationColorSuccess: #7ed312;
 @import "lbwp/lbwp-forms";
 
 .lbwp-form {
@@ -113,15 +111,6 @@ $lbwpFormValidationColorSuccess: #7ed312;
 @include lbwpFormInputFieldErrorStyles() {
 	border-color: $lbwpFormValidationColorError;
 }
-
-// Default form styles without these colors
-//@include lbwpFormInputFieldWarningStyles() {
-//	border-color: $lbwpFormValidationColorWarning;
-//}
-//
-//@include lbwpFormInputFieldSuccessStyles() {
-//	border-color: $lbwpFormValidationColorSuccess;
-//}
 
 // TODO move to highwind theme?
 /* Fix for the highwind theme that uses EM for paddings */

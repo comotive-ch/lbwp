@@ -131,7 +131,7 @@ var MetaboxHelper = {
 			var link = jQuery(this);
 			jQuery('.media-modal-backdrop-mbh').show();
 			jQuery('#metaboxHelper_frame').attr('src', link.attr('href'));
-			jQuery('#metaboxHelperContainer').css('bottom', 0);
+			jQuery('#metaboxHelperContainer').show();
 			return MetaboxHelper.preventBubbling(event);
 		});
 
@@ -139,7 +139,7 @@ var MetaboxHelper = {
 		jQuery('.mbh-close-modal').off('click').on('click', function(event) {
 			jQuery('.media-modal-backdrop-mbh').hide();
 			jQuery('#metaboxHelper_frame').attr('src', '');
-			jQuery('#metaboxHelperContainer').css('bottom', -10000);
+			jQuery('#metaboxHelperContainer').hide();
 			return MetaboxHelper.preventBubbling(event);
 		});
 	},

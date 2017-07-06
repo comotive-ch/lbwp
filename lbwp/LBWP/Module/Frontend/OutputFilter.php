@@ -96,7 +96,7 @@ class OutputFilter extends \LBWP\Module\Base
     }
 
     // Allow to print output on post type single headers and do various stuff in header
-    add_action('wp_head', array($this, 'addHeaderFilters'));
+    add_action('wp_head', array($this, 'addHeaderFilters'), 10);
     // Register JSON LD output for posts
     add_action('wp_head_single_post', array('\LBWP\Helper\Tracking\MicroData', 'printArticleData'));
     // Remove CSS identifiers

@@ -1,25 +1,27 @@
 // ---
 // Copy and paste this settings variables to your scss file
-// ---
-//$lbwpTinyMceImageBreakpointMediumUp: ;
-//$lbwpTinyMceImageSizeFull: ;
-//$lbwpTinyMceImageSizeMedium: ;
-//$lbwpTinyMceImageSizeThumbnail: ;
-//$lbwpTinyMceImageAlignment: ;
-//$lbwpTinyMceImageLayoutLineHeight: ;
-//$lbwpTinyMceImageLayoutFontsize: ;
-//$lbwpTinyMceImageMarginH: ;
-//$lbwpTinyMceImageMarginBottom: ;
-//$lbwpTinyMceImageMarginBottomMobile: ;
-//$lbwpTinyMceImageCaptionColor: ;
-//$lbwpTinyMceImageCaptionFontWeight: ;
-//$lbwpTinyMceImageCaptionFontSize: ;
-//$lbwpTinyMceImageCaptionLineHeight: ;
-//$lbwpTinyMceImageCaptionMargin: ;
-//$lbwpTinyMceImageMarginTop: ;
-// ---
+/*
+$lbwpTinyMceImageUseDefaults: true;
+$lbwpTinyMceImageBreakpointMediumUp: ;
+$lbwpTinyMceImageSizeFull: ;
+$lbwpTinyMceImageSizeMedium: ;
+$lbwpTinyMceImageSizeThumbnail: ;
+$lbwpTinyMceImageAlignment: ;
+$lbwpTinyMceImageLayoutLineHeight: ;
+$lbwpTinyMceImageLayoutFontsize: ;
+$lbwpTinyMceImageMarginH: ;
+$lbwpTinyMceImageMarginBottom: ;
+$lbwpTinyMceImageMarginBottomMobile: ;
+$lbwpTinyMceImageCaptionColor: ;
+$lbwpTinyMceImageCaptionFontWeight: ;
+$lbwpTinyMceImageCaptionFontSize: ;
+$lbwpTinyMceImageCaptionLineHeight: ;
+$lbwpTinyMceImageCaptionMargin: ;
+$lbwpTinyMceImageMarginTop: ;
+*/
 
 // default variables
+$lbwpTinyMceImageUseDefaults: false !default;
 $lbwpTinyMceImageBreakpointMediumUp: "only screen and (min-width:40.063em)" !default; // greater than a mobile device (> 641px)
 
 // image alignment sizes
@@ -57,6 +59,12 @@ $lbwpTinyMceImageMarginTop: 0 !default;
 		.wp-caption-text {
 			@content;
 		}
+	}
+}
+
+@if $lbwpTinyMceImageUseDefaults {
+	.lbwp-editor-content {
+		@include lbwpClearfix;
 	}
 }
 

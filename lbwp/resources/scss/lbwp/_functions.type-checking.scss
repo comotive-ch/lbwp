@@ -12,6 +12,14 @@
   @return type-of($value) == 'map';
 }
 
+@function lbwpIsRelativeLength($value) {
+  @return lbwpIsNumber($value) and index('em' 'ex' 'ch' 'rem' 'vw' 'vh' 'vmin' 'vmax', unit($value)) != null;
+}
+
+@function lbwpIsAbsoluteLength($value) {
+  @return lbwpIsNumber($value) and index('cm' 'mm' 'in' 'px' 'pt' 'pc', unit($value)) != null;
+}
+
 /*
 TODO rename functions with lbwp prefix
 @function is-time($value) {
@@ -32,14 +40,6 @@ TODO rename functions with lbwp prefix
 
 @function is-integer($value) {
   @return is-number($value) and round($value) == $value;
-}
-
-@function is-relative-length($value) {
-  @return is-number($value) and index('em' 'ex' 'ch' 'rem' 'vw' 'vh' 'vmin' 'vmax', unit($value)) != null;
-}
-
-@function is-absolute-length($value) {
-  @return is-number($value) and index('cm' 'mm' 'in' 'px' 'pt' 'pc', unit($value)) != null;
 }
 
 @function is-percentage($value) {

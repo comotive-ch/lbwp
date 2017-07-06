@@ -38,8 +38,13 @@ class RestApi
       }
 
       // Add an unrendered excerpt
-      if (isset($config['excerpt_unrendered'])) {
-        RestApi::addUnrenderedExcerpt($config['excerpt_unrendered']);
+      if (isset($config['unrendered_content'])) {
+        RestApi::addUnrenderedContent();
+      }
+
+      // Prints certain taxonomies as full object lists
+      if (isset($config['taxonomy_objects'])) {
+        RestApi::addTaxonomyObjects($config['taxonomy_objects']);
       }
 
       // Handle all sorts of specific http headers
@@ -57,10 +62,10 @@ class RestApi
    */
   protected function handleHttpHeaders($config)
   {
-    // Add specific or wildcard cors header
+    // Add wildcard cors header
     if (isset($config['cors_header'])) {
-      if (is_array($config['cors_header'])) {
-        header('Access-Control-Allow-Origin: ' . implode(', ', $config['cors_header']));
+      if ($config['cors_header'] !== true) {
+        header('Access-Control-Allow-Origin: ' . $config['cors_header']);
       } else {
         header('Access-Control-Allow-Origin: *');
       }
@@ -100,25 +105,42 @@ class RestApi
   /**
    * Adds various types of unrendered excerpts without html
    */
-  protected static function addUnrenderedExcerpt($type)
+  protected static function addUnrenderedContent()
   {
-    register_rest_field('post', 'excerpt', array(
-      'get_callback' => function($post) use ($type) {
-        $unrendered = '';
-        $postObject = get_post($post['id']);
-        // By type, decide what to actually render
-        switch ($type) {
-          case 'field':
-          default:
-            $unrendered = strip_tags($postObject->post_excerpt);
-            break;
+    foreach (array('title', 'excerpt', 'content') as $field) {
+      register_rest_field('post', $field, array(
+        'get_callback' => function($post) use ($field) {
+          return array_merge($post[$field], array(
+            'unrendered' => trim(strip_tags($post[$field]['rendered']))
+          ));
         }
+      ));
+    }
+  }
 
-        return array_merge($post['excerpt'], array(
-          'unrendered' => $unrendered
-        ));
-      }
-    ));
+  /**
+   * Add meaningful taxonomy objects for the post
+   * @param array $taxonomies list of taxonomies
+   */
+  protected static function addTaxonomyObjects($taxonomies)
+  {
+    foreach ($taxonomies as $taxonomy) {
+      register_rest_field('post', $taxonomy  . '_objects', array(
+        'get_callback' => function($post) use ($taxonomy) {
+          $objects = array();
+          foreach (wp_get_post_terms($post['id'], $taxonomy) as $term) {
+            $objects[] = array(
+              'id' => $term->term_id,
+              'name' => $term->name,
+              'url' => get_term_link($term->term_id, $taxonomy)
+            );
+          }
+
+          // Add this to the main array and return it
+          return $objects;
+        }
+      ));
+    }
   }
 
   /**

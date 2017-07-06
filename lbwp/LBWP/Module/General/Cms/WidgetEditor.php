@@ -58,7 +58,7 @@ class WidgetEditor extends BaseSingleton
     wp_editor('', 'widgetEditor');
     echo '
         <div class="buttons">
-          <a class="widget-editor-save button-primary">' . __('Speichern', 'lbwp') . '</a>
+          <a class="widget-editor-save button-primary">' . __('Übernehmen', 'lbwp') . '</a>
           <a class="widget-editor-close button">' . __('Schliessen', 'lbwp') . '</a>
         </div>
       </div>

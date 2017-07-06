@@ -117,13 +117,16 @@ var SimpleFancyBox = {
 		var parent = image.parent();
 		// see if the parent is a link tag
 		if (parent.prop('tagName').toLowerCase() == 'a') {
-			// see if the link is another image
-			var ext = parent.attr('href').split('.').pop().toLowerCase();
-			if (!parent.hasClass('auto-fancybox') && (ext == 'jpg' || ext == 'jpeg' || ext == 'gif' || ext == 'png')) {
-				parent.addClass('auto-fancybox');
-				// If there is no grouping attribute, add it as defined
-				if (typeof(parent.attr('rel')) == 'undefined') {
-					parent.attr('rel', group);
+			var href = parent.attr('href');
+			if (typeof(href) == 'string') {
+				// see if the link is another image
+				var ext = href.split('.').pop().toLowerCase();
+				if (!parent.hasClass('auto-fancybox') && (ext == 'jpg' || ext == 'jpeg' || ext == 'gif' || ext == 'png')) {
+					parent.addClass('auto-fancybox');
+					// If there is no grouping attribute, add it as defined
+					if (typeof(parent.attr('rel')) == 'undefined') {
+						parent.attr('rel', group);
+					}
 				}
 			}
 		}

@@ -235,7 +235,7 @@ class WordPress
    * @param bool $addDots add dots if text ist cutted
    * @return mixed|void html
    */
-  public static function getConfigurableExcerpt($id, $length, $more, $force_more = false, $addDots = false)
+  public static function getConfigurableExcerpt($id, $length, $more, $force_more = false, $addDots = false, $dots = '... ')
   {
     $done_more = false;
     $post = get_post($id);
@@ -259,7 +259,7 @@ class WordPress
           array_pop($words);
           $text = implode(' ', $words);
           if ($addDots) {
-            $text .= '... ';
+            $text .= $dots;
           }
           $text .= $more;
           $done_more = true;

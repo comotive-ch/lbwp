@@ -88,12 +88,9 @@ class FormEditor extends Base
     add_action('admin_enqueue_scripts', array($this, 'preventJqueryUiLoading'));
 
     // Also load the CSS machine
-    $baseUrl = File::getResourceUri() . '/css/form-editor';
-    wp_enqueue_style('lbwp-form-editor-css', $baseUrl . '/app.css', array(), LbwpCore::REVISION);
-
-    // Special handling for frontend html
-    add_action('admin_footer', array($this->core->getFormHandler(), 'addAssetReplaceable'));
-    $this->core->getFormHandler()->addFormAssets();
+    $baseUrl = File::getResourceUri() . '/css';
+    wp_enqueue_style('lbwp-form-editor-css', $baseUrl . '/form-editor/app.css', array(), LbwpCore::REVISION);
+    wp_enqueue_style('lbwp-form-css', $baseUrl . '/lbwp-form-frontend.css', array(), LbwpCore::REVISION);
   }
 
   /**

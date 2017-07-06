@@ -76,9 +76,14 @@ class EventType extends Base
     $helper->addMetabox('event-subscribe', 'Anmeldung zur Veranstaltung', 'normal');
     $helper->addCheckbox('subscribe-active', 'event-subscribe', 'Anmeldung per Formular ermöglichen');
     $helper->addDateTime('subscribe-end', 'event-subscribe', 'Anmeldeschluss');
-    $helper->addInputText('subscribe-email', 'event-subscribe', 'E-Mail-Empfänger der Anmeldungen');
+    $helper->addInputText('subscribe-email', 'event-subscribe', 'E-Mail-Empfänger der Anmeldungen', array(
+      'description' => '
+        Es wird automatisch eine E-Mail an sie, den Veranstalter geschickt. Die E-Mail enthält alle Daten zum Event sowie die Formular-Daten.<br>
+        Wenn Sie eine Bestätigung an den Teilnehmer senden wollen, kann dies als Aktion im verknüpften Anmeldeformular hinterlegt werden.
+      '
+    ));
     // Create a dropdown of all forms that can be used as template
-    $helper->addDropdown('subscribe-form-id', 'event-subscribe', 'Formular', array(
+    $helper->addDropdown('subscribe-form-id', 'event-subscribe', 'Anmeldeformular', array(
       'items' => $this->getFormDropdownItems(),
       'description' => 'Anmeldeforumlare können unter "Forumlare" erstellt und konfiguriert werden.'
     ));

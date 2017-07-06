@@ -209,19 +209,30 @@ body .mbh-type-dropdown-inline {
 }
 
 #metaboxHelperContainer {
+	display: none;
 	position:fixed;
-	top: 0;
+	top: 50px;
 	right: 0;
 	left: 0;
-	bottom: -10000px;
+	bottom: 20px;
 	width:80%;
-	height:800px;
 	margin: auto;
 	z-index:10010;
 	/* styling of the box */
 	border:1px solid #333;
 	padding:0px;
 	background-color:#F1F1F1;
+	& > iframe {
+		height: 100%;
+		body {
+			padding-bottom: 100px;
+		}
+	}
+}
+
+// Quick (and dirty): Platz machen für das Chosen Dropdown am Ende des Iframes (im Modal)
+body.modal-backend.post-type-onepager-item #wpwrap {
+	padding-bottom: 200px;
 }
 
 #metaboxHelperContainer .dashicons-no-alt {

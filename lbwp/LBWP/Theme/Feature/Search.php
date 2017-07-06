@@ -3,8 +3,6 @@
 namespace LBWP\Theme\Feature;
 
 use LBWP\Core as LbwpCore;
-use LBWP\Module\Frontend\HTMLCache;
-use LBWP\Util\ArrayManipulation;
 use LBWP\Util\File;
 use LBWP\Util\Multilang;
 use LBWP\Util\Strings;

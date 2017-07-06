@@ -142,10 +142,6 @@ class FormHandler extends Base
    */
   const ALLOWED_TAGS = '<h1><h2><h3><h4><h5><p><div><span><strong><em><a>';
   /**
-   * @var string html comment to be replaced with the assets
-   */
-  const ASSET_REPLACEABLE = '<!--lbwp-form-assets-->';
-  /**
    * @var string after submit cookie prefix
    */
   const AFTER_SUBMIT_COOKIE_PREFIX = 'lbwp_form_after_submit_';
@@ -158,8 +154,6 @@ class FormHandler extends Base
     if (is_admin()) {
       // Execute actions while saving
       add_action('save_post_' . Posttype::FORM_SLUG, array($this, 'saveForm'));
-    } else {
-      add_action('wp_head', array($this, 'addAssetReplaceable'));
     }
 
     // Shortcodes need to be executed in backend too for saving purposes
@@ -823,30 +817,14 @@ class FormHandler extends Base
       return '';
     }
 
-    add_filter('output_buffer', function($html) {
-      // Now try to get the resources
-      $cacheKey = 'addFormAssets_' . LbwpCore::REVISION;
-      $resources = wp_cache_get($cacheKey, 'FormHandler');
-
-      if ($resources === false || defined('LOCAL_DEVELOPMENT')) {
-        // Inline print the resources
-        $resources = '
-          <style type="text/css">
-            ' . file_get_contents(File::getResourcePath() . '/css/lbwp-form-frontend.css') . '
-          </style>
-          <script type="text/javascript">
-            ' . file_get_contents(File::getResourcePath() . '/js/lbwp-form-frontend.js') . '
-            ' . file_get_contents(File::getResourcePath() . '/js/lbwp-form-validate.js') . '
-          </script>
-        ';
-
-        // Save to cache for the next time
-        wp_cache_set($cacheKey, $resources, 'FormHandler', 86400);
-      }
-
-      return str_replace(FormHandler::ASSET_REPLACEABLE, $resources, $html);
+    // Add the frontend JS in footer
+    $uri = File::getResourceUri();
+    wp_enqueue_script('lbwp-form-frontend', $uri . '/js/lbwp-form-frontend.js', array('jquery'), LbwpCore::REVISION, true);
+    wp_enqueue_script('lbwp-form-validate', $uri . '/js/lbwp-form-validate.js', array('jquery'), LbwpCore::REVISION, true);
+    // Add the CSS to top
+    add_filter('add_late_head_content', function($html) use ($uri) {
+      return $html . '<link rel="stylesheet" href="' . $uri . '/css/lbwp-form-frontend.css?ver=' . LbwpCore::REVISION . '" />' . PHP_EOL;
     });
-
 
     // Set as printed once
     $this->addedAssets = true;
@@ -915,14 +893,6 @@ class FormHandler extends Base
       implode(PHP_EOL, $fields) . '[/' . self::SHORTCODE_FORM . ']',
       $shortcode
     );
-  }
-
-  /**
-   * Adds a html comment to be replaced by output buffering
-   */
-  public function addAssetReplaceable()
-  {
-    echo self::ASSET_REPLACEABLE;
   }
 
   /**

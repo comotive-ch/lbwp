@@ -145,6 +145,11 @@ class Implementation extends Base implements Definition
   {
     // Grab lists from API
     $html = '';
+    // Check if api is ready
+    if (!$this->api instanceof LocalMailService) {
+      return array();
+    }
+
     $lists = $this->api->getLists();
     $currentListId = $this->getSetting($fieldKey);
     $selectedKeys = ArrayManipulation::forceArrayAndInclude($selectedKeys);
