@@ -1,4 +1,5 @@
 @import "functions.type-checking";
+//@import "functions.lists";
 
 /// Triangle helper mixin
 /// @author Hugo Giraudel
@@ -49,9 +50,10 @@
 	$delayedDisplay: false,
 	$displayTransition: 0
 ) {
-	.lbwp-focuspoint-container {
-		padding-bottom: $ratioInPercent;
-	}
+	// Set ratio
+	@include lbwpFocusPointRatio($ratioInPercent);
+
+	// Set display options
 	.lbwp-focuspoint {
 		@if ($delayedDisplay == true) {
 			img {
@@ -64,6 +66,14 @@
 				}
 			}
 		}
+	}
+}
+
+///	Ratio for focuspoint images
+/// @param {percent} $ratioInPercent - Ratio in percent
+@mixin lbwpFocusPointRatio($ratioInPercent:56.25%) {
+	.lbwp-focuspoint-container {
+		padding-bottom: $ratioInPercent;
 	}
 }
 
@@ -265,7 +275,7 @@
 
 @mixin lbwpClearfix() {
 	&:after {
-		@include lbwp-clearfix-pseudoele();
+		@include lbwpClearfixPseudoele;
 	}
 }
 

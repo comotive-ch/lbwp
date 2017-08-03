@@ -93,7 +93,7 @@ class Shortcode extends Base
    * @param int $listId id of the list
    * @return \WP_Post[] post elements assigned to the list
    */
-  protected function getListItems($listId)
+  public function getListItems($listId)
   {
     $metaKey = CrossReference::getKey(Posttype::TYPE_LIST, Posttype::TYPE_ITEM);
     return CrossReference::getListItems($listId, $metaKey);

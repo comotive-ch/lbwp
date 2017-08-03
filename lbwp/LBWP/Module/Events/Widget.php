@@ -89,6 +89,9 @@ class Widget extends \WP_Widget
       }
     } else {
       $html .= wpautop($instance['noCurrentEvents']);
+      if ($instance['show_link_no_events'] && intval($instance['pageId']) > 0) {
+        $html .= '<p><a href="' . get_permalink($instance['pageId']) . '?dpe=1">' . __('Alle Events anzeigen', 'lbwp') . '</a></p>';
+      }
     }
 
     return $html;
@@ -112,6 +115,7 @@ class Widget extends \WP_Widget
     else
       $instance['text'] = stripslashes(wp_filter_post_kses(addslashes($new_instance['text']))); // wp_filter_post_kses() expects slashed
     $instance['filter'] = isset($new_instance['filter']);
+    $instance['show_link_no_events'] = isset($new_instance['show_link_no_events']);
     return $instance;
   }
 
@@ -164,6 +168,9 @@ class Widget extends \WP_Widget
       ));
       ?>
     </p>
+    <p><input id="<?php echo $this->get_field_id('show_link_no_events'); ?>" name="<?php echo $this->get_field_name('show_link_no_events'); ?>"
+         type="checkbox" <?php checked(isset($instance['show_link_no_events']) ? $instance['show_link_no_events'] : 0); ?> />&nbsp;<label
+         for="<?php echo $this->get_field_id('show_link_no_events'); ?>">Link anzeigen, wenn es keine künftigen Events gibt</label></p>
     <?php
   }
 }

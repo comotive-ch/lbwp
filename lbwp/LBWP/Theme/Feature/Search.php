@@ -71,7 +71,7 @@ class Search
   /**
    * @param array $config override API config
    */
-  public static function setApiConfig($config)
+  public static function setApiConfig($config = array())
   {
     self::$apiConf = array_merge(self::$apiConf, self::getDefaultTexts(), $config);
     // Register the api function to be called from printed scripts

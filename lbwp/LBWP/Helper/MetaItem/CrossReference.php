@@ -51,6 +51,14 @@ class CrossReference
       'post_status' => 'any'
     );
 
+    // Override query variables, if needed
+    if (isset($args['query_orderby'])) {
+      $query['orderby'] = $args['query_orderby'];
+    }
+    if (isset($args['query_order'])) {
+      $query['order'] = $args['query_order'];
+    }
+
     // Set a specific or all languages, if needed
     if (isset($args['language'])) {
       $query['lang'] = $args['language'];

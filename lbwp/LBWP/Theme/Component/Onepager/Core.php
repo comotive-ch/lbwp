@@ -135,7 +135,7 @@ abstract class Core extends BaseComponent
     // Execute item metaboxes, if an item admin is displayed
     add_action('admin_init', array($this, 'executeItemMetaboxes'));
     add_action('save_post', array($this, 'executeItemMetaboxes'));
-    add_action('save_post_page', array($this, 'addAutoTemplate'));
+    add_action('save_post', array($this, 'addAutoTemplate'));
   }
 
   /**

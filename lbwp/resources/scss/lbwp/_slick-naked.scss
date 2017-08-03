@@ -1,5 +1,5 @@
 // SCSS component
-// Component «SearchApi»
+// Component «slick slider»
 // «LBWP» by comotive
 // www.comotive.ch
 
@@ -38,18 +38,19 @@
 }
 
 @mixin lbwpSlickArrowDefaults() {
-		.slick-arrow {
-    font-size: 0;
-    line-height: 0;
-    position: absolute;
-    top: 50%;
-    display: block;
-    padding: 0;
+	.slick-arrow {
+		font-size: 0;
+		line-height: 0;
+		position: absolute;
+		top: 50%;
+		display: block;
+		padding: 0;
 		@include transform(translate(0, -50%));
-    cursor: pointer;
-    border: none;
-    outline: none;
+		cursor: pointer;
+		border: none;
+		outline: none;
 		z-index: 1;
+		@content;
 	}
 	.slick-next {
 		right: 0;

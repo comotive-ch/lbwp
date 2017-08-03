@@ -70,6 +70,7 @@ class WidgetDropdownFormField extends AbstractFormField
         'multiple' => $multiple,
         'value' => $value,
         'itemsCallback' => $itemsCallback,
+        'items' => $this->getOption('items'),
         'widgetInstance' => $instance,
       );
 

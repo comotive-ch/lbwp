@@ -227,4 +227,42 @@ class ArrayManipulation
     }
     return $returnArray;
   }
+
+  /**
+   * Can be used in usort and uksort, orders posts array by their publish date
+   * @param \WP_Post $p1 the left post
+   * @param \WP_Post $p2 the right post
+   */
+  public static function sortByPostDateDesc($p1, $p2)
+  {
+    // Get the times first, most efficient way with out library
+    $pd1 = Date::getStamp(Date::SQL_DATETIME, $p1->post_date);
+    $pd2 = Date::getStamp(Date::SQL_DATETIME, $p2->post_date);
+    // Do the comparison
+    if ($pd1 > $pd2) {
+      return -1;
+    } else if ($pd1 < $pd2) {
+      return 1;
+    }
+    return 0;
+  }
+
+  /**
+   * Can be used in usort and uksort, orders posts array by their publish date
+   * @param \WP_Post $p1 the left post
+   * @param \WP_Post $p2 the right post
+   */
+  public static function sortByPostDateAsc($p1, $p2)
+  {
+    // Get the times first, most efficient way with out library
+    $pd1 = Date::getStamp(Date::SQL_DATETIME, $p1->post_date);
+    $pd2 = Date::getStamp(Date::SQL_DATETIME, $p2->post_date);
+    // Do the comparison
+    if ($pd1 > $pd2) {
+      return -1;
+    } else if ($pd1 < $pd2) {
+      return 1;
+    }
+    return 0;
+  }
 } 

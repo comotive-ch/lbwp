@@ -190,7 +190,7 @@ class SendMail extends Base
     }
 
     // Check for mass mail signature
-    WordPress::checkSignature('massmail', 30, 15, 1800);
+    WordPress::checkSignature('massmail', 30, 25, 1800);
 
     // Send and assume it worked
     $mail->Send();

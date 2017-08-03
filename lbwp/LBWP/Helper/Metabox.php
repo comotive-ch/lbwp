@@ -120,6 +120,15 @@ class Metabox
   }
 
   /**
+   * Remove a registered but not yet displayed metabox
+   * @param string $id the id of the metabox
+   */
+  public function removeMetabox($id)
+  {
+    unset($this->metaboxes[$id]);
+  }
+
+  /**
    * Actually add the registered metaboxes
    */
   public function addMetaboxes()

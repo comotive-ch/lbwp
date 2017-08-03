@@ -255,7 +255,7 @@ class CleanUp extends \LBWP\Module\Base
    */
   public function preventMassMail($phpMailer)
   {
-    WordPress::checkSignature('massmail', 60, 20, 3600);
+    WordPress::checkSignature('massmail', 60, 40, 3600);
   }
 
   /**
@@ -264,7 +264,7 @@ class CleanUp extends \LBWP\Module\Base
   public function preventMass404()
   {
     if (is_404() && !is_user_logged_in()) {
-      WordPress::checkSignature('mass404', 30, 10, 3600);
+      WordPress::checkSignature('mass404', 30, 20, 3600);
     }
   }
 

@@ -44,6 +44,8 @@ var LbwpResponsiveIframes = {
 
 // Init, override config and start class
 jQuery(function() {
-	LbwpResponsiveIframes.Config = lbwpResponsiveIframeConfig;
-	LbwpResponsiveIframes.initialize();
+	if (typeof(lbwpResponsiveIframeConfig) != 'undefined') {
+		LbwpResponsiveIframes.Config = lbwpResponsiveIframeConfig;
+		LbwpResponsiveIframes.initialize();
+	}
 });

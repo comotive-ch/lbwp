@@ -90,7 +90,6 @@ class CommentForm
       'comment_notes_after' => '<p class="form-allowed-tags">' . sprintf(__('You may use these <abbr title="HyperText Markup Language">HTML</abbr> tags and attributes: %s'), ' <code>' . allowed_tags() . '</code>') . '</p>',
       'id_form' => 'commentform',
       'id_submit' => 'submit',
-
       'title_reply' => __('Leave a Reply'),
       'title_reply_to' => __('Leave a Reply to %s'),
       'cancel_reply_link' => __('Cancel reply'),
@@ -101,11 +100,17 @@ class CommentForm
       'comment' => __('Kommentar', $this->textDomain),
       // Our own settings
       'disableField_Website' => false,
-      'addRequiredField' => false
+      'addRequiredField' => false,
+      'successMessage' => __('Vielen Dank für Ihren Kommentar. Wir werden diesen in Kürze überprüfen und freischalten.', 'lbwp')
     );
 
     $args = wp_parse_args($args, apply_filters('comment_form_defaults', $defaults));
     $args = apply_filters('comment_form_fix_fields', $args);
+
+    // Display a general success message
+    if (isset($_SESSION['avoidCacheTimed']) && strlen($args['successMessage']) > 0) {
+      echo '<p class="comment-notes">' . $args['successMessage'] . '</p>';
+    }
 
     // Display the title and text above form
     echo $args['title'];
@@ -130,7 +135,7 @@ class CommentForm
 
     // The comment field itself
     $fields[] = '[lbwp:formItem key="textarea" id="comment" pflichtfeld="ja" feldname="' . $args['comment'] . '" rows="8"]';
-    // The calculation (not working at the moment
+    // The calculation (not working at the moment)
     //$fields[] = '[lbwp:formItem key="calculation" pflichtfeld="ja" feldname="Rechnung"]';
 
     // Generate form with all additional items

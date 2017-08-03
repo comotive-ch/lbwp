@@ -127,16 +127,17 @@ class Strings
    * @param bool $addDots Am Ende drei Punkte (Nie, wenn letztes zeichen ein Punkt ist)
    * @param string $dots the dots to use
    * @param int $maxLength maximum length
+   * @param string $eolReplace replacement for EOL chars
    * @return string the chopped string
    */
-  public static function chopToWords($sString, $nWords, $addDots = false, $dots = '...', $maxLength = 0)
+  public static function chopToWords($sString, $nWords, $addDots = false, $dots = '...', $maxLength = 0, $eolReplace = '')
   {
     // In Wörter Teilen und bis zum maximum oder array Ende wieder zusammenführen
     $sNewString = '';
     $count = 0;
     $chopped = false;
     // Sanitize the string a little
-    $sString = str_replace(PHP_EOL, '', $sString);
+    $sString = str_replace(PHP_EOL, $eolReplace, $sString);
     $sString = str_replace('  ', ' ', $sString);
     $words = explode(' ', $sString);
     foreach ($words as $word) {
