@@ -48,6 +48,19 @@ class Multilang
   }
 
   /**
+   * @param string $field the field to get
+   * @return string|bool current language code
+   */
+  public static function getBackendLang($field = 'slug')
+  {
+    if (self::isActive()) {
+      return pll_current_language($field);
+    }
+
+    return false;
+  }
+
+  /**
    * @return string the default language
    */
   public static function getDefaultLang()

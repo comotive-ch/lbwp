@@ -41,6 +41,12 @@ class Buttons
       ),
       SocialApis::XING => array(
         'class' => '\LBWP\Theme\Feature\SocialShare\Button\Xing'
+      ),
+      SocialApis::PRINTBUTTON => array(
+        'class' => '\LBWP\Theme\Feature\SocialShare\Button\PrintButton'
+      ),
+      SocialApis::EMAIL => array(
+        'class' => '\LBWP\Theme\Feature\SocialShare\Button\Email'
       )
     ),
     // Button order (likely to be overridden)
@@ -60,7 +66,9 @@ class Buttons
     SocialApis::TWITTER => 'Twitter',
     SocialApis::LINKED_IN => 'LinkedIn',
     SocialApis::GOOGLE_PLUS => 'Google+',
-    SocialApis::XING => 'XING'
+    SocialApis::XING => 'XING',
+    SocialApis::PRINTBUTTON => 'Drucken',
+    SocialApis::EMAIL => 'E-Mail',
   );
   /**
    * @var string option name for settings

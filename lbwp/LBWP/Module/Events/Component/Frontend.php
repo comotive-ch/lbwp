@@ -88,6 +88,26 @@ class Frontend extends Base
   }
 
   /**
+   * @return array list of untimed events
+   */
+  public function getUntimedEvents()
+  {
+    $query = array(
+      'post_type' => EventType::EVENT_TYPE,
+      'post_status' => 'publish',
+      'posts_per_page' => -1,
+      'order' => 'ASC',
+      'meta_query' => array(array(
+        'key' => 'event-start',
+        'compare' => 'NOT EXISTS'
+      ))
+    );
+
+    // Add a meta query for from/to queriny
+    return get_posts($query);
+  }
+
+  /**
    * @param array $config the query config
    * @param int $year the year to look at (only that is supported right now
    * @return bool true, if there are future events (only year+1 supported)

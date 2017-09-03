@@ -450,11 +450,12 @@ class Implementation extends Base implements Definition
       'status' => 'pending'
     ));
 
-    // If member already exists, try a put command
+    // If member already exists, try a patch command
     if ($result['status'] == 400 && $result['title'] == MailChimpV3::ERROR_MEMBER_EXISTS) {
       $emailHash = md5(strtolower($email));
-      $this->getApi()->patch('lists/' . $listId . '/members/' . $emailHash, array(
+      $result = $this->getApi()->patch('lists/' . $listId . '/members/' . $emailHash, array(
         'email_address' => $email,
+        'status' => 'pending',
         'merge_fields' => $mergeVars
       ));
     }

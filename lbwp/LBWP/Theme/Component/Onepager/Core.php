@@ -7,6 +7,7 @@ use LBWP\Helper\MetaItem\PostTypeDropdown;
 use LBWP\Theme\Base\Component as BaseComponent;
 use LBWP\Theme\Component\Onepager\Item\Base as BaseItem;
 use LBWP\Util\Date;
+use LBWP\Util\Strings;
 use LBWP\Util\Templating;
 use LBWP\Util\WordPress;
 
@@ -105,6 +106,10 @@ abstract class Core extends BaseComponent
    */
   protected $displayedMenu = false;
   /**
+   * @var bool force unique slugs on one pager items
+   */
+  protected $forceUniqueSlugs = true;
+  /**
    * @var string can be overridden: If set, the page template is preselected automatically
    */
   protected $autoSetPageTemplate = '';
@@ -130,12 +135,14 @@ abstract class Core extends BaseComponent
     add_action('admin_init', array($this, 'addMetaboxes'));
     add_action('save_post', array($this, 'addMetaboxes'));
     add_action('wp_insert_post_data', array($this, 'filterPostContent'));
+    add_action('wp_insert_post_data', array($this, 'forceUniqueItemSlug'));
     add_action('mbh_addNewPostTypeItem', array($this, 'addTypeMetaInfo'), 10, 2);
     add_filter('mbh_addNewPostTypeItemHtmlCallback', array($this, 'getNewItemCallback'));
     // Execute item metaboxes, if an item admin is displayed
     add_action('admin_init', array($this, 'executeItemMetaboxes'));
     add_action('save_post', array($this, 'executeItemMetaboxes'));
     add_action('save_post', array($this, 'addAutoTemplate'));
+
   }
 
   /**
@@ -354,6 +361,20 @@ abstract class Core extends BaseComponent
       update_post_meta($postId, '_wp_page_template', $this->autoSetPageTemplate);
       update_post_meta($postId, 'automatically_set_template', true);
     }
+  }
+
+  /**
+   * @param array $data the post data
+   * @return array data array filtered
+   */
+  public function forceUniqueItemSlug($data)
+  {
+    // Only handle unique slugs for onepager items
+    if ($this->forceUniqueSlugs && $data['post_type'] == self::TYPE_SLUG && strlen($data['guid']) == 0) {
+      $data['post_name'] = str_replace('.', '-', uniqid('', true)) . '-' . strtolower(Strings::getRandom(6));
+    }
+
+    return $data;
   }
 
   /**

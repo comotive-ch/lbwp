@@ -203,6 +203,7 @@ class CmsFeatures extends \LBWP\Module\Base
   {
     $url = File::getResourceUri() . '';
     wp_register_script('jquery-mobile-events', $url . '/js/jquery-mobile-events.min.js', array('jquery'), LbwpCore::REVISION, true);
+    wp_register_script('jquery-multisort', $url . '/js/jquery.multisort.js', array('jquery'), LbwpCore::REVISION, true);
     wp_register_script('jquery-cookie', $url . '/js/jquery.cookie.js', array('jquery'), LbwpCore::REVISION, true);
     wp_register_script('lbwp-gallery-inline-fix', $url . '/js/lbwp-gallery-inline-fix.js', array('jquery'), LbwpCore::REVISION, true);
     wp_register_style('jquery-ui-theme-lbwp', $url . '/css/jquery.ui.theme.min.css', array(), LbwpCore::REVISION);

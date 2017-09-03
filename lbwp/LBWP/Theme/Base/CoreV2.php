@@ -301,6 +301,15 @@ abstract class CoreV2
   }
 
   /**
+   * Remove a component, mainly used in child themes
+   * @param string $namespacedClassName to be removed component
+   */
+  public function removeComponent($namespacedClassName)
+  {
+    unset($this->components[$namespacedClassName]);
+  }
+
+  /**
    * search for components by partial namespaced class name
    *
    * @param string $partialNamespacedClassname

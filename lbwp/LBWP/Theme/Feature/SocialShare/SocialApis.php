@@ -29,6 +29,8 @@ class SocialApis
   const GOOGLE_PLUS = 'googleplus';
   const LINKED_IN = 'linkedin';
   const XING = 'xing';
+  const PRINTBUTTON = 'printButton';
+  const EMAIL = 'email';
   /**
    * @var string additional constants
    */

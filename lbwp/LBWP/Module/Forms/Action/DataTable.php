@@ -366,6 +366,7 @@ class DataTable extends Base
     $config['from'] = current_time('timestamp');
     $config['to'] = $config['from'] + (86400 * 180);
     $events = $frontend->queryEvents($config);
+    $events = array_merge($events, $frontend->getUntimedEvents());
 
     foreach ($events as $event) {
       $values[$event->ID] = $event->post_title;

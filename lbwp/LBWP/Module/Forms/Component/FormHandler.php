@@ -231,12 +231,14 @@ class FormHandler extends Base
       $customAction = ' action="' . $args['external_action_url'] . '"';
     }
 
-    // If there is an after_submit, close the form after one submission
-    if (isset($args['after_submit']) && strlen($args['after_submit']) > 0 && $this->hasSubmissionCookie($formDisplayId)) {
-      // Don't cache the page, as this is user specific
-      HTMLCache::avoidCache();
-      $message = $args['after_submit'];
-      $displayForm = false;
+    // If there is an after_submit, close the form after one submission, but only if the user is not editing
+    if (!isset($_GET['tsid']) || strlen($_GET['tsid']) == 0) {
+      if (isset($args['after_submit']) && strlen($args['after_submit']) > 0 && $this->hasSubmissionCookie($formDisplayId)) {
+        // Don't cache the page, as this is user specific
+        HTMLCache::avoidCache();
+        $message = $args['after_submit'];
+        $displayForm = false;
+      }
     }
 
     // Add a message, if available

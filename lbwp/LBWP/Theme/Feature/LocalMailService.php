@@ -13,7 +13,10 @@ use LBWP\Util\External;
 use LBWP\Util\File;
 use LBWP\Util\Strings;
 use LBWP\Util\WordPress;
+use LBWP\Util\Multilang;
 use LBWP\Newsletter\Core as NLCore;
+use LBWP\Newsletter\Service\LocalMail\Implementation as ServiceImplementation;
+use LBWP\Core as LbwpCore;
 
 /**
  * Provides the service for local mail sending in a theme
@@ -82,9 +85,11 @@ class LocalMailService
    */
   public static function init($options = array())
   {
-    self::$initialized = true;
-    self::$instance = new LocalMailService($options);
-    self::$instance->initialize();
+    if (LbwpCore::isModuleActive('NewsletterBase')) {
+      self::$initialized = true;
+      self::$instance = new LocalMailService($options);
+      self::$instance->initialize();
+    }
   }
 
   /**
@@ -100,14 +105,59 @@ class LocalMailService
    */
   public function initialize()
   {
-    add_action('init', array($this, 'registerType'));
+    $newsletter = NLCore::getInstance();
     add_action('wp', array($this, 'handleUnsubscribe'));
-    add_action('admin_init', array($this, 'addMetaboxes'));
-    add_action('save_post_' . self::LIST_TYPE_NAME, array($this, 'addMetaboxes'));
-    add_filter('lbwpFormActions', array(NLCore::getInstance(), 'addFormActions'));
-    add_action('cron_job_localmail_sending', array($this, 'tryAndSendMails'));
-    add_filter('standard-theme-modify-data', array($this, 'replaceDefaultVariables'));
-    add_filter('cs_wordpress_filter_post_data', array($this, 'filterEventNewsletterItem'), 10, 3);
+    // Only register these, if needed
+    if ($newsletter->getService() instanceof ServiceImplementation) {
+      add_filter('lbwpFormActions', array($newsletter, 'addFormActions'));
+      add_action('cron_job_localmail_sending', array($this, 'tryAndSendMails'));
+      add_action('init', array($this, 'registerType'));
+      add_action('admin_init', array($this, 'addMetaboxes'));
+      add_action('save_post_' . self::LIST_TYPE_NAME, array($this, 'addMetaboxes'));
+      add_filter('standard-theme-modify-data', array($this, 'replaceDefaultVariables'));
+      add_filter('cs_wordpress_filter_post_data', array($this, 'filterEventNewsletterItem'), 10, 3);
+    }
+
+    // If configured, provide a UI to display unsubscribe url settings, and filter them into our config
+    if ($this->config['useDynamicUnsubscribeUrls']) {
+      add_action('customize_register', array($this, 'addCustomizerSettings'));
+      $this->setDynamicUnsubscribeUrls();
+    }
+  }
+
+  /**
+   * Add various configurations to theme
+   * @param \WP_Customize_Manager $customizer the customizer
+   */
+  public function addCustomizerSettings($customizer)
+  {
+    // Options
+    $customizer->add_section('section_localmail', array(
+      'title' => 'Lokaler Mailversand'
+    ));
+    $customizer->add_setting('unsubscribe_page_id', array(
+      'default' => 0,
+      'sanitize_callback' => array($this, 'sanitizePageId'),
+    ));
+    $customizer->add_control('unsubscribe_page_id', array(
+      'type' => 'dropdown-pages',
+      'section' => 'section_localmail',
+      'label' => 'Abmeldeseite',
+      'description' => 'Seite auf der jemand landet, der sich vom Newsletter abmeldet',
+    ));
+  }
+
+  /**
+   * @param int $pageId
+   * @param \stdClass $setting
+   * @return int sanitized setting value
+   */
+  public function sanitizePageId($pageId, $setting)
+  {
+    // Ensure $input is an absolute integer.
+    $page_id = absint($pageId);
+    // If $page_id is an ID of a published page, return it; otherwise, return the default.
+    return ('publish' == get_post_status($pageId) ? $pageId : $setting->default);
   }
 
   /**
@@ -289,15 +339,28 @@ class LocalMailService
    */
   public function getListData($listId)
   {
+    $data = array();
     switch (get_post_meta($listId, 'list-type', true))
     {
       case 'dynamic':
         $key = get_post_meta($listId, 'config-key', true);
-        return apply_filters('Lbwp_LMS_Data_' . $key, array(), $listId);
+        $data = apply_filters('Lbwp_LMS_Data_' . $key, array(), $listId);
+        break;
       case 'static':
       default:
-        return ArrayManipulation::forceArray(get_post_meta($listId, 'list-data', true));
+        $data = ArrayManipulation::forceArray(get_post_meta($listId, 'list-data', true));
+        break;
     }
+
+    // Make sure to not use integer ids, but email hashes for best compat to other features
+    foreach ($data as $key => $record) {
+      if (is_numeric($key) && isset($record['email']) && strlen($record['email']) > 0) {
+        $data[md5($record['email'])] = $record;
+        unset($data[$key]);
+      }
+    }
+
+    return $data;
   }
 
   /**
@@ -711,6 +774,26 @@ class LocalMailService
   {
     $unsubscribeCode = $memberId . '-' . md5($this->config['unsubscribeSalt'] . $memberId) . '-' . $listId;
     return $this->config['unsubscribeUrl_' . $language] . '?lm_unsub=' . $unsubscribeCode;
+  }
+
+  /**
+   * Sets the dynamic urls to our unsubscribe url scheme in config
+   */
+  protected function setDynamicUnsubscribeUrls()
+  {
+    $pageId = intval(get_theme_mod('unsubscribe_page_id'));
+
+    // If multilang, maybe get a translation of that page, depending on current language
+    if (Multilang::isActive()) {
+      foreach (Multilang::getAllLanguages() as $language) {
+        if ($language != Multilang::getPostLang($pageId)) {
+          $pageId = Multilang::getPostIdInLang($pageId, $language);
+        }
+        $this->config['unsubscribeUrl_' . $language] = get_permalink($pageId);
+      }
+    } else {
+      $this->config['unsubscribeUrl_de'] = get_permalink($pageId);
+    }
   }
 
   /**

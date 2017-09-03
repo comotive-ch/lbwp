@@ -83,7 +83,7 @@ class PostTypeDropdown
     }
 
     // Allow new item link and UI if only one post type
-    if (count($types) == 1) {
+    if (count($types) == 1 && !isset($args['hide_new_item_box'])) {
       $args['newItem'] = array(
         'title' => $typeObject->labels->add_new_item,
         'containerClass' => 'new-post-type-element',

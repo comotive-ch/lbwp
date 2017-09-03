@@ -59,7 +59,7 @@
 			img {
 				@include opacity(0);
 				@if (type-of($displayTransition) == 'number') and ($displayTransition > 0) {
-					@include transition(opacity #{$displayTransition}s ease-in-out);
+					@include transition(unquote("opacity #{$displayTransition}#{s ease-in-out}"));
 				}
 				&[style] {
 					@include opacity(1);
