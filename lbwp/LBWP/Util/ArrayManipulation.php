@@ -114,6 +114,19 @@ class ArrayManipulation
   }
 
   /**
+   * @param mixed $value can be an array or any other type
+   * @return mixed always the value or the first element in the array of value
+   */
+  public static function forceSingleValue($value)
+  {
+    if (is_array($value) && count($value) > 0) {
+      return $value[0];
+    }
+
+    return $value;
+  }
+
+  /**
    * @param $array
    * @param array $params
    * @param callable $method
@@ -264,5 +277,22 @@ class ArrayManipulation
       return 1;
     }
     return 0;
+  }
+
+  /**
+   * @param \stdClass[] $terms list of terms
+   * @param string $field name, slug, term_id
+   * @return array of single strings fromt he $field param
+   */
+  public static function getSimpleTermList($terms, $field)
+  {
+    $list = array();
+    if (is_array($terms)) {
+      foreach ($terms as $term) {
+        $list[] = $term->{$field};
+      }
+    }
+
+    return $list;
   }
 } 

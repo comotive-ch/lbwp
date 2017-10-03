@@ -154,10 +154,12 @@ class PostDuplicate extends \LBWP\Module\Base
       update_post_meta($newPostId, $k, $v);
     }
 
-    do_action('after_duplicate_' . $post['post_type'], $postId, $newPostId);
-
     // Clean the cache for this post (Since we changed the db directly)
     clean_post_cache($newPostId);
+
+    // Let developers and other modules do their stuff
+    do_action('after_post_duplicate', $postId, $newPostId, $post['post_type']);
+    do_action('after_duplicate_' . $post['post_type'], $postId, $newPostId);
 
     // Send back to the original page
     wp_redirect(admin_url('post.php?action=edit&post=' . $newPostId));

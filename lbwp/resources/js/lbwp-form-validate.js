@@ -10,7 +10,7 @@
 		var form = this;
 		var val = {};
 		var edits = typeof edits == "object" ? edits : {}; // checks if edits is set as an object else generates an empty object
-		var correctAll = "date, email, number, range, tel, time, url, text"; // all form input types
+		var correctAll = "date, email, number, range, tel, time, url, text, password"; // all form input types
 		var settings = { // Set default settings
 			defaultText: "Füllen Sie bitte das Feld korrekt aus",
 			elem: { // Different form elements
@@ -179,6 +179,7 @@
 					validField = vNumber(this);
 					break;
 				case "text":
+				case "password":
 					validField = vText(this);
 					break;
 				case "url":

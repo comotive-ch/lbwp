@@ -5,6 +5,7 @@ namespace LBWP\Theme\Feature;
 use LBWP\Util\File;
 use LBWP\Util\Strings;
 use LBWP\Core as LbwpCore;
+use LBWP\Util\WordPress;
 
 /**
  * Allows to have a (multi)sort interface for all type objects
@@ -61,6 +62,7 @@ class SortableTypes
     if (is_admin()) {
       // Provide the actual menu items (all with same callback)
       add_action('admin_menu', array($this, 'addSortingMenus'), 50);
+      add_action('wp_ajax_save_post_type_order', array($this, 'saveItemOrder'));
 
       // If we are on the actual sorting page, include some libraries
       if (isset($_GET['page']) && Strings::startsWith($_GET['page'], self::PAGE_PREFIX)) {
@@ -74,6 +76,31 @@ class SortableTypes
         wp_enqueue_script('sortable-types-js', $path, array('jquery-multisort'), LbwpCore::REVISION);
       }
     }
+  }
+
+  /**
+   * Saves a package of items and their respecting new order
+   */
+  public function saveItemOrder()
+  {
+    if (isset($_POST['packages']) && is_array($_POST['packages'])) {
+      foreach ($_POST['packages'] as $package) {
+        $id = intval($package['id']);
+        $order = intval($package['order']);
+        // Only save if both are above zero
+        if ($id > 0 && $order > 0) {
+          edit_post(array(
+            'post_ID' => $id,
+            'menu_order' => $order
+          ));
+        }
+      }
+    }
+
+    // Send a success only response with no futher data
+    WordPress::sendJsonResponse(array(
+      'success' => true
+    ));
   }
 
   /**
@@ -100,7 +127,7 @@ class SortableTypes
         <h1>Sortierung &laquo;' . $typeObject->label . '&raquo; <a class="page-title-action save-item-order">Sortierung speichern</a></h1>
         <p>Zur Selektion von mehreren Elementen können die CTRL und/oder Shift-Taste verwenden, danach per Drag & Drop die Sortierung ändern.</p>
         <div class="media-frame type-sort-frame wp-core-ui mode-grid">
-          <div class="media-frame-content">
+          <div class="media-frame-content" data-columns="10">
             <div class="attachments-browser">
               <ul class="attachments">
                 ' . $this->getItemList($type) . '

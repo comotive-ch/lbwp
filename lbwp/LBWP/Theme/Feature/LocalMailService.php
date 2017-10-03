@@ -217,7 +217,7 @@ class LocalMailService
       ));
     } else {
       $helper->addInputText('config-key', $boxId, 'Konfigurations-Schlüssel', array(
-        'description' => 'vom Entwickler genannter Konfigurations-Schlüssel für die automatische Liste'
+        'description' => 'Vom Entwickler genannter Konfigurations-Schlüssel für die automatische Liste'
       ));
     }
     // Hide the editor that is only active for uploads to work
@@ -385,7 +385,9 @@ class LocalMailService
 
     // If there are no fields, it might just be a dynamic list
     if ($countFields == 0 && $rowCount > 0) {
-      foreach ($listData[0] as $key => $value) {
+      reset($listData);
+      $firstKey = key($listData);
+      foreach ($listData[$firstKey] as $key => $value) {
         $fields[] = $key;
         $countFields++;
       }

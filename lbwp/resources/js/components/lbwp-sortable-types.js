@@ -5,6 +5,15 @@
 var LbwpSortableTypes = {
 
 	/**
+	 * Some settings for saving images
+	 */
+	saveItemsPerPackage : 10,
+	timeBetweenSaves : 500,
+	textIsSaving : 'Sortierung wird gespeichert...',
+	textSavedSortSuccess : 'Sortierung wurde gespeichert!',
+	textSaveSort : 'Sortierung speichern',
+
+	/**
 	 * Initialize the library
 	 */
 	initialize : function()
@@ -19,12 +28,56 @@ var LbwpSortableTypes = {
 	handleSaving : function()
 	{
 		jQuery('.save-item-order').click(function() {
+			var button = jQuery(this);
+			var packages = [], pack = [];
+			var confirmedPackages = 0, sentPackages = 0;
+			var data = { 'action' : 'save_post_type_order' };
+			button.text(LbwpSortableTypes.textIsSaving);
+
 			jQuery('.attachments li').each(function() {
 				var element = jQuery(this);
-				console.log(element.data('order'));
-				console.log(element.data('id'));
+				if (pack.length == LbwpSortableTypes.saveItemsPerPackage) {
+					packages.push(pack);
+					pack = [];
+				}
+
+				pack.push({
+					'id' : element.data('id'),
+					'order' : element.data('order')
+				});
 			});
+
+			// If there's an unpushed pack, push it
+			if (pack.length > 0) {
+				packages.push(pack);
+			}
+
+			// Push the packages to the server
+			for (var id in packages) {
+				setTimeout(function() {
+					var id = sentPackages++;
+					data.packages = packages[id];
+					jQuery.post(ajaxurl, data, function(response) {
+						if (++confirmedPackages == packages.length) {
+							LbwpSortableTypes.resetSaveButton();
+						}
+					});
+				}, LbwpSortableTypes.timeBetweenSaves * (parseInt(id)+1));
+			}
 		});
+	},
+
+	/**
+	 * Reset the save button back to its state
+	 */
+	resetSaveButton : function()
+	{
+		var button = jQuery('.save-item-order');
+		button.text(LbwpSortableTypes.textSavedSortSuccess);
+		// Reset the button text in a few seconds
+		setTimeout(function() {
+			button.text(LbwpSortableTypes.textSaveSort);
+		}, 3000);
 	},
 
 	/**
@@ -45,21 +98,9 @@ var LbwpSortableTypes = {
 				jQuery('.attachments li').each(function(index) {
 					jQuery(this).data('order', index+1);
 				});
-				LbwpSortableTypes.unselectAll();
-			},
+			}
 		});
-	},
-
-	/**
-	 * Unselects everything after dragging
-	 */
-	unselectAll : function()
-	{
-		setTimeout(function() {
-			jQuery('.attachments li').removeClass('selected');
-		}, 250);
 	}
-
 };
 
 

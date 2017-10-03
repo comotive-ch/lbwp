@@ -33,6 +33,10 @@ class MaintenanceMode extends BaseSingleton
    */
   const COOKIE_HASH = 'a6fe8fue83d76z82fhu4h974529tgz7werg';
   /**
+   * @var string salt for omitting maintenance mode for certain pages
+   */
+  const OMITTING_SALT = 'hd83jek8';
+  /**
    * @var int valid cookie time
    */
   const COOKIE_EXPIRE = 31536000;
@@ -69,7 +73,6 @@ class MaintenanceMode extends BaseSingleton
       add_filter('status_header', array($this, 'sendHeader'), 20, 4);
       add_filter('template', array($this, 'getThemeName'), 20);
       add_filter('stylesheet', array($this, 'getThemeName'), 20);
-      add_filter('robots_txt', array($this, 'denyRobotsAccess'), 20);
       // Don't cache the maintenance mode, because of possible password cookie logins
       HTMLCache::avoidCache();
     }
@@ -246,9 +249,31 @@ class MaintenanceMode extends BaseSingleton
   protected function useMaintenanceMode()
   {
     $isActive = $this->config['Various:MaintenanceMode'];
+    // If active, be sure to add a filter to handle robots
+    if ($isActive == 1) {
+      add_filter('robots_txt', array($this, 'denyRobotsAccess'), 20);
+    }
 
-    if ($isActive == 1 && !is_user_logged_in() && !$this->isNeededPublicFile($_SERVER['SCRIPT_FILENAME']) && !$this->hasPasswordLogin) {
-      return true;
+    return (
+      $isActive == 1 &&
+      !is_user_logged_in() &&
+      !$this->isNeededPublicFile($_SERVER['SCRIPT_FILENAME']) &&
+      !$this->hasPasswordLogin &&
+      !$this->omitByUriHash()
+    );
+  }
+
+  /**
+   * An URI can contain an md5 hash that uses the OMITTING_SALT
+   * and the actual URI before the questionmark to actually
+   * skip the maintenance mode and make the single site public/cachable
+   */
+  public function omitByUriHash()
+  {
+    if (strlen($_SERVER['QUERY_STRING']) == 32) {
+      $requestUri = substr($_SERVER['REQUEST_URI'], 0, strpos($_SERVER['REQUEST_URI'], '?'));
+      $matcher = md5(self::OMITTING_SALT . $requestUri);
+      return ($matcher == $_SERVER['QUERY_STRING']);
     }
 
     return false;
@@ -261,6 +286,7 @@ class MaintenanceMode extends BaseSingleton
   public function isNeededPublicFile($uri)
   {
     if (
+      (strpos($_SERVER['REQUEST_URI'], 'robots.txt') === false) &&
       (strpos($uri, 'async-upload.php') === false) &&
       (strpos($uri, 'lbwp/views/cron/daily.php') === false) &&
       (strpos($uri, 'lbwp/views/cron/hourly.php') === false) &&

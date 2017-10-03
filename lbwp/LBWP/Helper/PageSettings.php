@@ -205,13 +205,13 @@ class PageSettings
    * @param bool $isMultilang determines if the field is configurable in every language
    * @param string $description the description below the setting (optional)
    */
-  public static function addCheckbox($page, $section, $key, $titleRight = '', $titleLeft = '', $isMultilang = false, $description = '')
+  public static function addCheckbox($page, $section, $key, $titleRight = '', $titleLeft = '', $isMultilang = false, $description = '', $config = array())
   {
-    $config = array(
+    $config = array_merge($config, array(
       'rightHtml' => $titleRight,
       'saveAlways' => true,
       'multilang' => $isMultilang
-    );
+    ));
 
     self::addItem(array(
       'page' => $page,

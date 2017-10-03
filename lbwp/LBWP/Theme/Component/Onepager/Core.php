@@ -23,6 +23,10 @@ abstract class Core extends BaseComponent
    */
   protected $types = array('page');
   /**
+   * @var array the types that have onepager active immediately on creation (none by default)
+   */
+  protected $automaticOnepagerTypes = array();
+  /**
    * @var array the list of possible items to use
    */
   protected $items = array(
@@ -138,6 +142,7 @@ abstract class Core extends BaseComponent
     add_action('wp_insert_post_data', array($this, 'forceUniqueItemSlug'));
     add_action('mbh_addNewPostTypeItem', array($this, 'addTypeMetaInfo'), 10, 2);
     add_filter('mbh_addNewPostTypeItemHtmlCallback', array($this, 'getNewItemCallback'));
+    add_action('after_post_duplicate', array($this, 'duplicateItems'), 10, 3);
     // Execute item metaboxes, if an item admin is displayed
     add_action('admin_init', array($this, 'executeItemMetaboxes'));
     add_action('save_post', array($this, 'executeItemMetaboxes'));
@@ -195,20 +200,26 @@ abstract class Core extends BaseComponent
   {
     foreach ($this->types as $type) {
       $helper = Metabox::get($type);
+      // Get current post id from admin context (only given on edit, not on "new" page)
+      $postId = $this->getCurrentPostId();
+
       // Add the checkbox metabox
       $boxId = $type . '_onepager-settings';
       $helper->addMetabox($boxId, 'Onepager', 'side', 'default');
       $helper->addCheckbox('onepager-active', $boxId, 'Onepager-Verwaltung aktivieren (Bisheriger Inhalt geht verloren!)', array(
         'autosave_on_change' => true,
+        'always_selected' => in_array($type, $this->automaticOnepagerTypes),
         'description' => 'Aktivieren'
       ));
-
-      // Get current post id from admin context
-      $postId = $this->getCurrentPostId();
 
       // If the checkbox is active, add full stuff
       if ($postId > 0) {
         $onepagerActive = get_post_meta($postId, 'onepager-active', true) == 'on';
+        // Remove the activation metabox field, if this is an auto-onepager type
+        if (in_array($type, $this->automaticOnepagerTypes) && $onepagerActive) {
+          $helper->removeField('onepager-active', $boxId);
+        }
+
         $this->currentBackendHasMenusEnabled = get_post_meta($postId, 'onepager-activate-menu', true) == 'on';
         // If the onepager is active, add / remove everything needed
         if ($onepagerActive) {
@@ -222,7 +233,7 @@ abstract class Core extends BaseComponent
             'metaDropdown' => array(
               'key' => 'element-type',
               'sortBy' => 'sort',
-              'data' => $this->getTemplateList()
+              'data' => $this->getTemplateList($type)
             )
           );
 
@@ -251,6 +262,71 @@ abstract class Core extends BaseComponent
             ));
           }
         }
+      }
+    }
+  }
+
+  /**
+   * @param int $oldPostId the old post id (that was duplicated)
+   * @param int $newPostId the new duplications id
+   * @param string $type the type of our duplication
+   */
+  public function duplicateItems($oldPostId, $newPostId, $type)
+  {
+    // Only do something if onepager is active
+    if (in_array($type, $this->types) && get_post_meta($newPostId, 'onepager-active', true) == 'on') {
+      // Get all onepager items ids
+      $newElementIds = array();
+      $elements = get_post_meta($oldPostId, 'elements', false);
+      foreach ($elements as $itemId) {
+        $item = get_post($itemId, ARRAY_A);
+
+        // Rebuild new item
+        unset($item['ID']);
+        $item['post_date'] = current_time('mysql');
+        $item['post_date_gmt'] = get_gmt_from_date($item['post_date']);
+        $item['post_parent'] = 0;
+        if ($this->directChildrenOnly) {
+          $item['post_parent'] = $newPostId;
+        }
+        // Have a new item slug, maybe
+        $item = $this->forceUniqueItemSlug($item);
+
+        // Get meta data and convert into a meaningful array
+        $meta = get_post_custom($itemId);
+        $fmeta = array();
+        foreach ($meta as $key => $value) {
+          $fmeta[$key] = maybe_unserialize($value[0]);
+        }
+
+        // Create onepager element, remember its id
+        $newItemId = wp_insert_post($item);
+        $newElementIds[] = $newItemId;
+
+        // Save the post meta data for the item
+        foreach ($fmeta as $k => $v) {
+          update_post_meta($newItemId, $k, $v);
+        }
+
+        // Reassign taxonomy_terms
+        $taxonomies = get_object_taxonomies($type);
+        foreach ($taxonomies as $tax) {
+          $terms = wp_get_object_terms($itemId, $tax);
+          $term = array();
+
+          foreach ($terms as $t) {
+            $term[] = $t->slug;
+          }
+
+          wp_set_object_terms($newItemId, $term, $tax);
+        }
+      }
+
+      // After creating the elements, remove elements data
+      delete_post_meta($newPostId, 'elements');
+      // After that, readd the elements to the new post object
+      foreach ($newElementIds as $newItemId) {
+        add_post_meta($newPostId, 'elements', $newItemId);
       }
     }
   }
@@ -311,15 +387,22 @@ abstract class Core extends BaseComponent
   /**
    * @return array a named array of item keys
    */
-  protected function getTemplateList()
+  protected function getTemplateList($type)
   {
     $result = array();
     foreach ($this->items as $key => $data) {
-      $result[$key] = array(
-        'key' => $key,
-        'name' => $data['name'],
-        'sort' => intval($data['sort']) >0 ? intval($data['sort']) : 100
-      );
+      $itemTypeAllowed = true;
+      if (isset($data['types']) && !in_array($type, $data['types'])) {
+        $itemTypeAllowed = false;
+      }
+
+      if ($itemTypeAllowed) {
+        $result[$key] = array(
+          'key' => $key,
+          'name' => $data['name'],
+          'sort' => intval($data['sort']) > 0 ? intval($data['sort']) : 100
+        );
+      }
     }
 
     return $result;
@@ -332,7 +415,7 @@ abstract class Core extends BaseComponent
   public function filterPostContent($data)
   {
     $postId = intval($_POST['post_ID']);
-    $active = $_POST[$postId . '_onepager-active'] == 'on';
+    $active = $_POST[$postId . '_onepager-active'] == 'on' || in_array($_POST['post_type'], $this->automaticOnepagerTypes);
     $hasShortcode = stristr($data['post_content'], self::SHORTCODE_NAME) !== false;
 
     // Only switch, if active and no shortcode yet

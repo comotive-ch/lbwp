@@ -327,6 +327,11 @@ class FormHandler extends Base
       HTMLCache::avoidCache();
     }
 
+    // Skip execution if needed, return no message at all
+    if (isset($args['skip_execution']) && $args['skip_execution'] == 1) {
+      return '';
+    }
+
     // Load form data from fields
     $data = $this->getFormData();
     // Check if there are actions to execute

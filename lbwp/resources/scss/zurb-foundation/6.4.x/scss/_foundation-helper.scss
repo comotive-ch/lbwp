@@ -1,0 +1,15 @@
+@function foundationHelperGetBreakpointValue($map, $key) {
+	@return -zf-get-bp-val($map, $key);
+}
+
+@function foundationHelperColumnGutter($size:'small') {
+	@return foundationHelperGetBreakpointValue($grid-column-gutter, $size);
+}
+
+@function foundationHelperHeadingSize($heading: 'h1', $size:'small') {
+	@debug 'not yet implemented for 6.3.x';
+}
+
+@mixin foundationHelperResetDefaults() {
+	// not yet implemented (or needed) for 6.3.x
+}

@@ -22,6 +22,21 @@ body.modal-backend {
 	}
 }
 
+// Sorting types prototype CSS
+.type-sort-frame {
+	// When the user is dragging one or more items
+	.is-dragging {
+		.selected:not(.ui-sortable-helper) {
+
+		}
+	}
+	.placeholder {
+		width:70px !important; // very prototypey
+		height:70px !important; // very prototypey
+		border: 3px dashed #ccc;
+		float:left;
+	}
+}
 
 /**
  * OLD SCHOOL SHIT

@@ -251,7 +251,7 @@ class S3Upload extends \LBWP\Module\Base
    * @param array $file entry from $_FILES
    * @return string the final url of the file
    */
-  public function uploadLocalFile($file)
+  public function uploadLocalFile($file, $skipMaxImageSize = false)
   {
     // Move the file to a local temp path
     $localFile = $this->moveUploadedFile($file['tmp_name'], $file['name']);
@@ -259,7 +259,7 @@ class S3Upload extends \LBWP\Module\Base
     $s3Path = '/' . time() . '/' . File::getFileOnly($localFile);
     $s3Url = $this->changeUploadUrl('') . $s3Path;
     // Do the upload
-    if ($this->handleUpload($localFile, $s3Url, $file['type'])) {
+    if ($this->handleUpload($localFile, $s3Url, $file['type'], $skipMaxImageSize)) {
       return $s3Url;
     }
 
@@ -328,9 +328,10 @@ class S3Upload extends \LBWP\Module\Base
    * @param string $localFile The local file name
    * @param string $url The URL it should have on the CDN
    * @param string $mime_type The mime type of the file
+   * @param bool $skipMaxImageSize skip max image size
    * @return bool true/false if the upload is successful
    */
-  public function handleUpload($localFile, $url, $mime_type = '')
+  public function handleUpload($localFile, $url, $mime_type = '', $skipMaxImageSize = false)
   {
     $s3 = AwsFactory::getS3Service();
     // Just for the backup-image sake, we need to handle the error that a local file does not exist as a non-error
@@ -339,7 +340,9 @@ class S3Upload extends \LBWP\Module\Base
     }
 
     // Change to maximum image size, if known ending and image type
-    $this->handleMaxImageSize($localFile);
+    if (!$skipMaxImageSize) {
+      $this->handleMaxImageSize($localFile);
+    }
 
     // Set some cache headers
     $headers = array(

@@ -141,6 +141,22 @@ class Multilang
   }
 
   /**
+   * @return array key value pair of language code and name
+   */
+  public static function getLanguagesKeyValue()
+  {
+    if (self::isActive()) {
+      $list = array();
+      foreach (pll_languages_list() as $language) {
+        $list[$language] = self::getLanguageName($language);
+      }
+      return $list;
+    }
+
+    return array();
+  }
+
+  /**
    * @param string $slug a language slug
    * @return string the actual language name
    */

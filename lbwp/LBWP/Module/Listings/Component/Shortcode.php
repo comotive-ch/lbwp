@@ -125,8 +125,10 @@ class Shortcode extends Base
     // Start the container
     echo $start;
     // Now display all the items, depending on view type (file|html)
+    $ordering = 0;
     foreach ($items as $item) {
       // Make it globally accessible
+      $item->order = ++$ordering;
       Core::setCurrentListElementItem($item);
       // Display depending on view type
       if ($hasPath) {

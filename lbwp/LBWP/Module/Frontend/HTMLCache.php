@@ -54,6 +54,10 @@ class HTMLCache extends \LBWP\Module\Base
    * @var int the minimum time to cache
    */
   const MIN_CACHE_TIME = 300;
+  /**
+   * @var string cached objects need this size in bytes at least
+   */
+  const MIN_CACHEABLE_SIZE = 24;
 
   /**
 	 * call parent constructor and initialize the module
@@ -338,7 +342,7 @@ class HTMLCache extends \LBWP\Module\Base
       }
 
       // Save cacheVal to cache only if there is content or headers
-      if (strlen($output) > 0 || $hasLocationHeader) {
+      if (strlen($output) > self::MIN_CACHEABLE_SIZE || $hasLocationHeader) {
         wp_cache_set(
           md5($this->getCacheSiteId()),
           $cacheVal,

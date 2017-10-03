@@ -4,6 +4,7 @@ namespace LBWP\Module\Backend;
 
 use LBWP\Core as LbwpCore;
 use LBWP\Helper\MasterApi;
+use LBWP\Module\General\Cms\SystemLog;
 use LBWP\Util\Multilang;
 use LBWP\Module\Frontend\HTMLCache;
 use LBWP\Util\Strings;
@@ -136,6 +137,12 @@ class MemcachedAdmin extends \LBWP\Module\Base
       SELECT ID FROM ' . $wpdb->posts . '
       WHERE post_status = "future" AND post_date_gmt <= "' . $now . '"
     ');
+
+    SystemLog::add('checkPublishablePosts', 'debug', 'gmdate: ' . $now . ', posts: ' . count($posts), array(
+      'now' => $now,
+      'count' => count($posts),
+      'id' => $posts[0]
+    ));
 
     // Publish all the posts
     foreach ($posts as $postId) {

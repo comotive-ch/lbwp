@@ -94,6 +94,36 @@ abstract class Base
   }
 
   /**
+   * @return string title from "meta-title" field, if given, else the post title
+   */
+  protected function getInternalOrMetaTitle()
+  {
+    $metaTitle = trim(get_post_meta($this->post->ID, 'meta-title', true));
+    if (strlen($metaTitle) > 0) {
+      return $metaTitle;
+    }
+
+    // Fallback to item title (interal)
+    return $this->post->post_title;
+  }
+
+  /**
+   * @return \WP_Post the parent post object
+   */
+  protected function getParent()
+  {
+    return get_post($this->post->post_parent);
+  }
+
+  /**
+   * @return int the parent post id
+   */
+  protected function getParentId()
+  {
+    return $this->post->post_parent;
+  }
+
+  /**
    * @param string $attributes
    * @return string sames attributes
    */

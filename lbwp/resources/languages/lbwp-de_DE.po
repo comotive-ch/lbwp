@@ -559,3 +559,45 @@ msgstr ""
 
 msgid "Vielen Dank für Ihren Kommentar. Wir werden diesen in Kürze überprüfen und freischalten."
 msgstr ""
+
+msgid "Logout"
+msgstr ""
+
+msgid "<strong>Fehler</strong>: Bitte geben Sie Ihren Benutzernamen ein."
+msgstr ""
+
+msgid "<strong>Fehler</strong>: Bitte geben Sie Ihr Passwort ein."
+msgstr ""
+
+msgid "<strong>Fehler</strong>: Der eingegebene Benutzername ist ungültig."
+msgstr ""
+
+msgid "<strong>Fehler</strong>: Das eingegebene Passwort ist nicht korrekt."
+msgstr ""
+
+msgid "Registrieren"
+msgstr ""
+
+msgid "Benutzername"
+msgstr ""
+
+msgid "Passwort"
+msgstr ""
+
+msgid "Neues Passwort"
+msgstr ""
+
+msgid "Passwort bestätigen"
+msgstr ""
+
+msgid "Login"
+msgstr ""
+
+msgid "Ihr Account wurde erstellt. Sie sind nun eingeloggt."
+msgstr ""
+
+msgid "<strong>Fehler</strong>: %s"
+msgstr ""
+
+msgid "Ihre Profildaten wurden gespeichert."
+msgstr ""

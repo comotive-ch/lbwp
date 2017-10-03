@@ -5,6 +5,7 @@ namespace LBWP\Module\General;
 use LBWP\Core;
 use LBWP\Helper\Cronjob;
 use LBWP\Module\Backend\MemcachedAdmin;
+use LBWP\Module\General\Cms\SystemLog;
 use LBWP\Module\General\Multilang\OptionBridge;
 use LBWP\Module\General\Cms\PageSpeed;
 use LBWP\Core as LbwpCore;
@@ -143,6 +144,7 @@ class CmsFeatures extends \LBWP\Module\Base
     add_action('phpmailer_init', array($this, 'addReplyToEmail'), 50);
     add_action('shutdown', array($this, 'trackUncachedResponseTime'));
     add_filter('antispam_bee_patterns', array($this, 'addCustomSpamPatterns'));
+    add_action('cron_job_test_cron', array($this, 'testAndLogCron'));
   }
 
   /**
@@ -400,6 +402,14 @@ class CmsFeatures extends \LBWP\Module\Base
     }
 
     return $types;
+  }
+
+  /**
+   * Tests the cron and logs the data given
+   */
+  public function testAndLogCron()
+  {
+    SystemLog::add('testCron', 'debug', 'received external cron call', $_GET);
   }
 
   /**

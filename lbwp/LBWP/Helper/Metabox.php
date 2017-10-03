@@ -13,6 +13,7 @@ use LBWP\Helper\MetaItem\CrossReference;
 use LBWP\Helper\MetaItem\PostTypeDropdown;
 use LBWP\Helper\MetaItem\AddressLocation;
 use LBWP\Helper\MetaItem\ChosenDropdown;
+use LBWP\Helper\MetaItem\NativeUpload;
 
 /**
  * This helper can be instantiated to add one or more metaboxes to a posttype,
@@ -593,6 +594,26 @@ class Metabox
   }
 
   /**
+   * Helper for adding an upload field that is native
+   * @param string $key the key to store the metadata in
+   * @param string $boxId the metabox to display the field
+   * @param string $title the title of the field besides the input
+   * @param array $args additional arguments: description, width
+   */
+  public function addNativeUploadField($key, $boxId, $title, $args = array())
+  {
+    // Add the title as an argument
+    $args['title'] = $title;
+
+    // Add the field
+    $this->addField(
+      $key, $boxId, $args,
+      array($this, 'displayNativeUpload'),
+      array('\LBWP\Helper\MetaItem\NativeUpload', 'saveNativeUpload')
+    );
+  }
+
+  /**
    * Helper for adding an input text field (one liner)
    * @param string $key the key to store the metadata in
    * @param string $boxId the metabox to display the field
@@ -1007,6 +1028,18 @@ class Metabox
   }
 
   /**
+   * Inline callback to display a native upload field
+   * @param array $args the arguments to display the input field
+   * @return string HTML code to display the field
+   */
+  public function displayNativeUpload($args)
+  {
+    $key = $args['post']->ID . '_' . $args['key'];
+    $template = $this->getTemplate($args, $key);
+    return NativeUpload::displayNativeUpload($args, $key, $template, $this->knownPostFields);
+  }
+
+  /**
    * Inline callback to display a normal textfield
    * @param array $args the arguments to display the input textfield
    * @return string HTML code to display the field
@@ -1168,6 +1201,7 @@ class Metabox
       $template = $args['template'];
     }
 
+
     $html = $this->getTemplate($args, $key, $template);
 
     if (isset($args['value'])) {
@@ -1182,6 +1216,11 @@ class Metabox
       $selected = checked($args['selected'], true, false);
     } else {
       $selected = checked($value, 'on', false);
+    }
+
+    // If on the post new screen and always selected isset and true, preselect the checkbox
+    if (isset($args['always_selected']) && $args['always_selected'] && stristr($_SERVER['REQUEST_URI'], 'post-new') !== false) {
+      $selected  = checked(true, true, false);
     }
 
     if (empty($value)) {
@@ -1586,6 +1625,10 @@ class Metabox
     // Validate and save the field
     $key = $postId . '_' . $field['key'];
     $value = isset($_POST[$key]) && $_POST[$key] == 'on' ? 'on' : false;
+
+    if (isset($field['args']['globally_distinct']) && $value == 'on' && get_post_meta($postId, $field['key'], true) == false) {
+      delete_post_meta_by_key($field['key']);
+    }
 
     // Check if the field is required
     if (isset($field['args']['required']) && $field['args']['required'] && strlen($value) == 0) {

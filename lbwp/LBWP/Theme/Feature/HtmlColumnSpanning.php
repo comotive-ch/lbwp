@@ -100,14 +100,19 @@ class HtmlColumnSpanning
       case '12grid':
         return 6;
       case 'bootstrap':
+      case 'bootstrap-large':
+        $sizes = array('sm', 'md');
+        if ($this->options['column_numbering'] == 'bootstrap-large') {
+          $sizes[1] = 'lg';
+        }
         $total = count($parts);
         if ($total % 4 == 0) {
-          return 'col-sm-6 col-md-3';
+          return 'col-' . $sizes[0] . '-6 col-' . $sizes[1] . '-3';
         } else if ($total % 3 == 0) {
-          return 'col-sm-6 col-md-4';
+          return 'col-' . $sizes[0] . '-6 col-' . $sizes[1] . '-4';
         } else {
           // If not 3 or 4 columns, eveythign else is two cols
-          return 'col-md-6';
+          return 'col-' . $sizes[1] . '-6';
         }
       case 'leftright':
         return (++$id % 2 == 0) ? 'right' : 'left';

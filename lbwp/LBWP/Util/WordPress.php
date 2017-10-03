@@ -325,6 +325,24 @@ class WordPress
   }
 
   /**
+   * @param array $list a list of integer ids
+   * @return \WP_Post[] object list, can be empty if validation removes some items
+   */
+  public static function getValidatedPostObjects($list)
+  {
+    $objects = array();
+    // Only get published objects
+    foreach ($list as $id) {
+      $object = get_post(intval($id));
+      if ($object instanceof \WP_Post && $object->post_status != 'trashed') {
+        $objects[] = $object;
+      }
+    }
+
+    return $objects;
+  }
+
+  /**
    * @param string $key the option key
    * @return array the encoded option or false
    */
