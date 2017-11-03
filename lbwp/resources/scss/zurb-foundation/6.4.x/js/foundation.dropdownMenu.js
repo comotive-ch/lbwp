@@ -30,7 +30,6 @@ class DropdownMenu extends Plugin {
     this.options = $.extend({}, DropdownMenu.defaults, this.$element.data(), options);
     this.className = 'DropdownMenu'; // ie9 back compat
 
-    Nest.Feather(this.$element, 'dropdown');
     this._init();
 
     Keyboard.register('DropdownMenu', {
@@ -50,6 +49,8 @@ class DropdownMenu extends Plugin {
    * @function
    */
   _init() {
+    Nest.Feather(this.$element, 'dropdown');
+
     var subs = this.$element.find('li.is-dropdown-submenu-parent');
     this.$element.children('.is-dropdown-submenu-parent').children('.is-dropdown-submenu').addClass('first-sub');
 
@@ -173,10 +174,8 @@ class DropdownMenu extends Plugin {
       });
 
       var nextSibling = function() {
-        if (!$element.is(':last-child')) {
-          $nextElement.children('a:first').focus();
-          e.preventDefault();
-        }
+        $nextElement.children('a:first').focus();
+        e.preventDefault();
       }, prevSibling = function() {
         $prevElement.children('a:first').focus();
         e.preventDefault();

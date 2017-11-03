@@ -19,8 +19,8 @@ class Email extends BaseButton
    */
   public function getHtml($config, $link, $post)
   {
-    $subject = urlencode(__('Artikel', 'lbwp') . ' ' . $post->post_title);
-    $body = urlencode(__('Link', 'lbwp') . ': ' . get_permalink($post->ID));
+    $subject = rawurlencode(apply_filters('lbwpSocialShareEmailPrefix', __('Artikel', 'lbwp')) . ' ' . $post->post_title);
+    $body = rawurlencode(__('Link', 'lbwp') . ': ' . get_permalink($post->ID));
     // Return the html
     return '
       <a class="button" href="mailto:?subject=' . $subject . '&body=' . $body . '">' . __('Per E-Mail versenden', 'lbwp') . '</a>

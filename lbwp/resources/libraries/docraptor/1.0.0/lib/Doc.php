@@ -58,6 +58,7 @@ class Doc implements ArrayAccess
         'test' => 'bool',
         'strict' => 'string',
         'ignore_resource_errors' => 'bool',
+        'ignore_console_messages' => 'bool',
         'tag' => 'string',
         'help' => 'bool',
         'javascript' => 'bool',
@@ -78,6 +79,7 @@ class Doc implements ArrayAccess
         'test' => 'test',
         'strict' => 'strict',
         'ignore_resource_errors' => 'ignore_resource_errors',
+        'ignore_console_messages' => 'ignore_console_messages',
         'tag' => 'tag',
         'help' => 'help',
         'javascript' => 'javascript',
@@ -98,6 +100,7 @@ class Doc implements ArrayAccess
         'test' => 'setTest',
         'strict' => 'setStrict',
         'ignore_resource_errors' => 'setIgnoreResourceErrors',
+        'ignore_console_messages' => 'setIgnoreConsoleMessages',
         'tag' => 'setTag',
         'help' => 'setHelp',
         'javascript' => 'setJavascript',
@@ -118,6 +121,7 @@ class Doc implements ArrayAccess
         'test' => 'getTest',
         'strict' => 'getStrict',
         'ignore_resource_errors' => 'getIgnoreResourceErrors',
+        'ignore_console_messages' => 'getIgnoreConsoleMessages',
         'tag' => 'getTag',
         'help' => 'getHelp',
         'javascript' => 'getJavascript',
@@ -168,6 +172,10 @@ class Doc implements ArrayAccess
       * @var bool
       */
     protected $ignore_resource_errors = true;
+    /**
+     * @var bool|mixed
+     */
+    protected $ignore_console_messages = false;
 
     /**
       * $tag A field for storing a small amount of metadata with this document.
@@ -220,6 +228,7 @@ class Doc implements ArrayAccess
             $this->test = $data["test"];
             $this->strict = $data["strict"];
             $this->ignore_resource_errors = $data["ignore_resource_errors"];
+            $this->ignore_console_messages = $data["ignore_console_messages"];
             $this->tag = $data["tag"];
             $this->help = $data["help"];
             $this->javascript = $data["javascript"];
@@ -371,6 +380,15 @@ class Doc implements ArrayAccess
     }
 
     /**
+     * Gets ignore_resource_errors
+     * @return bool
+     */
+    public function getIgnoreConsoleMessages()
+    {
+        return $this->ignore_console_messages;
+    }
+
+    /**
      * Sets ignore_resource_errors
      * @param bool $ignore_resource_errors Failed loading of images/javascripts/stylesheets/etc. will not cause the rendering to stop.
      * @return $this
@@ -379,6 +397,18 @@ class Doc implements ArrayAccess
     {
 
         $this->ignore_resource_errors = $ignore_resource_errors;
+        return $this;
+    }
+
+    /**
+     * Sets ignore_resource_errors
+     * @param bool $ignore_console_messages Failed loading of images/javascripts/stylesheets/etc. will not cause the rendering to stop.
+     * @return $this
+     */
+    public function setIgnoreConsoleMessages($ignore_console_messages)
+    {
+
+        $this->ignore_console_messages = $ignore_console_messages;
         return $this;
     }
 

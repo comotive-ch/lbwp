@@ -183,6 +183,14 @@ $this->configData['NotFoundSettings']['items']['Title'] = array(
   'description' => 'Überschrift für die 404 Seite'
 );
 
+$this->configData['NotFoundSettings']['items']['UsePermanentRedirect'] = array(
+  'type' => 'checkbox',
+  'typeConfig' => array(),
+  'checkbox' => true,
+  'title' => 'Auf die Startseite weiterleiten',
+  'description' => 'Alle Fehler leiten auf die Startseite weiter. Suchmaschinen werden informiert, dass es die alten Links nicht mehr gibt.'
+);
+
 $this->configData['NotFoundSettings']['items']['Content'] = array(
   'type' => 'editor',
   'typeConfig' => array(),

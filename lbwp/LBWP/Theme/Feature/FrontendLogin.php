@@ -3,6 +3,7 @@
 namespace LBWP\Theme\Feature;
 
 use LBWP\Module\Forms\Core as FormCore;
+use LBWP\Util\Multilang;
 use LBWP\Util\Strings;
 
 /**
@@ -129,6 +130,7 @@ class FrontendLogin
         // Set first and lastname meta data, also set a role
         update_user_meta($userId, 'first_name', $_POST['firstname']);
         update_user_meta($userId, 'last_name', $_POST['lastname']);
+        update_user_meta($userId, 'salutation', $this->getSalutation($_POST['gender']));
         // Make a user instance and make sure to set the subscriber role
         $user = new \WP_User($userId);
         $user->set_role('subscriber');
@@ -171,11 +173,17 @@ class FrontendLogin
    */
   public function displayRegistrationForm()
   {
+    $language = Multilang::getCurrentLang('slug', 'de');
+
     $shortcode = '
       [lbwp:form button="' . __('Registrieren', 'lbwp') . '" id="register" weiterleitung="' . get_permalink() . '" action="' . get_permalink() . '" skip_execution="1"]
-        [lbwp:formItem key="textfield" pflichtfeld="ja" id="email" feldname="' . __('E-Mail-Adresse', 'lbwp') . '" type="email"]
+        [lbwp:formContentItem id="gender" key="dropdown" pflichtfeld="ja" feldname="' . __('Anrede', 'lbwp') . '" id="gender"]
+          male_' . $language . '==' . __('Herr', 'lbwp') . '$$
+          female_' . $language . '==' . __('Frau', 'lbwp') . '
+        [/lbwp:formContentItem]
         [lbwp:formItem key="textfield" pflichtfeld="ja" id="firstname" feldname="' . __('Vorname', 'lbwp') . '" type="text"]
         [lbwp:formItem key="textfield" pflichtfeld="ja" id="lastname" feldname="' . __('Nachname', 'lbwp') . '" type="text"]
+        [lbwp:formItem key="textfield" pflichtfeld="ja" id="email" feldname="' . __('E-Mail-Adresse', 'lbwp') . '" type="email"]
         [lbwp:formItem key="textfield" pflichtfeld="ja" id="password" feldname="' . __('Passwort', 'lbwp') . '" type="password"]
       [/lbwp:form]
     ';
@@ -195,6 +203,26 @@ class FrontendLogin
     }
 
     return $formHtml;
+  }
+
+  /**
+   * @param string $tag the salutation tag from reg form
+   * @return string the actual saveable salutation
+   */
+  protected function getSalutation($tag)
+  {
+    switch ($tag) {
+      case 'male_de': return 'Sehr geehrter Herr';
+      case 'male_fr': return 'Cher monsieur';
+      case 'male_en': return 'Dear Mr';
+      case 'male_it': return 'Caro signore';
+      case 'female_de': return 'Sehr geehrte Frau';
+      case 'female_fr': return 'Chère madame';
+      case 'female_en': return 'Dear Ms';
+      case 'female_it': return 'Cara signorina';
+    }
+
+    return '';
   }
 
   /**

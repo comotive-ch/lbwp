@@ -47,29 +47,11 @@ class RestApi
         RestApi::addTaxonomyObjects($config['taxonomy_objects']);
       }
 
-      // Handle all sorts of specific http headers
-      RestApi::handleHttpHeaders($config);
-
       // Execute callable, if available
       if (is_callable($callback)) {
         call_user_func($callback, $config);
       }
     });
-  }
-
-  /**
-   * @param array $config the config
-   */
-  protected function handleHttpHeaders($config)
-  {
-    // Add wildcard cors header
-    if (isset($config['cors_header'])) {
-      if ($config['cors_header'] !== true) {
-        header('Access-Control-Allow-Origin: ' . $config['cors_header']);
-      } else {
-        header('Access-Control-Allow-Origin: *');
-      }
-    }
   }
 
   /**

@@ -150,6 +150,7 @@ class Frontend extends Base
       $event->startTime = $eventStart;
       $event->endTime = $eventEnd;
       $event->location = get_post_meta($event->ID, 'event-location', true);
+      $event->address = get_post_meta($event->ID, 'event-address', true);
       $event->subscribeActive = get_post_meta($event->ID, 'subscribe-active', true) == 'on';
       $event->subscribeAltText = get_post_meta($event->ID, 'subscribe-end-alternate-text', true);
 
@@ -189,7 +190,7 @@ class Frontend extends Base
   }
 
   /**
-   * @param \stdClass $event the event object to be displayed
+   * @param \WP_Post $event the event object to be displayed
    * @param string $textdomain the text domain for labels
    * @param array $display display configuration
    * @param array $override for the $config array
@@ -205,6 +206,7 @@ class Frontend extends Base
       'showDates' => true,
       'showSubscriptionInfo' => true,
       'showLocation' => true,
+      'showAddressAfterLocation' => true,
       'showCalendarDownload' => false
     ), $display);
 
@@ -284,13 +286,22 @@ class Frontend extends Base
     }
 
     // Add location, if available
-    if (strlen($event->location) > 0 && $display['showLocation']) {
-      $html .= '
-        <dl>
-          <dt>' . __('Ort', 'lbwp') . '</dt>
-          <dd>' . $event->location . '</dd>
-        </dl>
-      ';
+    if ($display['showLocation']) {
+      if ($display['showAddressAfterLocation'] && is_array($event->address)) {
+        $html .= '
+          <dl>
+            <dt>' . __('Ort', 'lbwp') . '</dt>
+            <dd>' . self::getCombinedLocationAndAddress($event) . '</dd>
+          </dl>
+        ';
+      } else if (strlen($event->location) > 0) {
+        $html .= '
+          <dl>
+            <dt>' . __('Ort', 'lbwp') . '</dt>
+            <dd>' . $event->location . '</dd>
+          </dl>
+        ';
+      }
     }
 
     // Add event subcribe info, if available
@@ -340,6 +351,32 @@ class Frontend extends Base
   }
 
   /**
+   * Returns a combined strong of location and the address array
+   * @param \WP_Post $event the event object and its data
+   * @return string a human readable string of the location
+   */
+  public static function getCombinedLocationAndAddress($event)
+  {
+    // Only return location, if address isn't given at all
+    if (!isset($event->address) || !is_array($event->address)) {
+      return $event->location;
+    }
+
+    $parts = array($event->location);
+    if (strlen($event->address['street']) > 0) {
+      $parts[] = $event->address['street'];
+    }
+    if (strlen($event->address['zip']) > 0 || strlen($event->address['city']) > 0) {
+      $parts[] = trim($event->address['zip'] . ' ' . $event->address['city']);
+    }
+    if (strlen($event->address['addition']) > 0) {
+      $parts[] = $event->address['addition'];
+    }
+
+    return implode(', ', array_filter($parts));
+  }
+
+  /**
    * Downloads an ICS calendar file suiteable for all apps or outlook
    */
   public function downloadCalendarFile()
@@ -348,10 +385,10 @@ class Frontend extends Base
     // Continue, if there is valid data
     if ($event->ID > 0 && isset($event->startTime) && $event->startTime > 0) {
       // Set the email
-      $email = $event->subscribeEmail;
+      /*$email = $event->subscribeEmail;
       if (!Strings::checkEmail($email)) {
         $email = get_user_by('id', $event->post_author)->user_email;
-      }
+      }*/
       // Print the needed mime header
       header('Content-Type: text/calendar');
       // Print the calendar minimal output
@@ -360,10 +397,11 @@ class Frontend extends Base
       echo 'PRODID:' . get_bloginfo('url') . PHP_EOL;
       echo 'METHOD:PUBLISH' . PHP_EOL;
       echo 'BEGIN:VEVENT' . PHP_EOL;
-      echo 'UID:' . $email . PHP_EOL;
-      echo 'ORGANIZER;CN="' . get_bloginfo('name') . '":MAILTO:' . $email . PHP_EOL;
-      echo 'LOCATION:' . $event->location . PHP_EOL;
-      echo 'SUMMARY:' . trim(preg_replace('/\s\s+/', ' ', $event->post_excerpt)) . PHP_EOL;
+      // TODO This actually sends a invitation which we don't want until it's configurable
+      //echo 'UID:' . $email . PHP_EOL;
+      //echo 'ORGANIZER;CN="' . get_bloginfo('name') . '":MAILTO:' . $email . PHP_EOL;
+      echo 'LOCATION:' . self::getCombinedLocationAndAddress($event) . PHP_EOL;
+      echo 'SUMMARY:' . trim(preg_replace('/\s\s+/', ' ', $event->post_title)) . PHP_EOL;
       echo 'DESCRIPTION:' . strip_tags(trim(preg_replace('/\s\s+/', ' ', $event->post_content))) . PHP_EOL;
       echo 'CLASS:PUBLIC' . PHP_EOL;
       echo 'DTSTART:' . date(Date::ICS_DATE, $event->startTime) . PHP_EOL;

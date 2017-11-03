@@ -335,7 +335,9 @@ class Implementation extends Base implements Definition
       // Schedule if configured
       if ($this->getSetting('sendType') == 'automatic') {
         // Schedule the campaign for "now"
-        $this->getApi()->post('campaigns/' . $mailingId . '/actions/send');
+        if (!$this->getApi()->post('campaigns/' . $mailingId . '/actions/send')) {
+          return 0;
+        }
       }
     }
 

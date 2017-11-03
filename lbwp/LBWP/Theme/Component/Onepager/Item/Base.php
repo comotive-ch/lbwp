@@ -108,6 +108,16 @@ abstract class Base
   }
 
   /**
+   * @param string $class the class to be checked
+   * @return bool true, if the class is set
+   */
+  protected function hasCoreClass($class)
+  {
+    $classes = get_post_meta($this->post->ID, 'core-classes');
+    return in_array($class, $classes);
+  }
+
+  /**
    * @return \WP_Post the parent post object
    */
   protected function getParent()

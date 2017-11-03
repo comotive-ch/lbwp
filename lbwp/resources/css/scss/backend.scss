@@ -24,6 +24,24 @@ body.modal-backend {
 
 // Sorting types prototype CSS
 .type-sort-frame {
+	// Grid
+	.media-frame-content[data-columns="10"] {
+		.attachments {
+			//padding: 0;
+			//margin: 0 -2px;
+		}
+		.attachment {
+			//width: calc(10% - 4px);
+			//margin: 0 2px;
+		}
+		.attachment-title {
+			background: white;
+			height: 36px;
+			overflow: hidden;
+			padding: 2px 0;
+		}
+	}
+
 	// When the user is dragging one or more items
 	.is-dragging {
 		.selected:not(.ui-sortable-helper) {

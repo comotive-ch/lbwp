@@ -17,6 +17,7 @@ $this->config = array(
   'Reference_Posttype:ImageHeight' => 150,
   'Events:CleanupEvents' => 1,
   'Events:CleanupMonths' => 30,
+  'NotFoundSettings:UsePermanentRedirect' => 0,
   'NotFoundSettings:Title' => '',
   'NotFoundSettings:Content' => '',
   'Various:MaxImageSize' => 1920,

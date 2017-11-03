@@ -179,13 +179,14 @@ class FocusPoint
    * @param int $postId the post id
    * @param string $size file size
    * @param string $containerClasses optional container class around the figure
+   * @param bool $wrapOriginal wraps a link to the original file around the image
    * @param string $attr for get_attachment_image function
    * @return string html or empty string
    */
-  public static function getFeaturedImage($postId, $size = 'large', $containerClasses = '', $attr = '')
+  public static function getFeaturedImage($postId, $size = 'large', $containerClasses = '', $wrapOriginal = false, $attr = '')
   {
     $attachmentId = intval(get_post_thumbnail_id($postId));
-    return self::getImage($attachmentId, $size, $containerClasses, $attr);
+    return self::getImage($attachmentId, $size, $containerClasses, $wrapOriginal, $attr);
   }
 
   /**
@@ -193,10 +194,11 @@ class FocusPoint
    * @param int $attachmentId the attachment file id
    * @param string $size file size
    * @param string $containerClasses optional container class around the figure
+   * @param bool $wrapOriginal wraps a link to the original file around the image
    * @param string $attr for get_attachment_image function
    * @return string html or empty string
    */
-  public static function getImage($attachmentId, $size = 'large', $containerClasses = '', $attr = '')
+  public static function getImage($attachmentId, $size = 'large', $containerClasses = '', $wrapOriginal = false, $attr = '')
   {
     $html = '';
 
@@ -221,6 +223,11 @@ class FocusPoint
           </figure>
         </div>
       ';
+
+      // Wrap original image url around the block, if desired
+      if ($wrapOriginal) {
+        $html = '<a href="' . WordPress::getImageUrl($attachmentId, 'original') . '" class="auto-fancybox">' . $html . '</a>';
+      }
     }
 
     return $html;

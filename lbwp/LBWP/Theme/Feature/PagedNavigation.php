@@ -1,6 +1,7 @@
 <?php
 
 namespace LBWP\Theme\Feature;
+
 use LBWP\Util\Strings;
 
 /**

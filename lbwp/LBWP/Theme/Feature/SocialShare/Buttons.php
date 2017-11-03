@@ -112,15 +112,15 @@ class Buttons
       }
     }
 
-    // Merge developer config
-    $this->config = ArrayManipulation::deepMerge($this->config, $config);
-
     // If given, merge with user config
     $userConfig = get_option(self::SETTING_NAME, array());
     if (!empty($userConfig)) {
       unset($this->config['order']);
       $this->config = ArrayManipulation::deepMerge($this->config, $userConfig);
     }
+
+    // Merge developer config
+    $this->config = ArrayManipulation::deepMerge($this->config, $config);
 
     // Auto include the buttons in content, if desired
     if ($this->config['type'] != 'code') {

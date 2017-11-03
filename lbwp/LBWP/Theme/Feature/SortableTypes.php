@@ -89,12 +89,19 @@ class SortableTypes
         $order = intval($package['order']);
         // Only save if both are above zero
         if ($id > 0 && $order > 0) {
-          edit_post(array(
-            'post_ID' => $id,
-            'menu_order' => $order
-          ));
+          // Save directl to database and flush post cache afterwards
+          $db = WordPress::getDb();
+          $db->update(
+            $db->posts,
+            array('menu_order' => $order),
+            array('ID' => $id)
+          );
+          clean_post_cache($id);
         }
       }
+
+      // Let developers integrate after a saving
+      do_action('LBWP_SortableTypes_after_saving', $_POST['packages']);
     }
 
     // Send a success only response with no futher data

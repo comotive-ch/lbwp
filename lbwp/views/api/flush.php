@@ -1,14 +1,16 @@
 <?php
 define('CACHE_FLUSH_KEY', 'MK8RNE8MQ8DNR8EHDN8rMFH65QM8ADHR');
 define('CACHE_FLUSH_SECRET', 'md74bf71z93dkmnxv847t29wn9x46mf9m6zgb5sm9fzm3x4bhms');
-define('REDIS_AUTH_KEY', 'Md7EmwzQ28Ejw9dJem5WlqK9eW');
+define('SKIP_WP_STACK', true);
 
 if (!isset($_REQUEST[CACHE_FLUSH_KEY]) || $_REQUEST[CACHE_FLUSH_KEY] != CACHE_FLUSH_SECRET) {
   exit;
 }
 
+// Load the needed Redis by loading config without wp stack
+require_once '../../../../../wp-config.php';
+
 // See if external depending on host
-$isExternal = stristr($_SERVER['HTTP_HOST'], 'sdd1.ch') !== false ? false : true;
 $customerKey = $_REQUEST['customer'];
 $deletePrefix = $customerKey . ':';
 $keySearch = '';
@@ -28,11 +30,11 @@ if (isset($_REQUEST['search']) && strlen($_REQUEST['search']) > 0) {
   $keySearch = $_REQUEST['search'];
 }
 
-// Create a memcached connection to all servers
+// Create a connection to the write
 $redis = new Redis();
-$redis->pconnect('127.0.0.1');
+$redis->pconnect(REDIS_WRITE_NODE_IP, REDIS_CONNECTION_PORT, 1.0);
 $redis->auth(REDIS_AUTH_KEY);
-$redis->setOption(Redis::OPT_SERIALIZER, Redis::SERIALIZER_PHP);
+$redis->setOption(Redis::OPT_SERIALIZER, REDIS_WP_CACHE_SERIALIZER);
 
 // Get all keys with a wildcard search
 $keys = $redis->keys($deletePrefix . $keySearch . '*');

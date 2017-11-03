@@ -164,20 +164,19 @@ class MailChimp
       if (isset($d['status']) && intval($d['status']) != 200 && isset($d['detail'])) {
         $this->last_error = sprintf('%d: %s', $d['status'], $d['detail']);
         // Send a report of that error if unknown error
-        if (
-         !($d['title'] == self::ERROR_MEMBER_EXISTS && $d['status'] == 400)
-        ) {
+        if (!($d['title'] == self::ERROR_MEMBER_EXISTS && $d['status'] == 400)) {
           $subject = LBWP_HOST . ' Mailchimp Exception';
           $body = 'Requested: ' . $url . PHP_EOL;
           $body.= $this->last_error . PHP_EOL . PHP_EOL;
           $body.= Strings::getVarDump($this->last_response);
           wp_mail(SERVER_EMAIL, $subject, $body);
+          return false;
         }
       }
 
       return $d;
     }
 
-    return false;
+    return true;
   }
 }

@@ -66,6 +66,7 @@ class PrinceOptions implements ArrayAccess
         'no_embed_fonts' => 'bool',
         'no_subset_fonts' => 'bool',
         'no_compress' => 'bool',
+        'ignore_console_messages' => 'bool',
         'encrypt' => 'bool',
         'key_bits' => 'int',
         'user_password' => 'string',
@@ -102,6 +103,7 @@ class PrinceOptions implements ArrayAccess
         'no_embed_fonts' => 'no_embed_fonts',
         'no_subset_fonts' => 'no_subset_fonts',
         'no_compress' => 'no_compress',
+        'ignore_console_messages' => 'ignore_console_messages',
         'encrypt' => 'encrypt',
         'key_bits' => 'key_bits',
         'user_password' => 'user_password',
@@ -138,6 +140,7 @@ class PrinceOptions implements ArrayAccess
         'no_embed_fonts' => 'setNoEmbedFonts',
         'no_subset_fonts' => 'setNoSubsetFonts',
         'no_compress' => 'setNoCompress',
+        'ignore_console_messages' => 'setIgnoreConsoleMessages',
         'encrypt' => 'setEncrypt',
         'key_bits' => 'setKeyBits',
         'user_password' => 'setUserPassword',
@@ -174,6 +177,7 @@ class PrinceOptions implements ArrayAccess
         'no_embed_fonts' => 'getNoEmbedFonts',
         'no_subset_fonts' => 'getNoSubsetFonts',
         'no_compress' => 'getNoCompress',
+        'ignore_console_messages' => 'getIgnoreConsoleMessages',
         'encrypt' => 'getEncrypt',
         'key_bits' => 'getKeyBits',
         'user_password' => 'getUserPassword',
@@ -282,6 +286,12 @@ class PrinceOptions implements ArrayAccess
     protected $no_compress;
 
     /**
+      * $ignore_console_messages ignore console messages in JS
+      * @var bool
+      */
+    protected $ignore_console_messages;
+
+    /**
       * $encrypt Encrypt PDF output.
       * @var bool
       */
@@ -388,6 +398,7 @@ class PrinceOptions implements ArrayAccess
             $this->no_embed_fonts = $data["no_embed_fonts"];
             $this->no_subset_fonts = $data["no_subset_fonts"];
             $this->no_compress = $data["no_compress"];
+            $this->ignore_console_messages = $data["ignore_console_messages"];
             $this->encrypt = $data["encrypt"];
             $this->key_bits = $data["key_bits"];
             $this->user_password = $data["user_password"];
@@ -496,6 +507,26 @@ class PrinceOptions implements ArrayAccess
     public function getHttpUser()
     {
         return $this->http_user;
+    }
+
+    /**
+     * Gets ignore_console_messages
+     * @return bool
+     */
+    public function getIgnoreConsoleMessages()
+    {
+        return $this->ignore_console_messages;
+    }
+
+    /**
+     * Sets ignore_console_messages
+     * @param bool $ignore_console_messages
+     * @return $this
+     */
+    public function setIgnoreConsoleMessages($ignore_console_messages)
+    {
+        $this->ignore_console_messages = $ignore_console_messages;
+        return $this;
     }
 
     /**

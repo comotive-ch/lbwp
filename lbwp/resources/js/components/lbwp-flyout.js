@@ -51,7 +51,12 @@ var LbwpFlyout = {
 	handleClosing : function()
 	{
 		jQuery('.lbwp-close-flyout').click(function() {
-			jQuery.cookie('flyout-' + lbwpFlyoutConfig.cookieId, 1, { expires: 365, path: '/' });
+			if (lbwpFlyoutConfig.forSessionOnly) {
+				jQuery.cookie('flyout-' + lbwpFlyoutConfig.cookieId, 1, { path: '/' });
+			} else {
+				jQuery.cookie('flyout-' + lbwpFlyoutConfig.cookieId, 1, { expires: 365, path: '/' });
+			}
+			//
 			LbwpFlyout.element.remove();
 		});
 	},

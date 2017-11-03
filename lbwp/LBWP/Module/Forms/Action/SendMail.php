@@ -260,7 +260,7 @@ class SendMail extends Base
         $field['name'] == 'tsid' ||
         $field['name'] == 'user-ip-adresse' ||
         $field['name'] == 'zeitstempel' ||
-        $field['name'] == 'Ursprungsformular' ||
+        $field['name'] == 'ursprungsformular' ||
         $field['item'] instanceof Hiddenfield
       ) {
         continue;

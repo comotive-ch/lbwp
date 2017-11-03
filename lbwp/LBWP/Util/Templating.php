@@ -63,6 +63,7 @@ class Templating
    * @param string $selectedValue selected value
    * @param string $first the first element, if needed
    * @param string|int $firstValue the value of the first option
+   * @return string html
    */
   public static function getSelectItem($options, $name, $selectedValue, $first = '', $firstValue = 0)
   {
@@ -85,5 +86,24 @@ class Templating
     $html .= '</select>';
 
     return $html;
+  }
+
+  /**
+   * Returns a target="_blank" attribute with prefix string, if the url is external
+   * @param string $url the url to target blank or not
+   * @param string $prefix the html prefix to the attribute, a single space by default
+   * @return string empty or '$prefix.target="_blank"'
+   */
+  public static function autoTargetBlank($url, $prefix = ' ')
+  {
+    // Only do something if the string is an analyzeable url
+    if (Strings::isURL($url)) {
+      $parts = parse_url($url);
+      if ($parts['host'] != LBWP_HOST) {
+        return $prefix . 'target="_blank"';
+      }
+    }
+
+    return '';
   }
 }

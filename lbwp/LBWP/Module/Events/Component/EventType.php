@@ -70,7 +70,8 @@ class EventType extends Base
     $helper->addDateTime('event-end', 'event-main', 'Ende (optional)');
     // Add optional fields
     $helper->addTextarea('post_excerpt', 'event-main', 'Kurzbeschreibung', 65);
-    $helper->addInputText('event-location', 'event-main', 'Adresse / Ort');
+    $helper->addInputText('event-location', 'event-main', 'Veranstaltungsort');
+    $helper->addAddressLocation('event-address', 'event-main');
 
     // Subscription features
     $helper->addMetabox('event-subscribe', 'Anmeldung zur Veranstaltung', 'normal');

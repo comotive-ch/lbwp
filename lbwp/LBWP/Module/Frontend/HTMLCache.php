@@ -329,7 +329,6 @@ class HTMLCache extends \LBWP\Module\Base
       $hasLocationHeader = false;
       foreach (headers_list() as $header) {
         if (
-          Strings::startsWith(strtolower($header), 'access-control') ||
           Strings::startsWith(strtolower($header), 'content-type') ||
           Strings::startsWith(strtolower($header), 'reverseproxy')
         ) {

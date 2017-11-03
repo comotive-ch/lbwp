@@ -235,11 +235,9 @@ class MemcachedAdmin extends \LBWP\Module\Base
     );
 
     // Flush on each node
-    foreach ($lbwpNodes[INFRASTRUCTURE_KEY] as $node) {
-      $url = $node['cacheUrl'] . self::FLUSH_ENDPOINT;
-      // Post that thing, but don't wait for a response
-      MasterApi::postAsynchronous($url, $params);
-    }
+    $url = get_bloginfo('url') . self::FLUSH_ENDPOINT;
+    // Post that thing, but don't wait for a response
+    MasterApi::postAsynchronous($url, $params);
 
     // Let others flush their cache
     do_action('lbwp_flushed_cache', $keyword);
@@ -268,6 +266,14 @@ class MemcachedAdmin extends \LBWP\Module\Base
   }
 
   /**
+   * Helper to flush frontend cache with a single, safe, outside call
+   */
+  public static function flushFrontendCacheHelper()
+  {
+    self::flushByKeyword(self::HTML_CACHE_PREFIX);
+  }
+
+  /**
    * @param bool $force flush, even if already flushed once
    */
   public function flushFrontendCache($force = false)
@@ -292,12 +298,6 @@ class MemcachedAdmin extends \LBWP\Module\Base
       $message = $this->flushCache(self::HTML_CACHE_PREFIX);
     }
 
-    $additional = '';
-    if (LbwpCore::isSuperlogin()) {
-      $additional .= '<td><input type="submit" name="showAllKeys" value="Keys anzeigen" class="button-primary" /></td>';
-      $additional .= '<td><input type="submit" name="checkConsistency" value="Konsistenzprüfung" class="button-primary" /></td>';
-    }
-
     $html = '
 			<div class="wrap">
 				<div id="icon-tools" class="icon32"><br></div>
@@ -311,7 +311,6 @@ class MemcachedAdmin extends \LBWP\Module\Base
 						<tr>
 							<td><input type="submit" name="doFlushHtml" value="Webseiten Cache leeren" class="button-primary" /></td>
 							<td><input type="submit" name="doFlushTotal" value="Cache komplett leeren" class="button-primary" /></td>
-							' . $additional . '
 						</tr>
 					</table>
 				</form>
@@ -319,81 +318,18 @@ class MemcachedAdmin extends \LBWP\Module\Base
 
     // If super admin, add some more info
     if (LbwpCore::isSuperlogin()) {
-      global $table_prefix;
-      $buckets = wp_get_cache_bucket();
+      global $wp_object_cache;
 
-      // Show all keys
-      if (isset($_POST['showAllKeys']) || isset($_POST['checkConsistency'])) {
-        $lists = $count = $hashes = array();
-        foreach ($buckets as $index => $bucket) {
-          $keys = $bucket->getKeys(CUSTOMER_KEY . ':' . str_replace('_', '', $table_prefix) . ':*');
-          natcasesort($keys);
-          $keys = array_values($keys);
-          $listHtml = '';
-          foreach ($keys as $key) {
-            $listHtml .= '
-            <div>
-              ' . str_replace(CUSTOMER_KEY . ':', '', $key) . '
-              ' . $this->consistencyCheck($key, $buckets, $index) . '
-            </div>';
-          }
-          $hashes[$index] = md5(json_encode($keys));
-          $lists[$index] = $listHtml;
-          $count[$index] = count($keys);
-        }
-
-        $html .= '<p><table class="widefat fixed"><tr>';
-        foreach ($lists as $index => $content) {
-          $info = $buckets[$index]->info();
-          $html .= '
-            <td>
-              <strong>Size total: ' . $info['used_memory_human'] . '</strong><br>
-              <strong>Key count: ' . $count[$index] . '</strong><br>
-              <strong>Server index: ' . $index . ' (' . $info['role'] . ')</strong><br>
-              <strong>Keylist-Hash: ' . $hashes[$index] . '</strong><br>
-              <br>
-              ' . $content . '
-            </td>';
-        }
-        $html .= '</tr></table></p>';
-      }
-
-      $html .= '<pre>';
-      $html .= Strings::getVarDump($buckets);
+      $html .= '<pre style="float:left;width:45%;">Write Connection:';
+      $html .= Strings::getVarDump($wp_object_cache->getWriteConnection()->info());
+      $html .= '</pre>';
+      $html .= '<pre style="float:left;width:45%;">Read Connection:';
+      $html .= Strings::getVarDump($wp_object_cache->getReadConnection()->info());
       $html .= '</pre>';
     }
 
     // Close the div
     $html .= '</div>';
     echo $html;
-  }
-
-  /**
-   * @param $key
-   * @param $buckets
-   * @param $index
-   * @return string
-   */
-  protected function consistencyCheck($key, $buckets, $index)
-  {
-    if ($index == 0 && isset($_POST['checkConsistency'])) {
-      $sizes = $values = array();
-      $info = '(Sizes: ';
-      foreach ($buckets as $index => $bucket) {
-        $values[$index] = serialize($bucket->get($key));
-        $sizes[$index] = strlen($values[$index]);
-      }
-      $info .= implode(', ', $sizes);
-      // Say OK or NOK
-      $ok = '<span style="font-weight:bold; color:#FF0000;">NOK</span>';
-      if (count(array_unique($sizes)) === 1 && count(array_unique($values)) === 1) {
-        $ok = '<span style="font-weight:normal; color:#008000;">OK</span>';
-      }
-      $info .= ', ' . $ok . ')';
-
-      return $info;
-    }
-
-    return '';
   }
 }

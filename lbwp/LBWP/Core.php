@@ -18,7 +18,7 @@ class Core
   /**
    * @var int Revisionnumber of the plugins (not svn revision, only for updates)
    */
-  const REVISION = 182;
+  const REVISION = 185;
   /**
    * @var int CSS/JS file version for cloudfront
    */
@@ -261,6 +261,7 @@ class Core
         $this->config[$key] = $value;
       }
     }
+
     // Save the features
     update_option('LbwpConfig', $this->config);
   }
@@ -272,7 +273,7 @@ class Core
   {
     //self::installPlugin();
     //$this->mergeFeatures();
-    //$this->mergeConfig();
+    $this->mergeConfig();
     //Installer::resetWooCommerceCrons();
   }
 

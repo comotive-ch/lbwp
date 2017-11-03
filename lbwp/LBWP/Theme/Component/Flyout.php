@@ -52,6 +52,7 @@ abstract class Flyout extends BaseComponent
     PageSettings::addCheckbox('flyout-settings', 'timeframe', 'flyoutActive', 'Flyout anzeigen, sofern Zeitrahmen zutrifft', 'Aktivierung', false, '', array(
       'saveCallback' => array($this, 'saveActivationCheckbox')
     ));
+    PageSettings::addCheckbox('flyout-settings', 'timeframe', 'flyoutSessionOnly', 'Teaser nach Ablauf der Sitzung erneut anzeigen', 'Gültigkeit', false, '');
     PageSettings::addTextInput('flyout-settings', 'timeframe', 'flyoutFromDate', 'Anzeigen ab', false, 'Datum im Format dd.mm.yyyy angeben.');
     PageSettings::addTextInput('flyout-settings', 'timeframe', 'flyoutToDate', 'Anzeigen bis', false, 'Datum im Format dd.mm.yyyy angeben. Leer = Kein Enddatum.');
     PageSettings::addSection('content', 'flyout-settings', 'Inhalt des Flyouts', '');
@@ -85,6 +86,7 @@ abstract class Flyout extends BaseComponent
   {
     $config = array(
       'isActive' => get_option('flyoutActive') == 1,
+      'forSessionOnly' => get_option('flyoutSessionOnly') == 1,
       'showFrom' => Date::getStamp(Date::EU_DATE, get_option('flyoutFromDate')),
       'showUntil' => Date::getStamp(Date::EU_DATE, get_option('flyoutToDate')),
       'cookieId' => get_option('flyoutCookieId')
@@ -104,7 +106,9 @@ abstract class Flyout extends BaseComponent
   {
     echo '
       <div class="lbwp-flyout" style="display:none;">
-        <a href="#" class="lbwp-close-flyout"><span>' . get_option('flyoutCloseText') . '</span></a>
+        <a href="#" class="lbwp-close-flyout">
+          <span>' . get_option('flyoutCloseText') . '</span>
+        </a>
         <div class="flyout-content">
           ' . apply_filters('the_content', get_option('flyoutContent')) . '
         </div>

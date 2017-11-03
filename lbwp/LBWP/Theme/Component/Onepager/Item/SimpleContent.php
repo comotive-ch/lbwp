@@ -44,7 +44,8 @@ class SimpleContent extends Base
       $html = '
         <header>
           <h2>' . $this->post->post_title . '</h2>
-        </header>';
+        </header>
+      ';
     }
 
     // Append editor content

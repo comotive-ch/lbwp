@@ -1,7 +1,10 @@
 <?php
 
 namespace LBWP\Helper;
+
+use LBWP\Util\Strings;
 use LBWP\Util\Multilang;
+use LBWP\Core as LbwpCore;
 
 /**
  * Allows to add different common rewriting rules
@@ -89,6 +92,39 @@ class Rewrite
 
       return $url;
     }, 100, 2);
+  }
+
+  /**
+   * Can be used in filters to change links from cached loadbalancer assets to native exoscale urls
+   * @param string $html an html document
+   * @return string fixed html
+   */
+  public static function rewriteVideoAssetsToExoscaleNativeUrl($html)
+  {
+    return Strings::replaceByXPath($html, '//source', function ($doc, $tag, $fragment) {
+      /**
+       * @var \DOMDocument $doc The document initialized with $html
+       * @var \DOMNode $tag A node of the result set
+       * @var \DOMDocumentFragment $fragment Empty fragment node, add content by $fragment->appendXML('something');
+       */
+      $originalUrl = $tag->attributes->getNamedItem('src')->nodeValue;
+      $parts = parse_url($originalUrl);
+
+      // Only change our own rewritten urls
+      if (Strings::endsWith($parts['path'], '.mp4') || Strings::endsWith($parts['path'], '.webm')) {
+        $cdnFullUri = LbwpCore::getCdnFileUri();
+        $searchUrl = substr($cdnFullUri, 0, strpos($cdnFullUri, '/lbwp-cdn/'));
+        // Change to the new attribute
+        $tag->setAttribute('src', str_replace(
+          $searchUrl,
+          'https://sos.exo.io',
+          $originalUrl
+        ));
+      }
+
+      $fragment->appendXML($doc->saveXML($tag));
+      return $tag;
+    });
   }
 
   /**

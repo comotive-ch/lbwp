@@ -513,7 +513,9 @@ class Implementation extends Base implements Definition
       // Schedule if configured
       if ($this->getSetting('sendType') == 'automatic') {
         // Schedule the campaign
-        $this->api->scheduleMailing($mailingId, current_time('timestamp'));
+        if (!$this->api->scheduleMailing($mailingId, current_time('timestamp'))) {
+          return 0;
+        }
       }
     }
 

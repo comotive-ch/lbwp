@@ -22,10 +22,11 @@ class Facebook extends BaseButton
   {
     // Register the api
     SocialApis::add(SocialApis::FACEBOOK, $this->getLocaleString('_', 5));
-
+    // The type is normally like, but can be changed to share
+    $type = (isset($config['share_only'])) ? 'fb-share-button' : 'fb-like';
     // Return the html
     return '
-      <div class="fb-like"
+      <div class="' . $type . '"
         data-href="' . esc_attr($link) . '"
         data-layout="' . $config['layout'] . '"
         data-action="' . $config['action'] . '"

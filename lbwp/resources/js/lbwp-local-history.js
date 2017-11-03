@@ -42,12 +42,12 @@ LbwpLocalHistory = {
 
 		// Check if the current page was already the last one
 		if (history.length > 0) {
-			isNewPage = (history[0] != document.location.href + document.location.hash);
+			isNewPage = (history[0] != document.location.href);
 		}
 
 		// Add the current location at the beginning of our array
 		if (isNewPage) {
-			history.unshift(document.location.href + document.location.hash);
+			history.unshift(document.location.href);
 		}
 
 		// Maybe pop the oldest one out, if length is reached

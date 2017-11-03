@@ -210,7 +210,7 @@ class PostTypeDropdown
   public static function getPostElementName($post, $map = array(), $stati = array('draft' => 'Entwurf', 'pending' => 'Review', 'future' => 'Geplant'))
   {
     $itemInfos = array();
-    $itemTitle = $post->post_title;
+    $itemTitle = strlen($post->post_title) > 0 ? $post->post_title : __('(no title)');
     if (isset($map[$post->post_type])) {
       $itemInfos[] = $map[$post->post_type];
     }

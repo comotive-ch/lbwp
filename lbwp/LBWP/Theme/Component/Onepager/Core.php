@@ -147,8 +147,14 @@ abstract class Core extends BaseComponent
     add_action('admin_init', array($this, 'executeItemMetaboxes'));
     add_action('save_post', array($this, 'executeItemMetaboxes'));
     add_action('save_post', array($this, 'addAutoTemplate'));
-
+    // After setup hook
+    $this->onAfterSetup();
   }
+
+  /**
+   * Does nothing in base, but can be overridden to override certain things
+   */
+  protected function onAfterSetup() { }
 
   /**
    * Initialize the component. Is likely to be overridden and needs to be
@@ -583,11 +589,17 @@ abstract class Core extends BaseComponent
         // Create the attributes
         $attributes = 'class="menu-item ' . get_post_meta($item->ID, 'item-type', true) . ' ' . $item->post_name . '"';
 
+        // Use the meta title, fallback to the item title if not given
+        $menuTitle = get_post_meta($item->ID, 'menu-name', true);
+        if (strlen($menuTitle) == 0) {
+          $menuTitle = $item->post_title;
+        }
+
         // Create the html block
         $html .= Templating::getBlock($this->templates['menu-item'], array(
           '{itemAttributes}' => trim($element->filterMenuItemAttributes($attributes)),
           '{itemLink}' => '#' . $item->post_name,
-          '{itemName}' => get_post_meta($item->ID, 'menu-name', true),
+          '{itemName}' => $menuTitle,
           '{itemBeforeLink}' => $element->getBeforeMenuItemHtml(),
           '{itemAfterLink}' => $element->getAfterMenuItemHtml(),
         ));

@@ -28,8 +28,6 @@ class Drilldown extends Plugin {
     this.options = $.extend({}, Drilldown.defaults, this.$element.data(), options);
     this.className = 'Drilldown'; // ie9 back compat
 
-    Nest.Feather(this.$element, 'drilldown');
-
     this._init();
 
     Keyboard.register('Drilldown', {
@@ -50,6 +48,8 @@ class Drilldown extends Plugin {
    * @private
    */
   _init() {
+    Nest.Feather(this.$element, 'drilldown');
+
     if(this.options.autoApplyClass) {
       this.$element.addClass('drilldown');
     }
@@ -85,7 +85,7 @@ class Drilldown extends Plugin {
       var $link = $(this);
       var $sub = $link.parent();
       if(_this.options.parentLink){
-        $link.clone().prependTo($sub.children('[data-submenu]')).wrap('<li class="is-submenu-parent-item is-submenu-item is-drilldown-submenu-item" role="menu-item"></li>');
+        $link.clone().prependTo($sub.children('[data-submenu]')).wrap('<li class="is-submenu-parent-item is-submenu-item is-drilldown-submenu-item" role="menuitem"></li>');
       }
       $link.data('savedHref', $link.attr('href')).removeAttr('href').attr('tabindex', 0);
       $link.children('[data-submenu]')

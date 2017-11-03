@@ -171,36 +171,45 @@
 * Extends <hr> with column layout information
 */
 @mixin lbwpEditorColumnSpanningHr() {
-	hr {
-		border: 0 solid #0073aa;
-		border-top-width: 2px;
-		height: 0;
-		margin: 40px auto;
-		clear: both;
+	$hrHeight: 34px;
+	hr:not([class]) {
+		border: none;
+		height: $hrHeight;
+		margin: 20px 0;
 		display: block;
-		width: 80%;
 		position: relative;
-	}
-	hr:after {
-		$height: 40px;
-		$width: 100px;
-		content:'Neue Spalte';
-		display:block;
-		position:absolute;
-		left: 50%;
-		left: calc(50% - #{$width / 2});
-		top: ($height / 2) * -1;
-		height: $height;
-		width: $width;
-		padding: 0 10px;
-		border-radius:50px;
-		overflow:hidden;
-		box-shadow: 0 0 0 2px #0073aa, 0 0 5px;
-		background: white;
-		text-align: center;
-		font-size: 12px;
-		line-height: $height;
-		color: #0073aa;
+		&:before {
+			content: '';
+			position: absolute;
+			left: 0;
+			right: 0;
+			top: calc(50% - 1px);
+			height: 2px;
+			background: $lbwpWpColorMain;
+		}
+		&:after {
+			$height: $hrHeight - 6px;
+			$width: 100px;
+			content:'Neue Spalte';
+			font-family: $lbwpWpFontFamily;
+			display:block;
+			position: absolute;
+			left: 50%;
+			left: calc(50% - #{$width / 2});
+			top: calc(50% - #{$height / 2});
+			height: $height;
+			width: $width;
+			padding: 0 10px;
+			border-radius:50px;
+			overflow:hidden;
+			box-shadow: 0 0 0 2px #0073aa;
+			background: white;
+			text-align: center;
+			font-size: 14px;
+			font-weight: 600;
+			line-height: $height;
+			color: $lbwpWpColorMain;
+		}
 	}
 }
 

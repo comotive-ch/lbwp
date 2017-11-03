@@ -118,6 +118,7 @@ class WpMenu
    *   'level_depth'       => 0,     // 0 is one level, 1 is an additional level to level_start
    *   'select_branch'     => false, // select only the current branch
    *   'expand_noncurrent' => true   // removes children of the non current branches if false
+   *   'check_immediate_parent' => false   // removes children if not immediate parents of each other
    * );
    *
    * @param array $items the items selected for the menu
@@ -139,6 +140,7 @@ class WpMenu
       $levelDepth = isset($args->level_depth) ? $args->level_depth : 0;
       $selectBranch = isset($args->select_branch) ? $args->select_branch : false;
       $expandNonCurrent = isset($args->expand_noncurrent) ? $args->expand_noncurrent : true;
+      $checkImmediateParent = isset($args->check_immediate_parent) ? $args->check_immediate_parent : false;
 
       // build tree map (parents array), detect current items
       foreach ($items as $item) {
@@ -198,12 +200,18 @@ class WpMenu
           $itemDepth++;
         }
 
-        // remove conditions
-        $removeItem =
+        $removeItem = (
+          // Remove if not same current top and we select branches (only correct submenus of current)
           ($selectBranch && $id != $currentTopParent) ||
+          // Remove if we want to remove non current elements from the top
           (!$selectBranch && !$expandNonCurrent && $id != $currentTopParent && $itemDepth > $levelStart) ||
+          // When parsing third and deeper hierarchies, check for immediate parent, if not matching, remove them,
+          // because else we'd show *all* third level items instead of just currents from their immediate parent
+          (!$expandNonCurrent && $checkImmediateParent && !($currentItems[0]->menu_item_parent == $item->menu_item_parent)) ||
+          // Remove if mismatching depth
           ($itemDepth < $levelStart) ||
-          ($itemDepth > $levelStart + $levelDepth);
+          ($itemDepth > $levelStart + $levelDepth)
+        );
 
         if ($removeItem) {
           // item be gone!
@@ -230,6 +238,7 @@ class WpMenu
       }
       $items = $result;
     }
+
     return $items;
   }
 

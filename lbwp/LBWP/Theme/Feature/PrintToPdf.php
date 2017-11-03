@@ -2,6 +2,7 @@
 
 namespace LBWP\Theme\Feature;
 
+use DocRaptor\PrinceOptions;
 use LBWP\Module\Frontend\HTMLCache;
 use LBWP\Util\ArrayManipulation;
 use LBWP\Util\File;
@@ -24,9 +25,7 @@ class PrintToPdf
     'apiKey' => 'H3CM2Yff0XwryukWJdB',
     'libraryVersion' => '1.0.0',
     'useJavascript' => true,
-    'urlParameters' => array(
-      'PageSpeed' => 'off'
-    ),
+    'urlParameters' => array(),
     'userAgentBlacklist' => array(
       '*googlebot*',
       '*crawler*',
@@ -183,6 +182,7 @@ class PrintToPdf
     $document->setTest(defined('LOCAL_DEVELOPMENT'));
     $document->setJavascript($this->options['useJavascript']);
     $document->setName($printedPost->post_name . '.pdf');
+    $document->setIgnoreConsoleMessages(true);
     $document->setDocumentType('pdf');
     $document->setStrict('none');
 

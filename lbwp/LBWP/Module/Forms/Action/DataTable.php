@@ -196,7 +196,7 @@ class DataTable extends Base
     }
 
     // Add source information
-    $data = $this->addRowMetaData($data);
+    $data = $this->addRowMetaData($data, $formId);
 
     // Add a table entry, if not working, send message
     if (!$backend->addTableEntry($formId, $data, $this)) {
@@ -218,9 +218,10 @@ class DataTable extends Base
   /**
    * Add various additonal generic data to the row
    * @param array $data previous data array
+   * @param int $formId the id of the executed form
    * @return array new data array with additional information
    */
-  protected function addRowMetaData($data)
+  protected function addRowMetaData($data, $formId)
   {
     // Add a data item, that contains the form source
     $source = array(
@@ -229,8 +230,11 @@ class DataTable extends Base
     );
 
     // Override with specific source, if set
-    if (isset($this->params['ursprung']) && strlen($this->params['ursprung']) > 0) {
-      $source['value'] = $this->params['ursprung'];
+    if ($formId > 0) {
+      $form = get_post($formId);
+      if ($form instanceof \WP_Post) {
+        $source['value'] = $form->post_title;
+      }
     }
 
     $data[] = $source;

@@ -1,8 +1,12 @@
 // base helper for vertical menus
 // map this on a parent selector of <ul>
-@mixin lbwpHorizontalNav($fontSize:1rem) {
+@mixin lbwpHorizontalNav($fontSize:1rem,$ulAsChild:true) {
+	$ulSelector: '&';
+	@if ($ulAsChild) {
+		$ulSelector: 'ul';
+	}
 	// fix the "space between inline block elements"
-	ul {
+	#{$ulSelector} {
 		margin: 0;
 		padding: 0;
 		font-size: 0;

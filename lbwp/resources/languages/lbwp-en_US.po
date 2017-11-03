@@ -564,16 +564,16 @@ msgid "Logout"
 msgstr "Logout"
 
 msgid "<strong>Fehler</strong>: Bitte geben Sie Ihren Benutzernamen ein."
-msgstr ""
+msgstr "<strong>Error</strong>: Please fill in your username."
 
 msgid "<strong>Fehler</strong>: Bitte geben Sie Ihr Passwort ein."
-msgstr ""
+msgstr "<strong>Error</strong>: Please fill in your password."
 
 msgid "<strong>Fehler</strong>: Der eingegebene Benutzername ist ungültig."
-msgstr ""
+msgstr "<strong>Error</strong>: The provided username is invalid."
 
 msgid "<strong>Fehler</strong>: Das eingegebene Passwort ist nicht korrekt."
-msgstr ""
+msgstr "<strong>Error</strong>: The provided password is invalid."
 
 msgid "Registrieren"
 msgstr "Register"

@@ -76,6 +76,7 @@ class CmsFeatures extends \LBWP\Module\Base
       add_action('rss2_item', array($this, 'addRssMediaItems'));
       add_action('rss2_ns', array($this, 'addRssNamespace'));
       add_filter('the_excerpt_rss', array($this, 'fixFeedExcerpt'));
+      add_action('wp', array($this, 'runAfterQueryHooks'));
       // Create a page speed instance with default settings
       PageSpeed::getInstance();
       // Print acme challenge for ssl domain validation, if given
@@ -105,6 +106,17 @@ class CmsFeatures extends \LBWP\Module\Base
     // General features
     $this->registerLibraries();
     $this->initGlobalFeatures();
+  }
+
+  /**
+   * Hooks and features that are run on "wp", so after the query is done
+   */
+  public function runAfterQueryHooks()
+  {
+    if ($this->config['NotFoundSettings:UsePermanentRedirect'] == 1 && is_404()) {
+      header('Location:' . get_bloginfo('url'), null, 301);
+      exit;
+    }
   }
 
   /**
@@ -208,6 +220,7 @@ class CmsFeatures extends \LBWP\Module\Base
     wp_register_script('jquery-multisort', $url . '/js/jquery.multisort.js', array('jquery'), LbwpCore::REVISION, true);
     wp_register_script('jquery-cookie', $url . '/js/jquery.cookie.js', array('jquery'), LbwpCore::REVISION, true);
     wp_register_script('lbwp-gallery-inline-fix', $url . '/js/lbwp-gallery-inline-fix.js', array('jquery'), LbwpCore::REVISION, true);
+    wp_register_script('lbwp-gallery-inline-fix-v2', $url . '/js/lbwp-gallery-inline-fix-v2.js', array('jquery'), LbwpCore::REVISION, true);
     wp_register_style('jquery-ui-theme-lbwp', $url . '/css/jquery.ui.theme.min.css', array(), LbwpCore::REVISION);
     wp_register_script('chosen-js', $url . '/js/chosen/chosen.jquery.min.js', array('jquery'), LbwpCore::REVISION);
     wp_register_script('chosen-sortable-js', $url . '/js/chosen/chosen.sortable.jquery.js', array('chosen-js'), LbwpCore::REVISION);
@@ -317,7 +330,7 @@ class CmsFeatures extends \LBWP\Module\Base
   public function removeUnlinkablePosttypes($query)
   {
     $postTypes = array();
-    $forbiddenTypes = array('lbwp-form', 'lbwp-snippet', 'lbwp-list', 'lbwp-listitem');
+    $forbiddenTypes = array('lbwp-form', 'lbwp-snippet', 'lbwp-list', 'lbwp-listitem', 'onepager-item');
     // Rebuild array (fastest way to do this, actually)
     foreach ($query['post_type'] as $type) {
       if (!in_array($type, $forbiddenTypes)) {

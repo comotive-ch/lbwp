@@ -45,8 +45,6 @@ class TypeNewsletter extends Base
     if ($service instanceof ServiceBase && $service->isWorking()) {
       // Add post type and meta fields
       $this->addPostType();
-      // Add the subscribe and unsubscribe actions
-      add_action('cron_hourly', array($this, 'scheduleNewsletter'));
 
       // Those hooks are only for the backend
       if (is_admin()) {
@@ -394,68 +392,6 @@ class TypeNewsletter extends Base
 
     // Save the template
     $this->set($postId, $field['key'], $templateId);
-  }
-
-  /**
-   * This is called in hourly cron and schedules planned newsletters by sending them
-   * to the service and scheduling them there.
-   */
-  public function scheduleNewsletter()
-  {
-    $newsletters = $this->getScheduleableNewsletters();
-
-    foreach ($newsletters as $newsletter) {
-      // Get the template and the schedule time
-      $type = $this->core->getTypeNewsletter();
-      $newsletter = $type->getNewsletter($newsletter->ID);
-      $time = strtotime($newsletter->post_date_gmt);
-
-      // Load the template engine and enerate html/text version
-      $templating = $this->core->getTemplating();
-      $template = $templating->getTemplate($newsletter->templateId);
-      $html = $type->renderNewsletter($template, $newsletter, 'html');
-      $text = $type->renderNewsletter($template, $newsletter, 'text');
-
-      // Create and/or schedule the mailing
-      $service = $this->core->getService();
-      $service->createMailing($html, $text, $newsletter, $time);
-
-      // Mark the newsletter as sent and ave the mailing id
-      update_post_meta($newsletter->ID, 'sent', 1);
-    }
-  }
-
-  /**
-   * Gets all unsent newsletters planned in the next two hours
-   * @return array of scheduleable newsletters
-   */
-  protected function getScheduleableNewsletters()
-  {
-    // Calculate the search time
-    $stampAfter = current_time('timestamp') - (14 * 24 * 3600);
-    $stampBefore = current_time('timestamp') + (2 * 3600);
-
-    // Do the query
-    $newsletters = get_posts(array(
-      'post_type' => 'lbwp-nl',
-      'post_status' => array('publish', 'future'),
-      'meta_query' => array(
-        array(
-          'key' => 'sent',
-          'compare' => 'NOT EXISTS', // works!
-          'value' => 'bogus' // Ignored, but is necessary.
-        ),
-      ),
-      'date_query' => array(
-        array(
-          'after' => Date::getTime(Date::SQL_DATETIME, $stampAfter),
-          'before' => Date::getTime(Date::SQL_DATETIME, $stampBefore),
-          'inclusive' => true,
-        ),
-      )
-    ));
-
-    return $newsletters;
   }
 
   /**

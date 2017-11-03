@@ -34,7 +34,7 @@ class Multilang
    * @param string $field the field to get
    * @return string current language code
    */
-  public static function getCurrentLang($field = 'slug')
+  public static function getCurrentLang($field = 'slug', $fallback = false)
   {
     if (self::isActive()) {
       if (!pll_current_language($field)) {
@@ -44,7 +44,7 @@ class Multilang
       }
     }
 
-    return false;
+    return $fallback;
   }
 
   /**
