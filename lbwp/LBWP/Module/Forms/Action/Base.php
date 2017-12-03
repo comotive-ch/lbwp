@@ -93,12 +93,11 @@ abstract class Base
   public function getFieldContent($fields, $value)
   {
     // Return directly, if there is no parseable value
-    if (Strings::startsWith($value, 'field:')) {
-      list($tag, $fieldName) = explode(':', $value);
+    if (Strings::contains($value, 'field:')) {
       foreach ($fields as $field) {
-        if ($field['name'] == $fieldName || $field['id'] == $fieldName) {
-          return $field['value'];
-        }
+        // Blindly replace every replaceable field by name and id
+        $value = str_replace('field:' . $field['name'], $field['value'], $value);
+        $value = str_replace('field:' . $field['id'], $field['value'], $value);
       }
     }
 

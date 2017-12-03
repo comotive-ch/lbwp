@@ -3,6 +3,7 @@
 namespace LBWP\Helper\MetaItem;
 
 use LBWP\Helper\MetaItem\Templates;
+use LBWP\Module\General\AuthorHelper;
 use LBWP\Util\Strings;
 
 /**
@@ -329,5 +330,33 @@ class ChosenDropdown
       // Save the meta data to the database
       update_post_meta($postId, $key, $value);
     }
+  }
+
+  /**
+   * @param \WP_User $user
+   * @return string the html representation in a chosen for the user
+   */
+  public static function getUserHtmlCallback($user)
+  {
+    // Edit link for modals
+    $editLink = admin_url('user-edit.php?user_id=' . $user->ID . '&ui=show-as-modal');
+
+    // Get a list of roles of the user
+    global $wp_roles;
+    $roles = array();
+    foreach ($user->roles as $role) {
+      $roles[] = translate_user_role($wp_roles->roles[$role]['name']);
+    }
+
+    return '
+      <div class="mbh-chosen-inline-element">
+        <h2><a href="' . $editLink . '" class="open-modal">' . $user->display_name . '</a></h2>
+        <ul class="mbh-item-actions">
+          <li><a href="' . $editLink . '" class="open-modal">' . __('Bearbeiten', 'lbwp') . '</a></li>
+        </ul>
+        <p class="mbh-post-info">E-Mail: ' . $user->user_email . '</p>
+        <p class="mbh-post-info">Rolle(n): ' . implode(', ', $roles) . '</p>
+      </div>
+    ';
   }
 } 

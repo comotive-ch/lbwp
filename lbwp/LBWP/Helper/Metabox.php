@@ -858,6 +858,32 @@ class Metabox
   }
 
   /**
+   * Displays a user dropdown
+   * @param string $key
+   * @param string $boxId
+   * @param string $title
+   * @param array $args
+   */
+  public function addUserDropdown($key, $boxId, $title, $args = array())
+  {
+    $items = array();
+    $users = get_users();
+
+    foreach ($users as $user) {
+      $items[$user->ID] = array(
+        'title' => $user->display_name,
+        'data' => array(
+          'html' => esc_attr(ChosenDropdown::getUserHtmlCallback($user)),
+          'is-modal' => 1
+        )
+      );
+    }
+
+    $args['items'] = $items;
+    $this->addDropdown($key, $boxId, $title, $args);
+  }
+
+  /**
    * @param $key
    * @param $boxId
    * @param $title

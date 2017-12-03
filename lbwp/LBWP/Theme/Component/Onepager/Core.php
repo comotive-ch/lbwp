@@ -102,6 +102,10 @@ abstract class Core extends BaseComponent
    */
   protected $useMenus = false;
   /**
+   * @var bool activate the possibility to make sliders out of op-elements
+   */
+  protected $useSliders = false;
+  /**
    * @var bool use direct children only to be selected from a onepager
    */
   protected $directChildrenOnly = true;
@@ -113,6 +117,10 @@ abstract class Core extends BaseComponent
    * @var bool force unique slugs on one pager items
    */
   protected $forceUniqueSlugs = true;
+  /**
+   * @var bool if true, item types are changeable
+   */
+  protected $makeTypesChangeable = false;
   /**
    * @var string can be overridden: If set, the page template is preselected automatically
    */
@@ -253,7 +261,7 @@ abstract class Core extends BaseComponent
           $helper->addMetabox($boxId, 'Inhalte für den Onepager', 'normal', 'high');
           $helper->addPostTypeDropdown('elements', $boxId, 'Inhalte', self::TYPE_SLUG, $args);
 
-          // IF menus are active, add another metabox for it
+          // If menus are active, add another metabox for it
           if ($this->useMenus) {
             $boxId = $type . '_onepager-menu';
             $helper->addMetabox($boxId, 'Menu für den Onepager', 'normal', 'high');
@@ -267,6 +275,30 @@ abstract class Core extends BaseComponent
               )
             ));
           }
+        }
+      }
+    }
+
+    // If configured, make the item type changeable on op items
+    if ($this->makeTypesChangeable) {
+      $postId = $this->getCurrentPostId();
+      if ($postId > 0) {
+        $opItem = get_post($postId);
+        $parentItem = get_post($opItem->post_parent);
+        $templates = $this->getTemplateList($parentItem->post_type);
+        uasort($templates, array('\LBWP\Helper\MetaItem\ChosenDropdown', 'sortByNumber'));
+        // Now, create an
+        if ($opItem->post_type == self::TYPE_SLUG && count($templates) > 0) {
+          $items = array();
+          foreach ($templates as $template) {
+            $items[$template['key']] = $template['name'];
+          }
+          $helper = Metabox::get(self::TYPE_SLUG);
+          $helper->addMetabox('type-changer', 'Inhalts-Typ ändern', 'side', 'low');
+          $helper->addDropdown('item-type', 'type-changer', '', array(
+            'items' => $items,
+            'description' => 'Bitte Inhalts-Typ auswählen und speichern. Danach erscheinen die Felder des neu zugeordneten Inhalts-Typs.'
+          ));
         }
       }
     }
@@ -354,7 +386,10 @@ abstract class Core extends BaseComponent
         if (isset($this->items[$type])) {
           /** @var BaseItem $element */
           $class = $this->items[$type]['class'];
-          $element = new $class($this->useMenus, $type, $this);
+          $element = new $class($type, $this, array(
+            'useMenus' => $this->useMenus,
+            'useSliders' => $this->useSliders
+          ));
           $element->onMetaboxAdd();
         }
       }
@@ -484,7 +519,8 @@ abstract class Core extends BaseComponent
    */
   public function getItemsHtml($items)
   {
-    $html = '';
+    $html = $lastSliderId = '';
+    $openedWrapper = false;
     // If menus are active and there is a menu to display
     if ($this->useMenus && !$this->displayedMenu) {
       $html .= $this->getMenuHtml();
@@ -494,10 +530,10 @@ abstract class Core extends BaseComponent
       // Get item html and wrap in template
       foreach ($items as $element) {
         // Create the html output
-        $elementHtml = $element->getHtml();
+        $elementHtml = $element->getHtmlCached();
         if (strlen($elementHtml) > 0) {
           // Set attributes of the item
-          $attributes = '';
+          $attributes = $before = '';
           $item = $element->getPost();
           $classes = get_post_class($this->itemClass, $item->ID);
           $classes[] = get_post_meta($item->ID, 'item-type', true);
@@ -510,7 +546,22 @@ abstract class Core extends BaseComponent
             $attributes .= ' class="' . implode(' ', $classes) . '"';
           }
 
-          $html .= Templating::getBlock($this->templates['item'], array(
+          // If we have sliders add wrappers before and after elements
+          if ($this->useSliders) {
+            $changingIds = ($element->sliderId != $lastSliderId);
+            $closeOld = strlen($lastSliderId) > 0;
+            $startNew = strlen($element->sliderId) > 0;
+            // On changing ids add closing and new starting wrappers
+            if ($changingIds) {
+              if ($closeOld)
+                $before .= '</div>';
+              if ($startNew)
+                $before .= '<div class="lbwp-onepager-slider" data-id="' . $element->sliderId . '">';
+            }
+            $lastSliderId = $element->sliderId;
+          }
+
+          $html .= $before . Templating::getBlock($this->templates['item'], array(
             '{itemAttributes}' => trim($attributes),
             '{itemSlug}' => $item->post_name,
             '{itemContent}' => $elementHtml,
@@ -582,7 +633,7 @@ abstract class Core extends BaseComponent
       foreach ($items as $element) {
         $item = $element->getPost();
         // Skip if not configured to show
-        if (get_post_meta($item->ID, 'show-in-menu', true) != 'on') {
+        if (get_post_meta($item->ID, 'show-in-menu', true) != 'on' || strlen($element->getHtmlCached()) == 0) {
           continue;
         }
 
@@ -641,6 +692,13 @@ abstract class Core extends BaseComponent
       $additional .= '<p class="mbh-post-info">' . __('Im Menu anzeigen', 'lbwp') . ': ' . $showInMenu . '</p>' . $menuName;
     }
 
+    if ($this->useSliders) {
+      $sliderId = Strings::forceSlugString(get_post_meta($item->ID, 'slider-id', true));
+      if (strlen($sliderId) > 0) {
+        $additional .= '<p class="mbh-post-info">' . __('Teil von Slider', 'lbwp') . ': ' . $sliderId . '</p>';
+      }
+    }
+
     // Edit link for modals
     $editLink = admin_url('post.php?post=' . $item->ID . '&action=edit&ui=show-as-modal');
 
@@ -696,8 +754,14 @@ abstract class Core extends BaseComponent
           $type = get_post_meta($postId, 'item-type', true);
           /** @var BaseItem $element */
           $class = $this->items[$type]['class'];
-          $element = new $class($this->useMenus, $type, $this);
+          $element = new $class($type, $this, array(
+            'useMenus' => $this->useMenus,
+            'useSliders' => $this->useSliders
+          ));
           $element->setPost($postObject);
+          if ($this->useSliders) {
+            $element->sliderId = get_post_meta($postId, 'slider-id', true);
+          }
           $this->instances[$postId] = $element;
         }
       }
@@ -717,7 +781,10 @@ abstract class Core extends BaseComponent
       $type = get_post_meta($postId, 'item-type', true);
       /** @var BaseItem $element */
       $class = $this->items[$type]['class'];
-      $element = new $class(false, $type, $this);
+      $element = new $class($type, $this, array(
+        'useMenus' => false,
+        'useSliders' => false
+      ));
       $element->setPost($postObject);
       $items[$postId] = $element;
     }

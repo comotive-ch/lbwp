@@ -2,7 +2,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: LBWP\n"
 "POT-Creation-Date: 2015-08-03 11:05+0100\n"
-"PO-Revision-Date: 2017-07-28 11:15+0200\n"
+"PO-Revision-Date: 2017-11-30 14:33+0100\n"
 "Last-Translator: \n"
 "Language-Team: comotive <info@comotive.ch>\n"
 "Language: it_IT\n"
@@ -62,15 +62,15 @@ msgstr ""
 
 #: /var/www/lbwp/wp-content/plugins/lbwp/LBWP/Theme/Feature/ListingTemplate.php:101
 msgid "Vorname"
-msgstr ""
+msgstr "Nome"
 
 #: /var/www/lbwp/wp-content/plugins/lbwp/LBWP/Theme/Feature/ListingTemplate.php:102
 msgid "Nachname"
-msgstr ""
+msgstr "Cognome"
 
 #: /var/www/lbwp/wp-content/plugins/lbwp/LBWP/Theme/Feature/ListingTemplate.php:103
 msgid "Anrede"
-msgstr ""
+msgstr "Saluto"
 
 #: /var/www/lbwp/wp-content/plugins/lbwp/LBWP/Theme/Feature/ListingTemplate.php:104
 msgid "Funktion/Rolle"
@@ -567,40 +567,55 @@ msgid "Logout"
 msgstr "Ritirare"
 
 msgid "<strong>Fehler</strong>: Bitte geben Sie Ihren Benutzernamen ein."
-msgstr ""
+msgstr "<strong>Errore</strong>: Inserisci il tuo nome utente."
 
 msgid "<strong>Fehler</strong>: Bitte geben Sie Ihr Passwort ein."
-msgstr ""
+msgstr "<strong>Errore</strong>: Inserisci la tua password."
 
 msgid "<strong>Fehler</strong>: Der eingegebene Benutzername ist ungültig."
-msgstr ""
+msgstr "<strong>Errore</strong>: Il nome utente inserito non è valido."
 
 msgid "<strong>Fehler</strong>: Das eingegebene Passwort ist nicht korrekt."
-msgstr ""
+msgstr "<strong>Errore</strong>: La password inserita non è corretta."
 
 msgid "Registrieren"
-msgstr ""
+msgstr "Registrazione"
 
 msgid "Benutzername"
-msgstr ""
+msgstr "Nome utente"
 
 msgid "Passwort"
-msgstr ""
+msgstr "Password"
 
 msgid "Neues Passwort"
-msgstr ""
+msgstr "Nuova password"
 
 msgid "Passwort bestätigen"
-msgstr ""
+msgstr "Conferma password"
 
 msgid "Login"
-msgstr ""
+msgstr "Login"
 
 msgid "Ihr Account wurde erstellt. Sie sind nun eingeloggt."
-msgstr ""
+msgstr "Il tuo account è stato creato. Hai effettuato l'accesso."
 
 msgid "<strong>Fehler</strong>: %s"
-msgstr ""
+msgstr "<strong>Errore</strong>: %s"
 
 msgid "Ihre Profildaten wurden gespeichert."
-msgstr ""
+msgstr "I tuoi dati del profilo sono stati salvati."
+
+msgid "Profil"
+msgstr "Profilo"
+
+msgid "Sie haben sich erfolgreich eingeloggt."
+msgstr "Accesso effettuato correttamente."
+
+msgid "Sie wurden erfolgreich ausgeloggt."
+msgstr "Il logout è stato effettuato con successo."
+
+msgid "Herr"
+msgstr "Signore"
+
+msgid "Frau"
+msgstr "Signorina"

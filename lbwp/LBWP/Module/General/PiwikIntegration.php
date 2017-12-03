@@ -56,7 +56,7 @@ class PiwikIntegration extends \LBWP\Module\Base
    */
   public function addDnsPrefetch()
   {
-    echo '<link rel="dns-prefetch" href="//' . $this->integration['domain'] . '" />' . PHP_EOL;
+    echo '<link rel="dns-prefetch" href="' . $this->integration['protocol'] . '//' . $this->integration['domain'] . '" />' . PHP_EOL;
   }
 
 

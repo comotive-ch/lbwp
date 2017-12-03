@@ -2,7 +2,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: LBWP\n"
 "POT-Creation-Date: 2015-08-03 11:05+0100\n"
-"PO-Revision-Date: 2017-07-28 11:15+0200\n"
+"PO-Revision-Date: 2017-11-30 14:33+0100\n"
 "Last-Translator: \n"
 "Language-Team: comotive <info@comotive.ch>\n"
 "Language: fr_FR\n"
@@ -62,15 +62,15 @@ msgstr ""
 
 #: /var/www/lbwp/wp-content/plugins/lbwp/LBWP/Theme/Feature/ListingTemplate.php:101
 msgid "Vorname"
-msgstr ""
+msgstr "Prénom"
 
 #: /var/www/lbwp/wp-content/plugins/lbwp/LBWP/Theme/Feature/ListingTemplate.php:102
 msgid "Nachname"
-msgstr ""
+msgstr "Nom"
 
 #: /var/www/lbwp/wp-content/plugins/lbwp/LBWP/Theme/Feature/ListingTemplate.php:103
 msgid "Anrede"
-msgstr ""
+msgstr "Salutation"
 
 #: /var/www/lbwp/wp-content/plugins/lbwp/LBWP/Theme/Feature/ListingTemplate.php:104
 msgid "Funktion/Rolle"
@@ -567,40 +567,55 @@ msgid "Logout"
 msgstr "Déconnecter"
 
 msgid "<strong>Fehler</strong>: Bitte geben Sie Ihren Benutzernamen ein."
-msgstr ""
+msgstr "<strong>Erreur</strong>: veuillez saisir un identifiant."
 
 msgid "<strong>Fehler</strong>: Bitte geben Sie Ihr Passwort ein."
-msgstr ""
+msgstr "<strong>Erreur</strong>: veuillez saisir votre mot de passe."
 
 msgid "<strong>Fehler</strong>: Der eingegebene Benutzername ist ungültig."
-msgstr ""
+msgstr "<strong>Erreur</strong>: l’identifiant saisi n’est pas valide."
 
 msgid "<strong>Fehler</strong>: Das eingegebene Passwort ist nicht korrekt."
-msgstr ""
+msgstr "<strong>Erreur</strong>: le mot de passe saisi est erroné."
 
 msgid "Registrieren"
-msgstr ""
+msgstr "S’enregistrer"
 
 msgid "Benutzername"
-msgstr ""
+msgstr "Identifiant"
 
 msgid "Passwort"
-msgstr ""
+msgstr "Mot de passe"
 
 msgid "Neues Passwort"
-msgstr ""
+msgstr "Nouveau mot de passe"
 
 msgid "Passwort bestätigen"
-msgstr ""
+msgstr "Confirmer le mot de passe"
 
 msgid "Login"
-msgstr ""
+msgstr "Connexion"
 
 msgid "Ihr Account wurde erstellt. Sie sind nun eingeloggt."
-msgstr ""
+msgstr "Votre compte a été créé. Vous êtes maintenant connecté."
 
 msgid "<strong>Fehler</strong>: %s"
-msgstr ""
+msgstr "<strong>Erreur</strong>: %s"
 
 msgid "Ihre Profildaten wurden gespeichert."
-msgstr ""
+msgstr "Les données du profil ont été enregistrées."
+
+msgid "Profil"
+msgstr "Profil"
+
+msgid "Sie haben sich erfolgreich eingeloggt."
+msgstr "Connexion réussie."
+
+msgid "Sie wurden erfolgreich ausgeloggt."
+msgstr "Vous êtes déconnecté."
+
+msgid "Herr"
+msgstr "Monsieur"
+
+msgid "Frau"
+msgstr "Madame"

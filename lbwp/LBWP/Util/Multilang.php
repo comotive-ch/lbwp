@@ -116,6 +116,25 @@ class Multilang
   }
 
   /**
+   * @param $postId
+   * @return array
+   */
+  public static function getPostTranslations($postId, $filterCurrent = false)
+  {
+    if (self::isActive()) {
+      $translations = pll_get_post_translations($postId);
+      if ($filterCurrent) {
+        $language = self::getPostLang($postId);
+        unset($translations[$language]);
+      }
+
+      return $translations;
+    }
+
+    return array();
+  }
+
+  /**
    * @param int $postId the post
    * @return string post language code
    */

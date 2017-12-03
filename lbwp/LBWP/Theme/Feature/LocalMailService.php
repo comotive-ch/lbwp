@@ -542,7 +542,8 @@ class LocalMailService
       'post_type' => self::LIST_TYPE_NAME,
       'orderby' => 'title',
       'order' => 'ASC',
-      'posts_per_page' => -1
+      'posts_per_page' => -1,
+      'lang' => 'all'
     ));
 
     foreach ($lists as $list) {

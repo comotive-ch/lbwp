@@ -24,6 +24,14 @@ abstract class Base
    */
   protected $useMenus = false;
   /**
+   * @var bool tells if the onepager uses menus potentially
+   */
+  protected $useSliders = false;
+  /**
+   * @var string the cached html of an element
+   */
+  protected $cachedHtml = false;
+  /**
    * @var string the main box id, to add other fields in onMetaboxAdd
    */
   const MAIN_BOX_ID = 'onepager-item-main';
@@ -34,13 +42,14 @@ abstract class Base
 
   /**
    * Base constructor of a onepager item
-   * @param bool $useMenus true if menus are used in this handler
    * @param string $key the element type key
    * @param Core $handler the handler reference
+   * @param array $settings a settings array
    */
-  public function __construct($useMenus, $key, $handler)
+  public function __construct($key, $handler, $settings)
   {
-    $this->useMenus = $useMenus;
+    $this->useMenus = $settings['useMenus'];
+    $this->useSliders = $settings['useSliders'];
     $this->key = $key;
     $this->handler = $handler;
     $this->helper = Metabox::get(Core::TYPE_SLUG);
@@ -83,6 +92,15 @@ abstract class Base
       $this->helper->addDropdown('core-classes', self::MAIN_BOX_ID, __('Darstellungs-Optionen'), array(
         'items' => $classes,
         'multiple' => true
+      ));
+    }
+
+    // See if sliders are activated
+    if ($this->useSliders) {
+      $this->helper->addInputText('slider-id', self::MAIN_BOX_ID, 'Slider-ID', array(
+        'description' => '
+          Sie können mehrere Elemente zu einem Slider zusammenfassen indem sie allen die gleiche Slider-ID geben.
+          Die ID kann Buchstaben, Bindestriche und Zahlen enthalten und muss lediglich über alle Elemente gleich benannt werden.'
       ));
     }
 
@@ -156,6 +174,19 @@ abstract class Base
   public function getBeforeMenuItemHtml()
   {
     return '';
+  }
+
+  /**
+   * Can be called, if html is received, so getHtml is called only once per item
+   * @return string
+   */
+  public function getHtmlCached()
+  {
+    if ($this->cachedHtml === false) {
+      $this->cachedHtml = $this->getHtml();
+    }
+
+    return $this->cachedHtml;
   }
 
   /**

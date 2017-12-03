@@ -2,6 +2,7 @@
 
 namespace LBWP\Module\General;
 
+use LBWP\Util\File;
 use LBWP\Util\Strings;
 
 /**
@@ -41,28 +42,18 @@ class Favicon extends \LBWP\Module\Base
   {
     // Get icon and quit function, if no favicon is present
     $faviconUrl = $this->config['HeaderFooterFilter:FaviconPngUrl'];
+    $extension = substr(File::getExtension($faviconUrl), 1);
 
-    $type = 'image/png';
+    $type = 'image/' . $extension;
     if (Strings::endsWith($faviconUrl, '.ico')) {
       $type = 'image/x-icon';
     }
 
     echo '
-      <link rel="apple-touch-icon" sizes="57x57" href="' . $faviconUrl . '" />
-      <link rel="apple-touch-icon" sizes="60x60" href="' . $faviconUrl . '" />
-      <link rel="apple-touch-icon" sizes="72x72" href="' . $faviconUrl . '" />
-      <link rel="apple-touch-icon" sizes="76x76" href="' . $faviconUrl . '" />
-      <link rel="apple-touch-icon" sizes="114x114" href="' . $faviconUrl . '" />
-      <link rel="apple-touch-icon" sizes="120x120" href="' . $faviconUrl . '" />
-      <link rel="apple-touch-icon" sizes="144x144" href="' . $faviconUrl . '" />
-      <link rel="apple-touch-icon" sizes="152x152" href="' . $faviconUrl . '" />
+      <link rel="apple-touch-icon"  href="' . $faviconUrl . '" />
+      <link rel="icon" type="' . $type . '" href="' . $faviconUrl . '" />
       <link rel="shortcut icon" href="' . $faviconUrl . '" />
       <link rel="shortcut icon" type="' . $type . '" href="' . $faviconUrl . '" />
-      <link rel="icon" sizes="32x32" type="' . $type . '" href="' . $faviconUrl . '" />
-      <link rel="icon" sizes="194x194" type="' . $type . '" href="' . $faviconUrl . '" />
-      <link rel="icon" sizes="96x96" type="' . $type . '" href="' . $faviconUrl . '" />
-      <link rel="icon" sizes="192x192" type="' . $type . '" href="' . $faviconUrl . '" />
-      <link rel="icon" sizes="16x16" type="' . $type . '" href="' . $faviconUrl . '" />
       <meta name="msapplication-TileImage" content="' . $faviconUrl . '" />
     ';
   }

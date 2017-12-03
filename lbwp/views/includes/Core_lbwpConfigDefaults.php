@@ -23,5 +23,6 @@ $this->config = array(
   'Various:MaxImageSize' => 1920,
   'Various:MaintenanceMode' => 0,
   'Various:MaintenancePassword' => '',
+  'Various:RobotsTxt' => '',
   'Various:GoogleEngineId' => '',
 );

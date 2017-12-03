@@ -166,6 +166,16 @@ $this->configData['Various']['items']['MaxImageSize'] = array(
   'description' => 'Originalbilder werden beim Upload auf diese Maximalgrösse zugeschnitten (Längere Kante).'
 );
 
+$this->configData['Various']['items']['RobotsTxt'] = array(
+  'type' => 'textarea',
+  'typeConfig' => array(),
+  'title' => 'Zusätzlicher Inhalt robots.txt',
+  'description' => '
+    Dieses Feld kann verwendet werden um z.b. einzelne Seiten oder Verzeichnisse, aber auch Bilder von der Indexierung auszuschliessen.
+    Achtung: Die Syntax für die robots.txt muss korrekt sein, da sonst die Seite möglicherweise nicht mehr indexiert wird.
+  '
+);
+
 /**
  * Not found page settings
  */

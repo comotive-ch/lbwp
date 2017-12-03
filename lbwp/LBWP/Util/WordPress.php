@@ -556,6 +556,48 @@ class WordPress
   }
 
   /**
+   * @param array $config of config variables
+   * @return string login customization css and js
+   */
+  public static function getCustomizedLoginScreenHtml($config)
+  {
+    return '
+      <style type="text/css">
+        body.login {
+          background-color:' . $config['background'] . ';
+        }
+        body.login h1 a {
+          background-image: url("' . $config['logo'] . '") !important;
+          width: ' . $config['logoWidth'] . ';
+          background-size: ' . $config['logoWidth'] . ';
+          height: ' . $config['logoHeight'] . ';
+        }
+        body.login .message {
+          border-left-color:' . $config['messageBorderColor'] . ';
+        }
+        .button-primary, .button-primary:hover {
+            background: ' . $config['buttonColor'] . ' !important;
+            border-color:  ' . $config['buttonColor'] . ' !important;
+            color:  ' . $config['buttonFontColor'] . ' !important;
+            text-shadow: none !important;
+            box-shadow:none !important;
+            -webkit-box-shadow:none !important;
+        }
+        input[type=text]:focus, input[type=password]:focus {
+          border-color: #ccc !important;
+          -webkit-box-shadow: none !important;
+          box-shadow: none !important;
+        }
+      </style>
+      <script type="text/javascript">
+        jQuery(function() {
+          jQuery("h1 a").attr("href", "' . $config['url']  . '");
+        });
+      </script>
+    ';
+  }
+
+  /**
    * Checks if a post has a term/tax assigned or a subterm of the given one
    * @param int $postId the post it to check
    * @param int $termId the term id to check

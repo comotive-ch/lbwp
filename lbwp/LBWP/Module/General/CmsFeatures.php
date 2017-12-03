@@ -34,6 +34,7 @@ class CmsFeatures extends \LBWP\Module\Base
     'hideeditbox-lbwp-list' => true,
     'hideeditbox-lbwp-listitem' => true,
     'hideeditbox-lbwp-snippet' => true,
+    'hideeditbox-lbwp-user-group' => true,
     'hideeditbox-onepager-item' => true, // yes, lbwp missing
     'hideeditbox-lbwp-mailing-list' => true
   );
@@ -77,6 +78,10 @@ class CmsFeatures extends \LBWP\Module\Base
       add_action('rss2_ns', array($this, 'addRssNamespace'));
       add_filter('the_excerpt_rss', array($this, 'fixFeedExcerpt'));
       add_action('wp', array($this, 'runAfterQueryHooks'));
+      // Additional robots content, if given
+      if (strlen($this->config['Various:RobotsTxt']) > 0) {
+        add_filter('robots_txt', array($this, 'addAdditionalRobotsContent'), 50);
+      }
       // Create a page speed instance with default settings
       PageSpeed::getInstance();
       // Print acme challenge for ssl domain validation, if given
@@ -130,6 +135,18 @@ class CmsFeatures extends \LBWP\Module\Base
     }
 
     return $excerpt;
+  }
+
+  /**
+   * Adds user defined content for the robots.txt file
+   * @param string $txt the previous content
+   * @return string the new content
+   */
+  public function addAdditionalRobotsContent($txt)
+  {
+    $txt .= PHP_EOL . $this->config['Various:RobotsTxt'] . PHP_EOL;
+
+    return $txt;
   }
 
   /**
@@ -330,7 +347,7 @@ class CmsFeatures extends \LBWP\Module\Base
   public function removeUnlinkablePosttypes($query)
   {
     $postTypes = array();
-    $forbiddenTypes = array('lbwp-form', 'lbwp-snippet', 'lbwp-list', 'lbwp-listitem', 'onepager-item');
+    $forbiddenTypes = array('lbwp-form', 'lbwp-snippet', 'lbwp-list', 'lbwp-listitem', 'lbwp-user-group','onepager-item');
     // Rebuild array (fastest way to do this, actually)
     foreach ($query['post_type'] as $type) {
       if (!in_array($type, $forbiddenTypes)) {

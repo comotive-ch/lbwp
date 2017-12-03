@@ -2,7 +2,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: LBWP\n"
 "POT-Creation-Date: 2015-08-03 11:05+0100\n"
-"PO-Revision-Date: 2017-07-28 11:15+0200\n"
+"PO-Revision-Date: 2017-11-30 14:33+0100\n"
 "Last-Translator: \n"
 "Language-Team: comotive <info@comotive.ch>\n"
 "Language: de_DE\n"
@@ -600,4 +600,19 @@ msgid "<strong>Fehler</strong>: %s"
 msgstr ""
 
 msgid "Ihre Profildaten wurden gespeichert."
+msgstr ""
+
+msgid "Profil"
+msgstr ""
+
+msgid "Sie haben sich erfolgreich eingeloggt."
+msgstr ""
+
+msgid "Sie wurden erfolgreich ausgeloggt."
+msgstr ""
+
+msgid "Herr"
+msgstr ""
+
+msgid "Frau"
 msgstr ""

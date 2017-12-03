@@ -32,13 +32,13 @@ class Import extends Component
   const MODES = array(
     'tags',         // NOT_IMPLEMENTED Simple import of tags, setting correct language, but not connect
     'authors',      // DONE Simple import of authors by username slug, defaults: only import authors with at least one post
-    'posts',        // DONEImport posts without any meta data, try assignig authors and default category only
+    'posts',        // DONE Import posts without any meta data, try assignig authors and default category only
     'postmetas',    // DONE Assign post meta, override, if already existing
     'attachments',  // NOT_IMPLEMENTED Import *all* attachments depending on configuration. Flushes *all* attachments before importing, beware!
-    'thumbnails',   // TODO Mode to import only thumbnail attachments and assign them to their post (only run once as it doesnt flush!)
+    'thumbnails',   // DONE Mode to import only thumbnail attachments and assign them to their post (only run once as it doesnt flush!)
     'galleries',    // NOT_IMPLEMENTED Convert gallery shortcodes (must be done after "attachments" -> needs *all* attachments config)
     'comments',     // DONE Flush all and re-import comments to posts by post_name
-    'assignments',  // NOT_IMPLEMENTED Attach all category/tag assignments by slug to post_name (can use existing categories/tags by same slug)
+    'assignments',  // DONE Attach all category/tag assignments by slug to post_name (can use existing categories/tags by same slug)
     'cleanup'       // DONE Cleanup mode, remove unresolved post metas and empty post meta
   );
   /**
@@ -844,7 +844,7 @@ class Import extends Component
     ', ARRAY_A);
   }
 
-  /** TODO
+  /**
    * Flush all and re-import all category/tag assignments by slug the postMap
    */
   protected function runModeAssignments()
@@ -863,16 +863,18 @@ class Import extends Component
     }
   }
 
-  /** TODO
+  /**
    * @return array list of term assignments by post
    */
   protected function getTermAssignmentList()
   {
     $raw = WordPress::getDb()->get_results('
-      SELECT object_id, taxonomy, slug FROM asterm_relationships
-      INNER JOIN asterm_taxonomy ON asterm_taxonomy.term_taxonomy_id = asterm_relationships.term_taxonomy_id
-      INNER JOIN asterms ON asterm_taxonomy.term_id = asterms.term_id
-      WHERE asterm_taxonomy.taxonomy IN("post_tag", "category")
+      SELECT object_id, taxonomy, slug FROM ' . $this->exportPrefix . 'term_relationships
+      INNER JOIN ' . $this->exportPrefix . 'term_taxonomy
+      ON ' . $this->exportPrefix . 'term_taxonomy.term_taxonomy_id = ' . $this->exportPrefix . 'term_relationships.term_taxonomy_id
+      INNER JOIN ' . $this->exportPrefix . 'terms
+      ON ' . $this->exportPrefix . 'term_taxonomy.term_id = ' . $this->exportPrefix . 'terms.term_id
+      WHERE ' . $this->exportPrefix . 'term_taxonomy.taxonomy IN("post_tag", "category")
     ', ARRAY_A);
 
     // Put them into arrays by post id

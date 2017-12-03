@@ -322,6 +322,9 @@ class Search
       }
     }
 
+    // Let developers filter the results
+    $results = apply_filters('google_api_search_results', $results, self::$apiConf);
+
     // If wanted, filter out elements not matching
     if (self::$apiConf['filterResults']) {
       $backupResults = $results;

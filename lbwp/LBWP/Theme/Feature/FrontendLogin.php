@@ -3,6 +3,7 @@
 namespace LBWP\Theme\Feature;
 
 use LBWP\Module\Forms\Core as FormCore;
+use LBWP\Module\Frontend\HTMLCache;
 use LBWP\Util\Multilang;
 use LBWP\Util\Strings;
 
@@ -19,7 +20,6 @@ class FrontendLogin
   public function logoutUser()
   {
     wp_logout();
-    unset($_SESSION['gcb_pokershop_mode']);
     $url = get_permalink();
     $url = Strings::attachParam('message', 'logout', $url);
     wp_safe_redirect($url);
@@ -36,7 +36,7 @@ class FrontendLogin
     if ('POST' == $_SERVER['REQUEST_METHOD']) {
       $user = wp_signon('', false);
       if (!is_wp_error($user)) {
-        if (isset($_POST['redirect_to']) && $_POST['redirect_to'] !== '') {
+        if (isset($_POST['redirect_to']) && Strings::isURL($_POST['redirect_to'])) {
           wp_safe_redirect($_POST['redirect_to']);
         } else {
           wp_safe_redirect(get_permalink());
@@ -59,12 +59,12 @@ class FrontendLogin
         }
       }
 
-      $html .= implode(PHP_EOL, $errors);
+      $html .= '<p class="lbwp-message message-error">' . implode(PHP_EOL, $errors) . '</p>';
     }
 
     // Display a logout message
     if (isset($_GET['message']) && $_GET['message'] == 'logout') {
-      $html .= apply_filters('FrontendLogin_success', '<p class="message">' . __('Erfolgreich ausgeloggt', 'lbwp') . '</p>');
+      $html .= apply_filters('FrontendLogin_success', '<p class="lbwp-message">' . __('Sie wurden erfolgreich ausgeloggt.', 'lbwp') . '</p>');
     }
 
     $html .= $this->displayLoginForm();
@@ -76,10 +76,12 @@ class FrontendLogin
    */
   public function displayLoginForm()
   {
+    HTMLCache::avoidCache();
     $shortcode = '
       [lbwp:form button="' . __('Login', 'lbwp') . '" id="login" weiterleitung="' . get_permalink() . '" action="' . get_permalink() . '" skip_execution="1"]
-        [lbwp:formItem key="textfield" pflichtfeld="ja" id="log" feldname="' . __('Benutzername', 'lbwp') . '" type="text"]
+        [lbwp:formItem key="textfield" pflichtfeld="ja" id="log" feldname="' . __('E-Mail-Adresse', 'lbwp') . '" type="text"]
         [lbwp:formItem key="textfield" pflichtfeld="ja" id="pwd" feldname="' . __('Passwort', 'lbwp') . '" type="password"]
+        [lbwp:formItem key="hiddenfield" id="redirect_to" vorgabewert="' . apply_filters('FrontendLogin_redirect_to', $this->getTarget(), 'login') . '"]
       [/lbwp:form]
     ';
 
@@ -116,14 +118,20 @@ class FrontendLogin
     $html = '';
 
     if ('POST' == $_SERVER['REQUEST_METHOD'] && $_POST['sentForm'] == 'register') {
-      $diplayName = trim($_POST['firstname'] . ' ' . $_POST['lastname']);
-      $userId = wp_insert_user(array(
-        'user_login' => $_POST['email'],
-        'user_pass' => $_POST['password'],
-        'user_nicename' => Strings::forceSlugString($diplayName),
-        'user_email' => $_POST['email'],
-        'display_name' => $diplayName,
-      ));
+      // Let developers to custom validation and return an error
+      $userId = apply_filters('FrontendRegistration_custom_validation', false);
+
+      // Only proceed if custom validation threw no errors
+      if ($userId === false) {
+        $diplayName = trim($_POST['firstname'] . ' ' . $_POST['lastname']);
+        $userId = wp_insert_user(array(
+          'user_login' => $_POST['email'],
+          'user_pass' => $_POST['password'],
+          'user_nicename' => Strings::forceSlugString($diplayName),
+          'user_email' => $_POST['email'],
+          'display_name' => $diplayName,
+        ));
+      }
 
       // Proceed to add data, if a user was created
       if (intval($userId) > 0) {
@@ -144,9 +152,13 @@ class FrontendLogin
 
       // No errors happened, redirect to success page
       if (!is_wp_error($userId)) {
-        $url = get_permalink();
-        $url = Strings::attachParam('message', 'registered', $url);
-        wp_safe_redirect($url);
+        if (isset($_POST['redirect_to']) && Strings::isURL($_POST['redirect_to'])) {
+          wp_safe_redirect($_POST['redirect_to']);
+        } else {
+          $url = get_permalink();
+          $url = Strings::attachParam('message', 'registered', $url);
+          wp_safe_redirect($url);
+        }
         exit;
       }
     }
@@ -156,7 +168,7 @@ class FrontendLogin
       foreach ($userId->get_error_codes() as $code) {
         $errors[] = sprintf(__('<strong>Fehler</strong>: %s', 'lbwp'), $userId->get_error_message($code));
       }
-      $html .= implode(PHP_EOL, $errors);
+      $html .= '<p class="message message-error">' . implode('<br />', $errors) . '</p>';
     }
 
     // Display a registration success message
@@ -173,6 +185,7 @@ class FrontendLogin
    */
   public function displayRegistrationForm()
   {
+    HTMLCache::avoidCache();
     $language = Multilang::getCurrentLang('slug', 'de');
 
     $shortcode = '
@@ -185,6 +198,7 @@ class FrontendLogin
         [lbwp:formItem key="textfield" pflichtfeld="ja" id="lastname" feldname="' . __('Nachname', 'lbwp') . '" type="text"]
         [lbwp:formItem key="textfield" pflichtfeld="ja" id="email" feldname="' . __('E-Mail-Adresse', 'lbwp') . '" type="email"]
         [lbwp:formItem key="textfield" pflichtfeld="ja" id="password" feldname="' . __('Passwort', 'lbwp') . '" type="password"]
+        [lbwp:formItem key="hiddenfield" id="redirect_to" vorgabewert="' . apply_filters('FrontendRegistration_redirect_to', $this->getTarget(), 'registration') . '"]
       [/lbwp:form]
     ';
 
@@ -220,6 +234,20 @@ class FrontendLogin
       case 'female_fr': return 'Chère madame';
       case 'female_en': return 'Dear Ms';
       case 'female_it': return 'Cara signorina';
+    }
+
+    return '';
+  }
+
+  /**
+   * @return string
+   */
+  protected function getTarget()
+  {
+    if (isset($_GET['target']) && Strings::isURL($_GET['target'])) {
+      if ($_GET['target'] != get_permalink()) {
+        return $_GET['target'];
+      }
     }
 
     return '';
@@ -284,7 +312,7 @@ class FrontendLogin
       foreach ($result->get_error_codes() as $code) {
         $errors[] = sprintf(__('<strong>Fehler</strong>: %s', 'lbwp'), $result->get_error_message($code));
       }
-      $html .= implode(PHP_EOL, $errors);
+      $html .= '<p class="message message-error">' . implode('<br />', $errors) . '</p>';
     }
 
     // Display a registration success message
@@ -301,6 +329,7 @@ class FrontendLogin
    */
   public function displayDataChangeForm()
   {
+    HTMLCache::avoidCache();
     // Get the currently logged in user and its data
     $user = wp_get_current_user();
     $email = esc_attr($user->user_email);

@@ -64,7 +64,7 @@ class PageSpeed extends BaseSingleton
    */
   public function addCookielessDnsPrefetch()
   {
-    echo '<link rel="dns-prefetch" href="//' . $this->settings['cookieless_domain'] . '" />' . PHP_EOL;
+    echo '<link rel="dns-prefetch" href="https://' . $this->settings['cookieless_domain'] . '" />' . PHP_EOL;
   }
 
   /**

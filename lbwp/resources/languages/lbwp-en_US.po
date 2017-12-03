@@ -2,7 +2,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: LBWP\n"
 "POT-Creation-Date: 2015-08-03 11:05+0100\n"
-"PO-Revision-Date: 2017-07-28 11:15+0200\n"
+"PO-Revision-Date: 2017-11-30 14:33+0100\n"
 "Last-Translator: \n"
 "Language-Team: comotive <info@comotive.ch>\n"
 "Language: en_US\n"
@@ -62,15 +62,15 @@ msgstr ""
 
 #: /var/www/lbwp/wp-content/plugins/lbwp/LBWP/Theme/Feature/ListingTemplate.php:101
 msgid "Vorname"
-msgstr ""
+msgstr "Firstname"
 
 #: /var/www/lbwp/wp-content/plugins/lbwp/LBWP/Theme/Feature/ListingTemplate.php:102
 msgid "Nachname"
-msgstr ""
+msgstr "Lastname"
 
 #: /var/www/lbwp/wp-content/plugins/lbwp/LBWP/Theme/Feature/ListingTemplate.php:103
 msgid "Anrede"
-msgstr ""
+msgstr "Salutation"
 
 #: /var/www/lbwp/wp-content/plugins/lbwp/LBWP/Theme/Feature/ListingTemplate.php:104
 msgid "Funktion/Rolle"
@@ -601,3 +601,18 @@ msgstr "<strong>Error</strong>: %s"
 
 msgid "Ihre Profildaten wurden gespeichert."
 msgstr "Your account data has been saved."
+
+msgid "Profil"
+msgstr "Profile"
+
+msgid "Sie haben sich erfolgreich eingeloggt."
+msgstr "You've been logged in."
+
+msgid "Sie wurden erfolgreich ausgeloggt."
+msgstr "You've been logged out."
+
+msgid "Herr"
+msgstr "Mr."
+
+msgid "Frau"
+msgstr "Ms."

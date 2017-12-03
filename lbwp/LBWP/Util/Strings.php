@@ -238,6 +238,16 @@ class Strings
   }
 
   /**
+   * @param $string
+   * @param $contains
+   * @return bool
+   */
+  public static function contains($string, $contains)
+  {
+    return stristr($string, $contains) !== false;
+  }
+
+  /**
    * @param string $url
    * @return bool true, if valid url
    */

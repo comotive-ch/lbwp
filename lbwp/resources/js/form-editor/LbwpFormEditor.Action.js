@@ -367,7 +367,10 @@ LbwpFormEditor.Action = {
 
 				ref.children("a").click(function (e) {
 					e.preventDefault();
-					elem.parent().find("input").val("field:" + jQuery(this).attr("href")).change();
+					var dest = elem.parent().find("input");
+					var currentVal = dest.val();
+					if (currentVal.length > 0) currentVal += ' ';
+					dest.val(currentVal + "field:" + jQuery(this).attr("href")).change();
 					jQuery("#reference").remove();
 				});
 

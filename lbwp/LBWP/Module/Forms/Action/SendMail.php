@@ -61,11 +61,11 @@ class SendMail extends Base
         'type' => 'textfield'
       ),
       'cc' => array(
-        'name' => 'Weitere Empfänger (CC)',
+        'name' => 'Weiterer Empfänger (CC)',
         'type' => 'textfield'
       ),
       'bcc' => array(
-        'name' => 'Versteckte Empfänger (BCC)',
+        'name' => 'Versteckter Empfänger (BCC)',
         'type' => 'textfield'
       ),
       'replyto' => array(
@@ -132,7 +132,7 @@ class SendMail extends Base
 
     // Create the mail base data
     $mail = External::PhpMailer();
-    $mail->Subject = $this->params['betreff'];
+    $mail->Subject = $this->getFieldContent($data, $this->params['betreff']);
     $mail->AddAddress($this->getFieldContent($data, $this->params['email']));
 
     // If isset, use CC and BCC
