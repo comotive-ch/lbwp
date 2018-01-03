@@ -1121,6 +1121,60 @@ class Strings
   }
 
   /**
+   * @param $url
+   * @param $data
+   * @param $type
+   * @param bool $proxy
+   * @return mixed
+   */
+  public static function genericRequest($url, $data, $type = 'POST', $json = false, $proxy = false)
+  {
+    // The URL is set, try to get the contents with curl so we get HTTP Status too
+    $options = array(
+      CURLOPT_RETURNTRANSFER => true,
+      CURLOPT_SSL_VERIFYPEER => false, // do not verify ssl certificates (fails if they are self-signed)
+      CURLOPT_HEADER => false,
+      CURLOPT_FOLLOWLOCATION => true,
+      CURLOPT_ENCODING => '',
+      CURLOPT_USERAGENT => 'Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.31 (KHTML, like Gecko) Chrome/26.0.1410.43 Safari/537.31 Comotive-Fetch-1.0',
+      CURLOPT_AUTOREFERER => true,
+      CURLOPT_CONNECTTIMEOUT => 30,
+      CURLOPT_TIMEOUT => 30,
+      CURLOPT_MAXREDIRS => 10,
+      CURLOPT_COOKIEJAR => 'tempCookie',
+      CURLOPT_POSTFIELDS => $data,
+      CURLOPT_CUSTOMREQUEST => $type,
+      CURLOPT_HTTPHEADER => array(
+        'Content-Type: application/x-www-form-urlencoded'
+      )
+    );
+
+    // Make a json post, if needed
+    if ($json && $type == 'POST') {
+      $string = json_encode($data);
+      $options[CURLOPT_POSTFIELDS] = $string;
+      $options[CURLOPT_HTTPHEADER] = array(
+        'Content-Type: application/json',
+        'Content-Length: ' . strlen($string)
+      );
+    }
+
+    // If required, go via the comotive proxy
+    if ($proxy) {
+      $options[CURLOPT_PROXY] = 'http://46.101.12.125';
+      $options[CURLOPT_PROXYPORT] = '3128';
+      $options[CURLOPT_PROXYUSERPWD] = 'comotive:Kv8gnr9qd5erSquid';
+    }
+
+    $res = curl_init($url);
+    curl_setopt_array($res, $options);
+    $result = curl_exec($res);
+    curl_close($res);
+
+    return $result;
+  }
+
+  /**
    * @param string $hash the hash to attach or replace
    * @param string $url the url to attach the hash to
    * @return string url with hash

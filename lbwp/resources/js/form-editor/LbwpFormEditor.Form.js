@@ -325,7 +325,7 @@ LbwpFormEditor.Form = {
 
 		// change text of fieldname on keyup
 		jQuery(LbwpFormEditor.Core.itemFieldSelector + "[data-key=feldname]").off('keyup').keyup(function () {
-			var selected = jQuery("#editor-form-tab .frame-middle .forms-item.selected label");
+			var selected = jQuery("#editor-form-tab .frame-middle .forms-item.selected > label");
 			if (selected.text().indexOf("*") > -1) {
 				selected.text(jQuery(this).find("input").val() + " *");
 			} else {

@@ -275,7 +275,10 @@ class FormHandler extends Base
     $html .= '
       <div class="lbwp-form-override">
         ' . $messageHtml . '
-        <form id="lbwpForm-' . $formDisplayId . '" class="lbwp-form' . $formclass . '" method="POST" ' . $enctype . ' ' . $customAction . '>
+        <form id="lbwpForm-' . $formDisplayId . '" class="lbwp-form' . $formclass . '" method="POST"
+          data-message-multi="' . __('Es sind {number} Fehler aufgetreten.', 'lbwp') . '"
+          data-message-single="' . __('Es ist ein Fehler aufgetreten.', 'lbwp') . '"
+          ' . $enctype . ' ' . $customAction . '>
           <input type="hidden" name="sentForm" value="' . $this->currentForm->ID . '" />
     ';
 

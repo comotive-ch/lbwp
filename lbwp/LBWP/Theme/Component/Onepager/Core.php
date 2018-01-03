@@ -542,6 +542,11 @@ abstract class Core extends BaseComponent
           if (is_array($coreClasses) && count($coreClasses) > 0) {
             $classes = array_merge($classes, $coreClasses);
           }
+          // Add and merge additional classes, if given
+          $additionalClasses = $element->getAdditionalClasses();
+          if (is_array($additionalClasses) && count($additionalClasses) > 0) {
+            $classes = array_merge($classes, $additionalClasses);
+          }
           if (count($classes) > 0) {
             $attributes .= ' class="' . implode(' ', $classes) . '"';
           }
@@ -633,7 +638,7 @@ abstract class Core extends BaseComponent
       foreach ($items as $element) {
         $item = $element->getPost();
         // Skip if not configured to show
-        if (get_post_meta($item->ID, 'show-in-menu', true) != 'on' || strlen($element->getHtmlCached()) == 0) {
+        if (get_post_meta($item->ID, 'show-in-menu', true) != 'on' || !$element->showInMenu()) {
           continue;
         }
 

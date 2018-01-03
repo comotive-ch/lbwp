@@ -240,7 +240,7 @@ class DataTable extends Base
     $subscriberId = uniqid('subn', true);
     $subscriberField = $action->get('emailid_field');
     if (strlen($subscriberField) > 0) {
-      $subscriberId = $action->getFieldContent($data, $subscriberField);
+      $subscriberId = $action->getFieldContent($data, $subscriberField, true);
       // If they are the same (as getFieldContent works), generate an unique one too
       if ($subscriberId == $subscriberField) {
         $subscriberId = uniqid('sube', true);

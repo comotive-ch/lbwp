@@ -128,10 +128,29 @@ class CleanUp extends \LBWP\Module\Base
         update_user_meta($userId, 'wpseo_seen_about_version', '3.0.7');
         update_user_meta($userId, 'wpseo_ignore_tour', 1);
       }
+      if ($currentRev < 192 && Core::REVISION >= 192) {
+        // Set some variables for yoast
+        $this->dismissWpPointer('wpmudcs1', $userId);
+      }
 
       // Save new revision after doing all upgrades
       update_user_meta($userId, 'lbwp_user_meta_revision', Core::REVISION);
     }
+  }
+
+  /**
+   * @param string $pointer the pointer to be dismissed
+   * @param int $id the user id
+   */
+  protected function dismissWpPointer($pointer, $id)
+  {
+    $pointers = get_user_meta($id, 'dismissed_wp_pointers', true);
+    if (strlen($pointers) > 0) {
+      $pointers .= ',' . $pointer;
+    } else {
+      $pointers = $pointer;
+    }
+    update_user_meta($id, 'dismissed_wp_pointers', $pointers);
   }
 
   /**

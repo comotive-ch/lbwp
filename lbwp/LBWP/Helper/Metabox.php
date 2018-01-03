@@ -574,6 +574,19 @@ class Metabox
   }
 
   /**
+   * Adds a simple line as element
+   * @param $boxId
+   */
+  public function addTitleLine($boxId, $text)
+  {
+    $this->addHtml('text-line-' . (++$this->lineId), $boxId, '
+      <div class="mbh-title-line">
+        <h3><span>' . $text . '</span></h3>
+      </div>
+    ');
+  }
+
+  /**
    * Helper for adding an input text field (one liner)
    * @param string $key the key to store the metadata in
    * @param string $boxId the metabox to display the field

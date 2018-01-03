@@ -88,16 +88,24 @@ abstract class Base
   /**
    * @param array $fields all form fields including content
    * @param string $value given parameter value
+   * @param bool $exactMatch don't use str_replace, but exact matches only
    * @return string the value or the value from referenced field
    */
-  public function getFieldContent($fields, $value)
+  public function getFieldContent($fields, $value, $exactMatch = false)
   {
     // Return directly, if there is no parseable value
     if (Strings::contains($value, 'field:')) {
       foreach ($fields as $field) {
-        // Blindly replace every replaceable field by name and id
-        $value = str_replace('field:' . $field['name'], $field['value'], $value);
-        $value = str_replace('field:' . $field['id'], $field['value'], $value);
+        if (!$exactMatch) {
+          // Blindly replace every replaceable field by name and id
+          $value = str_replace('field:' . $field['name'], $field['value'], $value);
+          $value = str_replace('field:' . $field['id'], $field['value'], $value);
+        } else {
+          // Only exact matching of the field
+          if ($value == 'field:' . $field['id']) {
+            $value = str_replace('field:' . $field['id'], $field['value'], $value);
+          }
+        }
       }
     }
 

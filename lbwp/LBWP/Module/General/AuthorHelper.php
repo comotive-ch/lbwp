@@ -4,6 +4,7 @@ namespace LBWP\Module\General;
 
 use LBWP\Core;
 use LBWP\Util\File;
+use LBWP\Util\Multilang;
 use LBWP\Util\Strings;
 
 /**
@@ -287,5 +288,22 @@ class AuthorHelper extends \LBWP\Module\Base
     }
 
     return $html;
+  }
+
+  /**
+   * This handles authors that don't have posts in a specific language. On the default language
+   * switcher, the url is still linked, not knowing, that it will 404 due to no posts.
+   * For that, we'll redirect to the home url, if this happens for author archives.
+   * This only works and only makes sense in multi language installation, therefore no checks.
+   */
+  public static function addSingleLanguageAuthorFallback()
+  {
+    add_action('wp', function() {
+      if (is_404() && Strings::contains($_SERVER['REQUEST_URI'], '/author/')) {
+        // It's simple, just call the home url, as the language is present
+        header('Location: ' . Multilang::getHomeUrl(), null, 307);
+        exit;
+      }
+    });
   }
 }

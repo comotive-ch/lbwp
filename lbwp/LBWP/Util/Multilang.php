@@ -222,7 +222,7 @@ class Multilang
 
   /**
    * @param array $args the args you would give to pll_the_languages
-   * @return array list of elements to show
+   * @return array|bool list of elements to show
    */
   public static function getLanguageSwitcherData($args = array('raw' => 1))
   {

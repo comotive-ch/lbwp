@@ -2,6 +2,8 @@
 use LBWP\Util\WordPress;
 use LBWP\Module\Listings\Core as ListingCore;
 use LBWP\Util\Strings;
+use LBWP\Theme\Feature\FocusPoint;
+use LBWP\Util\Templating;
 
 $item = ListingCore::getCurrentListElementItem();
 
@@ -11,12 +13,10 @@ $itemHtml = get_post_meta($item->ID, 'content-title', true);
 // load image
 $imageHtml = '';
 $imageId = get_post_thumbnail_id($item->ID);
-//todo use medium in default template
-$imageUrl = WordPress::getImageUrl($imageId, 'thumbnail');
-if (strlen($imageUrl)) {
+if (strlen($imageId)) {
   $imageHtml = '
     <div class="image">
-      <img src="' . $imageUrl . '" alt="' . WordPress::getImageAltText($imageId) . '" />
+      ' . FocusPoint::getFeaturedImage($item->ID,'medium') . '
     </div>
     ';
 }
@@ -34,11 +34,16 @@ if (strlen($itemLink) > 0 && Strings::isURL($itemLink)) {
     $itemLinkText = __('mehr', 'lbwp');
   }
   $itemLinkHtml = '
-    <a class="more-link" href="' . $itemLink . '" target="' . get_post_meta($item->ID, 'logo-link-target', true) .'">' .
+    <a class="more-link" href="' . $itemLink . '" ' . Templating::autoTargetBlank($itemLink) . '>' .
       $itemLinkText .
     '</a>';
   // Append link to the past <p> of $content
   $content = Strings::replaceLastOccurence('</p>',$itemLinkHtml,$content);
+  // Append link to the image too
+  $imageHtml = '
+    <a href="' . $itemLink . '" ' . Templating::autoTargetBlank($itemLink) . '>
+    ' . $imageHtml . '
+    </a>';
 }
 
 echo '

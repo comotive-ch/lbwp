@@ -312,3 +312,29 @@ body.modal-backend.post-type-onepager-item #wpwrap {
 .mbh-item-normal .item-type {
 	padding:3px 0px;
 }
+
+.mbh-title-line {
+	h3 {
+		position: relative;
+		text-align: left;
+		margin:20px 0px 10px 0px;
+	}
+	h3 span {
+		background: #fff;
+		padding: 0 15px 0 0;
+		position: relative;
+		z-index: 1;
+	}
+	h3:before {
+		background: #ddd;
+		content: "";
+		display: block;
+		height: 1px;
+		position: absolute;
+			top: 50%;
+		width: 100%;
+	}
+	h3:before {
+		left: 0;
+	}
+}

@@ -23,7 +23,7 @@ class S3Upload extends \LBWP\Module\Base
   /**
    * Defaults
    */
-  const JPEG_QUALITY = 95;
+  const JPEG_QUALITY = 96;
   const MAX_IMAGE_SIZE = 1920;
 
   /**
@@ -399,6 +399,7 @@ class S3Upload extends \LBWP\Module\Base
       remove_filter('image_make_intermediate_size', array($this, 'filterHandleSizes'));
       $editor->save($localFile);
       add_filter('image_make_intermediate_size', array($this, 'filterHandleSizes'));
+
       return true;
     }
 

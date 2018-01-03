@@ -54,10 +54,11 @@
 			e.preventDefault();
 			// Selects all required fields. DAFUQ NICOLA.
 			var field = form.selector + " ".concat(val.fields.replace(new RegExp(", ", "g"), "[required], " + form.selector + " ").concat("[required]"));
+			var currentForm = jQuery(form);
 			// Variable for checking radio and check buttons
 			var same = "";
 			// Set errors to 0
-			var error = 0;
+			var error = 0, validationErrors = 0;
 			// remove all previous alerts
 			$(form.selector + " ." + val.alertClass).remove();
 
@@ -72,28 +73,34 @@
 
 			// Add the focus out errors
 			error += val.hasFocusOutErrors;
+			validationErrors = error;
 
 			// Go trough all required fields once again
 			$(field).each(function () { // loop through all required fields
-				var userMsg = $(this).attr("data-errorMsg"); // get custom error message from field
+				var userMsg = jQuery(this).attr("data-errorMsg"); // get custom error message from field
 				var msg = userMsg != undefined ? userMsg : val.defaultText; // if there is no custom error message get default text
 				var errorElem = "<label for=" + $(this).attr("id") + ">" + msg + "</label>"; // generate error element with message
 				var name = this.name.replace("[]", ""); // if the name of a field is an array remove "[]"
 
 				if ((this.type == "radio" || this.type == "checkbox" ) && same != name) { // check if current field is a "radio" or "checkbox" field and its not the same as before
-					$("input[name^=" + name + "]").each(function (i) { // loop through every box
+					jQuery("input[name^=" + name + "]").each(function (i) { // loop through every box
 						if ($(this).is(':checked')) { // if one is checked set same to current and return false
 							same = name;
 							return false;
 						} else if (i == $(this).closest(val.elem.inputbox).children().length - 1) { // if not one is checked set message and count error up
 							setMessage(this, errorElem, "error");
 							error++;
+							validationErrors++;
 							same = name;
 						}
 					});
-				} else if (!this.value.length && (this.type == "text" || this.type == "select-one" || this.type == "textarea")) { // Check if the value of "text", "select-one" or "textare" ar empty and set message
+				} else if (!this.value.length && (this.type == "text" || this.type == "select-one")) { // Check if the value of "text", "select-one" or "textare" ar empty and set message
 					setMessage(this, errorElem, "error");
 					error++;
+				} else if (!this.value.length && (this.type == "textarea")) { // Check if the value of "text", "select-one" or "textare" ar empty and set message
+					setMessage(this, errorElem, "error");
+					error++;
+					validationErrors++;
 				}
 			});
 
@@ -106,13 +113,41 @@
 
 			// Add a validation class if there are errors
 			if (error) {
-				$(form).addClass('validation-errors');
+				currentForm.addClass('validation-errors');
 			} else {
-				$(form).removeClass('validation-errors');
+				currentForm.removeClass('validation-errors');
+			}
+
+			// If we have errors, show a message on how many fixed need to be made
+			if (validationErrors > 0) {
+				// Check if single or multiple errors
+				var wrapper = form.parent();
+				var message = (validationErrors == 1)
+				 ? form.data('message-single').replace('{number}', validationErrors)
+				 : form.data('message-multi').replace('{number}', validationErrors);
+
+				// Display that message in an existing or newly created element
+				var domMsg = wrapper.find('.lbwp-form-message');
+				if (domMsg.length == 1) {
+					// Reset classes on the object, to reuse it
+					domMsg.attr('class', 'lbwp-form-message error');
+				} else {
+					// Create the new message objects
+					wrapper.find('form').before('<p class="lbwp-form-message error"></p>');
+					domMsg = wrapper.find('.lbwp-form-message');
+				}
+
+				// Set the message to the object
+				domMsg.text(message);
+
+				// Animate a fast scroll up to the message
+				jQuery('html, body').animate({
+					scrollTop: domMsg.offset().top - 50
+				}, 200);
 			}
 
 			// if there is no error unbind submit event and submit form
-			!error && ($(form).append("<input type='hidden' name='lbwpFormSend' value='1'>"), $(form).unbind('submit').submit());
+			!error && (currentForm.append("<input type='hidden' name='lbwpFormSend' value='1'>"), currentForm.unbind('submit').submit());
 		}
 
 		/**
@@ -238,7 +273,6 @@
 		function vURL(elem) {
 			var url = $(elem).val();
 			var pattern = new RegExp(/^(ftp|https?):\/\/+(www\.)?[a-z0-9\-\.]{3,}\.[a-z]{2,}$/i);
-			console.log(pattern.test(url), url);
 			if (url.length == 0 || pattern.test(url)) {
 				$(elem).closest(val.elem.item).removeClass(prfx + "error").addClass(prfx + "success");
 				removeMessage(elem);

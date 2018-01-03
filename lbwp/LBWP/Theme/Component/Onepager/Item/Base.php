@@ -31,6 +31,11 @@ abstract class Base
    * @var string the cached html of an element
    */
   protected $cachedHtml = false;
+    /**
+   * @var array some additonal classes for the wrapper element
+   */
+  protected $additionalClasses = array();
+
   /**
    * @var string the main box id, to add other fields in onMetaboxAdd
    */
@@ -161,6 +166,14 @@ abstract class Base
   }
 
   /**
+   * @return array return additional classes
+   */
+  public function getAdditionalClasses()
+  {
+    return $this->additionalClasses;
+  }
+
+  /**
    * @return string
    */
   public function getAfterMenuItemHtml()
@@ -187,6 +200,14 @@ abstract class Base
     }
 
     return $this->cachedHtml;
+  }
+
+  /**
+   * @return bool tells the menu feature if it needs to show in menu
+   */
+  public function showInMenu()
+  {
+    return true;
   }
 
   /**

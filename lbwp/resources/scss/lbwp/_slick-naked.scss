@@ -64,3 +64,16 @@
 		}
 	}
 }
+
+// Stack all slider items above each other until slick is ready
+@mixin lbwpSlickOnloadOptimization($slideSelector) {
+	#{$slideSelector}:not(.slick-slide) {
+		position: absolute;
+		top: 0;
+		z-index: -1;
+		// ... except of the first one
+		&:first-child {
+			position: static;
+		}
+	}
+}

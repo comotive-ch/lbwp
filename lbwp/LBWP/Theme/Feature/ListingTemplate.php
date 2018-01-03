@@ -70,7 +70,9 @@ class ListingTemplate
             //'alignright' => __('Rechts', 'lbwp')
           )
         ));
-        $helper->addInputText('link', $boxId, __('Link'));
+        $helper->addInputText('link', $boxId, __('Link'), array(
+          'placeholder' => 'http(s)://'
+        ));
         $helper->addInputText('link-text', $boxId, __('Linktext'),array('description' => 'Wenn du kein Linktext eingibst, wird «mehr» verwendet.'));
       });
 
@@ -103,6 +105,7 @@ class ListingTemplate
         $helper->addInputText('salutation', $boxId, __('Anrede', 'lbwp'));
         $helper->addInputText('role', $boxId, __('Funktion/Rolle', 'lbwp'));
         $helper->addInputText('email', $boxId, __('E-Mail-Adresse', 'lbwp'));
+        $helper->addInputText('phone', $boxId, __('Telefon', 'lbwp'));
         $helper->addEditor('description', $boxId, __('Beschreibung', 'lbwp'), 10);
       });
 

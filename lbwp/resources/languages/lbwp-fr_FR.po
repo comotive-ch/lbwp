@@ -2,7 +2,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: LBWP\n"
 "POT-Creation-Date: 2015-08-03 11:05+0100\n"
-"PO-Revision-Date: 2017-11-30 14:33+0100\n"
+"PO-Revision-Date: 2017-12-19 16:00+0100\n"
 "Last-Translator: \n"
 "Language-Team: comotive <info@comotive.ch>\n"
 "Language: fr_FR\n"
@@ -619,3 +619,9 @@ msgstr "Monsieur"
 
 msgid "Frau"
 msgstr "Madame"
+
+msgid "Es sind {number} Fehler aufgetreten."
+msgstr "Il y a eu {number} erreurs."
+
+msgid "Es ist ein Fehler aufgetreten."
+msgstr "Une erreur s'est produite."
