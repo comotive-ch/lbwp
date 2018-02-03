@@ -32,16 +32,19 @@ if (isset($_REQUEST['search']) && strlen($_REQUEST['search']) > 0) {
 
 // Create a connection to the write
 $redis = new Redis();
-$redis->pconnect(REDIS_WRITE_NODE_IP, REDIS_CONNECTION_PORT, 1.0);
-$redis->auth(REDIS_AUTH_KEY);
-$redis->setOption(Redis::OPT_SERIALIZER, REDIS_WP_CACHE_SERIALIZER);
+try {
+  $redis->pconnect(REDIS_WRITE_NODE_IP, REDIS_CONNECTION_PORT, 1.5);
+  $redis->auth(REDIS_AUTH_KEY);
+  $redis->setOption(Redis::OPT_SERIALIZER, REDIS_WP_CACHE_SERIALIZER);
+  // Get all keys with a wildcard search
+  $keys = $redis->keys($deletePrefix . $keySearch . '*');
+  // Just delete all found keys by providing the array as list of arguments in a single call
+  call_user_func(array($redis, 'delete'), $keys);
+  // Make sure to delete the keys from RAM
+  unset($keys);
+} catch (RedisException $e) {
+  mail('michael@comotive.ch', 'redis flush problem', LBWP_HOST . ': ' . $e->getMessage() . ' on ' . getServerName());
+}
 
-// Get all keys with a wildcard search
-$keys = $redis->keys($deletePrefix . $keySearch . '*');
 
-// Just delete all found keys by providing the array as list of arguments in a single call
-call_user_func(array($redis, 'delete'), $keys);
-
-// Make sure to delete the keys from RAM
-unset($keys);
 

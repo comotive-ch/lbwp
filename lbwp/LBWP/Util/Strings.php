@@ -1123,17 +1123,20 @@ class Strings
   /**
    * @param $url
    * @param $data
-   * @param $type
+   * @param string $type
+   * @param bool $json
    * @param bool $proxy
+   * @param string $baUser
+   * @param string $baPwd
    * @return mixed
    */
-  public static function genericRequest($url, $data, $type = 'POST', $json = false, $proxy = false)
+  public static function genericRequest($url, $data, $type = 'POST', $json = false, $proxy = false, $baUser = '', $baPwd = '', $headers = false)
   {
     // The URL is set, try to get the contents with curl so we get HTTP Status too
     $options = array(
       CURLOPT_RETURNTRANSFER => true,
       CURLOPT_SSL_VERIFYPEER => false, // do not verify ssl certificates (fails if they are self-signed)
-      CURLOPT_HEADER => false,
+      CURLOPT_HEADER => $headers,
       CURLOPT_FOLLOWLOCATION => true,
       CURLOPT_ENCODING => '',
       CURLOPT_USERAGENT => 'Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.31 (KHTML, like Gecko) Chrome/26.0.1410.43 Safari/537.31 Comotive-Fetch-1.0',
@@ -1166,9 +1169,29 @@ class Strings
       $options[CURLOPT_PROXYUSERPWD] = 'comotive:Kv8gnr9qd5erSquid';
     }
 
+    // Authenticate with basic auth, if needed
+    if (strlen($baUser) > 0 && strlen($baPwd) > 0) {
+      $options[CURLOPT_USERPWD] = $baUser . ':' . $baPwd;
+    }
+
     $res = curl_init($url);
     curl_setopt_array($res, $options);
     $result = curl_exec($res);
+
+    // If receiving headers and there is no result, add it
+    if ($headers) {
+      $headerStrings = explode(PHP_EOL, $result);
+      $result = array();
+      foreach ($headerStrings as $string) {
+        list($key, $value) = explode(':', $string);
+        if (strlen($key) > 0 && strlen($value) > 0) {
+          $result[strtolower($key)] = trim($value);
+        }
+      }
+      // Convert back to json, to be interpreted
+      $result = json_encode($result);
+    }
+
     curl_close($res);
 
     return $result;

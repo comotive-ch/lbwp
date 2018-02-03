@@ -117,7 +117,7 @@ class Rewrite
         // Change to the new attribute
         $tag->setAttribute('src', str_replace(
           $searchUrl,
-          'https://sos.exo.io',
+          'https://' . CDN_API_NAME,
           $originalUrl
         ));
       }

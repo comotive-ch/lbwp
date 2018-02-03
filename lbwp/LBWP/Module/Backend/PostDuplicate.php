@@ -90,6 +90,8 @@ class PostDuplicate extends \LBWP\Module\Base
       return false;
     }
 
+
+
     $postId = intval($_GET['post']);
     $post = get_post($postId, ARRAY_A);
 
@@ -138,6 +140,12 @@ class PostDuplicate extends \LBWP\Module\Base
 
     // Copy the taxonomies
     $taxonomies = get_object_taxonomies($post['post_type']);
+
+    // Make sure to not copy post translations from multilang plugin
+    if (($key = array_search('post_translations', $taxonomies)) !== false) {
+      unset($taxonomies[$key]);
+    }
+
     foreach ($taxonomies as $tax) {
       $terms = wp_get_object_terms($postId, $tax);
       $term = array();

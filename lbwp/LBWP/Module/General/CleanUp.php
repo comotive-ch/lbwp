@@ -21,17 +21,6 @@ use LBWP\Module\Forms\Component\Posttype as FormTypes;
 class CleanUp extends \LBWP\Module\Base
 {
   /**
-   * List of themes that are for customers and therefore not displayed
-   * @var array
-   */
-  protected $publicThemes = array(
-    'alexandria', 'artificer', 'blank-theme', 'enigma', 'glptheme',
-    'highwind-config', 'match-config', 'twentyten', 'twentyeleven',
-    'twentytwelve', 'twentythirteen', 'twentyfourteen', 'twentyfifteen',
-    'standard-theme'
-  );
-
-  /**
    * call parent constructor and initialize the module
    */
   public function __construct()
@@ -68,6 +57,11 @@ class CleanUp extends \LBWP\Module\Base
       if (isset($_GET['wpseo_reset_defaults'])) {
         $this->fixYoastOptions();
       }
+    }
+
+    // Remove things for non superusers
+    if (!Core::isSuperlogin()) {
+      add_action('customize_register', array($this, 'removeAdditionalCssEditor'), 15);
     }
 
     // Disable vc frontend editor completely
@@ -311,11 +305,9 @@ class CleanUp extends \LBWP\Module\Base
     // Superlogin can skip this
     if (!Core::isSuperlogin()) {
       foreach ($themes as $slug => $theme) {
-        // Only removing if not active (so we see the current one)
+        // Remove all themes but the current one
         if ($theme['active'] !== true) {
-          if (!in_array($slug, $this->publicThemes)) {
-            unset($themes[$slug]);
-          }
+          unset($themes[$slug]);
         }
       }
     }
@@ -333,6 +325,14 @@ class CleanUp extends \LBWP\Module\Base
       'midnight' => $_wp_admin_css_colors['midnight'],
       'fresh' => $_wp_admin_css_colors['fresh'],
     );
+  }
+
+  /**
+   * @param \WP_Customize_Manager $customizer
+   */
+  public function removeAdditionalCssEditor($customizer)
+  {
+    $customizer->remove_section('custom_css');
   }
 
   /**
@@ -531,6 +531,11 @@ class CleanUp extends \LBWP\Module\Base
       unset($capabilites['edit_plugins']);
       unset($capabilites['edit_themes']);
     }
+
+    // Always prevent editing of themes and plugins
+    unset($capabilites['edit_themes']);
+    unset($capabilites['edit_plugins']);
+
     return $capabilites;
   }
 
@@ -611,8 +616,9 @@ class CleanUp extends \LBWP\Module\Base
     $wp_admin_bar->remove_node('customize');
     $wp_admin_bar->remove_node('snap-post');
     // since wp3.4
-    if (Core::isSuperlogin()) {
+    if (!Core::isSuperlogin()) {
       $wp_admin_bar->remove_node('themes');
+      $wp_admin_bar->remove_node('cs-explain');
     }
   }
 

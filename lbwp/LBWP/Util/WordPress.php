@@ -22,6 +22,10 @@ class WordPress
   const MENU_ID_FORMS = 'forms';
   const MENU_ID_DESIGN = 'themes.php';
   const MENU_ID_COMMENTS = 'edit-comments.php';
+  /**
+   * @var array post types to be restricted with taxonomies
+   */
+  protected static $restrictPostTables = array();
 
   /**
    * Registers a taxonomy
@@ -340,6 +344,76 @@ class WordPress
     }
 
     return $objects;
+  }
+
+  /**
+   * Allows to restrict post tables with taxonomy dropdowns
+   */
+  public static function restrictPostTable($args)
+  {
+    // Register the filters, if first call
+    if (count(self::$restrictPostTables) == 0) {
+      add_action('restrict_manage_posts', array('\LBWP\Util\WordPress', 'restrictPostTableFilter'));
+      add_filter('parse_query', array('\LBWP\Util\WordPress', 'restrictPostTableQuery'));
+    }
+
+    self::$restrictPostTables[] = $args;
+  }
+
+  /**
+   * Restricts to all registered type/tax combinations
+   */
+  public static function restrictPostTableFilter()
+  {
+    global $typenow;
+    foreach (self::$restrictPostTables as $item) {
+      $type = $item['type'];
+      $taxonomy = $item['taxonomy'];
+      if ($typenow == $type) {
+        $selected = isset($_GET[$taxonomy]) ? $_GET[$taxonomy] : '';
+        wp_dropdown_categories(array(
+          'show_option_all' => $item['all_label'],
+          'taxonomy' => $taxonomy,
+          'name' => $taxonomy,
+          'orderby' => $item['orderby'],
+          'selected' => $selected,
+          'show_count' => $item['show_count'],
+          'hide_empty' => $item['hide_empty'],
+        ));
+      };
+    }
+  }
+
+  /**
+   * Restricts to all registered type/tax combinations
+   * @param \WP_Query $query
+   */
+  public static function restrictPostTableQuery($query)
+  {
+    global $pagenow;
+    foreach (self::$restrictPostTables as $item) {
+      $type = $item['type'];
+      $taxonomy = $item['taxonomy'];
+      $vars = &$query->query_vars;
+      if ($pagenow == 'edit.php' && isset($vars['post_type']) && $vars['post_type'] == $type && isset($vars[$taxonomy]) && is_numeric($vars[$taxonomy]) && $vars[$taxonomy] != 0) {
+        $term = get_term_by('id', $vars[$taxonomy], $taxonomy);
+        $vars[$taxonomy] = $term->slug;
+      }
+    }
+  }
+
+  /**
+   * @param string $key the searching key
+   * @return array list of found options keys
+   */
+  public static function searchOptionKeys($key)
+  {
+    $db = self::getDb();
+    $sql = 'SELECT option_name FROM {sql:optionTable} WHERE option_name LIKE "{raw:keySearch}"';
+    return $db->get_col(Strings::prepareSql($sql, array(
+      'optionTable' => $db->prefix . 'options',
+      'keySearch' => '%' . $key . '%'
+    )));
   }
 
   /**

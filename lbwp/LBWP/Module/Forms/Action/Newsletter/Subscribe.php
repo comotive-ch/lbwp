@@ -50,6 +50,15 @@ class Subscribe extends Base
         'name' => 'Name des Anrede-Feldes (Optional)',
         'type' => 'textfield'
       ),
+      'custom_field_name_1' => array(
+        'name' => 'Benutzerdefiniertes Feld 1 (Name)',
+        'help' => 'Bei MailChimp bitte die komplette MergeVar z.B. *|COMPANY|* verwenden.',
+        'type' => 'textfield'
+      ),
+      'custom_field_value_1' => array(
+        'name' => 'Benutzerdefiniertes Feld 1 (Inhalt)',
+        'type' => 'textfield'
+      ),
       'list_id' => array(
         'name' => 'Listen- oder Segment ID',
         'help' => 'Diese ID bekommen Sie in der Regel von Ihrem Maildienstleister.',
@@ -124,6 +133,14 @@ class Subscribe extends Base
       return false;
     }
 
+    // Add custom fields to the subscription (only implemented in mailchimp), if given
+    for ($i = 1; $i <= 3; ++$i) {
+      $fieldName = $this->params['custom_field_name_' . $i];
+      if (strlen($fieldName) > 0) {
+        $subscription[$fieldName] = $this->getFieldContent($data, $this->params['custom_field_value_' . $i]);
+      }
+    }
+
     // Provide empty or string or a given list id as param
     $listId = '';
     if (isset($this->params['list_id']) && strlen($this->params['list_id']) > 0) {
@@ -133,6 +150,8 @@ class Subscribe extends Base
     /** @var NewsletterCore $newsletter Call the definition method on the current NL sevice */
     $newsletter = Core::getModule('NewsletterBase');
     $service = $newsletter->getService();
+
+
 
     // Subscribe the user
     if ($service->isWorking()) {

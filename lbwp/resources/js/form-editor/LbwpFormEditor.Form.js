@@ -272,8 +272,9 @@ LbwpFormEditor.Form = {
 	 */
 	getTextarea: function (field) {
 		var html = "";
+		var placeholder = (typeof(field.placeholder) == 'string') ? field.placeholder : '';
 		html += "<label>" + field.name + "</label>";
-		html += '<textarea>' + field.value + '</textarea>';
+		html += '<textarea placeholder="' + placeholder + '">' + field.value + '</textarea>';
 		return html;
 	},
 

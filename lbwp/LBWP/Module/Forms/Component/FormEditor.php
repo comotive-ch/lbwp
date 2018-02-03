@@ -447,7 +447,8 @@ class FormEditor extends Base
         <label class="checkbox-wrap">
           <input type="checkbox" name="hide_after_success" id="hide_after_success" value="1">' . __('Nach dem Absenden soll das Formular ausgeblendet werden.', 'lbwp') . '
         </label>
-        <label for="back_link_text">' . __('Text für den "Zurück"-Link', 'lbwp') . '</label><input type="text" name="back_link_text" id="back_link_text" value="">
+        <label for="back_link_text">' . __('Text für den "Zurück"-Link', 'lbwp') . '</label>
+        <input type="text" name="back_link_text" id="back_link_text" value="" placeholder="' . __('Zurück zum Formular', 'lbwp') . '">
         <span class="description">Der "Zurück"-Link wird nur angezeigt, wenn das Formular ausgeblendet wird.</span><br>
         <label class="checkbox-wrap">
           <input type="checkbox" name="after_submit" id="once">' . __('Benutzer können das Formular nur einmal ausfüllen.', 'lbwp') . '

@@ -322,7 +322,7 @@ class Frontend extends Base
     }
 
     // Display a calendar file download for outlook etc.
-    if ($display['showCalendarDownload']) {
+    if ($display['showCalendarDownload'] && $event->startTime > 0) {
       $html .= '
         <dl>
           <dt>' . __('Download', 'lbwp') . '</dt>
@@ -384,11 +384,6 @@ class Frontend extends Base
     $event = $this->getQueriedEvent();
     // Continue, if there is valid data
     if ($event->ID > 0 && isset($event->startTime) && $event->startTime > 0) {
-      // Set the email
-      /*$email = $event->subscribeEmail;
-      if (!Strings::checkEmail($email)) {
-        $email = get_user_by('id', $event->post_author)->user_email;
-      }*/
       // Print the needed mime header
       header('Content-Type: text/calendar');
       // Print the calendar minimal output

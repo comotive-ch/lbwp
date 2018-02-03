@@ -268,9 +268,11 @@ class S3Upload extends \LBWP\Module\Base
 
   /**
    * @param array $file entry from $_FILES
+   * @param string $type the mime type of the file
+   * @param bool $skipMaxImageSize skip max image size filter
    * @return string the final url of the file
    */
-  public function uploadDiskFile($file, $type = '')
+  public function uploadDiskFile($file, $type = '', $skipMaxImageSize = false)
   {
     // Move the file to a local temp path
     $localFile = $this->fixAndRename($file);
@@ -278,7 +280,7 @@ class S3Upload extends \LBWP\Module\Base
     $s3Path = '/' . time() . '/' . File::getFileOnly($localFile);
     $s3Url = $this->changeUploadUrl('') . $s3Path;
     // Do the upload
-    if ($this->handleUpload($localFile, $s3Url, $type)) {
+    if ($this->handleUpload($localFile, $s3Url, $type, $skipMaxImageSize)) {
       return $s3Url;
     }
 

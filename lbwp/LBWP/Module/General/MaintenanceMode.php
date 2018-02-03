@@ -17,9 +17,9 @@ class MaintenanceMode extends BaseSingleton
    */
   protected $settings = array(
     'pageTitle' => 'Webseite im Wartungsmodus',
-    'bodyBackgroundCss' => 'background: url(https://sos.exo.io/lbwp-cdn/comotive/files/1424341079/comotive-icon-bg.png) no-repeat center -280px;',
+    'bodyBackgroundCss' => 'background: url(https://assets01.sdd1.ch/assets/lbwp-cdn/comotive/files/1424341079/comotive-icon-bg.png) no-repeat center -280px;',
     'additionalCss' => '',
-    'logoUrl' => 'https://sos.exo.io/lbwp-cdn/comotive/files/1424341081/comotive-logo.png',
+    'logoUrl' => 'https://assets01.sdd1.ch/assets/lbwp-cdn/comotive/files/1424341081/comotive-logo.png',
     'pageInfoTitle' => '&lt;/comotive@work&gt;',
     'pageInfoText' => 'Die Webseite <strong>%s</strong> befindet sich im Wartungsmodus.',
     'showLoginLinkIfPassword' => false

@@ -156,7 +156,7 @@ class PageSettings
    * @param array $config must contain a saveCallback and an infoCallback
    * @param bool $isMultilang
    */
-  public static function addFileUpload($page, $section, $key, $title, $config, $isMultilang = false)
+  public static function addFileUpload($page, $section, $key, $title, $config = array(), $isMultilang = false)
   {
     $config['multilang'] = $isMultilang;
     $config['saveAlways'] = true;

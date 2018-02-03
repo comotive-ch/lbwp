@@ -53,6 +53,7 @@ class DataTable extends Base
       'max_error' => array(
         'name' => 'Text, wenn die maximale Anzahl erreicht ist',
         'type' => 'textarea',
+        'placeholder' => __('Es sind keine weiteren Anmeldungen möglich.', 'lbwp'),
         'help' => 'Anstelle des Formulars, wird dieser Text angezeigt, wenn die maximale Anzahl Datensätze erreicht ist.'
       ),
     ));
@@ -126,6 +127,12 @@ class DataTable extends Base
       'type' => 'textfield'
     );
 
+    $this->paramConfig['notify_mail_replyto'] = array(
+      'name' => 'Antwort-Adresse',
+      'type' => 'textfield',
+      'help' => 'An wen sollen Antworten auf diese E-Mail gesendet werden? Wird das Feld nicht ausgefüllt, wird die System-Adresse verwendet.'
+    );
+
     $this->paramConfig['notify_mail_content'] = array(
       'name' => 'E-Mail Inhalt',
       'type' => 'textarea',
@@ -168,7 +175,8 @@ class DataTable extends Base
   {
     $backend = $this->core->getDataTableBackend();
     if ($backend->maximumReached($form->ID, $this)) {
-      return $this->params['max_error'];
+      $this->core->getFormHandler()->showBackLink = false;
+      return strlen($this->params['max_error']) > 0 ? $this->params['max_error'] : __('Es sind keine weiteren Anmeldungen möglich.', 'lbwp');
     }
 
     // If the maximum is not reached, see if we need to prefill the form from an existing row
@@ -271,6 +279,7 @@ class DataTable extends Base
     $replyTo = 'info@' . str_replace('www.', '', getLbwpHost());
     $subject = $this->getFieldContent($data, $this->params['notify_mail_subject']);
     $recipient = $this->getFieldContent($data, $this->params['notify_mail_email']);
+    $replyto = $this->getFieldContent($data, $this->params['notify_mail_replyto']);
     // Get the link of the form without id, should work fine at this point
     $url = get_permalink();
 
@@ -292,13 +301,33 @@ class DataTable extends Base
       $content .= '<br/><br/>Sie können Ihre <a href="' . $url . '">Daten hier bearbeiten.</a>';
     }
 
-    // Send the email to the recipient
+    // Create the mail object
     $mail = External::PhpMailer();
+
+    // Set reply to address, if given
+    if (Strings::checkEmail($replyto)) {
+      $mail->addReplyTo($replyto);
+    }
+
+    // Send the email to the recipient
     $mail->Subject = $subject;
-    $mail->Body = $content;
+    $mail->Body = $this->getMailStyleHeader() . $content;
     $mail->addAddress($recipient);
     $mail->addReplyTo($replyTo);
     return $mail->send();
+  }
+
+  /**
+   * Forces some minimal styling to the mail
+   * @return string
+   */
+  protected function getMailStyleHeader()
+  {
+    return '
+      <style type="text/css">
+        body, table, td, p { font-family: Arial, Helvetica, sans-serif !important; }
+      </style>
+    ';
   }
 
   /**

@@ -24,5 +24,7 @@ $this->config = array(
   'Various:MaintenanceMode' => 0,
   'Various:MaintenancePassword' => '',
   'Various:RobotsTxt' => '',
+  'Various:RedirectAttachmentDetail' => 0,
+  'Various:AdditionalCommentNotifications' => '',
   'Various:GoogleEngineId' => '',
 );

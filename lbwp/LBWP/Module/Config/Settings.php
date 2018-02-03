@@ -50,7 +50,7 @@ class Settings extends \LBWP\Module\Base
    */
   protected $tplDescCheckbox = '
     <div class="cfg-item">
-      <div class="cfg-title">&nbsp;</div>
+      <div class="cfg-title">{label}</div>
       <div class="cfg-field">
         <div class="cfg-input">
           {input} <label for="{fieldId}">{title}</label>
@@ -161,6 +161,10 @@ class Settings extends \LBWP\Module\Base
         $tpl = $this->getTemplate($item);
         // Replace the title
         $tpl = str_replace('{title}', $item['title'], $tpl);
+        // Replace the label if given
+        if (isset($item['label'])) {
+          $tpl = str_replace('{label}', $item['label'], $tpl);
+        }
         // Replace the input by using a callback
         $tpl = call_user_func(
           array($this, 'displayField' . ucfirst($item['type'])),

@@ -32,11 +32,11 @@ class Cronjob
 
     curl_close($call);
 
-    if (defined('LOCAL_DEVELOPMENT')) {
+    /*if (defined('LOCAL_DEVELOPMENT')) {
       echo '<!--register-jobs.php master response:';
       var_dump($output);
       echo '--!>';
-    }
+    }*/
   }
 
   /**

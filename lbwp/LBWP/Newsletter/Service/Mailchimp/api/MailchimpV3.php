@@ -156,11 +156,16 @@ class MailChimp
 
     curl_close($ch);
 
-
     if ($this->last_response['body']) {
 
       $d = json_decode($this->last_response['body'], true);
 
+      // Special case for invalid api key, which needs to be transponded
+      if (isset($d['status']) && $d['status'] == 401 && $d['title'] == 'API Key Invalid') {
+        return $d;
+      }
+
+      // Only return data if status ist 200 and ok
       if (isset($d['status']) && intval($d['status']) != 200 && isset($d['detail'])) {
         $this->last_error = sprintf('%d: %s', $d['status'], $d['detail']);
         // Send a report of that error if unknown error

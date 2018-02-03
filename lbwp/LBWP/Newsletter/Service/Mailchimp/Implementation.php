@@ -45,8 +45,7 @@ class Implementation extends Base implements Definition
     // Create input and description
     $input = '<input type="text" class="cfg-field-text" name="apiKey" value="' . $this->getSetting('apiKey') . '">';
     $description = '
-      Erstellen Sie Ihren eigenen Key bei
-      <a href="https://us1.admin.mailchimp.com/account/api/" target="_blank">mailchimp.com</a>
+      <a href="https://us1.admin.mailchimp.com/account/api/" target="_blank">Erstellen Sie Ihren eigenen Key</a> bei mailchimp.com
     ';
 
     // Create the form field from template
@@ -440,7 +439,10 @@ class Implementation extends Base implements Definition
       $translatedKey = $variables[$key];
       // Remove the mailchimp tags, because the API docs say so
       $translatedKey = str_replace(array('*|', '|*'), '', $translatedKey);
-      if (strlen($data[$key]) > 0) {
+      if (strlen($data[$key]) > 0 && strlen($translatedKey) > 0) {
+        $mergeVars[$translatedKey] = $data[$key];
+      } else if (Strings::startsWith($key, '*|') && Strings::endsWith($key, '|*')) {
+        $translatedKey = str_replace(array('*|', '|*'), '', $key);
         $mergeVars[$translatedKey] = $data[$key];
       }
     }

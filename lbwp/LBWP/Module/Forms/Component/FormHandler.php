@@ -114,6 +114,10 @@ class FormHandler extends Base
    */
   public $fieldError = false;
   /**
+   * @var bool show the back link
+   */
+  public $showBackLink = true;
+  /**
    * @var bool provides outside information if the backend form is generated
    */
   public static $isBackendForm = false;
@@ -251,7 +255,9 @@ class FormHandler extends Base
         $formclass .= ' lbwp-form-hide';
         // And add a backlink to the message parameter, if given
         $text = (strlen($args['back_link_text']) > 0) ? $args['back_link_text'] : __('Zurück zum Formular', 'lbwp');
-        $message .= ' <a href="' . get_permalink() . '">' . $text . '</a>';
+        if ($this->showBackLink) {
+          $message .= ' <a class="lbwp-form-back-link" href="' . get_permalink() . '">' . $text . '</a>';
+        }
       }
 
       // Finally, create the message html

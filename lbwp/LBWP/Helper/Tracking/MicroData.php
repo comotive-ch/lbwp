@@ -77,13 +77,17 @@ class MicroData
       '@context' => 'http://schema.org',
       '@type' => 'Event',
       'name' => $event->post_title,
-      'startDate' => date('c', get_post_meta($event->ID, 'event-start', true)),
       'location' => array(
         '@type' => 'Place',
         'name' => get_post_meta($event->ID, 'event-location', true),
         'address' => get_post_meta($event->ID, 'event-location', true)
       )
     );
+
+    $startTs = intval(get_post_meta($event->ID, 'event-start', true));
+    if ($startTs > 0) {
+      $data['startDate'] = date('c', $startTs);
+    }
 
     // Add image object, if given
     self::addImageObject($event, $data);

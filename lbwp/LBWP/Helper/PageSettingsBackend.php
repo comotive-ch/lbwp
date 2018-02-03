@@ -2,6 +2,11 @@
 
 namespace LBWP\Helper;
 
+use LBWP\Core as LbwpCore;
+use LBWP\Module\Backend\S3Upload;
+use LBWP\Util\File;
+use LBWP\Util\Strings;
+
 /**
  * Class PageSettingsBackend
  * @package LBWP\Helper
@@ -313,8 +318,16 @@ class PageSettingsBackend
     if (isset($config['afterHtml'])) {
       $field .= ' ' . $config['afterHtml'];
     }
-    // Display a number field
+
+    // See if there is already something uploaded
+    $url = get_option($config['fieldId']);
+    if (Strings::checkURL($url)) {
+      $field .= '<p><a href="' . $url . '" target="_blank">Download ' . File::getFileOnly($url) . '</a></p>';
+    }
+
+    // Display a upload field
     $html = str_replace('{input}', $field, $html);
+
     return $html;
   }
 
@@ -514,6 +527,20 @@ class PageSettingsBackend
       update_option($item['id'], $value);
     } else {
       $this->errors[] = 'Die Auswahl von ' . $item['title'] . ' ist ungültig und wurde nicht gespeichert.';
+    }
+  }
+
+  /**
+   * Validates and saves a dropdown field
+   * @param array $item the item to be saved
+   */
+  public function saveFieldUpload($item)
+  {
+    if (isset($_FILES[$item['id']]) && $_FILES[$item['id']]['error'] == 0) {
+      /** @var S3Upload $upload the uploader to the configured cdn */
+      $upload = LbwpCore::getInstance()->getModule(('S3Upload'));
+      $url = $upload->uploadLocalFile($_FILES[$item['id']]);
+      update_option($item['id'], $url);
     }
   }
 

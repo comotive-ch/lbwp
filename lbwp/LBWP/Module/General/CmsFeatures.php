@@ -62,7 +62,6 @@ class CmsFeatures extends \LBWP\Module\Base
       add_action('transition_post_status', array($this, 'addGuaranteedPublication'), 200, 3);
       add_action('media_view_settings', array($this, 'overrideGallerySettings'));
       // Sub module singletons (calling getInstance runs them at the specified filter)
-      add_action('sidebar_admin_setup', array('LBWP\Module\General\Cms\WidgetEditor', 'getInstance'));
       add_action('admin_menu', array('LBWP\Module\General\Cms\SystemLog', 'getInstance'));
       add_filter('admin_body_class', array($this, 'addAdminBodyClasses'));
       add_filter('mce_external_plugins', array($this, 'loadEditorPlugins'));
@@ -81,6 +80,14 @@ class CmsFeatures extends \LBWP\Module\Base
       // Additional robots content, if given
       if (strlen($this->config['Various:RobotsTxt']) > 0) {
         add_filter('robots_txt', array($this, 'addAdditionalRobotsContent'), 50);
+      }
+      // Redirect attachment detail to its parent post if given
+      if ($this->config['Various:RedirectAttachmentDetail'] == 1) {
+        add_filter('wp', array($this, 'redirectAttachmentToParent'));
+      }
+      // Frontend comment notifications are extended with our own
+      if (strlen($this->config['Various:AdditionalCommentNotifications']) > 0) {
+        add_filter('comment_notification_recipients', array($this, 'addCommentNotificationRecipients'));
       }
       // Create a page speed instance with default settings
       PageSpeed::getInstance();
@@ -171,7 +178,7 @@ class CmsFeatures extends \LBWP\Module\Base
     add_action('widgets_init', array($this, 'registerGlobalWidgets'));
     add_filter('wp_mail_from', array($this, 'replaceEmailFrom'), 50);
     add_action('phpmailer_init', array($this, 'addReplyToEmail'), 50);
-    add_action('shutdown', array($this, 'trackUncachedResponseTime'));
+    //add_action('shutdown', array($this, 'trackUncachedResponseTime'));
     add_filter('antispam_bee_patterns', array($this, 'addCustomSpamPatterns'));
     add_action('cron_job_test_cron', array($this, 'testAndLogCron'));
   }
@@ -189,6 +196,37 @@ class CmsFeatures extends \LBWP\Module\Base
     }
 
     return CUSTOM_EMAIL_SENDER;
+  }
+
+  /**
+   * @param array $recipients the comment notification recipients
+   * @return array maybe additional recipients
+   */
+  public function addCommentNotificationRecipients($recipients)
+  {
+    $emails = array_map('trim', explode(',', $this->config['Various:AdditionalCommentNotifications']));
+    // Only add emails that are not already in the list
+    foreach ($emails as $email) {
+      if (!in_array($email, $recipients)) {
+        $recipients[] = $email;
+      }
+    }
+
+    return $recipients;
+  }
+
+  /**
+   * Redirects and attachment to its parent, if given
+   */
+  public function redirectAttachmentToParent()
+  {
+    if (is_singular('attachment')) {
+      $post = WordPress::getPost();
+      if ($post->post_parent > 0) {
+        header('Location: ' . get_permalink($post->post_parent), null, 301);
+        exit;
+      }
+    }
   }
 
   /**
@@ -646,6 +684,6 @@ class CmsFeatures extends \LBWP\Module\Base
   public function trackUncachedResponseTime()
   {
     global $lbwpTime;
-    \StatsD::gauge('lbwp.gauges.requests.uncached', (microtime(true) - $lbwpTime) * 1000);
+    //\StatsD::gauge('lbwp.gauges.requests.uncached', (microtime(true) - $lbwpTime) * 1000);
   }
 }

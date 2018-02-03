@@ -21,7 +21,7 @@ class External
     $mail = new PHPMailer();
     $mail->IsHTML(true);
     $mail->CharSet = 'UTF-8';
-    $mail->FromName = get_bloginfo('name');
+    $mail->FromName = apply_filters('lbwpPhpMailerFromName', get_bloginfo('name'));
     $mail->From = CUSTOM_EMAIL_SENDER;
 
     return $mail;

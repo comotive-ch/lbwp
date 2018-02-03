@@ -138,6 +138,7 @@ $this->configData['Various']['items']['MaintenanceMode'] = array(
   'type' => 'checkbox',
   'typeConfig' => array(),
   'title' => 'Wartungsmodus aktiv',
+  'label' => 'Wartungsmodus',
   'checkbox' => true,
   'description' => 'Wenn aktiv, haben weder Besucher noch Suchmaschinen Zugriff auf die Webseite.'
 );
@@ -176,6 +177,29 @@ $this->configData['Various']['items']['RobotsTxt'] = array(
   '
 );
 
+$this->configData['Various']['items']['AdditionalCommentNotifications'] = array(
+  'type' => 'text',
+  'typeConfig' => array(),
+  'title' => 'Kommentarbenachrichtigungen',
+  'description' => '
+    Standardmässig werden Kommentarbenachrichtigungen nur an den Autoren eines Beitrags gesendet.
+    Sie können hier eine oder mehrere (Kommagetrennte) E-Mail Adressen als weitere Empfänger eintragen.
+  '
+);
+
+$this->configData['Various']['items']['RedirectAttachmentDetail'] = array(
+  'type' => 'checkbox',
+  'typeConfig' => array(),
+  'title' => 'Detailseiten von Medien-Dateien auf deren Beitrag weiterleiten',
+  'label' => 'Medien-Dateien',
+  'checkbox' => true,
+  'description' => '
+    Meistens werden diese Seiten nur von Suchmaschinen gefunden oder versehentlich verlinkt. Es empfiehlt sich daher,
+    auf den Beitrag weiterzuleiten in welchem die Medien-Datei (Bild, Video, PDF) verwendet wird.
+  '
+);
+
+
 /**
  * Not found page settings
  */
@@ -197,6 +221,7 @@ $this->configData['NotFoundSettings']['items']['UsePermanentRedirect'] = array(
   'type' => 'checkbox',
   'typeConfig' => array(),
   'checkbox' => true,
+  'label' => 'Weiterleitung',
   'title' => 'Auf die Startseite weiterleiten',
   'description' => 'Alle Fehler leiten auf die Startseite weiter. Suchmaschinen werden informiert, dass es die alten Links nicht mehr gibt.'
 );
@@ -261,6 +286,7 @@ $this->configData['Events']['items']['CleanupEvents'] = array(
   'type' => 'checkbox',
   'typeConfig' => array(),
   'title' => 'Alte Events aus der Datenbank entfernen',
+  'label' => 'Aufräumen',
   'checkbox' => true,
   'description' => 'Events werden nach der unten eingestellten Anzahl Monate gelöscht.'
 );

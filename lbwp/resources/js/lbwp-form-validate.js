@@ -1,8 +1,8 @@
 (function ($) {
 	$.fn.validate = function (edits) {
 		if (this.length > 1) { // checks if there is more than one form
-			$(this).each(function () {
-				$(this).validate(edits);
+			jQuery(this).each(function () {
+				jQuery(this).validate(edits);
 			});
 			return this;
 		}
@@ -32,17 +32,19 @@
 
 		var prfx = val.msgClassPrefix;
 
-		$(form).addClass("validate");
+		jQuery(form).addClass("validate");
 		// Check if there is a submit button for triggering event
-		if ($(form.selector + " input[type=submit]").length != 0) {
-			$(form.selector + " input[type=submit]").mousedown(val.onSubmit);
+		if (jQuery(form.selector + " input[type=submit]").length != 0) {
+			jQuery(form.selector + " input[type=submit]").mousedown(val.onSubmit);
 		} else {
 			// else trigger on submit
-			$(form).submit(val.onSubmit);
+			jQuery(form).submit(val.onSubmit);
 		}
 
 		// add change function to all "required" fields
-		$(form.selector + " [required]").change(updateChange);
+		jQuery(form.selector + " [required]").change(updateChange);
+		// Special for stricter phone validation (only correction, no required)
+		jQuery('.strict-phone-validation input[type=text]').change(correctPhoneNumbers);
 		// If correct option is true all certain fields get checked on "keyup"
 		val.correct && (checkfields());
 
@@ -60,7 +62,7 @@
 			// Set errors to 0
 			var error = 0, validationErrors = 0;
 			// remove all previous alerts
-			$(form.selector + " ." + val.alertClass).remove();
+			jQuery(form.selector + " ." + val.alertClass).remove();
 
 			// Trigger all focus out and see, if there were errors
 			// Set correct to correctAll if val.correct is set to true
@@ -68,7 +70,7 @@
 			var types = correct.split(", "); // Converts string to array
 			val.hasFocusOutErrors = 0;
 			for (var key in types) {
-				$(form.selector + " input[type=" + types[key] + "]").trigger('focusout');
+				jQuery(form.selector + " input[type=" + types[key] + "]").trigger('focusout');
 			}
 
 			// Add the focus out errors
@@ -76,18 +78,18 @@
 			validationErrors = error;
 
 			// Go trough all required fields once again
-			$(field).each(function () { // loop through all required fields
+			jQuery(field).each(function () { // loop through all required fields
 				var userMsg = jQuery(this).attr("data-errorMsg"); // get custom error message from field
 				var msg = userMsg != undefined ? userMsg : val.defaultText; // if there is no custom error message get default text
-				var errorElem = "<label for=" + $(this).attr("id") + ">" + msg + "</label>"; // generate error element with message
+				var errorElem = "<label for=" + jQuery(this).attr("id") + ">" + msg + "</label>"; // generate error element with message
 				var name = this.name.replace("[]", ""); // if the name of a field is an array remove "[]"
 
 				if ((this.type == "radio" || this.type == "checkbox" ) && same != name) { // check if current field is a "radio" or "checkbox" field and its not the same as before
 					jQuery("input[name^=" + name + "]").each(function (i) { // loop through every box
-						if ($(this).is(':checked')) { // if one is checked set same to current and return false
+						if (jQuery(this).is(':checked')) { // if one is checked set same to current and return false
 							same = name;
 							return false;
-						} else if (i == $(this).closest(val.elem.inputbox).children().length - 1) { // if not one is checked set message and count error up
+						} else if (i == jQuery(this).closest(val.elem.inputbox).children().length - 1) { // if not one is checked set message and count error up
 							setMessage(this, errorElem, "error");
 							error++;
 							validationErrors++;
@@ -151,20 +153,53 @@
 		}
 
 		/**
+		 * Try correcting wrong format in phone numbers without requiring
+		 * the user to change it. Might serve for a little better data quality
+		 */
+		function correctPhoneNumbers()
+		{
+			var field = jQuery(this);
+			var number = field.val();
+			// Remove all spaces, slashes and parentheses
+			number = number.replace(/\s/gi, '');
+			number = number.replace('(0)', '');
+			number = number.replace(/[a-zA-Z()\/-]/gi, '');
+
+			// Replace 00 at the beginning with +
+			if (number.substring(0,2) == '00') {
+				number = '+' + number.substring(2);
+			}
+
+			// See if the country number is missing
+			if (number.indexOf('+') != 0) {
+				// If missing, see if there is a block of 0XX in the beginning
+				var firstpart = parseInt(number.substring(0, 3));
+				if (!isNaN(firstpart) && firstpart < 100) {
+					// If yes, replace the leading zero with the default swiss country number
+					number = '+41' + firstpart + number.substring(3);
+				}
+			}
+
+			// In the end, maximum of 14 charachters
+			field.val(number.substring(0, 14));
+		}
+
+		/**
 		 * Set a message to a certain field
 		 * @param elem
 		 * @param msg
 		 * @param mode
 		 */
-		function setMessage(elem, msg, mode) {
+		function setMessage(elem, msg, mode)
+		{
 			 // get closest item to current element
-			var cont = $(elem).closest(val.elem.item);
+			var cont = jQuery(elem).closest(val.elem.item);
 			// removes all message on current element
 			removeMessage(elem);
 
 			// if mode is defined it adds current mode as class
 			if (mode != undefined) {
-				$(elem).closest(val.elem.item).addClass(prfx + mode);
+				jQuery(elem).closest(val.elem.item).addClass(prfx + mode);
 			}
 
 			// places message after content element
@@ -179,9 +214,9 @@
 
 			if (!(correct.indexOf(this.type) > -1)) {
 				removeMessage(this);
-				$(this).closest(val.elem.item).removeClass(prfx + "error " + prfx + "warning").addClass(prfx + "success")
-				if ($(this).val().length == 0) {
-					$(this).closest(val.elem.item).removeClass(prfx + "success").addClass(prfx + "error");
+				jQuery(this).closest(val.elem.item).removeClass(prfx + "error " + prfx + "warning").addClass(prfx + "success")
+				if (jQuery(this).val().length == 0) {
+					jQuery(this).closest(val.elem.item).removeClass(prfx + "success").addClass(prfx + "error");
 				}
 			}
 		}
@@ -196,7 +231,7 @@
 
 			// loop through all types and add "keyup" and "focusout" event;
 			for (var key in types) {
-				$(form.selector + " input[type=" + types[key] + "]").focusout(checkFocusOut);
+				jQuery(form.selector + " input[type=" + types[key] + "]").focusout(checkFocusOut);
 			}
 		}
 
@@ -223,13 +258,13 @@
 			}
 
 			// Now show the message, if needed
-			if ($(this).prop('required') && $(this).val().trim().length == 0 || !validField) {
+			if (jQuery(this).prop('required') && jQuery(this).val().trim().length == 0 || !validField) {
 				// Warn, if it was validated and isn't valid, else error, since it's required
 				var type = !validField ? "warning" : "error";
-				var userMsg = $(this).attr("data-" + type + "Msg");
+				var userMsg = jQuery(this).attr("data-" + type + "Msg");
 				// if there is no custom message take default
 				var msg = userMsg != undefined ? userMsg : val.defaultText;
-				var msgElem = "<label class=" + val.alertClass + " for=" + $(this).attr("id") + ">" + msg + "</label>";
+				var msgElem = "<label class=" + val.alertClass + " for=" + jQuery(this).attr("id") + ">" + msg + "</label>";
 				var name = this.name.replace("[]", "");
 				// Set error and count focus out errors
 				setMessage(this, msgElem, "error");
@@ -244,7 +279,7 @@
 		 * @param elem
 		 */
 		function removeMessage(elem) {
-			$(elem).closest(val.elem.item).next("." + val.messageBoxClass).remove();
+			jQuery(elem).closest(val.elem.item).next("." + val.messageBoxClass).remove();
 		}
 
 		/**
@@ -253,14 +288,14 @@
 		 * @returns {boolean}
 		 */
 		function vEmail(elem) {
-			var email = $(elem).val();;
+			var email = jQuery(elem).val();;
 			var pattern = new RegExp(/^(("[\w-+\s]+")|([\w-+]+(?:\.[\w-+]+)*)|("[\w-+\s]+")([\w-+]+(?:\.[\w-+]+)*))(@((?:[\w-+]+\.)*\w[\w-+]{0,66})\.([a-z]{2,12}(?:\.[a-z]{2})?)$)|(@\[?((25[0-5]\.|2[0-4][\d]\.|1[\d]{2}\.|[\d]{1,2}\.))((25[0-5]|2[0-4][\d]|1[\d]{2}|[\d]{1,2})\.){2}(25[0-5]|2[0-4][\d]|1[\d]{2}|[\d]{1,2})\]?$)/i);
 			if (email.length == 0 || pattern.test(email)) {
-				$(elem).closest(val.elem.item).removeClass(prfx + "error").addClass(prfx + "success");
+				jQuery(elem).closest(val.elem.item).removeClass(prfx + "error").addClass(prfx + "success");
 				removeMessage(elem);
 				return true;
 			} else {
-				$(elem).closest(val.elem.item).addClass(prfx + "error").removeClass(prfx + "success");
+				jQuery(elem).closest(val.elem.item).addClass(prfx + "error").removeClass(prfx + "success");
 				return false;
 			}
 		}
@@ -271,14 +306,14 @@
 		 * @returns {boolean}
 		 */
 		function vURL(elem) {
-			var url = $(elem).val();
+			var url = jQuery(elem).val();
 			var pattern = new RegExp(/^(ftp|https?):\/\/+(www\.)?[a-z0-9\-\.]{3,}\.[a-z]{2,}$/i);
 			if (url.length == 0 || pattern.test(url)) {
-				$(elem).closest(val.elem.item).removeClass(prfx + "error").addClass(prfx + "success");
+				jQuery(elem).closest(val.elem.item).removeClass(prfx + "error").addClass(prfx + "success");
 				removeMessage(elem);
 				return true;
 			} else {
-				$(elem).closest(val.elem.item).addClass(prfx + "error").removeClass(prfx + "success");
+				jQuery(elem).closest(val.elem.item).addClass(prfx + "error").removeClass(prfx + "success");
 				return false;
 			}
 		}
@@ -289,7 +324,7 @@
 		 * @returns {boolean}
 		 */
 		function vText(elem) {
-			$(elem).closest(val.elem.item).removeClass(prfx + "error").addClass(prfx + "success");
+			jQuery(elem).closest(val.elem.item).removeClass(prfx + "error").addClass(prfx + "success");
 			removeMessage(elem);
 			return true;
 		}
@@ -300,13 +335,13 @@
 		 * @returns {boolean}
 		 */
 		function vNumber(elem) {
-			var value = parseInt($(elem).val());
-			if ($(elem).val().length == 0 || !isNaN(value)) {
-				$(elem).closest(val.elem.item).removeClass(prfx + "error").addClass(prfx + "success");
+			var value = parseInt(jQuery(elem).val());
+			if (jQuery(elem).val().length == 0 || !isNaN(value)) {
+				jQuery(elem).closest(val.elem.item).removeClass(prfx + "error").addClass(prfx + "success");
 				removeMessage(elem);
 				return true;
 			} else {
-				$(elem).closest(val.elem.item).addClass(prfx + "error").removeClass(prfx + "success");
+				jQuery(elem).closest(val.elem.item).addClass(prfx + "error").removeClass(prfx + "success");
 				return false;
 			}
 		}

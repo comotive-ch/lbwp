@@ -331,6 +331,43 @@ class Multilang
   }
 
   /**
+   * @param int $postId the post id
+   * @param string $language the language to set
+   */
+  public static function setPostLanguage($postId, $language)
+  {
+    if (Multilang::isActive()) {
+      pll_set_post_language($postId, $language);
+    }
+  }
+
+  /**
+   * Adds a translation post to an existing set of already translated posts
+   * @param int $originalPostId the original post
+   * @param int $newPostId the new post to be added
+   * @param string $language the language of the post
+   */
+  public static function addPostTranslation($originalPostId, $newPostId, $language)
+  {
+    if (Multilang::isActive()) {
+      $translations = pll_get_post_translations($originalPostId);
+      $translations[$language] = $newPostId;
+      pll_save_post_translations($translations);
+    }
+  }
+
+  /**
+   * @param int $termId the term id
+   * @param string $language the language to set
+   */
+  public static function setTermLanguage($termId, $language)
+  {
+    if (Multilang::isActive()) {
+      pll_set_term_language($termId, $language);
+    }
+  }
+
+  /**
    * @param string $default overrideable default if multilang not active
    * @return string
    */
