@@ -42,13 +42,13 @@ class Rss2 extends Feedreader
       // paste it into the data container
       $this->data[] = array(
         'title' => (string)$item->title,
-        'description' => (string)$item->description,
+        'description' => trim((string)$item->description),
         'category' => $this->get_categories($item),
         'guid' => (string)$this->get_guid($item),
         'image' => $this->get_image($item),
         'link' => (string)$item->link,
         'date' => $this->get_date($item),
-        'content' => (string)$content->encoded
+        'content' => trim((string)$content->encoded)
       );
     }
   }

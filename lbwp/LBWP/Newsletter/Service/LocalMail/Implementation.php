@@ -11,6 +11,7 @@ use LBWP\Newsletter\Service\Definition;
 use LBWP\Core as LbwpCore;
 use LBWP\Theme\Feature\LocalMailService;
 use LBWP\Util\ArrayManipulation;
+use LBWP\Util\LbwpData;
 use LBWP\Util\Multilang;
 use LBWP\Util\Strings;
 
@@ -239,6 +240,10 @@ class Implementation extends Base implements Definition
     $mails = array();
     $uniqueAdresses = array();
     $listIdMap = array();
+    // Data table helper for statistics
+    $key = 'localmail_stats_' . $newsletter->getId();
+    $stats = new LbwpData($key);
+    update_post_meta($newsletter->getId(), 'statistics_key', $key);
 
     // Get the list and loop trough it to create the actual mailing object
     foreach ($targets as $listId) {
@@ -286,6 +291,13 @@ class Implementation extends Base implements Definition
             'senderName' => $senderName
           );
 
+          // Track the recipient info into the stats of this newsletter
+          $stats->updateRow($memberId, array_merge($recipient, array(
+            'opens' => 0,
+            'clicks' => 0,
+            'details' => array()
+          )));
+
           $listIdMap[$memberId] = $emailListId;
           $uniqueAdresses[$memberId] = $recipient['email'];
         }
@@ -304,13 +316,13 @@ class Implementation extends Base implements Definition
     if (isset($map[EventType::EVENT_TYPE]) && count($map[EventType::EVENT_TYPE]) > 0) {
       foreach ($map[EventType::EVENT_TYPE] as $eventId) {
         foreach ($uniqueAdresses as $id => $email) {
-          EventType::setSubscribeInfo($eventId, $id, array(
+          EventType::addSubscribeInfo($eventId, $id, array(
             'email' => $email,
             'list-id' => $listIdMap[$id],
             'filled' => false,
             'subscribed' => false,
             'subscribers' => 0
-          ), $overrideSubscriberInfo);
+          ));
         }
       }
     }
@@ -398,10 +410,33 @@ class Implementation extends Base implements Definition
     return $this->api->unsubscribe($recordId, $listId);
   }
 
+  /** TODO
+   * @param int $newsletterId
+   * @return string url to the stats page or empty string
+   */
+  public function getStatisticsUrl($newsletterId)
+  {
+    $key = get_post_meta($newsletterId, 'statistics_key', true);
+    $data = new LbwpData($key);
+    if (strlen($key) > 0 && $data->hasRows()) {
+      return '?page=comotive-newsletter/admin/dispatcher.php&view=LocalMailStats&id=' . $newsletterId;
+    }
+
+    return '';
+  }
+
   /**
    * @return bool true: we have dynamic targets here
    */
   public function hasDynamicTargets()
+  {
+    return true;
+  }
+
+  /**
+   * @return bool true: statistics available
+   */
+  public function hasStatistics()
   {
     return true;
   }

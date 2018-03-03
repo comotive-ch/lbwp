@@ -222,6 +222,20 @@ class Strings
   }
 
   /**
+   * Get the domain of the email address, namely everything after @
+   * @param $email
+   * @return bool
+   */
+  public static function getDomainFromEmail($email)
+  {
+    if (self::checkEmail($email)) {
+      return substr($email, strripos($email, '@') + 1);
+    }
+
+    return false;
+  }
+
+  /**
    * URL validieren (http, https, ftp).
    * @deprecated please use isURL as it actually uses meaningful regex
    * @param string $url zu prüfende URL

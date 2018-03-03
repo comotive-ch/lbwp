@@ -22,6 +22,16 @@ class EventType extends Base
    */
   const EVENT_TYPE = 'lbwp-event';
   const EVENT_TAXONOMY = 'lbwp-event-category';
+
+  /**
+   * @var string Overrideable vars for the type itself
+   */
+  public static $singular = 'Event';
+  public static $plural = 'Events';
+  public static $letter = 'n';
+  public static $rewrite = 'event';
+  public static $defaultCategory = true;
+
   /**
    * Called at init(50)
    */
@@ -43,17 +53,19 @@ class EventType extends Base
   public function registerCustomType()
   {
     // Event base type
-    WordPress::registerType(self::EVENT_TYPE, 'Event', 'Events', array(
+    WordPress::registerType(self::EVENT_TYPE, self::$singular, self::$plural, array(
       'menu_position' => 22,
       'menu_icon' => 'dashicons-calendar-alt',
       'supports' => array('title', 'thumbnail'),
-      'rewrite' => array('slug' => 'event')
-    ), 'n');
+      'rewrite' => array('slug' => self::$rewrite)
+    ), self::$letter);
 
     // Event category
-    WordPress::registerTaxonomy(self::EVENT_TAXONOMY, 'Kategorie', 'Kategorien', '', array(
-      'rewrite' => array('slug' => 'event-category')
-    ), array(self::EVENT_TYPE));
+    if (self::$defaultCategory) {
+      WordPress::registerTaxonomy(self::EVENT_TAXONOMY, 'Kategorie', 'Kategorien', '', array(
+        'rewrite' => array('slug' => 'event-category')
+      ), array(self::EVENT_TYPE));
+    }
   }
 
   /**
@@ -174,6 +186,23 @@ class EventType extends Base
       }
     } else {
       // New data set, take as given
+      $info[$id] = $data;
+    }
+
+    update_post_meta($eventId, 'subscribeInfo', $info);
+  }
+
+  /**
+   * More simple function than set: Add info if not existing or discard
+   * @param int $eventId the id of the event
+   * @param string $id unique id for the data set
+   * @param array $data the data set to write minimum: email, filled, subscribed, subscribers
+   */
+  public static function addSubscribeInfo($eventId, $id, $data)
+  {
+    $info = ArrayManipulation::forceArray(get_post_meta($eventId, 'subscribeInfo', true));
+
+    if (!isset($info[$id])) {
       $info[$id] = $data;
     }
 

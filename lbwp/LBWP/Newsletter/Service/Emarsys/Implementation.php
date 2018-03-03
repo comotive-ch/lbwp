@@ -658,9 +658,26 @@ class Implementation extends Base implements Definition
   }
 
   /**
+   * @param int $newsletterId
+   * @return string url to the stats page or empty string
+   */
+  public function getStatisticsUrl($newsletterId)
+  {
+    return '';
+  }
+
+  /**
    * @return bool false: no dynamic targets
    */
   public function hasDynamicTargets()
+  {
+    return false;
+  }
+
+  /**
+   * @return bool false: no statistics available
+   */
+  public function hasStatistics()
   {
     return false;
   }

@@ -2,7 +2,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: LBWP\n"
 "POT-Creation-Date: 2015-08-03 11:05+0100\n"
-"PO-Revision-Date: 2017-12-19 16:00+0100\n"
+"PO-Revision-Date: 2018-02-26 10:43+0100\n"
 "Last-Translator: \n"
 "Language-Team: comotive <info@comotive.ch>\n"
 "Language: fr_FR\n"
@@ -198,7 +198,7 @@ msgstr ""
 
 #: /var/www/lbwp/wp-content/plugins/lbwp/LBWP/Module/Forms/Component/FormHandler.php:140
 msgid "Fehler beim Absenden des Formulars"
-msgstr "Erreur lors de l'envoi du formulaire"
+msgstr "Erreur (commise) lors de l'envoi du formulaire"
 
 #: /var/www/lbwp/wp-content/plugins/lbwp/LBWP/Module/Forms/Item/Base.php:101
 #, php-format
@@ -621,7 +621,7 @@ msgid "Frau"
 msgstr "Madame"
 
 msgid "Es sind {number} Fehler aufgetreten."
-msgstr "Il y a eu {number} erreurs."
+msgstr "{number} erreurs se sont produites."
 
 msgid "Es ist ein Fehler aufgetreten."
 msgstr "Une erreur s'est produite."

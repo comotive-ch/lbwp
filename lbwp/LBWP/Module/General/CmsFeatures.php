@@ -493,7 +493,8 @@ class CmsFeatures extends \LBWP\Module\Base
       $timestamp = strtotime($post->post_date);
       // Add to jobs slightly later than the actual publication
       Cronjob::register(array(
-        ($timestamp + 90) => 'flush_html_cache'
+        ($timestamp + 5) => 'flush_html_cache',
+        ($timestamp + 75) => 'flush_html_cache'
       ));
     }
   }

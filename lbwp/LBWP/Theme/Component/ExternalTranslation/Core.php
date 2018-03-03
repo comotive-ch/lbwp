@@ -41,7 +41,7 @@ abstract class Core extends BaseComponent
     'integration' => array(
       // Importing translations by cron is the only method as of now
       'type' => 'cron',
-      // The import cycle, can be daily or hourly for the desperate people
+      // The import cycle, can be daily or hourly or daily_multiple for the desperate people
       'cycle' => 'daily',
       // Can be a wordpress post status, be cautions with "publish"
       'translation_status' => 'pending',
@@ -145,9 +145,17 @@ abstract class Core extends BaseComponent
   {
     if ($this->config['integration']['type'] == 'cron') {
       switch ($this->config['integration']['cycle']) {
+        // Once daily at six in the morning
         case 'daily':
           add_action('cron_daily_6', array($this, 'importFinishedTranslations'));
           break;
+        // Multiple times daily, but not too many times
+        case 'daily_multiple':
+          add_action('cron_daily_4', array($this, 'importFinishedTranslations'));
+          add_action('cron_daily_10', array($this, 'importFinishedTranslations'));
+          add_action('cron_daily_16', array($this, 'importFinishedTranslations'));
+          break;
+         // Every effing hour
         case 'hourly':
           add_action('cron_hourly', array($this, 'importFinishedTranslations'));
           break;

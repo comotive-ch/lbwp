@@ -4,6 +4,7 @@ namespace LBWP\Module\Forms\Component\ActionBackend;
 
 use LBWP\Module\Events\Component\EventType;
 use LBWP\Module\Forms\Core as FormCore;
+use LBWP\Theme\Feature\LocalMailService;
 use LBWP\Util\File;
 use LBWP\Util\Strings;
 use LBWP\Util\WordPress;
@@ -63,6 +64,7 @@ class DataDisplay
         ' . $this->getUserOptions($formId, $hasEntries) . '<br />
         ' . $this->getTableHtml($columns, $rawTable, $formId, $eventId) . '<br />
         ' . $this->getEventSummaryHtml($formId, $eventId) . '
+        ' . $this->getEventUnfilledHtml($formId, $eventId) . '
         <br class="clear">
       </div>
     ';
@@ -221,13 +223,15 @@ class DataDisplay
 
     // Get the a counting array from events subscribeinfo metadata
     $summary = $this->getRawEventSummary($eventId);
+    $event = get_post($eventId);
 
     if ($eventId > 0) {
       // Create a little table for that
       $html .= '
-      <h4>Event Zusammenfassung</h4>
-      <table class="widefat" style="width:210px">
-    ';
+        <h3>Event Zusammenfassung</h3>
+        <p>Der Datenspeicher im Formular ist mit dem Event &laquo;' . $event->post_title . '&raquo; verknüpft.</p>
+        <table class="widefat" style="width:210px">
+      ';
       foreach ($summary as $key => $sum) {
         $html .= '
         <tr class="sum-' . $key . '">
@@ -236,10 +240,107 @@ class DataDisplay
         </tr>
       ';
       }
-      $html .= '</table>';
+      $html .= '</table><br>';
     }
 
     return $html;
+  }
+
+  /**
+   * @param int $formId the form id
+   * @param int $eventId the event id
+   * @return string html to display unfilled answers
+   */
+  public function getEventUnfilledHtml($formId, $eventId)
+  {
+    $html = '';
+
+    if ($eventId > 0) {
+      // Initialize column info
+      $columnInfo = array('email' => 'E-Mail-Adresse');
+      // Get the according rows of the event data
+      $rows = $this->getEventUnfilledData($eventId, $columnInfo);
+      // Add this at the end so it appears at the tables end
+      $columnInfo['subscribe-link'] = 'Anmelde-Link';
+
+      // Create Html for that data
+      foreach ($rows as $row) {
+        $html .= '<tr>';
+        foreach ($columnInfo as $key => $info) {
+          if ($key == 'subscribe-link') {
+            $html .= '<td><a href="' . $row[$key] . '" target="_blank">Anmelden</a></td>';
+          } else {
+            $html .= '<td>' . $row[$key] . '</td>';
+          }
+        }
+        $html .= '</tr>';
+      }
+
+      // If there were answers, provide the heading
+      if (count($rows) > 0) {
+        $html = '
+          <h3>Ausstehende Antworten</h3>
+          <p>
+            <a href="?page=' . $_GET['page'] . '&export-unfilled=csv&type=utf8">Export als CSV (UTF-8)</a> | 
+            <a href="?page=' . $_GET['page'] . '&export-unfilled=csv&type=iso">Export als CSV (Excel)</a>
+          </p>
+          <table class="widefat">
+            <thead><tr><th>' . implode('</th><th>', $columnInfo) . '</th></tr></thead>
+            <tbody>' . $html . '</tbody>
+            <tfoot><tr><th>' . implode('</th><th>', $columnInfo) . '</th></tr></tfoot>
+          </table>
+          <br>
+        ';
+      }
+    }
+
+    return $html;
+  }
+
+  /**
+   * @param int $eventId the event id
+   * @param array $columns the columns to be added
+   * @return array the raw data of unfilled people
+   */
+  protected function getEventUnfilledData($eventId, &$columns)
+  {
+    // Get all the unanswered data sets
+    $rows = $localMailData = array();
+    $info = EventType::getSubscribeInfo($eventId);
+    foreach ($info as $key => $record) {
+      // Is the record even filled out?
+      if (!isset($record['filled']) || !$record['filled'] && (isset($record['email']) && isset($record['list-id']))) {
+        $row = array();
+        // Create the subscription link from data
+        $url = get_permalink($eventId);
+        $url = Strings::attachParam('list', $record['list-id'], $url);
+        $url = Strings::attachParam('ml', $key, $url);
+        // File the basic data
+        $row['email'] = $record['email'];
+        $row['subscribe-link'] = $url;
+
+        // See if there is more info in the list itself
+        if (LocalMailService::isWorking()) {
+          if (!isset($localMailData[$record['list-id']])) {
+            $localMailData[$record['list-id']] = LocalMailService::getInstance()->getListData($record['list-id']);
+          }
+
+          // Check if the mail id exists for that record
+          if (isset($localMailData[$record['list-id']][$key])) {
+            foreach ($localMailData[$record['list-id']][$key] as $key => $value) {
+              $row[$key] = $value;
+              if (!isset($columns[$key])) {
+                $columns[$key] = $key;
+              }
+            }
+          }
+        }
+
+        $rows[] = $row;
+      }
+    }
+
+    return $rows;
   }
 
   /**
@@ -251,11 +352,11 @@ class DataDisplay
     // Create skeleton to count into and return
     $data = array(
       'subscribed' => array(
-        'name' => 'Angemeldete Personen',
+        'name' => 'Anmeldungen',
         'value' => 0
       ),
       'unsubscribed' => array(
-        'name' => 'Abgemeldete Personen',
+        'name' => 'Abmeldungen',
         'value' => 0
       ),
       'unfilled' => array(
@@ -420,6 +521,15 @@ class DataDisplay
       }
     }
 
+    if (isset($_GET['export-unfilled'])) {
+      if ($_GET['export-unfilled'] == 'csv' && $_GET['type'] == 'utf8') {
+        $this->sendCsvUnfilled($name, false, $formId, $eventId);
+      }
+      if ($_GET['export-unfilled'] == 'csv' && $_GET['type'] == 'iso') {
+        $this->sendCsvUnfilled($name, true, $formId, $eventId);
+      }
+    }
+
     if (isset($_GET['newrow'])) {
       $this->backend->addEmptyTableEntry($formId, $eventId);
       header('location: ?page=' . $_GET['page']);
@@ -439,6 +549,24 @@ class DataDisplay
       header('location: ' . get_admin_url());
       exit;
     }
+  }
+
+  /**
+   * Download a table of unfilled data records
+   * @param string $name name of the table
+   * @param bool $utf8decode utf8 decoding
+   * @param int $formId the form id, to check for an event
+   * @param int $eventId eventual event id
+   */
+  protected function sendCsvUnfilled($name, $utf8decode, $formId, $eventId)
+  {
+    // Initialize column info and get the raw data
+    $columns = array('email' => 'email');
+    $data = $this->getEventUnfilledData($eventId, $columns);
+    $columns['subscribe-link'] = 'subscribe-link';
+
+    // Export as actual csv with the existing method, but no event id
+    $this->sendCsv('unfilled-' . $name, $columns, $data, $utf8decode, 0, 0);
   }
 
   /**

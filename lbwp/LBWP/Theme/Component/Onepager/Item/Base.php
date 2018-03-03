@@ -83,6 +83,15 @@ abstract class Base
    */
   public function onMetaboxAdd()
   {
+    $this->addBaseMetaboxFeatures();
+  }
+
+  /**
+   * Adds some basic functions to metaboxes of onepager items. This is its own functions if
+   * we multi-extend items so they don't need to tranverse parent::onMetaBoxAdd
+   */
+  protected function addBaseMetaboxFeatures()
+  {
     // Add a box for menu settings on the item, if the parent has menus active
     if ($this->useMenus) {
       $this->helper->addMetabox(self::MENU_BOX_ID, __('Menu-Einstellungen', 'lbwp'));

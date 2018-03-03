@@ -44,11 +44,14 @@ $lbwpTinyMceImageMarginBottomAlignNoneMobile: null !default; // Maybe more margi
 @if $lbwpTinyMceImageMarginBottomMobile == null {
 	$lbwpTinyMceImageMarginBottomMobile: $lbwpTinyMceImageMarginBottom;
 }
-@if ($lbwpTinyMceImageMarginBottomAlignNone == null) {
-	$lbwpTinyMceImageMarginBottomAlignNone: $lbwpTinyMceImageMarginBottom;
-}
-@if ($lbwpTinyMceImageMarginBottomAlignNoneMobile == null) {
-	$lbwpTinyMceImageMarginBottomAlignNoneMobile: $lbwpTinyMceImageMarginBottomAlignNone;
+
+@if $lbwpTinyMceImageUseDefaults {
+	@if ($lbwpTinyMceImageMarginBottomAlignNone == null) {
+		$lbwpTinyMceImageMarginBottomAlignNone: $lbwpTinyMceImageMarginBottom;
+	}
+	@if ($lbwpTinyMceImageMarginBottomAlignNoneMobile == null) {
+		$lbwpTinyMceImageMarginBottomAlignNoneMobile: $lbwpTinyMceImageMarginBottomAlignNone;
+	}
 }
 
 // image captions settings
@@ -76,7 +79,10 @@ $lbwpTinyMceImageMarginTop: 0 !default;
 	.lbwp-editor-content {
 		@include lbwpClearfix;
 	}
-	.alignnone {
+}
+
+.alignnone {
+	&.size-medium, &.size-large, &.size-full {
 		margin-bottom: $lbwpTinyMceImageMarginBottomAlignNoneMobile;
 		@media #{$lbwpTinyMceImageBreakpointMediumUp} {
 			margin-bottom: $lbwpTinyMceImageMarginBottomAlignNone;

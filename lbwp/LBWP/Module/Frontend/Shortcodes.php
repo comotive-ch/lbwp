@@ -67,7 +67,7 @@ class Shortcodes extends \LBWP\Module\Base
       $url = str_replace('&amp;', '&', $url);
       $url = str_replace('&#038;', '&', $url);
 
-      header('Location: ' . $url);
+      header('Location: ' . $url, null, 301);
       exit;
     }
   }

@@ -79,6 +79,17 @@ interface Definition
   public function hasDynamicTargets();
 
   /**
+   * @return bool true/false if there are statistics with this service
+   */
+  public function hasStatistics();
+
+  /**
+   * @param int $newsletterId the internal newsletter id
+   * @return string the url of a statistics page (internal or external) to display stats for a newsletter
+   */
+  public function getStatisticsUrl($newsletterId);
+
+  /**
    * @param array $targets the list IDs to use
    * @param string $html the html code for the newsletter
    * @param string $text the text version of the newsletter

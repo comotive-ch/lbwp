@@ -155,6 +155,7 @@ class File
 
     switch (strtolower($extension)) {
       case 'jpg':
+      case 'jpeg':
       case 'gif':
       case 'png':
         return true;

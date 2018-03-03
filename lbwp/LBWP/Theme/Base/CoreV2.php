@@ -141,6 +141,14 @@ abstract class CoreV2
       add_action('init', array($this, 'adminInit'));
       add_action('admin_enqueue_scripts', array($this, 'adminAssets'));
       add_action('admin_enqueue_scripts', array($this, 'lateAdminAssets'), 50);
+      // Add the style version number of the theme to editor css
+      $version = $this->version;
+      add_filter('editor_stylesheets', function($stylesheets) use ($version) {
+        foreach ($stylesheets as $key => $url) {
+          $stylesheets[$key] = Strings::attachParam('v', $version, $url);;
+        }
+        return $stylesheets;
+      });
     }
   }
 

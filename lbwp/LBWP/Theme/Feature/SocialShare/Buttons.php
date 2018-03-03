@@ -2,6 +2,7 @@
 
 namespace LBWP\Theme\Feature\SocialShare;
 
+use LBWP\Helper\Metabox;
 use LBWP\Util\ArrayManipulation;
 use LBWP\Util\Strings;
 use LBWP\Util\WordPress;
@@ -56,7 +57,8 @@ class Buttons
       SocialApis::LINKED_IN,
       SocialApis::GOOGLE_PLUS
     ),
-    'type' => 'code' // or: top/bottom
+    'type' => 'code', // or: top/bottom
+    'single_setting_support' => array()
   );
   /**
    * @var array the nice names of services for settings
@@ -125,6 +127,26 @@ class Buttons
     // Auto include the buttons in content, if desired
     if ($this->config['type'] != 'code') {
       add_filter('the_content', array($this, 'autoInsert'));
+    }
+
+    // If there's post types where a setting is needed to activate the buttons
+    if (count($this->config['single_setting_support'])) {
+      add_action('admin_init', array($this, 'addSettingMetaboxes'));
+    }
+  }
+
+  /**
+   * Adds a setting for each configured post types, to display single instances
+   */
+  public function addSettingMetaboxes()
+  {
+    foreach ($this->config['single_setting_support'] as $postType) {
+      $helper = Metabox::get($postType);
+      $boxId = 'lbwp-social-share-settings';
+      $helper->addMetabox($boxId, 'Social-Sharing Buttons', 'side');
+      $helper->addCheckbox('lbwp-enable-share-buttons', $boxId, 'Anzeige', array(
+        'description' => 'Buttons auf dieser Seite anzeigen'
+      ));
     }
   }
 
@@ -295,6 +317,13 @@ class Buttons
     $post = WordPress::getPost();
     $link = get_permalink($post->ID);
     $html = '<div class="lbwp-share-buttons"><ul>';
+
+    // If the type is configured, leave if not set to "on"
+    if (in_array($post->post_type, $this->config['single_setting_support'])) {
+      if (get_post_meta($post->ID, 'lbwp-enable-share-buttons', true) !== 'on') {
+        return '';
+      }
+    }
 
     // Add the buttons
     foreach ($this->config['order'] as $key) {

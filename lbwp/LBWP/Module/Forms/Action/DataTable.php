@@ -353,11 +353,25 @@ class DataTable extends Base
         // Radio / Checkbox / Dropdown get a special treatment
         switch ($class) {
           case 'radio':
-          case 'checkbox':
             $script .= 'jQuery("input[name=' . $item->get('id') . '][value=\'' . esc_js($row[$cellKey]) . '\'").attr("checked", "checked");' . PHP_EOL;
             break;
           case 'dropdown':
             $script .= 'jQuery("select[name=' . $item->get('id') . '] option[value=\'' . esc_js($row[$cellKey]) . '\'").attr("selected", "selected");' . PHP_EOL;
+            break;
+          // Checkboxes are a tad more complicated to solve
+          case 'checkbox':
+            $values = array_map('trim', explode(',', $row[$cellKey]));
+            foreach ($values as $value) {
+              $script .= '
+                checkboxes = jQuery("input[name=\'' . $item->get('id') . '\[\]\']");
+                checkboxes.each(function() {
+                  var checkbox = jQuery(this);
+                  if (checkbox.next().text() == "' . esc_js($value) . '") {
+                    checkbox.attr("checked", "checked");
+                  };
+                });
+              ';
+            }
             break;
           default:
             $script .= 'jQuery("#' . $item->get('id') . '").val("' . esc_js($row[$cellKey]) . '");' . PHP_EOL;

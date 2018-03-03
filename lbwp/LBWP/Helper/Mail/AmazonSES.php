@@ -49,6 +49,11 @@ class AmazonSES extends Base
    */
   public function send()
   {
+    // On local, assume it was sent, but don't send anything
+    if (defined('LOCAL_DEVELOPMENT')) {
+      return true;
+    }
+
     $response = $this->instance->send_email(
       $this->data['from']['name'] . '<' . $this->data['from']['email'] . '>',
       array(

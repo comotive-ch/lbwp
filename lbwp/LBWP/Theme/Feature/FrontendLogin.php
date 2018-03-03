@@ -15,6 +15,34 @@ use LBWP\Util\Strings;
 class FrontendLogin
 {
   /**
+   * @var array custom fields after the default fields for register/change process
+   * Example structure
+   * array(
+   *   array(
+   *     'id' => 'myFieldId1',
+   *     'label' => __('myLabel1', 'lbwp'),
+   *     'type' => 'text', // any allowed lbwp form text field
+   *     'required' => true
+   *   ),
+   *   array(
+   *     'id' => 'myFieldId2',
+   *     'label' => __('myLabel2', 'lbwp'),
+   *     'type' => 'text', // any allowed lbwp form text field
+   *     'required' => false
+   *    ),
+   * )
+   */
+  protected $customFields = array();
+
+  /**
+   * @param array $fields the custom fields for registration/datachange
+   */
+  public function setCustomFields(array $fields)
+  {
+    $this->customFields = $fields;
+  }
+
+  /**
    * Logouts the user
    */
   public function logoutUser()
@@ -139,9 +167,15 @@ class FrontendLogin
         update_user_meta($userId, 'first_name', $_POST['firstname']);
         update_user_meta($userId, 'last_name', $_POST['lastname']);
         update_user_meta($userId, 'salutation', $this->getSalutation($_POST['gender']));
+        // Process further custom fields, if given
+        foreach ($this->customFields as $field) {
+          update_user_meta($userId, $field['id'], $_POST[$field['id']]);
+        }
         // Make a user instance and make sure to set the subscriber role
         $user = new \WP_User($userId);
         $user->set_role('subscriber');
+        // Success filter to make further changes to the user
+        do_action('FrontendRegistration_after_user_creation', $user);
         // Log the user in after redirecting by setting the login cookie
         wp_signon(array(
           'user_login' => $user->user_email,
@@ -194,9 +228,10 @@ class FrontendLogin
           male_' . $language . '==' . __('Herr', 'lbwp') . '$$
           female_' . $language . '==' . __('Frau', 'lbwp') . '
         [/lbwp:formContentItem]
+        [lbwp:formItem key="textfield" pflichtfeld="ja" id="email" feldname="' . __('E-Mail-Adresse', 'lbwp') . '" type="email"]
         [lbwp:formItem key="textfield" pflichtfeld="ja" id="firstname" feldname="' . __('Vorname', 'lbwp') . '" type="text"]
         [lbwp:formItem key="textfield" pflichtfeld="ja" id="lastname" feldname="' . __('Nachname', 'lbwp') . '" type="text"]
-        [lbwp:formItem key="textfield" pflichtfeld="ja" id="email" feldname="' . __('E-Mail-Adresse', 'lbwp') . '" type="email"]
+        ' . $this->getCustomFieldShortcodes() . '
         [lbwp:formItem key="textfield" pflichtfeld="ja" id="password" feldname="' . __('Passwort', 'lbwp') . '" type="password"]
         [lbwp:formItem key="hiddenfield" id="redirect_to" vorgabewert="' . apply_filters('FrontendRegistration_redirect_to', $this->getTarget(), 'registration') . '"]
       [/lbwp:form]
@@ -279,6 +314,11 @@ class FrontendLogin
       update_user_meta($user->ID, 'first_name', $_POST['firstname']);
       update_user_meta($user->ID, 'last_name', $_POST['lastname']);
 
+      // Process further custom fields, if given
+      foreach ($this->customFields as $field) {
+        update_user_meta($user->ID, $field['id'], $_POST[$field['id']]);
+      }
+
       // See if the email changed
       if ($user->user_email != $_POST['email'] && Strings::checkEmail($_POST['email'])) {
         // Change the email in our update object
@@ -296,6 +336,7 @@ class FrontendLogin
 
       // Finally update the user
       $result = wp_update_user($updateData);
+      do_action('FrontendLogin_after_user_data_change', $user, $updateData, $result);
 
       // No errors happened, redirect to success page
       if (!is_wp_error($result)) {
@@ -341,6 +382,7 @@ class FrontendLogin
         [lbwp:formItem key="textfield" pflichtfeld="ja" id="email" feldname="' . __('E-Mail-Adresse', 'lbwp') . '" type="email" vorgabewert="' . $email . '"]
         [lbwp:formItem key="textfield" pflichtfeld="ja" id="firstname" feldname="' . __('Vorname', 'lbwp') . '" type="text" vorgabewert="' . $firstname . '"]
         [lbwp:formItem key="textfield" pflichtfeld="ja" id="lastname" feldname="' . __('Nachname', 'lbwp') . '" type="text" vorgabewert="' . $lastname . '"]
+        ' . $this->getCustomFieldShortcodes($user->ID) . '
         [lbwp:formItem key="textfield" pflichtfeld="nein" id="new-password" feldname="' . __('Neues Passwort', 'lbwp') . '" type="password"]
         [lbwp:formItem key="textfield" pflichtfeld="nein" id="password-confirm" feldname="' . __('Passwort bestätigen', 'lbwp') . '" type="password"]
       [/lbwp:form]
@@ -361,6 +403,29 @@ class FrontendLogin
     }
 
     return $formHtml;
+  }
+
+  /**
+   * @param int $userId if given, we prefill data fields
+   * @return string the shortcodes to display the custom fields
+   */
+  protected function getCustomFieldShortcodes($userId = 0)
+  {
+    $shortcodes = '';
+    foreach ($this->customFields as $field) {
+      $required = ($field['required']) ? 'ja' : 'nein';
+
+      // if user, prefill data
+      $value = '';
+      if ($userId > 0) {
+        $value = esc_attr(trim(get_user_meta($userId, $field['id'], true)));
+      }
+
+      // Create shortcode
+      $shortcodes .= '[lbwp:formItem key="textfield" pflichtfeld="' . $required . '" id="' . $field['id'] . '" feldname="' . $field['label'] . '" type="' . $field['type'] . '" vorgabewert="' . $value . '"]';
+    }
+
+    return $shortcodes;
   }
 
   /**

@@ -217,6 +217,26 @@ class WordPress
   }
 
   /**
+   * Can be used to get all meta, but single values stay single
+   * @param int $postId the post to get all meta data
+   * @return array
+   */
+  public static function getAccessiblePostMeta($postId)
+  {
+    $meta = get_post_meta($postId);
+    $newMeta = array();
+    foreach ($meta as $key => $list) {
+      if (count($list) == 1) {
+        $newMeta[$key] = $list[0];
+      } else {
+        $newMeta[$key] = $list;
+      }
+    }
+
+    return $newMeta;
+  }
+
+  /**
    * @param \WP_Post $post the post to be checked
    * @return bool true if displayable
    */
@@ -339,6 +359,24 @@ class WordPress
     foreach ($list as $id) {
       $object = get_post(intval($id));
       if ($object instanceof \WP_Post && $object->post_status != 'trashed') {
+        $objects[] = $object;
+      }
+    }
+
+    return $objects;
+  }
+
+  /**
+   * @param array $list a list of integer ids
+   * @return \WP_Post[] object list, can be empty if validation removes some items
+   */
+  public static function getPublishedPostObjects($list)
+  {
+    $objects = array();
+    // Only get published objects
+    foreach ($list as $id) {
+      $object = get_post(intval($id));
+      if ($object instanceof \WP_Post && $object->post_status == 'publish') {
         $objects[] = $object;
       }
     }

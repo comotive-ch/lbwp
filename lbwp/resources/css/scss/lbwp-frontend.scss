@@ -80,3 +80,98 @@ div.really_simple_share .fb-like {
 		margin-bottom: 10px;
 	}
 }
+
+
+// Styling for onepager element in draft mode
+$customColorDraft: #F39868;
+$customColorDraftGrey: #fbfbfb;
+$customColorDraftFontColor: #505050;
+
+.onepager-item{
+	position: relative;
+
+	.item-admin-wrapper{
+
+		&:before,
+		&:after{
+			content: '';
+			position: absolute;
+			top: 0;
+			left: 0;
+			right: 0;
+			border-top: 3px dashed $customColorDraft;
+		}
+
+		&:after{
+			top: auto;
+			bottom: 0;
+		}
+
+		.item-admin-inner-wrapper{
+			display: flex;
+			position: absolute;
+			top: 10px;
+			right: 10px;
+			padding: 10px;
+
+			.item-admin-edit{
+				margin: 0 10px 0 0;
+				padding: 5px 10px;
+				font-size: 12px;
+				color: $customColorDraftFontColor;
+				background: lighten($customColorDraftFontColor, 60%);
+
+				&:hover{
+					background: lighten($customColorDraftFontColor, 55%);
+				}
+
+				.dashicons{
+					width: auto;
+					height: auto;
+					font-size: 16px;
+					line-height: 1;
+				}
+			}
+
+			.draft-label{
+				position: relative;
+				background: $customColorDraft;
+				padding: 5px 10px;
+				text-align: center;
+				color: #fff;
+				font-weight: bold;
+				font-size: 12px;
+				letter-spacing: 2px;
+				cursor: pointer;
+
+				&:hover{
+					background: darken($customColorDraft, 10%);
+					.label-notice{
+						visibility: visible;
+					}
+				}
+
+				.label-notice{
+					text-align: left;
+					width: 300px;
+					padding: 10px;
+					position: absolute;
+					right: 0;
+					top: 35px;
+					color: $customColorDraftFontColor;
+					background: $customColorDraftGrey;
+					box-shadow: 0px 0px 10px 0px lighten($customColorDraftFontColor, 60%);
+					visibility: hidden;
+					hyphens: auto;
+					-moz-hyphens: auto;
+					-ms-hyphens: auto;
+					-webkit-hyphens: auto;
+
+					@media (max-width: 400px){
+						width: 200%;
+					}
+				}
+			}
+		}
+	}
+}

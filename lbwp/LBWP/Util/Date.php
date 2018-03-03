@@ -44,7 +44,7 @@ class Date
 	 * Formattyp für Verwendung als ICS Kalender Datei
 	 * @var string
 	 */
-	const ICS_DATE		= 'Ymd\THis\Z';
+	const ICS_DATE		= 'Ymd\THis';
 	/**
 	 * Formattyp für ein korrektes Datum nach RFC 822
 	 * @var string

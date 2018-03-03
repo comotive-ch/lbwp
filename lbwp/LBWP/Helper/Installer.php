@@ -18,6 +18,7 @@ class Installer
   {
     // Set bigger image size defaults
     self::setImageSizeDefaults();
+    self::updateLbwpTables();
   }
 
   /**
@@ -41,6 +42,32 @@ class Installer
         update_option($option, $after);
       }
     }
+  }
+
+  /**
+   * Installs or upgrades all lbwp core tables
+   */
+  public static function updateLbwpTables()
+  {
+    global $wpdb;
+    $charset = $wpdb->get_charset_collate();
+    $table = $wpdb->prefix . 'lbwp_data';
+
+    $sql = "CREATE TABLE $table (
+      pid bigint(11) UNSIGNED NOT NULL AUTO_INCREMENT,
+      row_key varchar(100) DEFAULT '' NOT NULL,
+      row_id varchar(100) DEFAULT '' NOT NULL,
+      row_created datetime DEFAULT CURRENT_TIMESTAMP NOT NULL,
+      row_modified datetime DEFAULT CURRENT_TIMESTAMP NOT NULL,
+      user_id bigint(11) UNSIGNED DEFAULT 0 NOT NULL,
+      row_data mediumtext NOT NULL,
+      PRIMARY KEY  (pid),
+      KEY  (row_key),
+      KEY  (row_id)
+    ) $charset;";
+
+    require_once(ABSPATH . 'wp-admin/includes/upgrade.php');
+    dbDelta($sql);
   }
 
   /**

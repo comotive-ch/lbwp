@@ -490,6 +490,22 @@ class Implementation extends Base implements Definition
   }
 
   /**
+   * @param int $newsletterId
+   * @return string url to the stats page or empty string
+   */
+  public function getStatisticsUrl($newsletterId)
+  {
+    $serviceNewsletterId = $this->getServiceMailingId($newsletterId);
+    // If there is an id, link it
+    if (strlen($serviceNewsletterId)) {
+      return 'https://admin.mailchimp.com/reports/summary?id=' . $serviceNewsletterId;
+    }
+
+    // If there is no mailing id from mailchimp, don't provide the summary link
+    return '';
+  }
+
+  /**
    * Helper to make api calls where it's secure to use the apiKey blindly
    * @return MailchimpV3
    */
@@ -504,5 +520,13 @@ class Implementation extends Base implements Definition
   public function hasDynamicTargets()
   {
     return false;
+  }
+
+  /**
+   * @return bool true: statistics available
+   */
+  public function hasStatistics()
+  {
+    return true;
   }
 } 

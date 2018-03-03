@@ -44,6 +44,7 @@ class Search
     'filterResults' => false,                     // true filters the results (if post) for search term existens
     'displayImages' => true,                      // Display images, if available
     'displayFiles' => false,                      // Skip file search results completely
+    'fileBlackList' => array('xml', 'css', 'js', 'json'), // XML and various assets files are not allowed to show
     'rawResultFallback' => false,                 // Fallback to a raw result, if postType matching didn't work
     'rawResultFallbackUseImages' => true,         // Wheter to use google defined images for raw result fallback
     'imageFallback' => '<div></div>',             // Fallback html, if no image can be displayed
@@ -53,7 +54,7 @@ class Search
     'textFieldType' => 'text',                    // Type of the text field for search input
     'textFieldClass' => '',                       // A class to be set onto the text field
     'textFieldId' => 'gss_query',                 // ID of the search input field
-    'textFieldPlaceHolder' => '',                 // Search placeholder for input field
+    'textFieldPlaceHolder' => ''                 // Search placeholder for input field
   );
   /**
    * The endpoint for xml requests
@@ -132,7 +133,7 @@ class Search
 
     // Add start / num parameters
     $page = (intval($_POST['page']) > 0) ? intval($_POST['page']) : 1;
-    $start = ($page > 1) ? ($page - 1) * self::RESULTS_PER_PAGE : 1;
+    $start = ($page > 1) ? (($page - 1) * self::RESULTS_PER_PAGE)+1 : 1;
     $url .= '&start=' . $start . '&num=' . self::RESULTS_PER_PAGE . '';
 
     // Make a simple call and convert the xml doc to an array
@@ -166,6 +167,7 @@ class Search
           'resultCount' => count($results),
           'nativeCount' => $nativeResultCount,
           'html' => $itemHtml,
+          'call' => $url,
           'cached' => false
         );
       } else {
@@ -173,6 +175,7 @@ class Search
           'resultCount' => 0,
           'nativeCount' => $nativeResultCount,
           'html' => '<p>' . self::$apiConf['errorMessage'] . '</p>',
+          'call' => $url,
           'cached' => false
         );
       }
@@ -244,15 +247,23 @@ class Search
   {
     $description = get_post_meta($post->ID, '_yoast_wpseo_metadesc', true);
     if (strlen($description) == 0)
-      $description = get_post_meta($post->ID, '_wpseo_edit_description', true);
-    if (strlen($description) == 0)
       $description = strip_tags($post->post_excerpt);
-    if (strlen($description) == 0 && ($post->post_type == 'post' || $post->post_type == 'page'))
+    if (strlen($description) == 0 && !self::containsShortcode($post->post_content) && ($post->post_type == 'post' || $post->post_type == 'page'))
       $description = Strings::chopToWords(strip_tags(strip_shortcodes($post->post_content)), 40, true);
     if (strlen($description) == 0)
       $description = $raw['snippet'];
 
     return $description;
+  }
+
+  /**
+   * Checks if the content contains a shortcode and is hence in-usable for displaying a search result
+   * @param string $html from post_content or similar
+   * @return bool true|false if the $html contains a shortcode
+   */
+  protected function containsShortcode($html)
+  {
+    return Strings::contains($html, '[') && Strings::contains($html, ']');
   }
 
   /**
@@ -281,22 +292,26 @@ class Search
             'meta' => (in_array($postObject->post_type, self::$apiConf['postTypesShowDate']))
               ? date_i18n(get_option('date_format'), strtotime($postObject->post_date))
               : '',
-            'description' =>self::getPostDescription($postObject, $item),
+            'description' => self::getPostDescription($postObject, $item),
             'target' => '_self',
             'type' => 'content'
           );
         } else if (self::$apiConf['displayFiles'] && isset($item['fileFormat'])) {
           // Insert file data into our structure
-          $results[] = array(
-            'url' => $item['link'],
-            'classes' => 'result-file ext-' . substr(File::getExtension($item['link']), 1),
-            'imageHtml' => self::$apiConf['imageFallback'],
-            'title' => $item['title'],
-            'meta' => $item['fileFormat'],
-            'description' => $item['snippet'],
-            'target' => '_blank',
-            'type' => 'file'
-          );
+          $extension = substr(File::getExtension($item['link']), 1);
+          if (!in_array($extension, self::$apiConf['fileBlackList'])) {
+            $results[] = array(
+              'url' => $item['link'],
+              'classes' => 'result-file ext-' . $extension,
+              'extension' => $extension,
+              'imageHtml' => self::$apiConf['imageFallback'],
+              'title' => $item['title'],
+              'meta' => $item['fileFormat'],
+              'description' => $item['snippet'],
+              'target' => '_blank',
+              'type' => 'file'
+            );
+          }
         } else if (self::$apiConf['rawResultFallback']) {
           // Get an image, if possible, else fallback
           $imageHtml = self::$apiConf['imageFallback'];
@@ -308,16 +323,19 @@ class Search
             ));
           }
 
-          // Insert data into our structure
-          $results[] = array(
-            'url' => $item['link'],
-            'classes' => 'result-raw',
-            'imageHtml' => $imageHtml,
-            'title' => $item['title'],
-            'description' => $item['snippet'],
-            'target' => '_self',
-            'type' => 'raw'
-          );
+          // Insert data into our structure, but check for file blacklist as well
+          $extension = trim(substr(File::getExtension($item['link']), 1));
+          if (strlen($extension) == 0 || !in_array($extension, self::$apiConf['fileBlackList'])) {
+            $results[] = array(
+              'url' => $item['link'],
+              'classes' => 'result-raw',
+              'imageHtml' => $imageHtml,
+              'title' => $item['title'],
+              'description' => $item['snippet'],
+              'target' => '_self',
+              'type' => 'raw'
+            );
+          }
         }
       }
     }
@@ -330,7 +348,7 @@ class Search
       $backupResults = $results;
       $results = array_filter($results, function($result) use ($terms) {
         foreach ($terms as $term) {
-          // If it is a file, it is allowed anyway
+          // If it is a file, it is allowed
           if ($result['type'] == 'file') {
             return true;
           }

@@ -70,6 +70,15 @@ abstract class Base
   }
 
   /**
+   * @param int $newsletterId internal newsletter id
+   * @return int|string the object id from the sent service newsletter (remotely)
+   */
+  protected function getServiceMailingId($newsletterId)
+  {
+    return get_post_meta($newsletterId, 'serviceMailingId', true);
+  }
+
+  /**
    * @param string $key the key
    * @param mixed $value the value
    */

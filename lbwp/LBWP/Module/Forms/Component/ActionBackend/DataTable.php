@@ -42,7 +42,7 @@ class DataTable extends Base
     add_action('wp_ajax_editDataTableRow', array($this, 'editDataTableRow'));
     add_filter('ComotiveNL_dynamic_target_get_list', array($this, 'addDynamicTargets'));
     add_filter('ComotiveNL_dynamic_target_field_mapping', array($this, 'getDynamicTargetFieldMap'));
-    add_Filter('ComotiveNL_dynamic_target_get_list_data', array($this, 'getDynamicTargetData'), 10, 4);
+    add_filter('ComotiveNL_dynamic_target_get_list_data', array($this, 'getDynamicTargetData'), 10, 4);
   }
 
   /**
@@ -59,7 +59,9 @@ class DataTable extends Base
 
       // Add the submenus
       foreach ($list as $id => $name) {
-        add_submenu_page('data-tables', $name, $name, 'edit_pages', 'data-table-' . $id, array($this, 'displayTable'));
+        if (get_post($id)->post_status == 'publish') {
+          add_submenu_page('data-tables', $name, $name, 'edit_pages', 'data-table-' . $id, array($this, 'displayTable'));
+        }
       }
 
       // Remove the first submenu, as usual
@@ -129,26 +131,24 @@ class DataTable extends Base
       return false;
     }
 
-    // The entry can be newly  added
+    // The entry can be newly added
     if ($this->validateRowId($table['data'], $editTsId)) {
-      $this->editRow($table, $data, $editTsId, $action, $eventId);
+      $this->editRow($key, $data, $editTsId, $action, $eventId);
     } else {
-      $this->addNewRow($table, $data, $tsid, $action, $eventId);
+      $this->addNewRow($key, $data, $tsid, $action, $eventId);
     }
 
-    // And save back to the table
-    WordPress::updateJsonOption($key, $table);
     return true;
   }
 
   /**
-   * @param array $table the full table by reference
+   * @param string $tableKey the table key
    * @param array $data the form data
    * @param string $tsid the storage row id, to be used
    * @param DataTableAction $action the action object
    * @param int $eventId eventual matched event
    */
-  protected function addNewRow(&$table, $data, $tsid, $action, $eventId = 0)
+  protected function addNewRow($tableKey, $data, $tsid, $action, $eventId = 0)
   {
     $row = array();
     foreach ($data as $item) {
@@ -162,7 +162,9 @@ class DataTable extends Base
     }
 
     // Add the new row to the table
+    $table = WordPress::getJsonOption($tableKey);
     $table['data'][] = $row;
+    WordPress::updateJsonOption($tableKey, $table);
 
     // Add event subscription info, if needed
     if ($eventId > 0) {
@@ -171,16 +173,17 @@ class DataTable extends Base
   }
 
   /**
-   * @param array $table the full table by reference
+   * @param string $tableKey the table key
    * @param array $data the form data
    * @param string $tsid the storage row id, to be used
    * @param DataTableAction $action the action object
    * @param int $eventId eventual matched event
    */
-  protected function editRow(&$table, $data, $tsid, $action, $eventId = 0)
+  protected function editRow($tableKey, $data, $tsid, $action, $eventId = 0)
   {
     // Set the last tsid for an eventual notification
     self::$lastTsid = $tsid;
+    $table = WordPress::getJsonOption($tableKey);
     // Get the existing row and its internal index
     foreach ($table['data'] as $index => $row) {
       if (isset($row['tsid']) && $row['tsid'] == $tsid) {
@@ -197,6 +200,7 @@ class DataTable extends Base
 
     // Override the row in our referenced table
     $table['data'][$index] = $row;
+    WordPress::updateJsonOption($tableKey, $table);
 
     // Remove existing subscriber information, if available, add new one
     if ($eventId > 0) {
@@ -670,7 +674,7 @@ class DataTable extends Base
    */
   protected function getDynamicTargetListSubscribed(&$data, $formId, $map, $fallback)
   {
-    $this->getDynamicTargetListFromEventData($data, $formId, $map, $fallback, 'subscribed', true);
+    $this->getDynamicTargetListFromEventData($data, $formId, $map, $fallback, 'subscribed', true, true);
   }
 
   /**
@@ -682,7 +686,7 @@ class DataTable extends Base
    */
   protected function getDynamicTargetListUnsubscribed(&$data, $formId, $map, $fallback)
   {
-    $this->getDynamicTargetListFromEventData($data, $formId, $map, $fallback, 'subscribed', false);
+    $this->getDynamicTargetListFromEventData($data, $formId, $map, $fallback, 'subscribed', false, true);
   }
 
   /**
@@ -694,7 +698,7 @@ class DataTable extends Base
    */
   protected function getDynamicTargetListNoAnswer(&$data, $formId, $map, $fallback)
   {
-    $this->getDynamicTargetListFromEventData($data, $formId, $map, $fallback, 'filled', false);
+    $this->getDynamicTargetListFromEventData($data, $formId, $map, $fallback, 'filled', false, false);
   }
 
   /**
@@ -706,7 +710,7 @@ class DataTable extends Base
    * @param string $field the field to check on event data
    * @param mixed $value the value the field needs to have
    */
-  protected function getDynamicTargetListFromEventData(&$data, $formId, $map, $fallback, $field, $value)
+  protected function getDynamicTargetListFromEventData(&$data, $formId, $map, $fallback, $field, $value, $filled)
   {
     // Get table and event data, go trough events to find matching rows by TSID
     $table = $this->getTable($formId);
@@ -718,7 +722,8 @@ class DataTable extends Base
     if ($eventId > 0) {
       $subscribeInfo = EventType::getSubscribeInfo($eventId);
       foreach ($subscribeInfo as $id => $subscription) {
-        if (isset($subscription[$field]) && $subscription[$field] == $value) {
+        // Check for the field, its value and also, make sure it was filled (only then, all checks work)
+        if (isset($subscription[$field]) && $subscription[$field] == $value && $subscription['filled'] == $filled) {
           if (isset($subscription['tsid']) && strlen($subscription['tsid']) > 0) {
             $row = $this->getRowById($table['data'], $subscription['tsid']);
           } else if (isset($subscription['list-id']) && strlen($subscription['list-id']) > 0) {

@@ -399,13 +399,14 @@ class CleanUp extends \LBWP\Module\Base
       $config = get_option('LbwpConfig');
       // Deactivate maintenance mode
       $config['Various:MaintenanceMode'] = 0;
-      $config['HTMLCache:CacheTime'] = 120;
-      $config['HTMLCache:CacheTimeSingle'] = 120;
+      $config['HTMLCache:CacheTime'] = 300;
+      $config['HTMLCache:CacheTimeSingle'] = 300;
       update_option('LbwpConfig', $config);
 
-      // Flush cache
-      $admin = new MemcachedAdmin();
-      $admin->flushCache();
+      // Flush the whole cache with redis asterisk
+      $cache = wp_get_cache_bucket();
+      $keys = $cache->keys('*' . str_replace('_', '', $this->wpdb->prefix) . '*');
+      $cache->delete($keys);
 
       // Do it only once
       update_option('preparedLocalDb', '1');

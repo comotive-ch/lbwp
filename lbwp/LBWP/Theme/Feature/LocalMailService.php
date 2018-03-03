@@ -7,6 +7,7 @@ use LBWP\Helper\Import\Csv;
 use LBWP\Helper\Metabox;
 use LBWP\Helper\Mail\Base as MailService;
 use LBWP\Module\Events\Component\EventType;
+use LBWP\Module\General\Cms\SystemLog;
 use LBWP\Util\ArrayManipulation;
 use LBWP\Util\Date;
 use LBWP\Util\External;
@@ -48,7 +49,7 @@ class LocalMailService
     'mailServiceId' => 'localmail',
     'mailServiceConfig' => array(),
     'maxRowsDisplayInBackend' => 500,
-    'maxMailsPerSendPeriod' => 50,
+    'maxMailsPerSendPeriod' => 30,
     'unsubscribeSalt' => '9t2hoeg24tgrhg'
   );
 
@@ -677,6 +678,13 @@ class LocalMailService
         $service->setTag($mailingId);
         $service->send();
         $service->reset();
+
+        // Log the sent email
+        SystemLog::add('LocalMailService', 'debug', 'sending email to "' . $mail['recipient'] . '"', array(
+          'subject' => $mail['subject'],
+          'recipient' => $mail['recipient'],
+          'mailingId' => $mailingId,
+        ));
 
         // Unset from the array so it's not sent again
         unset($mails[$id]);

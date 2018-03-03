@@ -6,6 +6,7 @@ use LBWP\Core;
 use LBWP\Util\File;
 use LBWP\Util\Multilang;
 use LBWP\Util\Strings;
+use LBWP\Util\WordPress;
 
 /**
  * Various author features and filters, also: helpers.
@@ -191,6 +192,23 @@ class AuthorHelper extends \LBWP\Module\Base
   }
 
   /**
+   * @param string $fileId the file in $_FILES from an upload
+   * @param int $authorId the author id
+   * @return bool true if the upload was a success
+   */
+  public static function setAuthorImageFromFile($fileId, $authorId)
+  {
+    $attachmentId = WordPress::uploadAttachment($fileId, true);
+    if ($attachmentId > 0) {
+      update_user_meta($authorId, 'author-image-id', $attachmentId);
+      do_action('AuthorHelper_after_upload_profile_image', $authorId, $attachmentId);
+      return true;
+    }
+
+    return false;
+  }
+
+  /**
    * @param int $authorId id of the user/author
    * @param string $imageSize desired image size, defaults to thumbnail
    * @return string url or NULL string to the image
@@ -209,6 +227,15 @@ class AuthorHelper extends \LBWP\Module\Base
   public static function getAuthorImageId($authorId)
   {
     return intval(get_user_meta($authorId, 'author-image-id', true));
+  }
+
+  /**
+   * @param int $authorId the author id whose image gets removed
+   */
+  public static function removeAuthorImage($authorId)
+  {
+    delete_user_meta($authorId, 'author-image-id');
+    do_action('AuthorHelper_after_remove_profile_image', $authorId);
   }
 
   /**

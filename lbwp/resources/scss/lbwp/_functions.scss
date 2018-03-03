@@ -15,7 +15,6 @@
   width: 0;
   height: 0;
   content: '';
-  z-index: 2;
   border-#{opposite-position($direction)}: ($size * $edgeRatio) solid $color;
 
   $perpendicular-borders: $size solid transparent;
@@ -352,6 +351,37 @@
 
 		&:before { top: 0; transform: rotate(45deg); }
   	&:after { top: 0; transform: rotate(-45deg); }
+	}
+}
+
+/*
+Editorbilder mit einer Bildbeschriftung (.wp-caption) ändern wir onload mit JS (lbwp-gallery-inline-fix.js).
+Die DOM-Änderung ist leider meistens sichtbar (grösse des Bildes ändert sich). Mit diesem mixin kann soviel CSS
+wie nötig generiert werden, um den Effekt zu verhindern. Das mixin muss mit einer map konfiguriert werden:
+$wpImageSizes: (
+	'thumbnail': (
+    wpImageSize: 300, // Bildgrösse der Vorschaubilder
+    displayedSize: 25% // Anzeigegrösse dieser Bildgrösse
+  ),
+  'medium': (
+    wpImageSize: 600, // Bildgrösse «Mittelgroß»
+    displayedSize: 50% // Anzeigegrösse dieser Bildgrösse
+  )
+);
+*/
+@mixin lbwpPreventOnloadEffectForWpCaptions($wpImageSizes:null) {
+	@if (lbwpIsMap($wpImageSizes)) {
+		@each $size, $colors in $wpImageSizes {
+			$wpImageSize: nth(nth($colors, 1), 2) + 10;
+			$displayedSize: nth(nth($colors, 2), 2);
+			.wp-caption:not([class*="size-"]) {
+				&.alignleft, &.alignright {
+					&[style="max-width: #{$wpImageSize}px"] {
+						width: $displayedSize;
+					}
+				}
+			}
+		}
 	}
 }
 
