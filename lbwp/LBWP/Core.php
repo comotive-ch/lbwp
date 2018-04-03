@@ -7,6 +7,7 @@ use LBWP\Module\Base;
 use LBWP\Util\Cookie;
 use LBWP\Module\Config\Feature;
 use LBWP\Module\Config\Settings;
+use LBWP\Util\InstanceConfig;
 use LBWP\Util\WordPress;
 
 /**
@@ -18,7 +19,7 @@ class Core
   /**
    * @var int Revisionnumber of the plugins (not svn revision, only for updates)
    */
-  const REVISION = 203;
+  const REVISION = 206;
   /**
    * @var int CSS/JS file version for cloudfront
    */
@@ -99,6 +100,10 @@ class Core
     // Load feature configurations
     $this->loadFeatures();
     $this->loadConfig();
+    // If available, load instance config
+    if (defined('LBWP_INSTANCE_CONFIG')) {
+      $this->loadInstanceConfig();
+    }
     // Load activated public modules
     $this->loadModules('PublicModules');
     // Load activated admin modules, if admin. if not, load frontend modules
@@ -198,6 +203,14 @@ class Core
     } else {
       $this->config = $config;
     }
+  }
+
+  /**
+   * Loads the instance config from json, caches it
+   */
+  protected function loadInstanceConfig()
+  {
+    InstanceConfig::load();
   }
 
   /**

@@ -2,8 +2,7 @@
 
 namespace LBWP\Util;
 
-use AmazonS3;
-use AmazonDynamoDB;
+use \AmazonS3;
 
 /**
  * Factory class to use the amazon sdk services
@@ -33,7 +32,7 @@ class AwsFactory {
 
   /**
    * returns an instance of the amazon s3 service object
-   * @return AmazonS3 instance of the amazon s3 service object
+   * @return \AmazonS3 instance of the amazon s3 service object
    */
   public static function getS3Service()
   {
@@ -42,7 +41,8 @@ class AwsFactory {
       'key' => self::$CDN_ACCESS_KEY,
       'secret' => self::$CDN_SECRET_KEY
     ));
-    // Scumbag amazon api. needs the region after 1.6.
+
+    // Set the region and if given a custom hostname
     $s3->set_region(AmazonS3::REGION_EU_W1);
     if (defined('CDN_API_NAME')) {
       $s3->set_hostname(CDN_API_NAME);
@@ -50,6 +50,39 @@ class AwsFactory {
 
     return $s3;
   }
+
+  /**
+   * @param string $key
+   * @param string $secret
+   * @return \AmazonS3
+   */
+  public static function getCustomS3Service($key, $secret)
+  {
+    require_once self::getSdkPath().'services/s3.class.php';
+    return new AmazonS3(array(
+      'key' => self::$CDN_ACCESS_KEY,
+      'secret' => self::$CDN_SECRET_KEY
+    ));
+  }
+
+  /**
+   * returns an instance of the amazon s3 service object
+   * @return \AmazonSES instance of the amazon s3 service object
+   */
+  public static function getSesService($key, $secret, $region)
+  {
+    require_once self::getSdkPath().'services/ses.class.php';
+    $ses = new \AmazonSES(array(
+      'key' => $key,
+      'secret' => $secret
+    ));
+
+    // Set the region
+    $ses->set_region($region);
+
+    return $ses;
+  }
+
 
   /**
    *

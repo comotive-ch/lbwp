@@ -1,0 +1,160 @@
+@import "compass/css3";
+
+$lbwpFormValidationColorError: red;
+@import "lbwp/lbwp-forms";
+
+.lbwp-form {
+	// honey pot
+	.field_email_to {
+		background-color: transparent;
+		border:0px none;
+		box-shadow: none;
+	}
+
+	// labels: default for mobile (full-width)
+	.default-label {
+		display: block;
+		margin: 20px 0 5px;
+	}
+
+	.send-button .default-container {
+		margin: 20px 0 0;
+	}
+
+	// checkboxes and radios
+	.label-checkbox {
+		display: block;
+		margin: 0 0 5px 0;
+		&:last-child {
+			margin: 0;
+		}
+		input, .beside-checkbox {
+			margin: 0;
+			display: inline-block;
+			vertical-align: middle;
+		}
+		.beside-checkbox {
+			padding: 0 0 0 5px;
+			width: 90%;
+			// don't work for < IE11
+			//width: calc(100% - 25px);
+		}
+	}
+
+	// zip and city input
+
+	//todo remove this element from template
+	.zip-field-spacer { display: none; }
+
+	input[type="text"].zip-field-part {
+		display: inline-block;
+		width:22%;
+	}
+
+	input[type="text"].city-field-part {
+		display: inline-block;
+		width: 75%;
+		float: right;
+	}
+
+}
+
+// input fields
+@include lbwpFormInputFieldStyles() {
+	width: 100%;
+}
+
+// For medium and larger screens: Display forms in a table layout, except for those with the class "lbwp-form-no-table-layout"
+@media only screen and (min-width: 641px) {
+	//todo SE
+	//table layout with flexbox
+	$manfredFormFlexLayout: false;
+
+	@if $manfredFormFlexLayout {
+
+		$manfredFormFlexLayoutLabelCollumnWidth: 30%;
+
+		.lbwp-form {
+
+			.forms-item{
+				display: flex;
+				align-items: center;
+				justify-content: space-between;
+				margin: 10px 0 0 0;
+				padding: 5px 0;
+
+				.default-label{
+					margin: 0;
+					padding-top: 10px;
+					min-width: $manfredFormFlexLayoutLabelCollumnWidth;
+				}
+
+				.default-container{
+					width: 100%;
+				}
+
+				&.send-button{
+
+					input[type=submit]{
+						margin-left: $manfredFormFlexLayoutLabelCollumnWidth;
+					}
+
+				}
+
+				&.validate-message{
+					margin: 0 0 10px 0;
+					padding: 0;
+				}
+
+
+			}
+
+		}
+	}
+
+}
+
+
+// validation
+.lbwp-form {
+	// error message "row"
+	.validate-message {
+		// default label is empty for validate-message-rows, reset margin (for mobile)
+		.default-label {
+			margin: 0;
+		}
+		.default-container{
+			padding-top: 0;
+		}
+	}
+
+	.lbwp-form-error {
+		.default-container {
+			padding-bottom: 5px;
+		}
+	}
+}
+
+// Hide a form, if there's need
+.lbwp-form.lbwp-form-hide {
+	display:none;
+}
+
+// Ancor for messages with default top offset
+@include lbwpFormSetAnchorTopGap() {
+	display: block;
+	visibility: hidden;
+};
+
+
+@include lbwpFormInputFieldErrorStyles() {
+	border-color: $lbwpFormValidationColorError;
+}
+
+// TODO move to highwind theme?
+/* Fix for the highwind theme that uses EM for paddings */
+.outer-wrap .content-wrapper .lbwp-form-override input[type="text"],
+.outer-wrap .content-wrapper .lbwp-form-override input[type="password"],
+.outer-wrap .content-wrapper .lbwp-form-override input[type="email"],
+.outer-wrap .content-wrapper .lbwp-form-override input[type="search"],
+.outer-wrap .content-wrapper .lbwp-form-override textarea { padding:6px 10px 6px 10px !important; }

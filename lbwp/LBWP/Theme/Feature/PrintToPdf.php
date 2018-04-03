@@ -70,7 +70,7 @@ class PrintToPdf
    */
   public function listenForPdfParam()
   {
-    if (isset($_GET['print-to-pdf']) && intval($_GET['print-to-pdf']) > 0 && !$this->isBlacklisted()) {
+    if (isset($_GET['print-to-pdf']) && intval($_GET['print-to-pdf']) > 0 && !$this->isBlacklisted() && !is_404()) {
       $this->generatePostPdf(intval($_GET['print-to-pdf']));
     }
   }

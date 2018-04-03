@@ -33,7 +33,14 @@ abstract class Core extends BaseComponent
       'username' => 'email@organisation.com',
       'password' => '*****************',
       // The endpoint URL to use (Example is the actual sandbox api of telelingua)
-      'endpoint' => 'https://extradev.telelingua.fr'
+      'endpoint' => 'https://extradev.telelingua.fr',
+      // Code mapping to provide the correct target and source languages
+      'codeMapping' => array(
+        'de' => 'de-CH',
+        'fr' => 'fr-FR',
+        'it' => 'it-IT',
+        'en' => 'en-GB',
+      )
     ),
     /**
      * Configurates how translations are integrated into the instance
@@ -305,9 +312,9 @@ abstract class Core extends BaseComponent
 
     // Try receiving the importable data from the service
     if ($this->instance->receiveTranslation($post->ID, $translationId)) {
-      delete_post_meta($post->ID, '_external_translation_lock');
+      //delete_post_meta($post->ID, '_external_translation_lock');
       $this->sendImportCompletedNotifications($post->ID);
-      delete_post_meta($post->ID, 'external_translation_id');
+      //delete_post_meta($post->ID, 'external_translation_id');
     }
   }
 
@@ -337,7 +344,7 @@ abstract class Core extends BaseComponent
 
     // Send the email as simple html email, if there are recipients
     if (count($mail->getAllRecipientAddresses()) > 0) {
-      $url = get_edit_post_link($translatedPost->ID, 'raw');
+      $url = get_edit_post_link($postId, 'raw');
       $mail->Subject = $this->config['texts']['translationAvailableForReview'];
       $mail->Body = '
         ' . sprintf($this->config['texts']['articleAvailableForReview'], $translatedPost->post_title) . '<br />

@@ -188,14 +188,15 @@ class Telelingua extends Base
    */
   protected function translateLanguageCode($code)
   {
-    switch ($code) {
-      case 'en':
-        return 'en-GB';
-      case 'de':
-        return 'de-CH';
-      default:
-        return $code . '-' . strtoupper($code);
+    // If we have a mapping, translate the language code
+    foreach ($this->config['service']['codeMapping'] as $source => $target) {
+      if ($source == $code) {
+        return $target;
+      }
     }
+
+    // If nothing was returned, assume same language and region code
+    return $code . '-' . strtoupper($code);
   }
 
   /**

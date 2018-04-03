@@ -214,23 +214,6 @@ class Frontend extends Base
     $html = '<div class="event-data-list">';
     $html .= apply_filters('lbwpEvents_detail_data_list_prepend', '', $event);
 
-    // Add event subcribe info, if available
-    if ($this->hasEventSubscription($event, $currentTime) && $display['showSubscriptionInfo']) {
-      $html .= '
-        <dl>
-          <dt>' . __('Anmeldung bis', 'lbwp') . '</dt>
-          <dd>' . $this->getDateTimeString($event->subscribeEnd, $config, $textdomain) . '</dd>
-        </dl>
-      ';
-    } else if ($event->subscribeActive && strlen($event->subscribeAltText) > 0) {
-      $html .= '
-        <dl>
-          <dt>' . __('Anmeldeinformation', 'lbwp') . '</dt>
-          <dd>' . $event->subscribeAltText . '</dd>
-        </dl>
-      ';
-    }
-
     // Handle the various date/time from/to combinations
     $event->endTime = intval($event->endTime);
     if ($event->startTime > 0 && $event->endTime > 0 && $display['showDates']) {
@@ -301,6 +284,23 @@ class Frontend extends Base
           </dl>
         ';
       }
+    }
+
+    // Add event subcribe info, if available
+    if ($this->hasEventSubscription($event, $currentTime) && $display['showSubscriptionInfo']) {
+      $html .= '
+        <dl>
+          <dt>' . __('Anmeldung bis', 'lbwp') . '</dt>
+          <dd>' . $this->getDateTimeString($event->subscribeEnd, $config, $textdomain) . '</dd>
+        </dl>
+      ';
+    } else if ($event->subscribeActive && strlen($event->subscribeAltText) > 0) {
+      $html .= '
+        <dl>
+          <dt>' . __('Anmeldeinformation', 'lbwp') . '</dt>
+          <dd>' . $event->subscribeAltText . '</dd>
+        </dl>
+      ';
     }
 
     // Add location, if available
@@ -423,6 +423,10 @@ class Frontend extends Base
 
     // Bolster up the shortcode, on loading so everything is correctly handled
     add_filter('lbwpForms_load_form_shortcode', function ($shortcode, $form) use ($event) {
+      // Check if there is a skipping var, to omit the automatic email
+      if (isset($event->skipAutomaticSubscribeEmail) && $event->skipAutomaticSubscribeEmail) {
+        return $shortcode;
+      }
       // Check if there is a subscribe email and the form is actually from the event
       if (!Strings::checkEmail($event->subscribeEmail) || $form->ID != $event->subscribeFormId) {
         return $shortcode;

@@ -564,7 +564,7 @@ class CmsFeatures extends \LBWP\Module\Base
         }
       }
 
-      echo '<enclosure url="' . $url . '" type="' . $attachment->post_mime_type . '" length="' . $metaData['filesize'] . '" />' . "\n";
+      echo '<enclosure url="' . $url . '" type="' . $attachment->post_mime_type . '" length="' . $metaData['sizes'][$imageSize]['filesize'] . '" />' . "\n";
       echo '<media:content url="' . $url . '" type="' . $attachment->post_mime_type . '" expression="sample" />' . "\n";
     }
   }

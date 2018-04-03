@@ -3,8 +3,12 @@ use LBWP\Util\WordPress;
 use LBWP\Module\Listings\Core as ListingCore;
 $item = ListingCore::getCurrentListElementItem();
 
-// title as default output
-$itemHtml = get_post_meta($item->ID, 'logo-title', true);
+$itemHtml = '';
+
+$itemTitle = get_post_meta($item->ID, 'logo-title', true);
+if (strlen($itemTitle) > 0) {
+  $itemTitle = '<span class="title">' . $itemTitle .'</span>';
+}
 
 // load image
 $imageId = get_post_thumbnail_id($item->ID);
@@ -18,7 +22,7 @@ $itemLink = get_post_meta($item->ID, 'logo-link', true);
 if (strlen($itemLink)) {
   $itemHtml = '
     <a href="' . $itemLink . '" target="' . get_post_meta($item->ID, 'logo-link-target', true) .'">' .
-      $itemHtml .
+      $itemHtml . $itemTitle .
     '</a>';
 }
 

@@ -41,7 +41,8 @@ class Search
     'buttonClasses' => 'lbwp-button',             // "more results" button class, can be multiple (sep. by space), if needed
     'apiKey' => 'AIzaSyDcRBXI37rJlgSUCx1X0qy0cL_XVKKKFUE',  // Defaults to our main key
     'containerClasses' => 'lbwp-gss-results',     // Container class, can be multiple (sep. by space), if needed
-    'filterResults' => false,                     // true filters the results (if post) for search term existens
+    'filterResults' => false,                     // true filters the results (if post) for search term existence
+    'filterByBlacklist' => array(),               // Filters the results by wildcard blacklist
     'displayImages' => true,                      // Display images, if available
     'displayFiles' => false,                      // Skip file search results completely
     'fileBlackList' => array('xml', 'css', 'js', 'json'), // XML and various assets files are not allowed to show
@@ -278,6 +279,16 @@ class Search
     // If there are results, show them
     if (isset($data['items']) && count($data['items']) > 0) {
       foreach ($data['items'] as $item) {
+        // Skip the item, if on blacklist
+        $isBlacklisted = false;
+        foreach (self::$apiConf['filterByBlacklist'] as $pattern) {
+          if (fnmatch($pattern, $item['link'])) {
+            $isBlacklisted = true;
+          }
+        }
+        // If blacklisted, skip
+        if ($isBlacklisted) continue;
+
         // Extract the post name from the url
         $url = substr($item['link'], 0, -1);
         $postName = substr($url, strrpos($url, '/') + 1);

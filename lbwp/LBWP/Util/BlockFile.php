@@ -28,12 +28,8 @@ class BlockFile
    */
   public function __construct($endpoint, $bucket, $access, $secret)
   {
-    require_once self::getSdkPath().'services/s3.class.php';
     $this->bucket = $bucket;
-    $this->storage = new \AmazonS3(array(
-      'key' => $access,
-      'secret' => $secret
-    ));
+    $this->storage = AwsFactory::getCustomS3Service($access, $secret);
     // Set a region even if not needed and the custom endpoint
     $this->storage->set_region(\AmazonS3::REGION_EU_W1);
     $this->storage->set_hostname($endpoint);

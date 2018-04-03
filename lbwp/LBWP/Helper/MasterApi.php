@@ -29,7 +29,7 @@ class MasterApi
   {
     // Post the data to the master view
     $call = curl_init();
-    curl_setopt($call, CURLOPT_URL, 'https://' . MASTER_HOST . '/api/' . $endpoint);
+    curl_setopt($call, CURLOPT_URL, MASTER_HOST_PROTO . '://' . MASTER_HOST . '/api/' . $endpoint);
     curl_setopt($call, CURLOPT_POST, 1);
     curl_setopt($call, CURLOPT_RETURNTRANSFER, true);
     curl_setopt($call, CURLOPT_POSTFIELDS, http_build_query($data));

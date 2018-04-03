@@ -5,6 +5,7 @@ namespace LBWP\Module\Forms\Component\ActionBackend;
 use LBWP\Module\Events\Component\EventType;
 use LBWP\Module\Forms\Core as FormCore;
 use LBWP\Theme\Feature\LocalMailService;
+use LBWP\Util\ArrayManipulation;
 use LBWP\Util\File;
 use LBWP\Util\Strings;
 use LBWP\Util\WordPress;
@@ -43,7 +44,7 @@ class DataDisplay
   {
     // Prepare the data
     $table = $this->backend->getTable($formId);
-    $tableName = WordPress::getBackendPageName($_GET['page']);
+    $tableName = $this->getTableName($formId);
     $columns = $this->getColumns($table);
     $rawTable = $this->getRawTable($columns, $table['data']);
     $hasEntries = count($rawTable) > 0;
@@ -71,6 +72,24 @@ class DataDisplay
   }
 
   /**
+   * @param int $formId the form and hence table id
+   * @return string the name of the table
+   */
+  protected function getTableName($formId)
+  {
+    $list = ArrayManipulation::forceArray(get_option(DataTable::LIST_OPTION));
+
+    if (count($list) > 0) {
+      // Add table rows
+      foreach ($list as $id => $name) {
+        if ($id == $formId) {
+          return $name;
+        }
+      }
+    }
+  }
+
+  /**
    * @param int $formId display various user options
    * @param bool $hasEntries some menus can only be displayed if there are entries
    * @return string html code for options
@@ -80,14 +99,14 @@ class DataDisplay
     $additionalMenus = '';
     if ($hasEntries) {
       $additionalMenus .= '
-        <li> | <a href="?page=' . $_GET['page'] . '&newrow">Neuen Datensatz anfügen</a></li>
+        <li> | <a href="?page=' . $_GET['page'] . '&table=' . $_GET['table'] . '&newrow">Neuen Datensatz anfügen</a></li>
       ';
     }
 
     return '
       <ul class="subsubsub">
-        <li><a href="?page=' . $_GET['page'] . '&flushtable" onclick="return confirm(\'Tabelle wirklich leeren?\')">Tabelle leeren</a></li>
-        <li> | <a href="?page=' . $_GET['page'] . '&deletetable" onclick="return confirm(\'Tabelle wirklich löschen?\')">Tabelle löschen</a></li>
+        <li><a href="?page=' . $_GET['page'] . '&table=' . $_GET['table'] . '&flushtable" onclick="return confirm(\'Tabelle wirklich leeren?\')">Tabelle leeren</a></li>
+        <li> | <a href="?page=' . $_GET['page'] . '&table=' . $_GET['table'] . '&deletetable" onclick="return confirm(\'Tabelle wirklich löschen?\')">Tabelle löschen</a></li>
         <li> | <a href="#export-csv-utf8" class="export" data-type="csv" data-encoding="utf8">Export als CSV (UTF-8)</a></li>
         <li> | <a href="#export-csv-iso" class="export" data-type="csv" data-encoding="iso">Export als CSV (Excel)</a></li>
         ' . $additionalMenus . '
@@ -127,7 +146,7 @@ class DataDisplay
 
     // Create the export form
     $exportForm = '
-      <form action="?page=' . $_GET['page'] . '" method="POST" id="exportForm">
+      <form action="?page=' . $_GET['page'] . '&table=' . $_GET['table'] . '" method="POST" id="exportForm">
         <input type="hidden" id="exportType" name="export" value="" />
         <input type="hidden" id="exportEncoding" name="type" value="" />
         <p>Bitte wählen und sortieren Sie die gewünschten Felder für den Export.</p>
@@ -281,8 +300,8 @@ class DataDisplay
         $html = '
           <h3>Ausstehende Antworten</h3>
           <p>
-            <a href="?page=' . $_GET['page'] . '&export-unfilled=csv&type=utf8">Export als CSV (UTF-8)</a> | 
-            <a href="?page=' . $_GET['page'] . '&export-unfilled=csv&type=iso">Export als CSV (Excel)</a>
+            <a href="?page=' . $_GET['page'] . '&table=' . $_GET['table'] . '&export-unfilled=csv&type=utf8">Export als CSV (UTF-8)</a> | 
+            <a href="?page=' . $_GET['page'] . '&table=' . $_GET['table'] . '&export-unfilled=csv&type=iso">Export als CSV (Excel)</a>
           </p>
           <table class="widefat">
             <thead><tr><th>' . implode('</th><th>', $columnInfo) . '</th></tr></thead>
@@ -532,21 +551,21 @@ class DataDisplay
 
     if (isset($_GET['newrow'])) {
       $this->backend->addEmptyTableEntry($formId, $eventId);
-      header('location: ?page=' . $_GET['page']);
+      header('location: ?page=' . $_GET['page'] . '&table=' . $_GET['table']);
       exit;
     }
 
     // Flush the data table and redirect
     if (isset($_GET['flushtable'])) {
       $this->backend->flushTable($formId, $eventId);
-      header('location: ?page=' . $_GET['page']);
+      header('location: ?page=' . $_GET['page'] . '&table=' . $_GET['table']);
       exit;
     }
 
     // Flush the data table and redirect
     if (isset($_GET['deletetable'])) {
       $this->backend->deleteTable($formId, $eventId);
-      header('location: ' . get_admin_url());
+      header('location: ?page=' . $_GET['page']);
       exit;
     }
   }

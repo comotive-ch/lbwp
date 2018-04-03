@@ -37,7 +37,7 @@ class DataTable extends Base
    */
   public function initialize()
   {
-    add_action('admin_menu', array($this, 'addTableMenus'));
+    add_action('admin_menu', array($this, 'addTablesMainMenu'));
     add_action('wp_ajax_deleteDataTableRow', array($this, 'deleteDataTableRow'));
     add_action('wp_ajax_editDataTableRow', array($this, 'editDataTableRow'));
     add_filter('ComotiveNL_dynamic_target_get_list', array($this, 'addDynamicTargets'));
@@ -46,28 +46,88 @@ class DataTable extends Base
   }
 
   /**
-   * Adding table menus if there are
+   * Add the tables main menu
    */
-  public function addTableMenus()
+  public function addTablesMainMenu()
   {
+    add_menu_page('Datenspeicher', 'Datenspeicher', 'edit_pages', 'data-tables', array($this, 'displayTables'), 'dashicons-index-card', 46);
+  }
+
+  /**
+   * Display a list of tables
+   */
+  public function displayTables()
+  {
+    if (isset($_GET['table']) && intval($_GET['table']) > 0) {
+      $this->displayTable();
+    } else {
+      $this->displayTableOverview();
+    }
+  }
+
+  /**
+   * Displays the table overview list
+   */
+  protected function displayTableOverview()
+  {
+    $baseUrl = get_admin_url() . 'admin.php?page=data-tables';
+    $tableMetaInfo = '
+      <tr>
+        <th><a href="' . $baseUrl . '&order=title">' . __('Title') . '</a></th>
+        <th class="column-date">' . __('Einträge', 'lbwp') . '</th>
+        <th class="column-date"><a href="' . $baseUrl . '&order=date">' . __('Date') . '</a></th>
+      </tr>
+    ';
+
+    echo '
+      <div class="wrap">
+        <h2>' . __('Alle Datenspeicher', 'lbwp') . '</h2>
+        <p>
+        <table class="wp-list-table widefat fixed striped posts">
+          <thead>' . $tableMetaInfo . '</thead>
+	        <tbody id="the-list">
+    ';
+
     $list = $this->getTableList();
+    if (!isset($_GET['order']) || $_GET['order'] == 'date') {
+      $list = array_reverse($list, true);
+    } else if ($_GET['order'] == 'title') {
+      natcasesort($list);
+    }
 
-    // Create a menu only if there are tables to show
+    // Display the list if there is data
     if (count($list) > 0) {
-      // Add the main menu
-      add_menu_page('Datenspeicher', 'Datenspeicher', 'edit_pages', 'data-tables', array($this, 'displayTable'), 'dashicons-index-card', 46);
-
-      // Add the submenus
+      // Add table rows
       foreach ($list as $id => $name) {
-        if (get_post($id)->post_status == 'publish') {
-          add_submenu_page('data-tables', $name, $name, 'edit_pages', 'data-table-' . $id, array($this, 'displayTable'));
+        $form = get_post($id);
+        if ($form->post_status == 'publish') {
+          // Calculate some data for displaying
+          $timestamp = strtotime($form->post_date);
+          $table = $this->getTable($form->ID);
+
+          // Show the data row
+          echo '
+            <tr>
+              <td><strong><a href="' . $baseUrl . '&table=' . $id . '">' . $name . '</a></strong></td>
+              <td class="column-date">' . count($table['data']) . '</td>
+              <td class="column-date"><abbr title="' . date(Date::EU_DATETIME, $timestamp) . '">' . date(Date::EU_DATE, $timestamp) . '</abbr></td>
+            </tr>
+          ';
         }
       }
-
-      // Remove the first submenu, as usual
-      global $submenu;
-      unset($submenu['data-tables'][0]);
+    } else {
+      echo '
+        <tr>
+          <td colspan="3"><strong>' . __('Es wurde bisher kein Datenspeicher erstellt.', 'lbwp') . '</strong></td>
+        </tr>
+      ';
     }
+
+    // Close table body, table and wrapper
+    echo '
+      <tfoot>' . $tableMetaInfo . '</tfoot>
+      </tbody></table></p></div>
+    ';
   }
 
   /**
@@ -75,7 +135,7 @@ class DataTable extends Base
    */
   public function displayTable()
   {
-    $formId = intval(str_replace('data-table-', '', $_GET['page']));
+    $formId = intval($_GET['table']);
     $dataDisplay = new DataDisplay($this);
     echo $dataDisplay->getHtml($formId);
   }

@@ -2,6 +2,8 @@
 
 namespace LBWP\Helper\Mail;
 
+use LBWP\Util\AwsFactory;
+
 /**
  * Class for sending bulk mail trough AmazonSES
  * @package LBWP\Helper\Mail
@@ -25,13 +27,11 @@ class AmazonSES extends Base
    */
   public function configure($config = array())
   {
-    $this->instance = new \AmazonSES(array(
-      'key' => $config['accessKey'],
-      'secret' => $config['secretKey']
-    ));
-
-    // Set our region
-    $this->instance->set_region('email.eu-west-1.amazonaws.com');
+    $this->instance = AwsFactory::getSesService(
+      $config['accessKey'],
+      $config['secretKey'],
+      'email.eu-west-1.amazonaws.com'
+    );
   }
 
   /**

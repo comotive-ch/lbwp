@@ -5,6 +5,9 @@ require '../../../../../wp-load.php';
 use LBWP\Module\Frontend\HTMLCache;
 use LBWP\Helper\Cronjob;
 
+// Run for a maximum of 55 seconds (because in 60 seconds the next cron might be coming and do the same
+set_time_limit(55);
+
 // Don't cache this site
 if (class_exists('\LBWP\Module\Frontend\HTMLCache')) {
   HTMLCache::avoidCache();

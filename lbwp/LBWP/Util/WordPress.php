@@ -349,6 +349,26 @@ class WordPress
   }
 
   /**
+   * @param string $guid the guid
+   * @param string|array $posttype post_type or array of
+   * @return int the found id
+   */
+  public static function getPostIdByGuid($guid, $posttype)
+  {
+    $wpdb = self::getDb();
+    $posttype = ArrayManipulation::forceArrayAndInclude($posttype);
+    // Get id by simple query
+    $sql = 'SELECT ID FROM {sql:postTable} WHERE post_type IN("{raw:postTypes}") AND guid = {postGuid}';
+    $postId = $wpdb->get_var(Strings::prepareSql($sql, array(
+      'postTable' => $wpdb->posts,
+      'postTypes' => implode('","', $posttype),
+      'postGuid' => $guid
+    )));
+
+    return intval($postId);
+  }
+
+  /**
    * @param array $list a list of integer ids
    * @return \WP_Post[] object list, can be empty if validation removes some items
    */

@@ -43,6 +43,7 @@ class Textfield extends Base
           'email' => 'E-Mail-Feld',
           'phone' => 'Telefon-Feld',
           'number' => 'Zahlen-Feld',
+          'date' => 'Datums-Feld',
           'password' => 'Passwort-Feld'
         )
       )
@@ -73,6 +74,7 @@ class Textfield extends Base
       case 'url':
       case 'phone':
       case 'number':
+      case 'date':
       case 'password':
         return $type;
       default:

@@ -3,6 +3,20 @@
 body.modal-backend {
 	// The trousers of wp core use padding-bottom 32px on <html> tag. reverse that
 	margin-top:-32px;
+
+	/*#wp-content-editor-tools{
+		top: 0 !important;
+	}
+
+	.mce-menubarsoweit{
+		top: 55px !important;
+	}
+
+	.mce-toolbar-grp{
+		top: 83px !important;
+	}*/
+
+
 	// Remove some elements
 	#wpadminbar, #adminmenuback, #adminmenuwrap, .page-title-action, #wpfooter,
 	#view-post-btn, #delete-action {

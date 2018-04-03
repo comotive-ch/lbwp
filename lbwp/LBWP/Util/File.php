@@ -89,6 +89,23 @@ class File
 		return(rmdir($sPath));
 	}
 
+  /**
+   * @param string $path the path
+   * @param string $url the url
+   */
+	public static function downloadLargeFile($path, $url)
+  {
+    $fp = fopen($path, 'w+');
+    $ch = curl_init($url);
+    curl_setopt($ch, CURLOPT_TIMEOUT, 60);
+    // Write curl response to file
+    curl_setopt($ch, CURLOPT_FILE, $fp);
+    curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
+    curl_exec($ch);
+    curl_close($ch);
+    fclose($fp);
+  }
+
 	/**
 	 * Gibt Timestamp einer Datei zurück (Änderungsdatum
 	 * @param $file File, welches geprüft wird

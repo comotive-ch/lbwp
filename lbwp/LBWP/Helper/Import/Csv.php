@@ -15,9 +15,10 @@ class Csv {
    * @param string $file the file name
    * @param string $delimiter the delimiter to use
    * @param string $enclosure the enclosures to use
+   * @param bool $skipFirst skip the first line
    * @return array|bool data table array or false
    */
-  public static function getArray($file, $delimiter = ';', $enclosure = '"')
+  public static function getArray($file, $delimiter = ';', $enclosure = '"', $skipFirst = false)
   {
     if (!file_exists($file) || !is_readable($file)) {
       return false;
@@ -29,6 +30,10 @@ class Csv {
         $csvData[] = $data;
       }
       fclose($handle);
+    }
+
+    if ($skipFirst) {
+      unset($csvData[0]);
     }
 
     return $csvData;

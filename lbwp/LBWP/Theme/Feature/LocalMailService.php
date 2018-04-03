@@ -10,7 +10,7 @@ use LBWP\Module\Events\Component\EventType;
 use LBWP\Module\General\Cms\SystemLog;
 use LBWP\Util\ArrayManipulation;
 use LBWP\Util\Date;
-use LBWP\Util\External;
+use LBWP\Util\TempLock;
 use LBWP\Util\File;
 use LBWP\Util\Strings;
 use LBWP\Util\WordPress;
@@ -643,10 +643,20 @@ class LocalMailService
    */
   public function tryAndSendMails()
   {
-    $mailings = ArrayManipulation::forceArray(get_option('LocalMail_Mailings'));
+    // The mailing id comes from the cron_data parameter
+    $mailingId = $_GET['data'];
+    // Check if the function is locked (= another cron is executing right now)
+    if (TempLock::check('localmail_sending_' . $mailingId)) {
+      return;
+    }
 
-    // Only proceed if there are still mailings
-    if (count($mailings) == 0) {
+    // Set a lock, before starting the process
+    TempLock::set('localmail_sending_' . $mailingId, 55);
+
+    $mailings = ArrayManipulation::forceArray(get_option('LocalMail_Mailings'));
+    // Only proceed if the mailing still exists
+    if (isset($mailings[$mailingId]) == 0 || $mailings[$mailingId] !== 'sending') {
+      TempLock::raise('localmail_sending_' . $mailingId);
       return;
     }
 
@@ -656,57 +666,51 @@ class LocalMailService
     $service = new $class();
     $service->configure($this->config['mailServiceConfig']);
 
-    // Loop trough all mailings. This will eventually go over the limit, but happens rarely
-    foreach ($mailings as $mailingId => $status) {
-      // Only proceed if the mailing is read to send
-      if ($status !== 'sending') {
-        continue;
-      }
+    // Load the mails of this mailing
+    $mails = ArrayManipulation::forceArray(get_option('LocalMail_Mailing_' . $mailingId));
 
-      // Load the mails
-      $mails = ArrayManipulation::forceArray(get_option('LocalMail_Mailing_' . $mailingId));
+    // Send maximum number of mails
+    $mailsSent = 0;
+    foreach ($mails as $id => $mail) {
+      // Use the service to send the mail, tag it and reset after sending
+      $service->setSubject($mail['subject']);
+      $service->setBody($mail['html']);
+      $service->setFrom($mail['senderEmail'], $mail['senderName']);
+      $service->addReplyTo($mail['senderEmail']);
+      $service->addAddress($mail['recipient']);
+      $service->setTag($mailingId);
+      $service->send();
+      $service->reset();
 
-      // Send maximum number of mails
-      $mailsSent = 0;
-      foreach ($mails as $id => $mail) {
-        // Use the service to send the mail, tag it and reset after sending
-        $service->setSubject($mail['subject']);
-        $service->setBody($mail['html']);
-        $service->setFrom($mail['senderEmail'], $mail['senderName']);
-        $service->addReplyTo($mail['senderEmail']);
-        $service->addAddress($mail['recipient']);
-        $service->setTag($mailingId);
-        $service->send();
-        $service->reset();
+      // Log the sent email
+      SystemLog::add('LocalMailService', 'debug', 'sending email to "' . $mail['recipient'] . '"', array(
+        'subject' => $mail['subject'],
+        'recipient' => $mail['recipient'],
+        'mailingId' => $mailingId,
+      ));
 
-        // Log the sent email
-        SystemLog::add('LocalMailService', 'debug', 'sending email to "' . $mail['recipient'] . '"', array(
-          'subject' => $mail['subject'],
-          'recipient' => $mail['recipient'],
-          'mailingId' => $mailingId,
-        ));
+      // Unset from the array so it's not sent again
+      unset($mails[$id]);
 
-        // Unset from the array so it's not sent again
-        unset($mails[$id]);
-
-        // Check if we need to take a break
-        if (++$mailsSent >= $this->config['maxMailsPerSendPeriod']) {
-          break;
-        }
-      }
-
-      // Are there still mails left
-      if (count($mails) > 0) {
-        // Schedule another cron
-        $this->scheduleSendingCron();
-        // Save the mails back into the mailing (deleting the already sent ones)
-        $this->createMailObjects($mailingId, $mails);
-      } else {
-        // Delete the mailing completely and don't reschedule
-        unset($mailings[$mailingId]);
-        $this->removeMailing($mailingId);
+      // Check if we need to take a break
+      if (++$mailsSent >= $this->config['maxMailsPerSendPeriod']) {
+        break;
       }
     }
+
+    // After sending the block, are there still mails left?
+    if (count($mails) > 0) {
+      // Schedule another cron
+      $this->scheduleSendingCron($mailingId);
+      // Save the mails back into the mailing (deleting the already sent ones)
+      $this->createMailObjects($mailingId, $mails);
+    } else {
+      // Delete the mailing completely and don't reschedule
+      $this->removeMailing($mailingId);
+    }
+
+    // Raise the cron lock
+    TempLock::raise('localmail_sending_' . $mailingId);
   }
 
   /**
@@ -809,12 +813,13 @@ class LocalMailService
 
   /**
    * Schedule a sending cron in n-seconds
+   * @param string $mailingId the mailing it to be sent
    * @param int $seconds to wait until the cron is called
    */
-  public function scheduleSendingCron($seconds = 75)
+  public function scheduleSendingCron($mailingId, $seconds = 60)
   {
     Cronjob::register(array(
-      (current_time('timestamp') + $seconds) => 'localmail_sending'
+      (current_time('timestamp') + $seconds) => 'localmail_sending::' . $mailingId
     ));
   }
 

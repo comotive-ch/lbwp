@@ -24,7 +24,7 @@ class Cronjob
   {
     // Post the data to the master view
     $call = curl_init();
-    curl_setopt($call, CURLOPT_URL, 'https://' . MASTER_HOST . '/wp-content/plugins/lbwp/views/api/job-register.php');
+    curl_setopt($call, CURLOPT_URL, MASTER_HOST_PROTO . '://' . MASTER_HOST . '/wp-content/plugins/lbwp/views/api/job-register.php');
     curl_setopt($call, CURLOPT_POST, 1);
     curl_setopt($call, CURLOPT_RETURNTRANSFER, true);
     curl_setopt($call, CURLOPT_POSTFIELDS, http_build_query(array(
@@ -45,7 +45,7 @@ class Cronjob
   {
     // Post the data to the master view
     $call = curl_init();
-    curl_setopt($call, CURLOPT_URL, 'https://' . MASTER_HOST . '/wp-content/plugins/lbwp/views/api/job-confirm.php');
+    curl_setopt($call, CURLOPT_URL, MASTER_HOST_PROTO . '://' . MASTER_HOST . '/wp-content/plugins/lbwp/views/api/job-confirm.php');
     curl_setopt($call, CURLOPT_POST, 1);
     curl_setopt($call, CURLOPT_RETURNTRANSFER, true);
     curl_setopt($call, CURLOPT_POSTFIELDS, http_build_query(array(
@@ -129,11 +129,16 @@ class Cronjob
 
     if ($jobId > 0) {
       // Get full job data, and delete every identifier with the same time
-      $set = mysqli_query($conn, 'SELECT job_identifier,job_time FROM jobs WHERE job_id = ' . $jobId);
+      $set = mysqli_query($conn, 'SELECT job_identifier,job_time,job_data FROM jobs WHERE job_id = ' . $jobId);
       $data = mysqli_fetch_assoc($set);
       // If both are set, delete by identifier/time to confirm all jobs that would have done the same and are now useless
       if (isset($data['job_identifier']) && strlen($data['job_identifier']) > 0 && isset($data['job_time']) && $data['job_time'] > 0) {
-        mysqli_query($conn, 'DELETE FROM jobs WHERE job_identifier = "' . $data['job_identifier'] . '" AND job_time = ' . intval($data['job_time']));
+        mysqli_query($conn, '
+          DELETE FROM jobs WHERE
+          job_identifier = "' . $data['job_identifier'] . '" AND
+          job_data = "' . $data['job_data'] . '" AND
+          job_time = ' . intval($data['job_time']
+        ));
       } else {
         // If not found that way, delete by ID
         mysqli_query($conn, 'DELETE FROM jobs WHERE job_id = ' . $jobId);

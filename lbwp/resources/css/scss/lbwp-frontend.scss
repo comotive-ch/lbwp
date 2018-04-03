@@ -166,6 +166,7 @@ $customColorDraftFontColor: #505050;
 					-moz-hyphens: auto;
 					-ms-hyphens: auto;
 					-webkit-hyphens: auto;
+					z-index: 1;
 
 					@media (max-width: 400px){
 						width: 200%;

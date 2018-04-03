@@ -309,7 +309,7 @@ class Implementation extends Base implements Definition
 
     // Create a cron that is checking for local mail sendings and actually starts sending
     $this->api->setMailing($mailingId, 'sending');
-    $this->api->scheduleSendingCron();
+    $this->api->scheduleSendingCron($mailingId);
 
     // Create the subscriber infos, if there were events
     $map = NewsletterRenderer::getLastItemMap();

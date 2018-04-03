@@ -4,7 +4,8 @@ namespace LBWP\Module\Backend;
 
 use AmazonS3;
 use LBWP\Core;
-use LBWP\Util\AwsFactory;
+use LBWP\Module\General\Cms\SystemLog;
+use LBWP\Util\AwsFactoryV3;
 use LBWP\Util\File;
 use LBWP\Util\Strings;
 
@@ -60,7 +61,7 @@ class S3Upload extends \LBWP\Module\Base
       add_filter('wp_generate_attachment_metadata', array($this, 'filterAttachmentMetadata'));
       add_filter('wp_save_image_file', array($this, 'filterSaveImage'), 10, 2);
       add_filter('wp_save_image_editor_file', array($this, 'filterEditorFile'), 10, 2);
-      AwsFactory::setKeys(CDN_ACCESS_KEY, CDN_SECRET_KEY);
+      AwsFactoryV3::setKeys(CDN_ACCESS_KEY, CDN_SECRET_KEY);
       self::$registeredFilters = true;
       // Set asset key constant if not defined in customer config
       if (!defined('ASSET_KEY')) {
@@ -144,11 +145,13 @@ class S3Upload extends \LBWP\Module\Base
    */
   public function deleteFile($filename)
   {
-    $s3 = AwsFactory::getS3Service();
-    $opts = array('curlopts' => array(CURLOPT_SSL_VERIFYPEER => false));
+    $s3 = AwsFactoryV3::getS3Service();
     // Delete it.
     $filename = str_replace(Core::getCdnProtocol() . '://' . Core::getCdnName() . '/', '', $filename);
-    $s3->delete_object(CDN_BUCKET_NAME, $filename, $opts);
+    $s3->deleteObject(array(
+      'Bucket' => CDN_BUCKET_NAME,
+      'Key' => $filename
+    ));
   }
 
   /**
@@ -335,7 +338,7 @@ class S3Upload extends \LBWP\Module\Base
    */
   public function handleUpload($localFile, $url, $mime_type = '', $skipMaxImageSize = false)
   {
-    $s3 = AwsFactory::getS3Service();
+    $s3 = AwsFactoryV3::getS3Service();
     // Just for the backup-image sake, we need to handle the error that a local file does not exist as a non-error
     if (!file_exists($localFile)) {
       return true;
@@ -346,25 +349,28 @@ class S3Upload extends \LBWP\Module\Base
       $this->handleMaxImageSize($localFile);
     }
 
-    // Set some cache headers
-    $headers = array(
-      'Cache-Control' => 'max-age=' . (315360000),
-      'Expires' => gmdate('D, d M Y H:i:s \G\M\T', time() + 315360000)
+    $options = array(
+      'SourceFile' => $localFile,
+      'ACL' => 'public-read',
+      'CacheControl' => 'max-age=' . (315360000),
+      'Expires' => gmdate('D, d M Y H:i:s \G\M\T', time() + 315360000),
+      'Bucket' => CDN_BUCKET_NAME,
+      'Key' => str_replace(Core::getCdnProtocol() . '://' . Core::getCdnName() . '/', '', $url)
     );
 
-    $options = array(
-      'fileUpload' => $localFile,
-      'acl' => AmazonS3::ACL_OPEN,
-      'headers' => $headers,
-      'curlopts' => array(CURLOPT_SSL_VERIFYPEER => false)
-    );
+    // Add explicit mime type if given
     if (strlen($mime_type) > 0) {
-      $options['contentType'] = $mime_type;
+      $options['ContentType'] = $mime_type;
     }
-    $s3_path = str_replace(Core::getCdnProtocol() . '://' . Core::getCdnName() . '/', '', $url);
-    $result = $s3->create_object(CDN_BUCKET_NAME, $s3_path, $options);
+
+    try {
+      $result = $s3->putObject($options);
+    } catch (\Exception $e) {
+      SystemLog::add('CdnUpload', 'error', 'Upload Error: ' . $e->getMessage());
+    }
+
     // Error or not determined by the request status
-    if ($result->status == 200) {
+    if (strlen($result->get('ObjectURL')) > 0) {
       return true;
     } else {
       return false;
@@ -446,16 +452,17 @@ class S3Upload extends \LBWP\Module\Base
   public function getFileSize($fileName)
   {
     // Get the client
-    AwsFactory::setKeys(CDN_ACCESS_KEY, CDN_SECRET_KEY);
-    $s3 = AwsFactory::getS3Service();
+    AwsFactoryV3::setKeys(CDN_ACCESS_KEY, CDN_SECRET_KEY);
+    $s3 = AwsFactoryV3::getS3Service();
 
     try {
       // Send the head request for the file
-      $headData = $s3->get_object_headers(CDN_BUCKET_NAME, $fileName);
+      $result = $s3->getObject(array(
+        'Bucket' => CDN_BUCKET_NAME,
+        'Key' => $fileName
+      ));
       // Return the file size if available
-      if (is_object($headData)) {
-        return intval($headData->header['content-length']);
-      }
+      return intval($result->get('ContentLength'));
     } catch (\Exception $exception) {
       return 0;
     }

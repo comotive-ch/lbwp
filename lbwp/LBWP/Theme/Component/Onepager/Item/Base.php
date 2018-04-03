@@ -208,7 +208,43 @@ abstract class Base
       $this->cachedHtml = $this->getHtml();
     }
 
+    // In logged in state, show frontend options/infos if given
+    if (current_user_can('edit_posts')) {
+      $this->cachedHtml .= $this->getFrontendOptionsHtml();
+    }
+
     return $this->cachedHtml;
+  }
+
+  /**
+   * @return string html to show frontend options and infos to logged in users
+   */
+  protected function getFrontendOptionsHtml()
+  {
+    $html = '';
+
+    // Add a visible label to show that the item is a draft
+    if ($this->post->post_status == 'draft') {
+      $html .= '
+        <div class="draft-label">
+          Entwurf          
+          <div class="label-notice">
+            Dieses Element ist im Entwurfsstadium und nur im eingeloggten Zustand sichtbar.
+          </div>
+        </div>
+      ';
+    }
+
+    // Append user options to the cached html, if given
+    if (strlen($html) > 0) {
+      $html = '
+        <div class="item-admin-wrapper">        
+          <div class="item-admin-inner-wrapper">' . $html . '</div>
+        </div>  
+      ';
+    }
+
+    return $html;
   }
 
   /**

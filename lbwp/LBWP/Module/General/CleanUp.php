@@ -52,6 +52,7 @@ class CleanUp extends \LBWP\Module\Base
       add_action('do_meta_boxes', array($this, 'removeMetaboxesFromTypes'), 5);
       add_action('admin_enqueue_scripts', array($this, 'removePluginAssets'), 50);
       remove_filter('pre_user_description', 'wp_filter_kses');
+      $this->fixCustomDateTimeFormat();
 
       // Also, set some update filters for yoast
       if (isset($_GET['wpseo_reset_defaults'])) {
@@ -104,6 +105,19 @@ class CleanUp extends \LBWP\Module\Base
     }
 
     return $submenus;
+  }
+
+  /**
+   * This needs to be fixed, as we remove wp magic quotes
+   */
+  protected function fixCustomDateTimeFormat()
+  {
+    if (isset($_POST['date_format']) && $_POST['date_format'] == '\c\u\s\t\o\m') {
+      $_POST['date_format'] = "\\\\c\\\\u\\\\s\\\\t\\\\o\\\\m";
+    }
+    if (isset($_POST['time_format']) && $_POST['time_format'] == '\c\u\s\t\o\m') {
+      $_POST['time_format'] = "\\\\c\\\\u\\\\s\\\\t\\\\o\\\\m";
+    }
   }
 
   /**
