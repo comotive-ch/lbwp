@@ -27,4 +27,9 @@ $this->config = array(
   'Various:RedirectAttachmentDetail' => 0,
   'Various:AdditionalCommentNotifications' => '',
   'Various:GoogleEngineId' => '',
+  'Privacy:DataPrivacyStatementPageId' => 0,
+  'Privacy:InformationalBannerActive' => 0,
+  'Privacy:InformationalBannerVersion' => 1,
+  'Privacy:InformationalBannerContent' => '',
+  'Privacy:PrivacyOptimizedShareButtons' => 0
 );

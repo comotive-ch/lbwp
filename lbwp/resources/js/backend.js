@@ -53,6 +53,12 @@ var LbwpBackend = {
 				jQuery('.frash-notice-dismiss').trigger('click');
 			}, 1000);
 		}
+
+		if (jQuery('#gf_dashboard_message').length > 0) {
+			if (typeof(GFDismissUpgrade) == 'function') {
+				GFDismissUpgrade();
+			}
+		}
 	},
 
 	/**

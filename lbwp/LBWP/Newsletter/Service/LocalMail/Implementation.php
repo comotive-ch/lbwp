@@ -14,6 +14,7 @@ use LBWP\Util\ArrayManipulation;
 use LBWP\Util\LbwpData;
 use LBWP\Util\Multilang;
 use LBWP\Util\Strings;
+use LBWP\Util\WordPress;
 
 /**
  * Implementation class for local mail sending
@@ -278,6 +279,12 @@ class Implementation extends Base implements Definition
             $personalizedHtml = str_replace('{' . $field . '}', $value, $personalizedHtml);
           }
 
+          // Use variables on subject too
+          $personalizedSubject = $subject;
+          foreach ($recipient as $field => $value) {
+            $personalizedSubject = str_replace('{' . $field . '}', $value, $personalizedSubject);
+          }
+
           // Replace some custom code fields
           $personalizedHtml = str_replace('_listId', $emailListId, $personalizedHtml);
           $personalizedHtml = str_replace('_emailId', $memberId, $personalizedHtml);
@@ -285,7 +292,7 @@ class Implementation extends Base implements Definition
           // Create a new mailing entry
           $mails[] = array(
             'html' => $personalizedHtml,
-            'subject' => $subject,
+            'subject' => $personalizedSubject,
             'recipient' => $recipient['email'],
             'senderEmail' => $senderEmail,
             'senderName' => $senderName
@@ -308,7 +315,11 @@ class Implementation extends Base implements Definition
     $this->api->createMailObjects($mailingId, $mails);
 
     // Create a cron that is checking for local mail sendings and actually starts sending
-    $this->api->setMailing($mailingId, 'sending');
+    $status = 'sending';
+    if ($newsletter->isTestSending()) {
+      $status .= '-test';
+    }
+    $this->api->setMailing($mailingId, $status);
     $this->api->scheduleSendingCron($mailingId);
 
     // Create the subscriber infos, if there were events

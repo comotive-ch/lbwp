@@ -60,8 +60,8 @@ class AwsFactory {
   {
     require_once self::getSdkPath().'services/s3.class.php';
     return new AmazonS3(array(
-      'key' => self::$CDN_ACCESS_KEY,
-      'secret' => self::$CDN_SECRET_KEY
+      'key' => $key,
+      'secret' => $secret
     ));
   }
 

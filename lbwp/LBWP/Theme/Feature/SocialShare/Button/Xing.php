@@ -20,16 +20,24 @@ class Xing extends BaseButton
    */
   public function getHtml($config, $link, $post)
   {
-    // Register the api
-    SocialApis::add(SocialApis::XING);
+    if ($this->needsPrivacyCompliance()) {
+      $locale = $this->getLocaleString('_', 5);
+      return '
+        <a href="//www.xing.com/spi/shares/new?cb=0&amp;url=' . urlencode($link) . '" target="_blank">
+        <img src="/wp-content/plugins/lbwp/resources/images/social/xing-' . substr($locale,0,2) . '.png" border="0"></a>
+      ';
+    } else {
+      // Register the api
+      SocialApis::add(SocialApis::XING);
 
-    // Return the html
-    return '
-      <div
-        data-type="xing/share"
-        data-counter="right"
-        data-lang="' . $this->getLocaleString('', 2) . '">
-      </div>
-    ';
+      // Return the html
+      return '
+        <div
+          data-type="xing/share"
+          data-counter="right"
+          data-lang="' . $this->getLocaleString('', 2) . '">
+        </div>
+      ';
+    }
   }
 } 

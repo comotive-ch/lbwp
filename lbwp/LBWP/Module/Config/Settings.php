@@ -4,6 +4,7 @@ namespace LBWP\Module\Config;
 
 use LBWP\Core;
 use LBWP\Util\File;
+use LBWP\Util\Multilang;
 use LBWP\Util\Strings;
 use LBWP\Util\WordPress;
 
@@ -522,6 +523,59 @@ class Settings extends \LBWP\Module\Base
       // The value can be saved
       $this->config[$key] = $value;
     }
+  }
+
+  /**
+   * @param array $config configuration for this field
+   * @param mixed $value the current configuration
+   * @param string $html the html template in where to replace {input}
+   * @return string the resulting html code
+   */
+  public function displayFieldPagedropdown($config, $value, $html)
+  {
+    $attr = array(
+      'class' => 'cfg-field-dropdown',
+      'id' => '{fieldId}',
+      'name' => '{fieldId}'
+    );
+
+    $field = '<select';
+    foreach ($attr as $key => $attribute) {
+      $field .= ' ' . $key . '="' . $attribute . '"';
+    }
+    $field .= '>';
+
+    // Add a first please choose option, if needed
+    if (isset($config['optional']) && $config['optional']) {
+      $field .= '<option value="0">Bitte wählen Sie eine Seite aus</option>';
+    }
+
+    // Add the page dropdown options
+    foreach (get_pages() as $page) {
+      $selected = selected($value, $page->ID, false);
+      $field .= '<option value="' . $page->ID . '" ' . $selected . '">' . $page->post_title . '</option>';
+    }
+
+    // Close the option field
+    $field .= '</select>';
+    // If html follows, do so
+    if (isset($config['afterHtml'])) {
+      $field .= ' ' . $config['afterHtml'];
+    }
+    // Display a number field
+    $html = str_replace('{input}', $field, $html);
+    return $html;
+  }
+
+  /**
+   * Validates and saves a text field, adds errors to $this->errors
+   * @param array $item the item to be saved
+   * @param mixed $value the new value to be saved
+   * @param string $key the key where to save it, if no error occured
+   */
+  public function saveFieldPagedropdown($item, $value, $key)
+  {
+    $this->config[$key] = intval($value);
   }
 
   /**

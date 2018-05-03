@@ -71,6 +71,11 @@ abstract class Base
   abstract public function setBody($body);
 
   /**
+   * @param string $body the alternative text body
+   */
+  abstract public function setAltBody($body);
+
+  /**
    * @param string $tag tagging for statistics
    */
   abstract public function setTag($tag);

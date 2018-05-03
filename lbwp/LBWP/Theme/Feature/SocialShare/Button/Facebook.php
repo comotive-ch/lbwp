@@ -20,18 +20,26 @@ class Facebook extends BaseButton
    */
   public function getHtml($config, $link, $post)
   {
-    // Register the api
-    SocialApis::add(SocialApis::FACEBOOK, $this->getLocaleString('_', 5));
-    // The type is normally like, but can be changed to share
-    $type = (isset($config['share_only'])) ? 'fb-share-button' : 'fb-like';
-    // Return the html
-    return '
-      <div class="' . $type . '"
-        data-href="' . esc_attr($link) . '"
-        data-layout="' . $config['layout'] . '"
-        data-action="' . $config['action'] . '"
-        data-show-faces="false"
-        data-share="' . ($config['share'] ? 'true' : 'false') . '"></div>
-    ';
+    if ($this->needsPrivacyCompliance()) {
+      $locale = $this->getLocaleString('_', 5);
+      return '
+        <a href="//www.facebook.com/share.php?u=' .  urlencode($link) .'&amp;t=' .  urlencode($post->post_title) . '&amp;locale=' . $locale . '" target="_blank">
+        <img src="/wp-content/plugins/lbwp/resources/images/social/share-' . substr($locale,0,2) . '.png" border="0"></a>
+      ';
+    } else {
+      // Register the api
+      SocialApis::add(SocialApis::FACEBOOK, $this->getLocaleString('_', 5));
+      // The type is normally like, but can be changed to share
+      $type = (isset($config['share_only'])) ? 'fb-share-button' : 'fb-like';
+      // Return the html
+      return '
+        <div class="' . $type . '"
+          data-href="' . esc_attr($link) . '"
+          data-layout="' . $config['layout'] . '"
+          data-action="' . $config['action'] . '"
+          data-show-faces="false"
+          data-share="' . ($config['share'] ? 'true' : 'false') . '"></div>
+      ';
+    }
   }
 } 

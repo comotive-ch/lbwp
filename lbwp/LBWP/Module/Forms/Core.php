@@ -7,6 +7,7 @@ use LBWP\Module\Forms\Component\Posttype;
 use LBWP\Module\Forms\Component\FormHandler;
 use LBWP\Core as LbwpCore;
 use LBWP\Module\Forms\Component\ActionBackend\DataTable as DataTableBackend;
+use LBWP\Theme\Feature\LbwpFormSettings;
 
 /**
  * This is the core file which manages the form tool
@@ -32,6 +33,7 @@ class Core extends \LBWP\Module\Base
   {
 		parent::__construct();
     add_action('widgets_init', array($this, 'loadWidgets'));
+    LbwpFormSettings::init();
 	}
 
   /**

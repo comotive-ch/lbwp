@@ -415,6 +415,14 @@ abstract class Base
   }
 
   /**
+   * @return array the params
+   */
+  public function getAllParams()
+  {
+    return $this->params;
+  }
+
+  /**
    * Called after construction for defining files and an id
    * @param string $key the key of the item
    */

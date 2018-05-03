@@ -2,6 +2,7 @@
 
 namespace LBWP\Module\Forms\Action;
 
+use LBWP\Module\Forms\Item\Base as BaseItem;
 use LBWP\Module\Forms\Item\Hiddenfield;
 use LBWP\Module\Forms\Item\Textfield;
 use LBWP\Util\External;
@@ -252,18 +253,23 @@ class SendMail extends Base
   public static function getDataHtmlTable($data)
   {
     $table = '<table width="100%" cellpadding="5" cellspacing="0" border="0">';
+    // Let developers add their own rows to the table
+    $table .= apply_filters('lbwpForms_Action_SendMail_beforeTableRows', '');
 
     // Loop trought the fields data
     foreach ($data as $field) {
       // There are some field id's that can be skipped
-      if (
-        $field['name'] == 'tsid' ||
-        $field['name'] == 'user-ip-adresse' ||
-        $field['name'] == 'zeitstempel' ||
-        $field['name'] == 'ursprungsformular' ||
-        $field['item'] instanceof Hiddenfield
-      ) {
-        continue;
+      if (!isset($field['item']) || ($field['item'] instanceof BaseItem && $field['item']->get('show_in_mail_action') != 1)) {
+        $name = strtolower($field['name']);
+        if (
+          $name == 'tsid' ||
+          $name == 'user-ip-adresse' ||
+          $name == 'zeitstempel' ||
+          $name == 'ursprungsformular' ||
+          $field['item'] instanceof Hiddenfield
+        ) {
+          continue;
+        }
       }
 
       // Check the value
@@ -279,6 +285,9 @@ class SendMail extends Base
         </tr>
       ';
     }
+
+    // Let developers add their own rows to the table
+    $table .= apply_filters('lbwpForms_Action_SendMail_afterTableRows', '');
 
     // Close the table and return
     $table .= '</table>';

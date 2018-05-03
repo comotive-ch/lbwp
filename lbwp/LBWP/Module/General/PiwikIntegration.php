@@ -233,16 +233,26 @@ class PiwikIntegration extends \LBWP\Module\Base
     $siteId = intval($this->settings['siteId']);
     echo '
       <script type="text/javascript">
-        var _paq = _paq || [];
-        _paq.push(["trackPageView"]);
-        _paq.push(["enableLinkTracking"]);
-        (function() {
-          var u="' . $this->integration['protocol'] . '://' . $this->integration['domain'] . '/";
-          _paq.push(["setTrackerUrl", u + "piwik.php"]);
-          _paq.push(["setSiteId", ' . $siteId . ']);
-          var d=document, g=d.createElement("script"), s=d.getElementsByTagName("script")[0];
-          g.type="text/javascript"; g.async=true; g.defer=true; g.src=u+"piwik.js"; s.parentNode.insertBefore(g,s);
-        })();
+        // Provide Opt Out function and opt-out by ommiting the code
+        var lbwpTrackingDisableMsg = "' . esc_js(__('Die Aufzeichnung des Nutzungsverhaltens wurde deaktiviert.', 'lbwp')) . '";
+        var lbwpTrackingDisabler = "piwik-disable-site-' . $siteId . '";
+        jQuery(".lbwp-tracking-opt-out").click(function() {
+          document.cookie = lbwpTrackingDisabler + "=true; expires=Thu, 31 Dec 2099 23:59:59 UTC; path=/";
+          alert(lbwpTrackingDisableMsg);
+        });
+        // If no cookie is set, still track
+        if (document.cookie.indexOf(lbwpTrackingDisabler + "=true") == -1) {
+          var _paq = _paq || [];
+          _paq.push(["trackPageView"]);
+          _paq.push(["enableLinkTracking"]);
+          (function() {
+            var u="' . $this->integration['protocol'] . '://' . $this->integration['domain'] . '/";
+            _paq.push(["setTrackerUrl", u + "piwik.php"]);
+            _paq.push(["setSiteId", ' . $siteId . ']);
+            var d=document, g=d.createElement("script"), s=d.getElementsByTagName("script")[0];
+            g.type="text/javascript"; g.async=true; g.defer=true; g.src=u+"piwik.js"; s.parentNode.insertBefore(g,s);
+          })();
+        }
       </script>
       <noscript>
         <p><img src="' . $this->integration['protocol'] . '://' . $this->integration['domain'] . '/piwik.php?idsite=' . $siteId . '" style="border:0;" alt="" /></p>

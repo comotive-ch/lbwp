@@ -40,6 +40,7 @@ LbwpFormEditor.Form = {
 	setEvents: function () {
 		// sort block left
 		jQuery("#editor-form-tab .frame-left .inside").sortable({
+			appendTo: 'body',
 			connectWith: ".lbwp-form",
 			helper: function (e, li) {
 				this.copyHelper = li.clone().insertAfter(li);

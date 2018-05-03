@@ -3,6 +3,7 @@
 namespace LBWP\Theme\Feature;
 
 use LBWP\Helper\Cronjob;
+use LBWP\Helper\Html2Text;
 use LBWP\Helper\Import\Csv;
 use LBWP\Helper\Metabox;
 use LBWP\Helper\Mail\Base as MailService;
@@ -653,9 +654,9 @@ class LocalMailService
     // Set a lock, before starting the process
     TempLock::set('localmail_sending_' . $mailingId, 55);
 
-    $mailings = ArrayManipulation::forceArray(get_option('LocalMail_Mailings'));
-    // Only proceed if the mailing still exists
-    if (isset($mailings[$mailingId]) == 0 || $mailings[$mailingId] !== 'sending') {
+    $mailings = $this->getMailings();
+    // Only proceed if the mailing still exists and is ready to send
+    if (!isset($mailings[$mailingId]) || !Strings::startsWith($mailings[$mailingId], 'sending')) {
       TempLock::raise('localmail_sending_' . $mailingId);
       return;
     }
@@ -665,22 +666,48 @@ class LocalMailService
     /** @var MailService $service the service instance of Base */
     $service = new $class();
     $service->configure($this->config['mailServiceConfig']);
+    $sendType = $mailings[$mailingId];
 
     // Load the mails of this mailing
     $mails = ArrayManipulation::forceArray(get_option('LocalMail_Mailing_' . $mailingId));
 
+    // Log if there is a sending with no mails
+    if (count($mails) == 0) {
+      SystemLog::add('LocalMailService', 'critical', 'Tried to send mailing ' . $mailingId . ' with no mails!');
+    }
+
     // Send maximum number of mails
     $mailsSent = 0;
     foreach ($mails as $id => $mail) {
+      // Test if a mail like this has already been sent
+      $securityKey = $mailingId . '-' . md5($mail['subject']) . '-' . md5($mail['recipient']);
+      if ($sendType == 'sending' && wp_cache_get($securityKey, 'LocalMail') !== false) {
+        // Log and send an email with critical state
+        SystemLog::add('LocalMailService', 'critical', 'Preventing multi-send of localmail newsletter', array(
+          'prevented-email' => $mail['subject'],
+          'recipient' => $mail['recipient'],
+          'total-mails' => count($mails)
+        ));
+        // Try saving the current mailings, if it doesn't fail on the first one
+        $this->createMailObjects($mailingId, $mails);
+        // Raise the lock anyway
+        TempLock::raise('localmail_sending_' . $mailingId);
+        return;
+      }
+
       // Use the service to send the mail, tag it and reset after sending
       $service->setSubject($mail['subject']);
       $service->setBody($mail['html']);
+      $service->setAltBody($this->generateAltBody($mail['html']));
       $service->setFrom($mail['senderEmail'], $mail['senderName']);
       $service->addReplyTo($mail['senderEmail']);
       $service->addAddress($mail['recipient']);
       $service->setTag($mailingId);
       $service->send();
       $service->reset();
+
+      // Set a cache key to prevent multi-sending the same mail
+      wp_cache_set($securityKey, 1, 'LocalMail', 600);
 
       // Log the sent email
       SystemLog::add('LocalMailService', 'debug', 'sending email to "' . $mail['recipient'] . '"', array(
@@ -700,10 +727,10 @@ class LocalMailService
 
     // After sending the block, are there still mails left?
     if (count($mails) > 0) {
-      // Schedule another cron
-      $this->scheduleSendingCron($mailingId);
       // Save the mails back into the mailing (deleting the already sent ones)
       $this->createMailObjects($mailingId, $mails);
+      // Schedule another cron
+      $this->scheduleSendingCron($mailingId);
     } else {
       // Delete the mailing completely and don't reschedule
       $this->removeMailing($mailingId);
@@ -711,6 +738,16 @@ class LocalMailService
 
     // Raise the cron lock
     TempLock::raise('localmail_sending_' . $mailingId);
+  }
+
+  /**
+   * @param string $html
+   * @return string text variant
+   */
+  protected function generateAltBody($html)
+  {
+    $worker = new Html2Text($html);
+    return $worker->getText();
   }
 
   /**
@@ -761,7 +798,7 @@ class LocalMailService
    */
   public function setMailing($id, $status)
   {
-    $mailings = ArrayManipulation::forceArray(get_option('LocalMail_Mailings'));
+    $mailings = $this->getMailings();
     $mailings[$id] = $status;
     update_option('LocalMail_Mailings', $mailings);
   }
@@ -772,10 +809,18 @@ class LocalMailService
    */
   public function removeMailing($id)
   {
-    $mailings = ArrayManipulation::forceArray(get_option('LocalMail_Mailings'));
+    $mailings = $this->getMailings();
     unset($mailings[$id]);
     update_option('LocalMail_Mailings', $mailings);
     delete_option('LocalMail_Mailing_' . $id);
+  }
+
+  /**
+   * @return array all mailings or empty array if there are none
+   */
+  public function getMailings()
+  {
+    return ArrayManipulation::forceArray(get_option('LocalMail_Mailings'));
   }
 
   /**

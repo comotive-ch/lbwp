@@ -72,6 +72,14 @@ class Local extends Base
   }
 
   /**
+   * @param string $body the alternative text body
+   */
+  public function setAltBody($body)
+  {
+    $this->instance->AltBody = $body;
+  }
+
+  /**
    * @param string $tag tagging for statistics
    */
   public function setTag($tag)

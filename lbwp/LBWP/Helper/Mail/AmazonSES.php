@@ -68,7 +68,11 @@ class AmazonSES extends Base
           'Html' => array(
             'Data' => $this->data['body'],
             'Charset' => 'UTF-8'
-          )
+          ),
+          'Text' => array(
+            'Data' => $this->data['altBody'],
+            'Charset' => 'UTF-8'
+          ),
         )
       )
     );
@@ -99,6 +103,14 @@ class AmazonSES extends Base
   public function setBody($body)
   {
     $this->data['body'] = $body;
+  }
+
+  /**
+   * @param string $body the alternative text body
+   */
+  public function setAltBody($body)
+  {
+    $this->data['altBody'] = $body;
   }
 
   /**

@@ -20,15 +20,22 @@ class GooglePlus extends BaseButton
    */
   public function getHtml($config, $link, $post)
   {
-    // Register the API
-    SocialApis::add(SocialApis::GOOGLE_PLUS, $this->getLocaleString('', 2));
+    if ($this->needsPrivacyCompliance()) {
+      return '
+        <a href="//plus.google.com/share?app=110&url=' .  urlencode($link) .'" target="_blank">
+        <img src="/wp-content/plugins/lbwp/resources/images/social/googleplus.png" border="0"></a>
+      ';
+    } else {
+      // Register the API
+      SocialApis::add(SocialApis::GOOGLE_PLUS, $this->getLocaleString('', 2));
 
-    // Return the html
-    return '
-      <div class="g-plusone"
-        data-size="medium"
-        data-href="' . esc_attr($link) . '">
-      </div>
-    ';
+      // Return the html
+      return '
+        <div class="g-plusone"
+          data-size="medium"
+          data-href="' . esc_attr($link) . '">
+        </div>
+      ';
+    }
   }
 } 

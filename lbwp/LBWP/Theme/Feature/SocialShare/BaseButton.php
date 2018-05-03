@@ -1,7 +1,9 @@
 <?php
 
 namespace LBWP\Theme\Feature\SocialShare;
+
 use LBWP\Util\Multilang;
+use LBWP\Core as LbwpCore;
 
 /**
  * Base class for a share button
@@ -26,6 +28,15 @@ abstract class BaseButton
 
     // Set separator and cut string
     return substr(str_replace('_', $separator, $locale), 0, $cut);
+  }
+
+  /**
+   * @return bool true if the buttons needs to comply to privacy laws such as GDPR
+   */
+  protected function needsPrivacyCompliance()
+  {
+    $config = LbwpCore::getInstance()->getConfig();
+    return $config['Privacy:PrivacyOptimizedShareButtons'] == 1;
   }
 
   /**

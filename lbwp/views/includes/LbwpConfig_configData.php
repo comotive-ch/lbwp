@@ -199,6 +199,68 @@ $this->configData['Various']['items']['RedirectAttachmentDetail'] = array(
   '
 );
 
+/**
+ * Various / General settings
+ */
+$this->configData['Privacy'] = array(
+  'title' => 'Datenschutz Einstellungen',
+  'description' => '
+    Einstellungen um den Datenschutz für Ihre Besucher zu optimieren.
+    <em>Die Einstellungen sind teilweise noch in Entwicklung und werden spätestens am 25. Mai mit der Inkrafttretung der EU-DSGVO aktiv.</em>
+  ',
+  'visible' => true,
+  'items' => array()
+);
+
+$this->configData['Privacy']['items']['DataPrivacyStatementPageId'] = array(
+  'type' => 'pagedropdown',
+  'typeConfig' => array('optional' => true),
+  'title' => 'Datenschutz-Seite',
+  'description' => 'Bitte wählen Sie die Seite ihrer Datenschutzerklärung aus. Diese wird wo nötig automatisch verlinkt.'
+);
+
+$this->configData['Privacy']['items']['InformationalBannerActive'] = array(
+  'type' => 'checkbox',
+  'typeConfig' => array(),
+  'title' => 'Informations-Banner zur Nutzung von Cookies und zur Anzeige der Datenschutzerklärung aktivieren',
+  'label' => 'Informations-Banner',
+  'checkbox' => true,
+  'description' => 'Es ist zu beachten, dass dieser Banner zur Einhaltung der EU-DSGVO nicht zwingend nötig ist.'
+);
+
+$this->configData['Privacy']['items']['InformationalBannerContent'] = array(
+  'type' => 'editor',
+  'typeConfig' => array(),
+  'title' => 'Banner Inhalt',
+  'description' => 'Der Inhalt des Banners sollte so kurz wie möglich sein und auf die Datenschutzerklärung verlinken.'
+);
+
+$this->configData['Privacy']['items']['InformationalBannerVersion'] = array(
+  'type' => 'number',
+  'typeConfig' => array(
+    'rangeFrom' => 1,
+    'rangeTo' => 9999
+  ),
+  'title' => 'Banner Version',
+  'description' => '
+    Hat ein Besucher den Banner geschlossen wird er diesen nicht erneut sehen. Sofern Sie aber den Inhalt des Banners ändern und die Änderung
+    von grosser Wichtigkeit ist, können Sie hier die Versionsnummer hochzählen. Damit wird die neue Version des Inhalts wieder allen Besuchern erneut gezeigt.    
+  '
+);
+
+$this->configData['Privacy']['items']['PrivacyOptimizedShareButtons'] = array(
+  'type' => 'checkbox',
+  'typeConfig' => array(),
+  'title' => 'Alternative Share-Buttons ohne Tracking-Code verwenden',
+  'label' => 'Share-Buttons',
+  'checkbox' => true,
+  'description' => '
+    Die Share-Buttons der verschiedenen Social-Sharing-Dienste zeichnen alleine durch die Anzeige des Buttons Nutzerdaten auf.
+    Wenn aktiv, werden alternative Buttons verwendet, welche erst beim Klick auf den Button einen externen Teilen-Dialog des Dienstes aufrufen.
+    Diese Einstellung kommt nur zum Tragen, wenn sie Share-Buttons verwenden.
+  '
+);
+
 
 /**
  * Not found page settings

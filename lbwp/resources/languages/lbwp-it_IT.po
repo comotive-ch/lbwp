@@ -2,7 +2,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: LBWP\n"
 "POT-Creation-Date: 2015-08-03 11:05+0100\n"
-"PO-Revision-Date: 2018-02-26 10:43+0100\n"
+"PO-Revision-Date: 2018-05-03 09:37+0200\n"
 "Last-Translator: \n"
 "Language-Team: comotive <info@comotive.ch>\n"
 "Language: it_IT\n"
@@ -625,3 +625,12 @@ msgstr "Sono stati commessi {number} errori."
 
 msgid "Es ist ein Fehler aufgetreten."
 msgstr "Si è verificato un errore."
+
+msgid "Die Aufzeichnung des Nutzungsverhaltens wurde deaktiviert."
+msgstr "La registrazione del comportamento d'uso è stata disattivata."
+
+msgid "Per E-Mail versenden"
+msgstr "E-Mail"
+
+msgid "Drucken"
+msgstr "Copia"

@@ -20,17 +20,24 @@ class Twitter extends BaseButton
    */
   public function getHtml($config, $link, $post)
   {
-    // Register the api
-    SocialApis::add(SocialApis::TWITTER, '');
+    if ($this->needsPrivacyCompliance()) {
+      return '
+        <a href="//twitter.com/home?status=' .  urlencode($post->post_title . ' ' . $link) .'" target="_blank">
+        <img src="/wp-content/plugins/lbwp/resources/images/social/twitter.png" border="0"></a>
+      ';
+    } else {
+      // Register the api
+      SocialApis::add(SocialApis::TWITTER, '');
 
-    // Return the html
-    return '
-      <a href="https://twitter.com/share"
-        class="twitter-share-button"
-        data-url="' . esc_attr($link) . '"
-        data-text="'  . esc_attr(strip_tags($post->post_title)) . '"
-        data-lang="' . $this->getLocaleString('', 2) . '"
-      >' . $config['fallback'] . '</a>
-    ';
+      // Return the html
+      return '
+        <a href="https://twitter.com/share"
+          class="twitter-share-button"
+          data-url="' . esc_attr($link) . '"
+          data-text="'  . esc_attr(strip_tags($post->post_title)) . '"
+          data-lang="' . $this->getLocaleString('', 2) . '"
+        >' . $config['fallback'] . '</a>
+      ';
+    }
   }
 } 

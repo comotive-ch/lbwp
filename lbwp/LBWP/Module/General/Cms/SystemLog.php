@@ -4,6 +4,7 @@ namespace LBWP\Module\General\Cms;
 
 use LBWP\Util\ArrayManipulation;
 use LBWP\Util\Date;
+use LBWP\Util\External;
 use LBWP\Util\Strings;
 use LBWP\Module\BaseSingleton;
 
@@ -118,6 +119,7 @@ class SystemLog extends BaseSingleton
   public static function add($component, $type, $message, $data = array())
   {
     $log = ArrayManipulation::forceArray(get_option(self::OPTION_NAME));
+    $type = Strings::forceSlugString($type);
 
     // See if we already reached the maximum entries in our log, remove oldest
     if (count($log) >= self::MAX_ENTRIES) {
@@ -128,12 +130,24 @@ class SystemLog extends BaseSingleton
     $log[] = array(
       'component' => $component,
       'date' => Date::getTime(Date::SQL_DATETIME, current_time('timestamp')),
-      'type' => Strings::forceSlugString($type),
+      'type' => $type,
       'message' => trim(strip_tags($message)),
       'data' => $data
     );
 
     // Save back to the option
     update_option(self::OPTION_NAME, $log);
+
+    // Send mail if critical status
+    if ($type == 'critical') {
+      $mail = External::PhpMailer();
+      $mail->addAddress('it+monitoring@comotive.ch');
+      $mail->Subject = 'SystemLog/' . $type . ':' . $message;
+      $mail->Body = 'Domain: ' . LBWP_HOST . '<br>';
+      foreach ($data as $key => $value) {
+        $mail->Body .= $key . ': ' . $value . '<br>';
+      }
+      $mail->send();
+    }
   }
 }

@@ -305,7 +305,8 @@ class Frontend extends Base
 
     // Add location, if available
     if ($display['showLocation']) {
-      if ($display['showAddressAfterLocation'] && is_array($event->address)) {
+      $address = self::getCombinedLocationAndAddress($event);
+      if ($display['showAddressAfterLocation'] && strlen($address) > 0) {
         $html .= '
           <dl>
             <dt>' . __('Ort', 'lbwp') . '</dt>
@@ -448,7 +449,7 @@ class Frontend extends Base
         'betreff' => sprintf(
           __('Anmeldung: %s / %s', 'lbwp'),
           $event->post_title,
-          Date::getTime(Date::EU_DATETIME, $event->startTime)
+          Date::getTime(Date::EU_DATE, $event->startTime)
         )
       ));
 
@@ -480,22 +481,36 @@ class Frontend extends Base
     $fields[] = array(
       'key' => $fieldKey,
       'feldname' => __('Veranstaltung', 'lbwp'),
-      'vorgabewert' => $event->post_title
+      'vorgabewert' => $event->post_title,
+      'show_in_mail_action' => 1
     );
 
     // Add the start time
     $fields[] = array(
       'key' => $fieldKey,
-      'feldname' => __('Datum/Zeit', 'lbwp'),
-      'vorgabewert' => Date::getTime(Date::EU_DATETIME, $event->startTime)
+      'feldname' => __('Datum', 'lbwp'),
+      'vorgabewert' => Date::getTime(Date::EU_DATE, $event->startTime),
+      'show_in_mail_action' => 1
     );
+
+    // Add the start time
+    $time = Date::getTime(Date::EU_CLOCK, $event->startTime);
+    if ($time !== '00:00') {
+      $fields[] = array(
+        'key' => $fieldKey,
+        'feldname' => __('Uhrzeit', 'lbwp'),
+        'vorgabewert' => $time,
+        'show_in_mail_action' => 1
+      );
+    }
 
     // Add the location if given
     if (strlen($event->location) > 0) {
       $fields[] = array(
         'key' => $fieldKey,
         'feldname' => __('Ort', 'lbwp'),
-        'vorgabewert' => $event->location
+        'vorgabewert' => $event->location,
+        'show_in_mail_action' => 1
       );
     }
 

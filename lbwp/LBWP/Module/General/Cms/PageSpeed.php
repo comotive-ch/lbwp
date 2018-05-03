@@ -50,12 +50,12 @@ class PageSpeed extends BaseSingleton
     }
 
     if ($this->settings['rewrite_asset_versions']) {
-      add_filter('output_buffer', array($this, 'rewriteAssetVersions'), 8050);
+      add_filter('output_buffer', array($this, 'rewriteAssetVersions'), 8510);
     }
 
     if ($this->settings['rewrite_cookieless_domain']) {
       add_filter('wp_head', array($this, 'addCookielessDnsPrefetch'), 5);
-      add_filter('output_buffer', array($this, 'rewriteCookielessDomain'), 8060);
+      add_filter('output_buffer', array($this, 'rewriteCookielessDomain'), 8520);
     }
   }
 

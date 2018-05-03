@@ -20,15 +20,23 @@ class LinkedIn extends BaseButton
    */
   public function getHtml($config, $link, $post)
   {
-    // Register the api
-    SocialApis::add(SocialApis::LINKED_IN, $this->getLocaleString('_'));
+    if ($this->needsPrivacyCompliance()) {
+      $locale = $this->getLocaleString('_', 5);
+      return '
+        <a href="//www.linkedin.com/cws/share?url=' .  urlencode($link) .'&isFramed=false&lang=' . $locale . '" target="_blank">
+        <img src="/wp-content/plugins/lbwp/resources/images/social/linkedin-' . substr($locale,0,2) . '.png" border="0"></a>
+      ';
+    } else {
+      // Register the api
+      SocialApis::add(SocialApis::LINKED_IN, $this->getLocaleString('_'));
 
-    // Return the html
-    return '
-      <script type="IN/Share"
-        data-url="' . esc_attr($link) . '"
-        data-counter="right">
-      </script>
-    ';
+      // Return the html
+      return '
+        <script type="IN/Share"
+          data-url="' . esc_attr($link) . '"
+          data-counter="right">
+        </script>
+      ';
+    }
   }
 } 

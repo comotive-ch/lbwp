@@ -10,7 +10,7 @@ jQuery(function() {
 			jQuery('.col-select').chosen();
 			jQuery('.col-select').chosenSortable();
 			// Set the chosen container just as fat as the table
-			var width = jQuery('table.widefat').width();
+			var width = jQuery('.wrap').width();
 			jQuery('.chosen-container').css('width', width + 'px');
 		});
 	});

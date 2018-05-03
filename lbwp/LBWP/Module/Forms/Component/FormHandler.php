@@ -3,6 +3,7 @@
 namespace LBWP\Module\Forms\Component;
 
 use LBWP\Core as LbwpCore;
+use LBWP\Theme\Feature\LbwpFormSettings;
 use LBWP\Util\Cookie;
 use LBWP\Util\File;
 use LBWP\Module\Frontend\HTMLCache;
@@ -838,9 +839,11 @@ class FormHandler extends Base
     wp_enqueue_script('lbwp-form-frontend', $uri . '/js/lbwp-form-frontend.js', array('jquery'), LbwpCore::REVISION, true);
     wp_enqueue_script('lbwp-form-validate', $uri . '/js/lbwp-form-validate.js', array('jquery'), LbwpCore::REVISION, true);
     // Add the CSS to top
-    add_filter('add_late_head_content', function($html) use ($uri) {
-      return $html . '<link rel="stylesheet" href="' . $uri . '/css/lbwp-form-frontend.css?ver=' . LbwpCore::REVISION . '" />' . PHP_EOL;
-    });
+    if (!LbwpFormSettings::get('removeCoreFrontendCss')) {
+      add_filter('add_late_head_content', function ($html) use ($uri) {
+        return $html . '<link rel="stylesheet" href="' . $uri . '/css/lbwp-form-frontend.css?ver=' . LbwpCore::REVISION . '" />' . PHP_EOL;
+      });
+    }
 
     // Set as printed once
     $this->addedAssets = true;

@@ -701,7 +701,7 @@ class WordPress
         body.login h1 a {
           background-image: url("' . $config['logo'] . '") !important;
           width: ' . $config['logoWidth'] . ';
-          background-size: ' . $config['logoWidth'] . ';
+          background-size: ' . $config['logoBackgroundWidth'] . ';
           height: ' . $config['logoHeight'] . ';
         }
         body.login .message {

@@ -104,17 +104,7 @@ div.drag-target {
 	.frame {
 		float: left;
 
-		&.frame-left {
-			max-width: 20%;
-			width: 20%;
-		}
-		&.frame-full {
-			max-width: 100%;
-			width: 100%;
-		}
 		&.frame-middle {
-			min-height: 50%;
-			width: 50%;
 
 			.lbwp-action-list {
 				height: 100%;
@@ -226,8 +216,6 @@ div.drag-target {
 		}
 
 		&.frame-right {
-			max-width: 30%;
-			width: 30%;
 
 			h3 {
 				cursor: pointer;
@@ -389,6 +377,12 @@ div.drag-target {
 // form preview
 .lbwp-form-preview {
 
+	.lbwp-form {
+		.field_email_to {
+			display: none !important;
+		}
+	}
+
 	@media #{$tableFormLayout} {
 		.forms-item input:not([type=checkbox]):not([type=radio]):not([type=submit]):not([type=button]):not(.zip-field-part):not(.city-field-part),
 		.forms-item select, .forms-item textarea {
@@ -503,20 +497,18 @@ div.drag-target {
 }
 
 // items to choose from the left
-.available-fields {
-	& > div {
-		margin-bottom: 10px;
-		border: 1px solid #dfdfdf;
-		padding: 10px 15px;
-		background: #fafafa;
-		@include box-shadow(0 1px 1px rgba(0, 0, 0, .04));
-		cursor: move;
-		&:hover {
-			border-color: #999;
-		}
-		&:last-child {
-			margin-bottom: 0;
-		}
+.draggable-item {
+	margin-bottom: 10px;
+	border: 1px solid #dfdfdf;
+	padding: 10px 15px;
+	background: #fafafa;
+	@include box-shadow(0 1px 1px rgba(0, 0, 0, .04));
+	cursor: move;
+	&:hover {
+		border-color: #999;
+	}
+	&:last-child {
+		margin-bottom: 0;
 	}
 }
 
@@ -577,4 +569,80 @@ div.drag-target {
 			padding-right: 30px;
 		}
 	}
+}
+
+$lbwpFormEditorScrollBarWith: 25px;
+
+// defaults
+$lbwpFormEditorLeftColumnWidth: 300px;
+$lbwpFormEditorRightColumnWidth: 500px;
+$lbwpFormEditorFullWidth: 100%;
+
+
+$lbwpFormEditorMiddleColumnWidth: calc( 100% - #{$lbwpFormEditorLeftColumnWidth + $lbwpFormEditorRightColumnWidth});
+
+
+.frame-full {
+	max-width: $lbwpFormEditorFullWidth;
+	width: $lbwpFormEditorFullWidth;
+}
+
+
+.frame-left {
+	width: $lbwpFormEditorLeftColumnWidth;
+	padding-right: $lbwpFormEditorScrollBarWith;
+}
+
+.frame-middle {
+	width: $lbwpFormEditorMiddleColumnWidth;
+}
+
+.frame-right {
+	width: calc(#{$lbwpFormEditorRightColumnWidth - $lbwpFormEditorScrollBarWith});
+}
+
+/*
+@media screen and (max-width: 1575px){
+	.frame-left {
+		width: 220px;
+
+	}
+
+	.frame-middle {
+		width: calc( 100% - 220px - 420px);
+	}
+
+	.frame-right {
+		width: calc(220px - #{$lbwpFormEditorScrollBarWith});
+	}
+
+	.form-editor-tab.fixed-frames {
+		.frame-middle {
+			margin-left: 220px
+		}
+
+	}
+}*/
+
+
+.form-editor-tab.fixed-frames {
+	.frame-left, .frame-right {
+		top: 40px;
+		position: fixed;
+		height: calc(100vh - 80px);
+		overflow-y: scroll;
+	}
+
+	.frame-left{
+		padding-right: 0;
+	}
+
+	.frame-right {
+		right: calc(#{$lbwpFormEditorScrollBarWith} - 5px);
+		padding-left: $lbwpFormEditorScrollBarWith;
+	}
+	.frame-middle {
+		margin-left: calc(#{$lbwpFormEditorLeftColumnWidth + $lbwpFormEditorScrollBarWith});
+	}
+
 }

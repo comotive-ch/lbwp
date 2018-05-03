@@ -55,7 +55,6 @@ class ZipCity extends Base
         id="' . $this->get('id') . '-zip"
         value="' . $value['zip'] . '"
       />
-      <div class="zip-field-spacer"></div>
       <input type="text"
         class="city-field-part"' . $attr . '
         name="' . $this->get('id') . '[city]"

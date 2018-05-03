@@ -4,12 +4,6 @@ $lbwpFormValidationColorError: red;
 @import "lbwp/lbwp-forms";
 
 .lbwp-form {
-	// honey pot
-	.field_email_to {
-		background-color: transparent;
-		border:0px none;
-		box-shadow: none;
-	}
 
 	// labels: default for mobile (full-width)
 	.default-label {
@@ -42,10 +36,6 @@ $lbwpFormValidationColorError: red;
 	}
 
 	// zip and city input
-
-	//todo remove this element from template
-	.zip-field-spacer { display: none; }
-
 	input[type="text"].zip-field-part {
 		display: inline-block;
 		width:22%;
@@ -96,17 +86,11 @@ $lbwpFormValidationColorError: red;
 	}
 }
 
-// Hide a form, if there's need
-.lbwp-form.lbwp-form-hide {
-	display:none;
-}
-
 // Ancor for messages with default top offset
 @include lbwpFormSetAnchorTopGap() {
 	display: block;
 	visibility: hidden;
 };
-
 
 @include lbwpFormInputFieldErrorStyles() {
 	border-color: $lbwpFormValidationColorError;

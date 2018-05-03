@@ -3,7 +3,23 @@
 @import "lbwp/functions";
 @import "focuspoint";
 
-// responsive iframe content
+// Core styles for lbwp forms
+
+// Hide a form, if there's need
+.lbwp-form.lbwp-form-hide {
+	display:none;
+}
+
+.lbwp-form {
+	// honey pot
+	.field_email_to {
+		background-color: transparent;
+		border:0px none;
+		box-shadow: none;
+	}
+}
+
+// Responsive iframe content
 .lbwp-iframe-container {
 	position: relative;
   overflow: hidden;
@@ -24,7 +40,7 @@
 	}
 }
 
-// share buttons
+// Share buttons
 .lbwp-share-buttons ul {
 	list-style: none;
 	padding: 0;
