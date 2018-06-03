@@ -7,7 +7,7 @@
 // Include the lbwp nodes config by adding the wp-config
 define('SKIP_WP_STACK', true);
 $_SERVER['HTTP_HOST'] = 'master.lbwp.sdd1.ch';
-require_once '/var/www/lbwp/wp-config.php';
+require_once '/var/www/lbwp-prod/wp-config.php';
 global $lbwpNodes;
 
 // Initialize the information containers

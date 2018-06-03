@@ -70,29 +70,52 @@ class DataTable extends Base
    */
   protected function displayTableOverview()
   {
-    $baseUrl = get_admin_url() . 'admin.php?page=data-tables';
+    $baseUrl = get_admin_url() . 'admin.php?page=data-tables&dss=' . $_GET['dss'];
     $tableMetaInfo = '
       <tr>
         <th><a href="' . $baseUrl . '&order=title">' . __('Title') . '</a></th>
-        <th class="column-date">' . __('Einträge', 'lbwp') . '</th>
-        <th class="column-date"><a href="' . $baseUrl . '&order=date">' . __('Date') . '</a></th>
+        <th style="width:10%">' . __('Einträge', 'lbwp') . '</th>
+        <th style="width:20%"><a href="' . $baseUrl . '&order=change">' . __('Letzte Änderung', 'lbwp') . '</th>
+        <th style="width:10%"><a href="' . $baseUrl . '&order=date">' . __('Erstellt am', 'lbwp') . '</a></th>
       </tr>
     ';
 
     echo '
       <div class="wrap">
         <h2>' . __('Alle Datenspeicher', 'lbwp') . '</h2>
-        <p>
-        <table class="wp-list-table widefat fixed striped posts">
-          <thead>' . $tableMetaInfo . '</thead>
-	        <tbody id="the-list">
+        <form id="datatables-filter" method="get">
+          <input type="hidden" name="order" value="' . $_GET['order'] . '" />
+          <input type="hidden" name="page" value="' . $_GET['page'] . '" />
+          <p class="search-box">
+            <label class="screen-reader-text" for="table-search-input">Datenspeicher suchen:</label>
+            <input type="search" id="table-search" name="dss" value="' . $_GET['dss'] . '">
+            <input type="submit" id="search-submit" class="button" value="Datenspeicher suchen">
+          </p>
+          <table class="wp-list-table widefat fixed striped posts float-left-top-margin">
+            <thead>' . $tableMetaInfo . '</thead>
+            <tbody id="the-list">
     ';
 
     $list = $this->getTableList();
-    if (!isset($_GET['order']) || $_GET['order'] == 'date') {
+    // Filter if there is a term
+    if (strlen($_GET['dss']) > 0) {
+      $term = strtolower($_GET['dss']);
+      $list = array_filter($list, function($name) use ($term) {
+        return stristr(mb_strtolower($name), $term) !== false;
+      });
+    }
+
+    // Order by field
+    if (!isset($_GET['order']) || $_GET['order'] == 'date' || $_GET['order'] == '') {
       $list = array_reverse($list, true);
     } else if ($_GET['order'] == 'title') {
       natcasesort($list);
+    } else if ($_GET['order'] == 'change') {
+      uksort($list, function($table1, $table2) {
+        $compare1 = intval($this->getTable($table1)['changed']);
+        $compare2 = intval($this->getTable($table2)['changed']);
+        return ($compare1 < $compare2) ? 1 : -1;
+      });
     }
 
     // Display the list if there is data
@@ -104,13 +127,13 @@ class DataTable extends Base
           // Calculate some data for displaying
           $timestamp = strtotime($form->post_date);
           $table = $this->getTable($form->ID);
-
           // Show the data row
           echo '
             <tr>
               <td><strong><a href="' . $baseUrl . '&table=' . $id . '">' . $name . '</a></strong></td>
-              <td class="column-date">' . count($table['data']) . '</td>
-              <td class="column-date"><abbr title="' . date(Date::EU_DATETIME, $timestamp) . '">' . date(Date::EU_DATE, $timestamp) . '</abbr></td>
+              <td>' . count($table['data']) . '</td>
+              <td>' . (($table['changed'] == 0) ? '-' : date(Date::EU_DATETIME, $table['changed'])) . '</td>
+              <td><abbr title="' . date(Date::EU_DATETIME, $timestamp) . '">' . date(Date::EU_DATE, $timestamp) . '</abbr></td>
             </tr>
           ';
         }
@@ -126,7 +149,7 @@ class DataTable extends Base
     // Close table body, table and wrapper
     echo '
       <tfoot>' . $tableMetaInfo . '</tfoot>
-      </tbody></table></p></div>
+      </tbody></table></form></div>
     ';
   }
 
@@ -211,19 +234,37 @@ class DataTable extends Base
   protected function addNewRow($tableKey, $data, $tsid, $action, $eventId = 0)
   {
     $row = array();
+    $fields = array();
     foreach ($data as $item) {
-      $cellKey = Strings::forceSlugString($item['name']);
-      // If storage id cell, update the id
-      if ($cellKey == 'tsid') {
-        $item['value'] = $tsid;
-        self::$lastTsid = $tsid;
+      if (isset($item['valueArray'])) {
+        // Have an own column for each selected value in the array
+        foreach ($item['valueArray'] as $value) {
+          $fields[$value['key']] = $value['colname'];
+          $row[$value['key']] = $value['value'];
+        }
+      } else {
+        // Have a single value to be added to the row
+        $cellKey = Strings::forceSlugString($item['name']);
+        $fields[$cellKey] = $item['name'];
+        // If storage id cell, update the id
+        if ($cellKey == 'tsid') {
+          $item['value'] = $tsid;
+          self::$lastTsid = $tsid;
+        }
+        $row[$cellKey] = $item['value'];
       }
-      $row[$cellKey] = $item['value'];
     }
 
     // Add the new row to the table
     $table = WordPress::getJsonOption($tableKey);
     $table['data'][] = $row;
+    $table['changed'] = current_time('timestamp');
+    // Set the named fields
+    if (is_array($table['fields'])) {
+      $table['fields'] = array_merge($table['fields'], $fields);
+    } else {
+      $table['fields'] = $fields;
+    }
     WordPress::updateJsonOption($tableKey, $table);
 
     // Add event subscription info, if needed
@@ -254,12 +295,25 @@ class DataTable extends Base
 
     // Override data in that row, except for the tsid
     foreach ($data as $item) {
-      $cellKey = Strings::forceSlugString($item['name']);
-      if ($cellKey != 'tsid') $row[$cellKey] = $item['value'];
+      if (isset($item['valueArray'])) {
+        // Have an own column for each selected value in the array
+        foreach ($item['valueArray'] as $value) {
+          $fields[$value['key']] = $value['colname'];
+          $row[$value['key']] = $value['value'];
+        }
+      } else {
+        // Have a single value changed in the row
+        $cellKey = Strings::forceSlugString($item['name']);
+        if ($cellKey != 'tsid') {
+          $row[$cellKey] = $item['value'];
+        }
+      }
+
     }
 
     // Override the row in our referenced table
     $table['data'][$index] = $row;
+    $table['changed'] = current_time('timestamp');
     WordPress::updateJsonOption($tableKey, $table);
 
     // Remove existing subscriber information, if available, add new one
@@ -471,6 +525,7 @@ class DataTable extends Base
   {
     $table = $this->getTable($formId);
     $table['data'] = array();
+    $table['changed'] = current_time('timestamp');
     $key = self::TABLE_OPTION_PREFIX . $formId;
     $this->flushEventSubscriberInfo($eventId);
     WordPress::updateJsonOption($key, $table);
@@ -507,7 +562,9 @@ class DataTable extends Base
       WordPress::updateJsonOption($key, array(
         'id' => $formId,
         'name' => $name,
-        'data' => array()
+        'data' => array(),
+        'changed' => current_time('timestamp'),
+        'fields' => array()
       ));
     }
   }
@@ -533,6 +590,7 @@ class DataTable extends Base
     }
 
     $table['data'] = $newData;
+    $table['changed'] = current_time('timestamp');
     $key = self::TABLE_OPTION_PREFIX . $formId;
     WordPress::updateJsonOption($key, $table);
     exit;
@@ -597,6 +655,7 @@ class DataTable extends Base
     }
 
     $table['data'] = $newData;
+    $table['changed'] = current_time('timestamp');
     $key = self::TABLE_OPTION_PREFIX . $formId;
     WordPress::updateJsonOption($key, $table);
     exit;

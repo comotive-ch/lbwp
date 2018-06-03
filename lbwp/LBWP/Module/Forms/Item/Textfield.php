@@ -15,8 +15,7 @@ class Textfield extends Base
    * @var array set the field config for this field
    */
   protected $fieldConfig = array(
-    'name' => 'Textfeld',
-    'help' => 'Simples Textfeld mit einer Zeile',
+    'name' => 'Einzeiliges Textfeld',
     'group' => 'Text-Felder'
   );
 
@@ -89,6 +88,7 @@ class Textfield extends Base
    */
   public function getElement($args, $content)
   {
+    $this->addFormFieldConditions($args['conditions']);
     $type = $this->validateType($args['type']);
     $attr = $this->getDefaultAttributes($args);
 

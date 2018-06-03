@@ -1,3 +1,4 @@
+@import "lbwp/lib";
 @import "lbwp/lbwp-forms";
 @import "compass/css3";
 
@@ -41,6 +42,10 @@ $wpColorHighlight: #0074a2;
 		border: $borderStyle;
 		border-radius: $borderRadius;
 	}
+}
+
+#editor-form-tab {
+	@include lbwpClearfix;
 }
 
 // General styles of the form UI container
@@ -171,6 +176,16 @@ div.drag-target {
 			margin-top: -10px;
 			right: -60px;
 		}
+		.icon-invisible {
+			width: 20px;
+			height: 20px;
+			cursor: pointer;
+			display: block;
+			position: absolute;
+			top: 50%;
+			margin-top: -10px;
+			right: 10px;
+		}
 		.edit {
 			width: 20px;
 			height: 20px;
@@ -215,6 +230,17 @@ div.drag-target {
 			}
 		}
 
+		.field-invisible {
+			background-color:#ececec;
+		}
+
+		.editor-trigger {
+			float: right;
+			span {
+				text-decoration: none;
+			}
+		}
+
 		&.frame-right {
 
 			h3 {
@@ -253,59 +279,6 @@ div.drag-target {
 			}
 			.hndle-conditions, .field-conditions {
 				display: none;
-			}
-
-			.field-conditions {
-				table {
-					margin-top: 20px;
-					width: 100%;
-					table-layout: fixed;
-					border-spacing: 0;
-					th {
-						width: 50%;
-					}
-					th:nth-child(1) {
-						text-align: left;
-					}
-					th:nth-child(2) {
-						width: 20px;
-						opacity: 0;
-						visibility: hidden;
-					}
-					th:nth-child(4) {
-						width: 30px;
-					}
-
-					td {
-						position: relative;
-						padding: 0;
-						.delete {
-							left: 0;
-							top: 0;
-							right: 0;
-							bottom: 0;
-							margin: auto !important;
-						}
-					}
-
-					td:nth-child(1) {
-						select {
-							width: 100%;
-						}
-					}
-
-					td:nth-child(2) {
-						text-align: center;
-					}
-
-					td:nth-child(3) {
-						input {
-							width: 100%
-						}
-					}
-
-				}
-
 			}
 
 		}
@@ -363,13 +336,22 @@ div.drag-target {
 				}
 			}
 			& label.checkbox-wrap {
-				width:100%;
-				margin-left:251px;
-				padding:15px 0px 10px 0px;
+				width: 100%;
+				margin-left: 251px;
+				padding: 15px 0px 10px 0px;
 			}
 			& input[type=text], textarea, select {
 				width: 400px;
 			}
+		}
+	}
+}
+
+// Overrides
+body {
+	#poststuff .frame {
+		.inside {
+			margin: 10px 0 0;
 		}
 	}
 }
@@ -422,6 +404,9 @@ div.drag-target {
 
 		.default-container {
 			position: relative;
+			p {
+				max-width: calc(100% - 70px);
+			}
 		}
 
 		$iconSize: 25px;
@@ -498,9 +483,9 @@ div.drag-target {
 
 // items to choose from the left
 .draggable-item {
-	margin-bottom: 10px;
+	margin-bottom: 7px;
 	border: 1px solid #dfdfdf;
-	padding: 10px 15px;
+	padding: 6px 10px;
 	background: #fafafa;
 	@include box-shadow(0 1px 1px rgba(0, 0, 0, .04));
 	cursor: move;
@@ -509,6 +494,10 @@ div.drag-target {
 	}
 	&:last-child {
 		margin-bottom: 0;
+	}
+	font-size: 12px;
+	strong {
+		font-size: 14px;
 	}
 }
 
@@ -578,15 +567,12 @@ $lbwpFormEditorLeftColumnWidth: 300px;
 $lbwpFormEditorRightColumnWidth: 500px;
 $lbwpFormEditorFullWidth: 100%;
 
-
-$lbwpFormEditorMiddleColumnWidth: calc( 100% - #{$lbwpFormEditorLeftColumnWidth + $lbwpFormEditorRightColumnWidth});
-
+$lbwpFormEditorMiddleColumnWidth: calc(100% - #{$lbwpFormEditorLeftColumnWidth + $lbwpFormEditorRightColumnWidth});
 
 .frame-full {
 	max-width: $lbwpFormEditorFullWidth;
 	width: $lbwpFormEditorFullWidth;
 }
-
 
 .frame-left {
 	width: $lbwpFormEditorLeftColumnWidth;
@@ -601,30 +587,6 @@ $lbwpFormEditorMiddleColumnWidth: calc( 100% - #{$lbwpFormEditorLeftColumnWidth 
 	width: calc(#{$lbwpFormEditorRightColumnWidth - $lbwpFormEditorScrollBarWith});
 }
 
-/*
-@media screen and (max-width: 1575px){
-	.frame-left {
-		width: 220px;
-
-	}
-
-	.frame-middle {
-		width: calc( 100% - 220px - 420px);
-	}
-
-	.frame-right {
-		width: calc(220px - #{$lbwpFormEditorScrollBarWith});
-	}
-
-	.form-editor-tab.fixed-frames {
-		.frame-middle {
-			margin-left: 220px
-		}
-
-	}
-}*/
-
-
 .form-editor-tab.fixed-frames {
 	.frame-left, .frame-right {
 		top: 40px;
@@ -633,7 +595,7 @@ $lbwpFormEditorMiddleColumnWidth: calc( 100% - #{$lbwpFormEditorLeftColumnWidth 
 		overflow-y: scroll;
 	}
 
-	.frame-left{
+	.frame-left {
 		padding-right: 0;
 	}
 
@@ -645,4 +607,126 @@ $lbwpFormEditorMiddleColumnWidth: calc( 100% - #{$lbwpFormEditorLeftColumnWidth 
 		margin-left: calc(#{$lbwpFormEditorLeftColumnWidth + $lbwpFormEditorScrollBarWith});
 	}
 
+}
+
+#editor-form-tab {
+	.field-condition {
+		background-color:#f5f5f5;
+		border:1px solid #dedede;
+		border-radius:3px;
+		border-spacing:10px 3px;
+		border-collapse: separate;
+		margin-bottom:5px;
+		// Table cell configs
+		tr {
+			> :nth-child(1) {
+				width:25%;
+				font-weight:bold;
+			}
+			> :nth-child(2) {
+				width:70%;
+				input, select {
+					width:100%;
+				}
+			}
+			> :nth-child(3) {
+				width:5%;
+			}
+		}
+	}
+	.delete-condition:hover {
+		cursor:pointer;
+	}
+}
+
+#editor-action-tab {
+	.field-conditions {
+		table {
+			margin-top: 20px;
+			width: 100%;
+			table-layout: fixed;
+			border-spacing: 0;
+			th {
+				width: 50%;
+			}
+			th:nth-child(1) {
+				text-align: left;
+			}
+			th:nth-child(2) {
+				width: 20px;
+				opacity: 0;
+				visibility: hidden;
+			}
+			th:nth-child(4) {
+				width: 30px;
+			}
+
+			td {
+				position: relative;
+				padding: 0;
+				.delete {
+					left: 0;
+					top: 0;
+					right: 0;
+					bottom: 0;
+					margin: auto !important;
+				}
+			}
+
+			td:nth-child(1) {
+				select {
+					width: 100%;
+				}
+			}
+
+			td:nth-child(2) {
+				text-align: center;
+			}
+
+			td:nth-child(3) {
+				input {
+					width: 100%
+				}
+			}
+		}
+	}
+}
+
+// HTML elements
+.forms-item {
+	$lbwpTinyMceImageUseDefaults: true;
+	$lbwpTinyMceImageSizeMedium: 50%;
+	$lbwpTinyMceImageSizeFull: 100%;
+	$lbwpTinyMceImageSizeThumbnail: 80px;
+	$lbwpTinyMceImageAlignment: true;
+	$lbwpTinyMceImageLayoutLineHeight: 18px;
+	$lbwpTinyMceImageLayoutFontsize: 13px;
+	$lbwpTinyMceImageMarginH: 20px;
+	$lbwpTinyMceImageMarginBottom: 10px;
+	@import "lbwp/tinymce-images";
+
+	img[class*="size-"] {
+		height: auto;
+	}
+
+	.small-text {
+		font-size: 11px;
+	}
+
+	img {
+
+		&.size-full,
+		&.size-large {
+			max-width: 100%;
+		}
+
+		&.size-medium {
+			max-width: 55%;
+		}
+
+		.aligncenter {
+			display: block;
+			margin: 0 auto;
+		}
+	}
 }

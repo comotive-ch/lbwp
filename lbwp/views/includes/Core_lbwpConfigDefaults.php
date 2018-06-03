@@ -31,5 +31,6 @@ $this->config = array(
   'Privacy:InformationalBannerActive' => 0,
   'Privacy:InformationalBannerVersion' => 1,
   'Privacy:InformationalBannerContent' => '',
+  'Privacy:InformationalBannerButton' => '',
   'Privacy:PrivacyOptimizedShareButtons' => 0
 );

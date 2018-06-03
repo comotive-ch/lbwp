@@ -8,7 +8,6 @@ use LBWP\Util\Cookie;
 use LBWP\Module\Config\Feature;
 use LBWP\Module\Config\Settings;
 use LBWP\Util\InstanceConfig;
-use LBWP\Util\WordPress;
 
 /**
  * Main class for LBWP features
@@ -19,7 +18,7 @@ class Core
   /**
    * @var int Revisionnumber of the plugins (not svn revision, only for updates)
    */
-  const REVISION = 213;
+  const REVISION = 230;
   /**
    * @var int CSS/JS file version for cloudfront
    */

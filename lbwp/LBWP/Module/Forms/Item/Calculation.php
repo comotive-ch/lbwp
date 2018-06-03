@@ -18,7 +18,7 @@ class Calculation extends Base
    */
   protected $fieldConfig = array(
     'name' => 'Spamschutz (Rechnung)',
-    'help' => 'Einfache Rechnung um Spam zu verhindern',
+    'help' => 'Rechnung um Spam zu verhindern',
     'group' => 'Spezial-Felder'
   );
 
@@ -50,6 +50,7 @@ class Calculation extends Base
    */
   public function getElement($args, $content)
   {
+    $this->addFormFieldConditions($args['conditions']);
     $attr = $this->getDefaultAttributes($args);
     $internalId = (++self::$internalCounter);
 

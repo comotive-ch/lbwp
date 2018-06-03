@@ -67,6 +67,28 @@ LbwpFormEditor.Core = {
 
 		// Everything else gets the key 1:1
 		return key;
+	},
+
+	/**
+	 * Encode a json object string to save json objects in shortcode attributes
+	 * @param rawObject
+	 */
+	encodeObjectString : function(rawObject)	{
+		var value = JSON.stringify(rawObject);
+		value = value.replace(/\[/g, '((');
+		value = value.replace(/]/g, '))');
+		return value;
+	},
+
+	/**
+	 * The decoding pendant to encodeObjectString
+	 * @param value
+	 */
+	decodeObjectString : function(value)	{
+		value = value.replace(/&quot;/g, '"');
+		value = value.replace(/\(\(/g, '[');
+		value = value.replace(/\)\)/g, ']');
+		return JSON.parse(value);
 	}
 };
 

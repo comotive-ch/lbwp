@@ -79,6 +79,11 @@ interface Definition
   public function hasDynamicTargets();
 
   /**
+   * @return bool true/false if dynamic email adresses instead of targets are possible to use
+   */
+  public function hasDynamicAddressing();
+
+  /**
    * @return bool true/false if there are statistics with this service
    */
   public function hasStatistics();

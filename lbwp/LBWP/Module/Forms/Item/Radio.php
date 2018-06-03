@@ -27,6 +27,14 @@ class Radio extends Base
   protected function setParamConfig()
   {
     $this->paramConfig = ArrayManipulation::deepMerge($this->paramConfig, array(
+      'compact' => array(
+        'name' => 'Kompakte Anordnung der Auswahlfelder',
+        'type' => 'radio',
+        'values' => array(
+          'ja' => 'Ja',
+          'nein' => 'Nein'
+        )
+      ),
       'content' => array(
         'name' => 'Auswahlmöglichkeiten',
         'type' => 'textfieldArray',
@@ -64,7 +72,10 @@ class Radio extends Base
    */
   public function getElement($args, $content)
   {
+    $this->addFormFieldConditions($args['conditions']);
     $attr = $this->getDefaultAttributes($args);
+    $classes = $this->params['class'];
+    $classes .= ($this->get('compact') == 'ja') ? ' field-compact' : '';
 
     // Make the field
     $field = '';
@@ -89,11 +100,14 @@ class Radio extends Base
       ';
     }
 
+    // Wrapper element for the field list
+    $field = '<div class="field-list">' . $field . '</div>';
+
     // Display a send button
     $html = Base::$template;
     $html = str_replace('{id}', $this->get('id'), $html);
     $html = str_replace('{label}', $args['feldname'], $html);
-    $html = str_replace('{class}', trim('radio-field ' . $this->params['class']), $html);
+    $html = str_replace('{class}', trim('radio-field ' . trim($classes)), $html);
     $html = str_replace('{field}', $field, $html);
 
     return $html;

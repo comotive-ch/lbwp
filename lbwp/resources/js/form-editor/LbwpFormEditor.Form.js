@@ -7,11 +7,36 @@ if (typeof(LbwpFormEditor) == 'undefined') {
  * @author Michael Sebel <michael@comotive.ch>
  */
 LbwpFormEditor.Form = {
+	/**
+	 * @var int internal id to be used to generate ids on text elements if needed
+	 */
+	internalId : 1,
+	/**
+	 * The operators a condition can have
+	 */
+	fieldConditionOperators : {
+		'is' : 'Ist gleich',
+		'not' : 'Ist nicht gleich',
+		'contains' : 'Enthält',
+		'absent' : 'Enthält nicht',
+		'morethan' : 'Ist grösser oder gleich',
+		'lessthan' : 'Ist kleiner oder gleich',
+		'focused' : 'Ist aktiv'
+	},
+	/**
+	 * The various effects/actions a condition can run
+	 */
+	fieldConditionActions : {
+		'show' : 'Zeige das Feld an',
+		'hide' : 'Blende das Feld aus',
+		'truncate' : 'Entferne den Feld-Inhalt'
+	},
 
 	/**
 	 * Initializes the form interface
 	 */
-	initialize: function () {
+	initialize: function ()
+	{
 		LbwpFormEditor.Form.removeRequired();
 		LbwpFormEditor.Form.setEvents();
 	},
@@ -20,16 +45,19 @@ LbwpFormEditor.Form = {
 	 * Update only the forms HTML output (completely)
 	 * @param html the new html to set
 	 */
-	updateHtml: function (html) {
+	updateHtml: function (html)
+	{
 		if (typeof(html) != 'undefined' && html.length > 0) {
 			jQuery('.lbwp-form-preview').html(html);
+			LbwpFormEditor.Form.onAfterHtmlUpdate();
 		}
 	},
 
 	/**
 	 * Remove every required attribut
 	 */
-	removeRequired: function () {
+	removeRequired: function ()
+	{
 		jQuery("[required]").removeAttr("required")
 		jQuery("[aria-required]").removeAttr("aria-required")
 	},
@@ -37,7 +65,8 @@ LbwpFormEditor.Form = {
 	/**
 	 * Set events
 	 */
-	setEvents: function () {
+	setEvents: function ()
+	{
 		// sort block left
 		jQuery("#editor-form-tab .frame-left .inside").sortable({
 			appendTo: 'body',
@@ -96,7 +125,8 @@ LbwpFormEditor.Form = {
 	/**
 	 * Checks new order in form
 	 */
-	checkOrder: function () {
+	checkOrder: function ()
+	{
 		var newJson = {};
 		var sub = 0;
 		var current;
@@ -133,7 +163,8 @@ LbwpFormEditor.Form = {
 	 * @param current
 	 * @param func
 	 */
-	loadAjax: function (current, func) {
+	loadAjax: function (current, func)
+	{
 		var data = {
 			formJson: JSON.stringify(LbwpFormEditor.Data),
 			action: 'updateFormHtml'
@@ -159,7 +190,8 @@ LbwpFormEditor.Form = {
 	/**
 	 * Load all settings related to current field
 	 */
-	loadEdits: function (key) {
+	loadEdits: function (key)
+	{
 		var html = "";
 		var fields = LbwpFormEditor.Data.Items[key].params;
 		jQuery("[for^=" + key + "]").closest(".forms-item").addClass("selected");
@@ -188,12 +220,176 @@ LbwpFormEditor.Form = {
 			html += '<div class="lbwp-editField" data-key="' + fields[fieldKey].key + '">' + editField + optin + help + '</div>';
 		}
 
-		LbwpFormEditor.Form.editEvents(html, key)
+		LbwpFormEditor.Form.editEvents(html, key);
+		LbwpFormEditor.Form.loadConditions(key);
 	},
+
+	/**
+	 * Load all conditions related to current field
+	 */
+	loadConditions: function(key)
+	{
+		var params = LbwpFormEditor.Data.Items[key].params;
+		var html = "<p>" + LbwpFormEditor.Text.itemConditionText + "</p>";
+
+		// Show currently created conditions
+		var hasCond = false;
+		var cond = "";
+		for (var i in params) {
+			if (params[i].key == "conditions" && params[i].value != "") {
+				hasCond = true;
+				var conditions = LbwpFormEditor.Core.decodeObjectString(params[i].value);
+				for (var cdi in conditions) {
+					html += LbwpFormEditor.Form.getConditionRow(
+						conditions[cdi].field,
+						conditions[cdi].operator,
+						conditions[cdi].value,
+						conditions[cdi].action
+					);
+				}
+				break;
+			}
+		}
+
+		html += '<div class="field-condition-container"></div>';
+		html += '<a href="#" class="addCond button">' + LbwpFormEditor.Text.conditionAdd + '</a>';
+		jQuery(".field-conditions").html(html);
+
+		LbwpFormEditor.Form.conditionEvents(key);
+	},
+
+	/**
+	 * Return a condition row
+	 */
+	getConditionRow: function (field, operator, value, action)
+	{
+		var key = '', selected = '';
+		// Begin the table and add the selection of fields
+		var html = '\
+			<table class="field-condition">\
+				<tr class="condition-field">\
+					<td>' + LbwpFormEditor.Text.itemConditionField + '</td>\
+					<td><select class="conditionField">';
+		for (key in LbwpFormEditor.Data.Items) {
+			selected = key == field ? "selected" : "";
+			if (LbwpFormEditor.Data.Items[key].key != 'required-note') {
+				html += '<option value="' + key + '"' + selected + '>' + LbwpFormEditor.Data.Items[key].params[0].value + '</option>';
+			}
+		}
+		html += '\
+			</select></td>\
+			<td><span class="delete-condition dashicons dashicons-trash"></span></td>\
+		</tr>';
+
+		// Show the possible condition operators
+		html += '\
+			<tr class="condition-operator">\
+				<td>' + LbwpFormEditor.Text.itemConditionType + '</td>\
+				<td><select class="conditionOperator">';
+		for (key in LbwpFormEditor.Form.fieldConditionOperators) {
+			selected = key == operator ? "selected" : "";
+			html += '<option value="' + key + '"' + selected + '>' + LbwpFormEditor.Form.fieldConditionOperators[key] + '</option>';
+		}
+		html += '</select></td>\
+				<td></td>\
+			</tr>\
+		';
+
+		// Show the current condition value
+		html += '\
+			<tr class="condition-value">\
+				<td>' + LbwpFormEditor.Text.itemConditionValue + '</td>\
+				<td><input type="text" class="conditionValue" placeholder="' + LbwpFormEditor.Text.itemConditionValuePlaceholder + '" value="' + value + '"></td>\
+				<td></td>\
+			</tr>\
+		';
+
+		// Show the possible actions
+		html += '\
+			<tr class="condition-operator">\
+				<td>' + LbwpFormEditor.Text.itemConditionAction + '</td>\
+				<td><select class="conditionAction">';
+		for (key in LbwpFormEditor.Form.fieldConditionActions) {
+			selected = key == action ? "selected" : "";
+			html += '<option value="' + key + '"' + selected + '>' + LbwpFormEditor.Form.fieldConditionActions[key] + '</option>';
+		}
+		html += '</select></td>\
+				<td></td>\
+			</tr>\
+		';
+
+		// Close the table
+		html += '</table>';
+
+		return html;
+	},
+
+	/**
+	 * Sets all events related to conditions
+	 */
+	conditionEvents: function (key)
+	{
+		// adds a new Condition
+		jQuery(".field-conditions .addCond").off('click').on('click', function (e) {
+			e.preventDefault();
+			jQuery(".field-conditions .field-condition-container").append(LbwpFormEditor.Form.getConditionRow("", "", "", ""));
+			LbwpFormEditor.Form.conditionEvents(key);
+			LbwpFormEditor.Form.saveFieldConditions(key);
+		});
+
+		// Deletes a condition
+		jQuery(".field-conditions .delete-condition").off('click').on('click', function (e) {
+			e.preventDefault();
+			var check = confirm(LbwpFormEditor.Text.confirmDelete);
+			if (check) jQuery(this).closest('table.field-condition').remove();
+			LbwpFormEditor.Form.saveFieldConditions(key);
+		});
+
+		// Save whole condition array on keyup in any field of a condition
+		jQuery(".field-conditions table input").off('keyup').on('keyup', function () {
+			LbwpFormEditor.Form.saveFieldConditions(key);
+		});
+
+		// Save whole condition array on change in any field of a condition
+		jQuery(".field-conditions table select, .field-conditions table input").off('change').on('change', function () {
+			LbwpFormEditor.Form.saveFieldConditions(key);
+		});
+	},
+
+	/**
+	 * Save the field conditions to our json array
+	 * @param key
+	 */
+	saveFieldConditions : function(key)
+	{
+		var params = LbwpFormEditor.Data.Items[key].params;
+		var conditions = [];
+
+		jQuery('#editor-form-tab .field-condition').each(function() {
+			var table = jQuery(this);
+			// Get the variables for this conditions
+			conditions.push({
+				'field' : table.find('.conditionField').val(),
+				'operator' : table.find('.conditionOperator').val(),
+				'value' : table.find('.conditionValue').val(),
+				'action' : table.find('.conditionAction').val()
+			});
+		});
+
+		// Search for the correct index to save to
+		for (var i in params) {
+			if (params[i].key == "conditions") break;
+		}
+
+		LbwpFormEditor.Data.Items[key].params[i].value = LbwpFormEditor.Core.encodeObjectString(conditions);
+		LbwpFormEditor.Core.updateJsonField();
+	},
+
 	/**
 	 * Returns html for a textfield
 	 */
-	getTextfield: function (field) {
+	getTextfield: function(field)
+	{
 		var html = '';
 		var additionalAttr = '';
 
@@ -214,7 +410,8 @@ LbwpFormEditor.Form = {
 	/**
 	 * Returns html for a dropdown
 	 */
-	getDropdown: function (field) {
+	getDropdown: function (field)
+	{
 		var html = "";
 		html += "<label>" + field.name + "</label>";
 		html += '<select>';
@@ -232,7 +429,8 @@ LbwpFormEditor.Form = {
 	/**
 	 * Returns html for radio buttons
 	 */
-	getRadioButtons: function (field) {
+	getRadioButtons: function (field)
+	{
 		var html = "";
 		var fieldIndex = 0;
 		html += "<label>" + field.name + "</label>";
@@ -250,7 +448,8 @@ LbwpFormEditor.Form = {
 	/**
 	 * Returns html for a textfieldArray
 	 */
-	getTextfieldArray: function (field) {
+	getTextfieldArray: function (field)
+	{
 		var html = "";
 		var separator = (typeof(field.separator)) == 'string' ? field.separator : ',';
 		var values = field.value.split(separator);
@@ -271,18 +470,26 @@ LbwpFormEditor.Form = {
 	/**
 	 * Returns html for a textarea
 	 */
-	getTextarea: function (field) {
+	getTextarea: function (field)
+	{
 		var html = "";
+		var editorLink = "";
 		var placeholder = (typeof(field.placeholder) == 'string') ? field.placeholder : '';
-		html += "<label>" + field.name + "</label>";
-		html += '<textarea placeholder="' + placeholder + '">' + field.value + '</textarea>';
+		// If editor is useable, activate the link to it
+		if (typeof(field.editor) != 'undefined' && field.editor) {
+			editorLink = ' <a href="#editor" class="editor-trigger"><span class="dashicons dashicons-edit"></span>Im Editor bearbeiten</a>';
+		}
+		// Return html
+		html += "<label>" + field.name + editorLink + "</label>";
+		html += '<textarea id="textarea_' + (LbwpFormEditor.Form.internalId++) + '" placeholder="' + placeholder + '">' + field.value + '</textarea>';
 		return html;
 	},
 
 	/**
 	 * Adds an input field to the textfieldArray
 	 */
-	addInputfield: function (e) {
+	addInputfield: function (e)
+	{
 		// Clone element and flush its inputs value
 		var newElement = jQuery(e).prev().clone();
 		newElement.find('input').val('');
@@ -293,13 +500,17 @@ LbwpFormEditor.Form = {
 	/**
 	 * All events related to the edit fields
 	 */
-	editEvents: function (html, key) {
+	editEvents: function (html, key)
+	{
 		var time = 100;
 
 		// add html to field-settings, if given
 		if (typeof(html) == 'string' && html.length > 0) {
 			jQuery("#editor-form-tab .field-settings").html(html);
 		}
+
+		jQuery("#editor-form-tab .postbox").accordion({heightStyle: "content"});
+		jQuery("#editor-form-tab .hndle-conditions").show();
 
 		// Destroy the sortable if existing
 		try {
@@ -404,5 +615,18 @@ LbwpFormEditor.Form = {
 			container.find('input[value=ja]').trigger('click');
 			container.hide();
 		}
+
+		// If finished, register events for textare editors
+		LbwpFormFieldEditor.handleEditorLink();
+	},
+
+	onAfterHtmlUpdate : function()
+	{
+		// Add an icon ti all that is invisible and a class to make it blurry
+		jQuery('[data-init-invisible=1]').each(function() {
+			var container = jQuery(this).closest('.default-container');
+			container.closest('.forms-item').addClass('field-invisible');
+			container.append('<span class="dashicons dashicons-hidden icon-invisible"></span>');
+		})
 	}
 };

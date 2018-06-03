@@ -360,7 +360,23 @@ class DataTable extends Base
             break;
           // Checkboxes are a tad more complicated to solve
           case 'checkbox':
-            $values = array_map('trim', explode(',', $row[$cellKey]));
+            // Differ between multicolumn and normal application
+            if ($item->get('multicolumn') == 'ja') {
+              // Merge the selectable with the selected values
+              $values = array();
+              $selectables = $item->prepareContentValues($item->getContent());
+              foreach ($selectables as $selectable) {
+                $key = Strings::forceSlugString($item->get('feldname') . '-' . $selectable);
+                if ($row[$key] == 'X') {
+                  $values[] = $selectable;
+                }
+              }
+            } else {
+              // Get the values by reverse engineering the imploded string
+              $values = array_map('trim', explode(',', $row[$cellKey]));
+            }
+
+            // Handle the checkboxes to be selected
             foreach ($values as $value) {
               $script .= '
                 checkboxes = jQuery("input[name=\'' . $item->get('id') . '\[\]\']");

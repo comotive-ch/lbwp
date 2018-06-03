@@ -27,6 +27,9 @@ class Posttype extends Base
       add_action('admin_head', array($this, 'addResources'));
       add_action('media_buttons', array($this, 'addFormButton'), 20);
       add_filter('post_updated_messages', array($this, 'alterSavedMessage'));
+      add_action('manage_' . self::FORM_SLUG . '_posts_custom_column', array($this, 'showModifiedDate'),	10,	2);
+      add_filter('manage_' . self::FORM_SLUG . '_posts_columns', array($this, 'addModifiedDateField'));
+      add_filter('manage_edit-' . self::FORM_SLUG . '_sortable_columns', array($this, 'addModifiedSortable'));
     }
   }
 
@@ -72,6 +75,44 @@ class Posttype extends Base
       <a href="' . $link . '" id="add-form" title="Formular einfügen"
         class="thickbox button dashicons-before dashicon-big dashicons-welcome-widgets-menus"></a>
     ';
+  }
+
+  /**
+   * @param array $columns the columns array
+   * @return array $columns with one more field
+   */
+  public function addModifiedDateField($columns)
+  {
+    //$columns['modified'] = '<a href="/wp-admin/edit.php?post_type=' . self::FORM_SLUG . '&orderby=modified&order=desc">' . __('Letzte Änderung', 'lbwp') . '</a>';
+    $columns['modified'] = __('Letzte Änderung', 'lbwp');
+    return $columns;
+  }
+
+  /**
+   * @param array $columns the columns array
+   * @return array $columns with one more field
+   */
+  public function addModifiedSortable($columns)
+  {
+    $columns['modified'] = 'post_modified';
+    return $columns;
+  }
+
+  /**
+   * @param string $column the col name
+   * @param int $postId the working post
+   */
+  public function showModifiedDate($column, $postId)
+  {
+    switch ($column) {
+      case 'modified':
+        $mOrig = get_post_field('post_modified', $postId, 'raw');
+        echo '
+          <p class="mod-date">
+            ' . date('d.m.Y, H:i', strtotime($mOrig)) . '
+          </p>
+        ';
+    }
   }
 
   /**

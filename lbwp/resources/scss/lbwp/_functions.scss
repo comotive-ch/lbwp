@@ -1,6 +1,22 @@
 @import "functions.type-checking";
 //@import "functions.lists";
 
+/// Two column layout for the info/cookie banner
+/// Use .lbwp-info-banner selector to use the mixin
+/// @author Martin Ott
+@mixin lbwpInfoBannerDesktopDefaultLayout($gapBetweenTextAndButton:40px) {
+	display: flex;
+	align-items: flex-start;
+
+	.info-banner-content {
+		margin-right: $gapBetweenTextAndButton;
+	}
+
+	.lbwp-close-info-banner {
+		white-space: nowrap;
+	}
+}
+
 /// Triangle helper mixin
 /// @author Hugo Giraudel
 /// @param {Direction} $direction - Triangle direction, either `top`, `right`, `bottom` or `left`

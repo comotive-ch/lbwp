@@ -489,6 +489,9 @@ class CleanUp extends \LBWP\Module\Base
 
     if (isset($submenu['options-general.php'])) {
       foreach ($submenu['options-general.php'] as $key => $item) {
+        if ($item[2] == 'privacy.php') {
+          unset($submenu['options-general.php'][$key]);
+        }
         if ($item[2] == 'eml-settings') {
           unset($submenu['options-general.php'][$key]);
         }

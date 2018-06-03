@@ -32,12 +32,12 @@ var LbwpResponsiveIframes = {
 			}
 
 			// Wrap our object in the container, then recalc its padding if padding makes sense
-			responsiveElement.wrap(container);
-			if (!isNaN(ratio) && isFinite(ratio) && ratio > 0) {
-				responsiveElement.parent().css('padding-bottom', ratio + '%');
+			if (!responsiveElement.hasClass('lbwp-iframe-no-transform')) {
+				responsiveElement.wrap(container);
+				if (!isNaN(ratio) && isFinite(ratio) && ratio > 0) {
+					responsiveElement.parent().css('padding-bottom', ratio + '%');
+				}
 			}
-
-
 		});
 	}
 };

@@ -311,6 +311,55 @@ class Implementation extends Base implements Definition
       }
     }
 
+    // See if there are dynamic emails to be sent as well
+    $dynamicAddresses = $newsletter->getDynamicAddresses();
+    if (is_array($dynamicAddresses) && count($dynamicAddresses) > 0) {
+      foreach ($dynamicAddresses as $recipient) {
+        $memberId = md5($recipient['email']);
+        // Skip, if we already created an email for this recipient
+        if (in_array($recipient['email'], $uniqueAdresses)) {
+          continue;
+        }
+
+        // Personalize the mailing text with user data
+        $personalizedHtml = $html;
+        foreach ($recipient as $field => $value) {
+          $personalizedHtml = str_replace('{' . $field . '}', $value, $personalizedHtml);
+        }
+
+        // Use variables on subject too
+        $personalizedSubject = $subject;
+        foreach ($recipient as $field => $value) {
+          $personalizedSubject = str_replace('{' . $field . '}', $value, $personalizedSubject);
+        }
+
+        // Replace some custom code fields
+        $personalizedHtml = str_replace('_listId', 'adhoc', $personalizedHtml);
+        $personalizedHtml = str_replace('_emailId', $memberId, $personalizedHtml);
+
+        // Create a new mailing entry
+        $mails[] = array(
+          'html' => $personalizedHtml,
+          'subject' => $personalizedSubject,
+          'recipient' => $recipient['email'],
+          'senderEmail' => $senderEmail,
+          'senderName' => $senderName
+        );
+
+        // Track the recipient info into the stats of this newsletter
+        $stats->updateRow($memberId, array_merge($recipient, array(
+          'opens' => 0,
+          'clicks' => 0,
+          'details' => array()
+        )));
+
+        $uniqueAdresses[$memberId] = $recipient['email'];
+      }
+    }
+
+    // Remove the dynamic addresses (Saving is made when sending is finished)
+    $newsletter->setDynamicAddresses(array());
+
     // Save the mails to be sent
     $this->api->createMailObjects($mailingId, $mails);
 
@@ -440,6 +489,14 @@ class Implementation extends Base implements Definition
    * @return bool true: we have dynamic targets here
    */
   public function hasDynamicTargets()
+  {
+    return true;
+  }
+
+  /**
+   * @return bool true: dynamic addressing is possible
+   */
+  public function hasDynamicAddressing()
   {
     return true;
   }

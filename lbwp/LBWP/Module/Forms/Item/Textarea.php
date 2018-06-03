@@ -15,8 +15,7 @@ class Textarea extends Base
    * @var array set the field config for this field
    */
   protected $fieldConfig = array(
-    'name' => 'Grosses Textfeld',
-    'help' => 'Textfeld mit mehreren Zeilen',
+    'name' => 'Mehrzeiliges Textfeld',
     'group' => 'Text-Felder'
   );
 
@@ -57,6 +56,7 @@ class Textarea extends Base
    */
   public function getElement($args, $content)
   {
+    $this->addFormFieldConditions($args['conditions']);
     // get the attributes
     $attr = $this->getDefaultAttributes($args);
 

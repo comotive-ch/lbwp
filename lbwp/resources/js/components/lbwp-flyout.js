@@ -36,7 +36,6 @@ var LbwpFlyout = {
 		// If the element is to be shown, show it
 		if (active) {
 			LbwpFlyout.element.removeAttr('style');
-			//LbwpFlyout.element.insertBefore(jQuery('body'));
 			jQuery('body').prepend(LbwpFlyout.element);
 			LbwpFlyout.element.addClass('show');
 		} else {
@@ -56,7 +55,6 @@ var LbwpFlyout = {
 			} else {
 				jQuery.cookie('flyout-' + lbwpFlyoutConfig.cookieId, 1, { expires: 365, path: '/' });
 			}
-			//
 			LbwpFlyout.element.remove();
 		});
 	},

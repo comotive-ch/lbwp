@@ -4,6 +4,7 @@ namespace LBWP\Module\Forms\Component;
 
 use LBWP\Core as LbwpCore;
 use LBWP\Theme\Feature\LbwpFormSettings;
+use LBWP\Util\ArrayManipulation;
 use LBWP\Util\Cookie;
 use LBWP\Util\File;
 use LBWP\Module\Frontend\HTMLCache;
@@ -36,7 +37,7 @@ class FormHandler extends Base
     'radio' => '\\LBWP\\Module\\Forms\\Item\\Radio',
     'checkbox' => '\\LBWP\\Module\\Forms\\Item\\Checkbox',
     'dropdown' => '\\LBWP\\Module\\Forms\\Item\\Dropdown',
-    'required-note' => '\\LBWP\\Module\\Forms\\Item\\RequiredNote',
+    'required-note' => '\\LBWP\\Module\\Forms\\Item\\HtmlItem',
     'calculation' => '\\LBWP\\Module\\Forms\\Item\\Calculation',
     'upload' => '\\LBWP\\Module\\Forms\\Item\\Upload',
     'hiddenfield' => '\\LBWP\\Module\\Forms\\Item\\Hiddenfield'
@@ -99,6 +100,10 @@ class FormHandler extends Base
    */
   protected $additionalArgs = array();
   /**
+   * @var array the form field conditions for the current form
+   */
+  protected $conditions = array();
+  /**
    * @var int additional up-counted id to have distinguished ids even if a form is added twice in the same page
    */
   protected $idDistinguisher = 0;
@@ -145,7 +150,7 @@ class FormHandler extends Base
   /**
    * @var string allowed tags in shortcode (for strip_tags)
    */
-  const ALLOWED_TAGS = '<h1><h2><h3><h4><h5><p><div><span><strong><em><a>';
+  const ALLOWED_TAGS = '<h1><h2><h3><h4><h5><p><div><span><strong><em><a><img>';
   /**
    * @var string after submit cookie prefix
    */
@@ -159,6 +164,11 @@ class FormHandler extends Base
     if (is_admin()) {
       // Execute actions while saving
       add_action('save_post_' . Posttype::FORM_SLUG, array($this, 'saveForm'));
+    } else {
+      // Add a global context variable for form field conditions
+      add_action('wp_head', function() {
+        echo '<script>var lbwpFormFieldConditions = [];</script>';
+      });
     }
 
     // Shortcodes need to be executed in backend too for saving purposes
@@ -225,6 +235,18 @@ class FormHandler extends Base
           break;
         }
       }
+    }
+
+    // Force conditions to be an array, then print them to DOM as json object
+    if (!is_admin()) {
+      $this->conditions = ArrayManipulation::forceArray($this->conditions);
+      $formHtml .= '
+        <script type="text/javascript">
+          lbwpFormFieldConditions["lbwpForm-' . $formDisplayId . '"] = ' . json_encode($this->conditions) . ';
+        </script>
+      ';
+      // Flush conditions after printing for "the next" form
+      $this->conditions = array();
     }
 
     // Set a custom action, if requested
@@ -512,12 +534,27 @@ class FormHandler extends Base
 
     foreach ($this->currentItems as $item) {
       if (!in_array($item->get('key'), $this->blacklistGetdata)) {
-        $data[] = array(
+        $values = array(
           'id' => $item->get('id'),
           'item' => $item,
           'name' => $item->get('feldname'),
           'value' => $item->getValue()
         );
+
+        // Check if the value is an array and implode it while preserving the array
+        // We made it this way for backwards compat on all actions that dont implement valueArray
+        if (is_array($values['value'])) {
+          $values['valueArray'] = $values['value'];
+          // Reset value to empty string and add up with keys and values
+          $values['value'] = array();
+          foreach ($values['valueArray'] as $key => $value) {
+            $values['value'][] = $value['colname'];
+          }
+          $values['value'] = implode(', ', $values['value']);
+        }
+
+        // Add the fieldset to our data array
+        $data[] = $values;
       }
     }
 
@@ -888,6 +925,16 @@ class FormHandler extends Base
     $shortcode = trim($shortcode) . '][/' . self::SHORTCODE_ACTION . ']';
 
     return $shortcode;
+  }
+
+  /**
+   * @param array $conditions adds form field display/effect conditions
+   */
+  public function addConditions($conditions)
+  {
+    if (is_array($conditions)) {
+      $this->conditions = array_merge($this->conditions, $conditions);
+    }
   }
 
   /**

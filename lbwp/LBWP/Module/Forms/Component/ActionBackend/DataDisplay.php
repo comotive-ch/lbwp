@@ -55,7 +55,7 @@ class DataDisplay
     $eventId = $this->getSaveEventId($action);
 
     // Run controller
-    $this->runController($formId, $tableName, $columns, $rawTable, $eventId);
+    $this->runController($formId, $tableName, $columns, $rawTable, $eventId, $table['fields']);
 
     // Return HTML code
     return '
@@ -63,7 +63,7 @@ class DataDisplay
         <h2>Datenspeicher ' . $tableName . '</h2>
         <input type="hidden" id="eventId" value="' . $eventId . '" />
         ' . $this->getUserOptions($formId, $hasEntries) . '<br />
-        ' . $this->getTableHtml($columns, $rawTable, $formId, $eventId) . '<br />
+        ' . $this->getTableHtml($columns, $rawTable, $formId, $eventId, $table['fields']) . '<br />
         ' . $this->getEventSummaryHtml($formId, $eventId) . '
         ' . $this->getEventUnfilledHtml($formId, $eventId) . '
         <br class="clear">
@@ -119,11 +119,14 @@ class DataDisplay
    * @param array $data the data to display
    * @param int $formId the form id
    * @param int $eventId the eventual event id
+   * @param int $fields the field names array
    * @return string html code
    */
-  protected function getTableHtml($columns, $data, $formId, $eventId)
+  protected function getTableHtml($columns, $data, $formId, $eventId, $fields)
   {
     $html = '<table class="widefat">';
+    // Force fields to be an array
+    $fields = ArrayManipulation::forceArray($fields);
 
     // If there is no data, show it
     if (count($columns) == 0) {
@@ -140,7 +143,11 @@ class DataDisplay
     $exportOptions = '';
     $htmlColumns = '<th class="manage-column">&nbsp;</th>';
     foreach ($columns as $colName) {
-      $htmlColumns .= '<th class="manage-column"><strong>' . $colName . '</strong></th>';
+      $printedName = $colName;
+      if (isset($fields[$colName])) {
+        $printedName = $fields[$colName];
+      }
+      $htmlColumns .= '<th class="manage-column"><strong>' . $printedName . '</strong></th>';
       $exportOptions .= '<option value="' . $colName . '" selected="selected">' . $colName . '</option>' . PHP_EOL;
     }
 
@@ -527,16 +534,17 @@ class DataDisplay
    * @param array $columns cell keys
    * @param array $data table raw data
    * @param int $eventId the event id
+   * @param array $fields actual field names
    */
-  protected function runController($formId, $name, $columns, $data, $eventId = 0)
+  protected function runController($formId, $name, $columns, $data, $eventId = 0, $fields)
   {
     // Export the data
     if (isset($_POST['export'])) {
       if ($_POST['export'] == 'csv' && $_POST['type'] == 'utf8') {
-        $this->sendCsv($name, $columns, $data, false, $formId, $eventId);
+        $this->sendCsv($name, $columns, $data, false, $formId, $eventId, $fields);
       }
       if ($_POST['export'] == 'csv' && $_POST['type'] == 'iso') {
-        $this->sendCsv($name, $columns, $data, true, $formId, $eventId);
+        $this->sendCsv($name, $columns, $data, true, $formId, $eventId, $fields);
       }
     }
 
@@ -596,11 +604,13 @@ class DataDisplay
    * @param bool $utf8decode utf8 decoding
    * @param int $formId the form id, to check for an event
    * @param int $eventId eventual event id
+   * @param array $fields translated field names
    */
-  protected function sendCsv($name, $columns, $data ,$utf8decode, $formId, $eventId)
+  protected function sendCsv($name, $columns, $data ,$utf8decode, $formId, $eventId, $fields)
   {
     ob_end_clean();
     $filename = Strings::forceSlugString($name) . '.csv';
+    $fields = ArrayManipulation::forceArray($fields);
     header('Content-Description: File Transfer');
     header('Content-Disposition: attachment; filename=' . $filename);
     header('Content-Type: application/octet-stream; charset=' . get_option('blog_charset'), true);
@@ -611,15 +621,31 @@ class DataDisplay
       $columns = array_map(array('\LBWP\Util\Strings', 'forceSlugString'), $_POST['columns']);
     }
 
+    // Convert fields, if needed to ascii
+    if ($utf8decode && count($fields) > 0) {
+      foreach ($fields as $key => $value) {
+        $fields[$key] = utf8_decode($value);
+      }
+    }
+
+    // Translate column names if possible
+    $printedColumns = array();
+    foreach ($columns as $cellKey) {
+      if (isset($fields[$cellKey])) {
+        $printedColumns[] = $fields[$cellKey];
+      } else {
+        $printedColumns[] = $cellKey;
+      }
+    }
+
     // Print the fields
-    fputcsv($outstream, $columns, ';', '"');
+    fputcsv($outstream, $printedColumns, ';', '"');
     // Print the data
     foreach ($data as $row) {
       // Crazy utf-8 decoding since excel doesn't know that by default
       $printedRow = array();
       foreach ($columns as $key) {
         $value = $row[$key];
-        $value = str_replace(array("\n","\r"),'',$value);
         if ($utf8decode) {
           $printedRow[$key] = utf8_decode($value);
         } else {

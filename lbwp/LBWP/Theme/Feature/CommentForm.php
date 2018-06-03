@@ -138,6 +138,11 @@ class CommentForm
     // The calculation (not working at the moment)
     //$fields[] = '[lbwp:formItem key="calculation" pflichtfeld="ja" feldname="Rechnung"]';
 
+    // Consent checkbox if given
+    if (isset($args['consentText']) && strlen($args['consentText']) > 0) {
+      $fields[] = '[lbwp:formContentItem key="checkbox" id="privacy_consent" pflichtfeld="ja" empty_label="1" feldname="" error_message="' . $args['noConsentError'] . '"]' . $args['consentText'] . '[/lbwp:formContentItem]';
+    }
+
     // Generate form with all additional items
     $formHtml = '
       [lbwp:form button="' . $args['label_submit'] . '" id="comment" action="' . get_bloginfo('url') . '/wp-comments-post.php"]

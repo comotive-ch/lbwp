@@ -19,7 +19,6 @@ class Upload extends Base
    */
   protected $fieldConfig = array(
     'name' => 'Datei-Upload',
-    'help' => 'Der Besucher kann eine Datei hochladen',
     'group' => 'Spezial-Felder'
   );
 
@@ -56,6 +55,7 @@ class Upload extends Base
    */
   public function getElement($args, $content)
   {
+    $this->addFormFieldConditions($args['conditions']);
     $attr = $this->getDefaultAttributes($args);
 
     // Make the field

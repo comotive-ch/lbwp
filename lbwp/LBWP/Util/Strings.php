@@ -53,6 +53,10 @@ class Strings
    * @var string
    */
   const ALPHA_NUMERIC_LOW = '/[^A-Za-z0-9\-\_]/i';
+  /**
+   * @var string a html quote
+   */
+  const HTML_QUOTE = '&quot;';
 
   /**
    * Mindestlänge eines Strings prüfen

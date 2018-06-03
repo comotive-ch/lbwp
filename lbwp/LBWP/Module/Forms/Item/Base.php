@@ -3,6 +3,8 @@
 namespace LBWP\Module\Forms\Item;
 
 use LBWP\Module\Forms\Component\FormEditor;
+use LBWP\Util\ArrayManipulation;
+use LBWP\Util\Strings;
 use wpdb;
 use LBWP\Module\Forms\Core;
 use LBWP\Module\Forms\Component\FormHandler;
@@ -34,13 +36,38 @@ abstract class Base
    * @var array default params for every item, can be extendes by the item
    */
   protected $params = array(
-    'id' => '',                 // Internal field, not overridable
-    'key' => '',                // Internal field, not overridable
-    'description' => '',        // Internal field, not overridable
-    'pflichtfeld' => 'nein',    // Marks the field required
-    'vorgabewert' => '',        // Predefined value
-    'class' => '',              // An additional, optional class
-    'feldname' => 'Formularfeld'// Name / Title of the element
+    'id' => '',                   // Internal field, not overridable
+    'key' => '',                  // Internal field, not overridable
+    'description' => '',          // Internal field, not overridable
+    'pflichtfeld' => 'nein',      // Marks the field not required by default
+    'visible' => 'ja',            // Marks the field visible by default
+    'vorgabewert' => '',          // Predefined value
+    'class' => '',                // An additional, optional class
+    'feldname' => 'Formularfeld', // Name / Title of the element
+    'conditions' => ''
+  );
+  /**
+   * Helper array to configure reversing of conditions
+   * @var array the reversal configuration
+   */
+  protected $conditionReversal = array(
+    'operator' => array(
+      'is' => 'not',
+      'not' => 'is',
+      'contains' => 'absent',
+      'absent' => 'contains',
+      'morethan' => 'lessthan',
+      'lessthan' => 'morethan'
+    ),
+    'action' => array(
+      'show' => 'hide',
+      'hide' => 'show'
+    ),
+    // Need a callback to change the value
+    'value' => array(
+      'morethan' => '__return_minus_one', // the lessthan equiv needs the same value minus one
+      'lessthan' => '__return_plus_one'   // the morethan equiv needs the same value plus one
+    )
   );
   /**
    * This is the base configuration that can be merged / overriden in setParamConfig
@@ -54,6 +81,15 @@ abstract class Base
     'pflichtfeld' => array(
       'name' => 'Pflichtfeld?',
       'type' => 'radio',
+      'values' => array(
+        'ja' => 'Ja',
+        'nein' => 'Nein'
+      )
+    ),
+    'visible' => array(
+      'name' => 'Sichtbar?',
+      'type' => 'radio',
+      'help' => 'Formular-Felder können initial als unsichtbar markiert werden. Mit Konditionen können diese je nach Nutzerinteraktionen angezeigt werden.',
       'values' => array(
         'ja' => 'Ja',
         'nein' => 'Nein'
@@ -80,6 +116,11 @@ abstract class Base
       'availability' => 'readonly',
       'optin' => 1, // Make user able to remove readonly "on his own danger"
       'help' => 'Bitte ändern Sie die Feld-ID nur, wenn die Daten an externe Systeme gesendet werden. Ansonsten kann es passieren, dass die Referenz zu einer Aktion verloren geht und diese nicht mehr funktioniert.'
+    ),
+    'conditions' => array(
+      'name' => 'Konditionsliste',
+      'type' => 'conditions',
+      'value' => '',
     ),
   );
   /**
@@ -186,6 +227,24 @@ abstract class Base
   }
 
   /**
+   * Decode hacky json attribute value
+   * @param string $string the potiential json string
+   * @return array the actual object of encoded json
+   */
+  protected function decodeObjectString($string)
+  {
+    $string = str_replace(
+      array('((', '))', Strings::HTML_QUOTE),
+      array('[', ']', '"'),
+      $string
+    );
+
+    return ArrayManipulation::forceArray(
+      json_decode($string, true)
+    );
+  }
+
+  /**
    * @param array $args the full array of field params
    * @param string $class a class name to set statically
    * @param string $styles eventuall css styles
@@ -203,6 +262,7 @@ abstract class Base
 
     // First, set the id and name
     $attr .= ' name="' . $name . '" id="' . $this->get('id') . '"';
+    $attr .= ' data-name="' . $this->get('id') . '"';
 
     // Is a class set?
     if (strlen($class) > 0) {
@@ -229,6 +289,10 @@ abstract class Base
         $width .= 'px';
       }
       $attr .= ' style="width:' . $width . ';' . $styles . '"';
+    }
+
+    if ($args['visible'] == 'nein') {
+      $attr .= ' data-init-invisible="1"';
     }
 
     // Placeholder text
@@ -320,7 +384,7 @@ abstract class Base
    * @param string $content shortcode content with a comma separated list
    * @return array of prepared values ready for combat
    */
-  protected function prepareContentValues($content)
+  public function prepareContentValues($content)
   {
     $preparedValues = array();
     $content = trim($content);
@@ -346,6 +410,60 @@ abstract class Base
     }
 
     return $preparedValues;
+  }
+
+  /**
+   * @param string $conditions maybe json or empty string
+   */
+  protected function addFormFieldConditions($conditions)
+  {
+    $conditions = $this->decodeObjectString($conditions);
+    foreach ($conditions as $key => $condition) {
+      $conditions[$key]['target'] = $this->params['id'];
+    }
+
+    // Add a reverse condition for every condition
+    if (count($conditions) > 0) {
+      foreach ($conditions as $key => $condition) {
+        $reverse = $this->getReverseCondition($condition);
+        if (is_array($reverse)) {
+          $conditions[] = $reverse;
+        }
+      }
+    }
+
+    // Add this to the core conditions
+    $this->formHandler->addConditions($conditions);
+  }
+
+  /**
+   * Generates a reverse condition to make the framework do the exact
+   * opposite of the condition, if the condition isn't met anymore
+   * @param array $condition the original condition
+   * @return array the new, opposite condition
+   */
+  protected function getReverseCondition($condition)
+  {
+    $reverse = false;
+    // Only reverse if there is something to reverse
+    if (
+      isset($this->conditionReversal['operator'][$condition['operator']]) &&
+      isset($this->conditionReversal['action'][$condition['action']])
+    ) {
+      // Create the new, reversed condition
+      $reverse = array(
+        'field' => $condition['field'],
+        'operator' => $this->conditionReversal['operator'][$condition['operator']],
+        // Value will be added a callback if needed
+        'value' => isset($this->conditionReversal['value'][$condition['operator']])
+          ? call_user_func($this->conditionReversal['value'][$condition['operator']], $condition['value'])
+          : $condition['value'],
+        'action' => $this->conditionReversal['action'][$condition['action']],
+        'target' => $condition['target']
+      );
+    }
+
+    return $reverse;
   }
 
   /**

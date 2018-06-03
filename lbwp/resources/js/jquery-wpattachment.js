@@ -1,10 +1,3 @@
-/*!
- * jQuery lightweight plugin boilerplate
- * Original author: @ajpiano
- * Further changes, comments: @addyosmani
- * Licensed under the MIT license
- */
-
 ;
 document.currentInstance = false;
 (function ($, wpMedia) {

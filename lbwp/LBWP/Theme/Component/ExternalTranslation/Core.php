@@ -312,9 +312,9 @@ abstract class Core extends BaseComponent
 
     // Try receiving the importable data from the service
     if ($this->instance->receiveTranslation($post->ID, $translationId)) {
-      //delete_post_meta($post->ID, '_external_translation_lock');
+      delete_post_meta($post->ID, '_external_translation_lock');
       $this->sendImportCompletedNotifications($post->ID);
-      //delete_post_meta($post->ID, 'external_translation_id');
+      delete_post_meta($post->ID, 'external_translation_id');
     }
   }
 

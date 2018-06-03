@@ -36,6 +36,13 @@ body.modal-backend {
 	}
 }
 
+// Custom admin table widths
+.fixed {
+	#modified {
+		width:15%;
+	}
+}
+
 // Sorting types prototype CSS
 .type-sort-frame {
 	// Grid
@@ -107,6 +114,9 @@ ul.wp-submenu li a img { display:none; }
 .simple-table-list li:nth-child(even) { background-color:#FFFFFF; }
 .simple-table-list li:nth-child(odd) { background-color:#F9f9f9; }
 .piwik-logo { max-width:100%; }
+.float-left { float:left; }
+.float-left-top-margin { float:left; margin-top:10px; }
+.float-right { float:right; }
 
 /* fix some general wordpress bugs */
 .wrap h2 .add-new-h2.primary {

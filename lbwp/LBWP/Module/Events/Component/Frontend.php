@@ -294,7 +294,7 @@ class Frontend extends Base
           <dd>' . $this->getDateTimeString($event->subscribeEnd, $config, $textdomain) . '</dd>
         </dl>
       ';
-    } else if ($event->subscribeActive && strlen($event->subscribeAltText) > 0) {
+    } else if ($event->subscribeActive && strlen($event->subscribeAltText) > 0 && $display['showSubscriptionInfo']) {
       $html .= '
         <dl>
           <dt>' . __('Anmeldeinformation', 'lbwp') . '</dt>

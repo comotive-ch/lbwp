@@ -675,6 +675,14 @@ class Implementation extends Base implements Definition
   }
 
   /**
+   * @return bool false: no dynamic addressing
+   */
+  public function hasDynamicAddressing()
+  {
+    return false;
+  }
+
+  /**
    * @return bool false: no statistics available
    */
   public function hasStatistics()

@@ -31,6 +31,9 @@ class Hiddenfield extends Base
         'type' => 'textfield'
       )
     ));
+
+    // Don't let visiblity be configured
+    unset($this->paramConfig['visible']);
   }
 
   /**
@@ -53,6 +56,8 @@ class Hiddenfield extends Base
    */
   public function getElement($args, $content)
   {
+    // Always set invisible
+    $args['visible'] = 'nein';
     $attr = $this->getDefaultAttributes($args);
     // Make the field
     $html = '<input type="hidden" value="' . $this->getValue($args) . '"' . $attr . '/>';

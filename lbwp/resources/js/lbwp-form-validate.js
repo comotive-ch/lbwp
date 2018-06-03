@@ -10,7 +10,7 @@
 		var form = this;
 		var val = {};
 		var edits = typeof edits == "object" ? edits : {}; // checks if edits is set as an object else generates an empty object
-		var correctAll = "date, email, number, range, tel, time, url, text, password"; // all form input types
+		var correctAll = "date, email, number, phone, range, time, url, text, password, textarea"; // all form input types
 		var settings = { // Set default settings
 			defaultText: "Füllen Sie bitte das Feld korrekt aus",
 			elem: { // Different form elements
@@ -54,7 +54,7 @@
 		 */
 		function validateForm(e) { // Main function
 			e.preventDefault();
-			// Selects all required fields. DAFUQ NICOLA.
+			// Selects all required fields
 			var field = form.selector + " ".concat(val.fields.replace(new RegExp(", ", "g"), "[required], " + form.selector + " ").concat("[required]"));
 			var currentForm = jQuery(form);
 			// Variable for checking radio and check buttons
@@ -79,17 +79,23 @@
 
 			// Go trough all required fields once again
 			jQuery(field).each(function () { // loop through all required fields
-				var userMsg = jQuery(this).attr("data-errorMsg"); // get custom error message from field
+				var fieldElement = jQuery(this);
+				var userMsg = fieldElement.attr("data-errorMsg"); // get custom error message from field
 				var msg = userMsg != undefined ? userMsg : val.defaultText; // if there is no custom error message get default text
-				var errorElem = "<label for=" + jQuery(this).attr("id") + ">" + msg + "</label>"; // generate error element with message
+				var errorElem = "<label for=" + fieldElement.attr("id") + ">" + msg + "</label>"; // generate error element with message
 				var name = this.name.replace("[]", ""); // if the name of a field is an array remove "[]"
+
+				// Is the field even visible? If not, its not required anymore
+				if (!fieldElement.is(':visible')) {
+					return true;
+				}
 
 				if ((this.type == "radio" || this.type == "checkbox" ) && same != name) { // check if current field is a "radio" or "checkbox" field and its not the same as before
 					jQuery("input[name^=" + name + "]").each(function (i) { // loop through every box
 						if (jQuery(this).is(':checked')) { // if one is checked set same to current and return false
 							same = name;
 							return false;
-						} else if (i == jQuery(this).closest(val.elem.inputbox).children().length - 1) { // if not one is checked set message and count error up
+						} else if (i == jQuery(this).closest('.field-list').children().length - 1) { // if not one is checked set message and count error up
 							setMessage(this, errorElem, "error");
 							error++;
 							validationErrors++;
@@ -120,7 +126,7 @@
 				currentForm.removeClass('validation-errors');
 			}
 
-			// If we have errors, show a message on how many fixed need to be made
+			// If we have errors, show a message on how many fixes need to be made
 			if (validationErrors > 0) {
 				// Check if single or multiple errors
 				var wrapper = form.parent();
@@ -239,6 +245,13 @@
 		 * Check function that is validating and setting messages after leaving a form
 		 */
 		function checkFocusOut() {
+			var fieldElement = jQuery(this);
+
+			// Skip if the field is not visible
+			if (!fieldElement.is(':visible')) {
+				return false;
+			}
+
 			var validField = true;
 			// First, actually validate, if the form input has a value
 			switch (this.type) {
@@ -258,13 +271,13 @@
 			}
 
 			// Now show the message, if needed
-			if (jQuery(this).prop('required') && jQuery(this).val().trim().length == 0 || !validField) {
+			if (fieldElement.prop('required') && fieldElement.val().trim().length == 0 || !validField) {
 				// Warn, if it was validated and isn't valid, else error, since it's required
 				var type = !validField ? "warning" : "error";
-				var userMsg = jQuery(this).attr("data-" + type + "Msg");
+				var userMsg = fieldElement.attr("data-" + type + "Msg");
 				// if there is no custom message take default
 				var msg = userMsg != undefined ? userMsg : val.defaultText;
-				var msgElem = "<label class=" + val.alertClass + " for=" + jQuery(this).attr("id") + ">" + msg + "</label>";
+				var msgElem = "<label class=" + val.alertClass + " for=" + fieldElement.attr("id") + ">" + msg + "</label>";
 				var name = this.name.replace("[]", "");
 				// Set error and count focus out errors
 				setMessage(this, msgElem, "error");

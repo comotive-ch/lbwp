@@ -7,7 +7,7 @@
 
 // Hide a form, if there's need
 .lbwp-form.lbwp-form-hide {
-	display:none;
+	display:none !important;
 }
 
 .lbwp-form {
@@ -77,6 +77,18 @@
 	.lbwp-share-buttons {
 		display: none;
 	}
+}
+
+// Core styles for the cookie banner
+.lbwp-info-banner {
+	position: fixed;
+	bottom: 0;
+	left: 0;
+	right: 0;
+	background: white;
+	padding: 15px;
+	z-index: 1;
+	@include box-shadow(0 0 5px 0 rgba(0,0,0,.2));
 }
 
 /* TODO remove, once obsolete: plugin really simple share buttons */

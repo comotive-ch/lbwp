@@ -101,7 +101,7 @@ LbwpFormEditor.Interface = {
 		// Make the navigation tabbable
 		jQuery('.nav-tab').click(LbwpFormEditor.Interface.onNavTabClick);
 		// Watch scrolling to fix left and right frame
-		//jQuery(window).scroll(LbwpFormEditor.Interface.fixLeftAndRightFrame);
+		jQuery(window).scroll(LbwpFormEditor.Interface.fixLeftAndRightFrame);
 	},
 
 	/**
@@ -142,15 +142,24 @@ LbwpFormEditor.Interface = {
 	},
 
 	fixLeftAndRightFrame: function() {
-		var scrollPos = jQuery(this).scrollTop();
 		// Calculate the adminbar height to the scroll position
+		var scrollPos = jQuery(this).scrollTop();
 		scrollPos += 32;
-		var tabContent = jQuery(".form-editor-tab:visible");
+		var tabContent = jQuery("#editor-form-tab:visible");
+		var doFixing = false;
 		if (tabContent.length > 0) {
+			// Only fix the frames when "the content" is the longest element
+			var frameMiddle = tabContent.find('.frame-middle');
+			if (frameMiddle.length > 0 && (tabContent.height() == frameMiddle.height())) {
+				doFixing = true;
+			}
+			if (!doFixing) {
+				return false;
+			}
 			var navTop = tabContent.offset().top;
 			if (scrollPos <= navTop && tabContent.hasClass("fixed-frames")) {
 				tabContent.removeClass("fixed-frames");
-			} else if ((scrollPos + 32) >= navTop && !tabContent.hasClass("fixed-frames")) {
+			} else if ((scrollPos) >= navTop && !tabContent.hasClass("fixed-frames")) {
 				tabContent.addClass("fixed-frames");
 			}
 		}

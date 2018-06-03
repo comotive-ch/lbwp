@@ -22,7 +22,7 @@ class External
     $mail->IsHTML(true);
     $mail->CharSet = 'UTF-8';
     $mail->FromName = apply_filters('lbwpPhpMailerFromName', get_bloginfo('name'));
-    $mail->From = CUSTOM_EMAIL_SENDER;
+    $mail->From = LBWP_CUSTOM_FROM_EMAIL;
 
     return $mail;
   }

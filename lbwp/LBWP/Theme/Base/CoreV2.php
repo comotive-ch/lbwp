@@ -150,7 +150,18 @@ abstract class CoreV2
         return $stylesheets;
       });
     }
+
+    // Run update routine, if needed
+    if ($this->version != get_option('lbwpCoreThemeVersion')) {
+      $this->update();
+      update_option('lbwpCoreThemeVersion', $this->version);
+    }
   }
+
+  /**
+   * Can be overridden to perform server side updates on new version of theme
+   */
+  protected function update() {}
 
   /**
    * Needs to be implemented. called on after_setup_theme(0) action.

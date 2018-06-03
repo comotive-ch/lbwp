@@ -61,3 +61,17 @@ function numberOfCallableArguments($callable)
   }
   return $number;
 }
+
+/**
+ * Basically ++, but as a callback
+ */
+function __return_plus_one($value) {
+  return ++$value;
+}
+
+/**
+ * Basically --, but as a callback
+ */
+function __return_minus_one($value) {
+  return --$value;
+}

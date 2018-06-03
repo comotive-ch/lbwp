@@ -7,6 +7,7 @@ use LBWP\Helper\MetaItem\PostTypeDropdown;
 use LBWP\Theme\Base\Component as BaseComponent;
 use LBWP\Theme\Component\Onepager\Item\Base as BaseItem;
 use LBWP\Util\Date;
+use LBWP\Util\Multilang;
 use LBWP\Util\Strings;
 use LBWP\Util\Templating;
 use LBWP\Util\WordPress;
@@ -122,6 +123,10 @@ abstract class Core extends BaseComponent
    */
   protected $makeTypesChangeable = false;
   /**
+   * @var bool only insert a non available shortcode once to prevent segfaults
+   */
+  protected $insertedShortcode = false;
+  /**
    * @var string can be overridden: If set, the page template is preselected automatically
    */
   protected $autoSetPageTemplate = '';
@@ -155,8 +160,27 @@ abstract class Core extends BaseComponent
     add_action('admin_init', array($this, 'executeItemMetaboxes'));
     add_action('save_post', array($this, 'executeItemMetaboxes'));
     add_action('save_post', array($this, 'addAutoTemplate'));
+    // In frontend with multilang, make a hack because polylang interferes
+    if (Multilang::isActive() && !is_admin()) {
+      add_filter('the_content', array($this, 'insertShortcodeIfEmpty'));
+    }
     // After setup hook
     $this->onAfterSetup();
+  }
+
+  /**
+   * @param string $content
+   * @return string
+   */
+  public function insertShortcodeIfEmpty($content)
+  {
+    $p = WordPress::getPost();
+    if (!$this->insertedShortcode && get_post_meta($p->ID, 'onepager-active', true) == 'on' && $p->post_status == 'draft' && $p->post_type != self::TYPE_SLUG && $content == '') {
+      $this->insertedShortcode = true;
+      return '[' . self::SHORTCODE_NAME . ']';
+    }
+
+    return $content;
   }
 
   /**

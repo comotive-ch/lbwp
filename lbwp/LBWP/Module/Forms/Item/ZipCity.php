@@ -43,6 +43,7 @@ class ZipCity extends Base
    */
   public function getElement($args, $content)
   {
+    $this->addFormFieldConditions($args['conditions']);
     // get the attributes
     $attr = $this->getRequiredAttributes($args);
     $value = $this->getArrayValue($args);

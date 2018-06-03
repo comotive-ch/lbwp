@@ -3,6 +3,7 @@
 namespace LBWP\Module\Frontend;
 
 use LBWP\Core;
+use LBWP\Theme\Feature\InformationBanner;
 use LBWP\Util\Multilang;
 use LBWP\Util\Strings;
 
@@ -85,6 +86,11 @@ class OutputFilter extends \LBWP\Module\Base
       add_filter('get_post_metadata', array($this, 'getDefaultThumbnailId'), 10, 4);
     }
 
+    // Add informational banner feature automatically, if configured in settings
+    if ($this->config['Privacy:InformationalBannerActive'] == 1) {
+      add_action('wp', array($this, 'initInformationBanner'));
+    }
+
     // Various multilang filters
     if (Multilang::isActive()) {
       add_filter('body_class', array($this, 'addLanguageClass'));
@@ -105,6 +111,15 @@ class OutputFilter extends \LBWP\Module\Base
     add_filter('output_buffer', array($this, 'replaceTemplateVariables'), 8300);
     // Print late head content by using filters
     add_filter('output_buffer', array($this, 'printLateHeadContent'), 8400);
+  }
+
+  public function initInformationBanner()
+  {
+    InformationBanner::init(array(
+      'infoBannerContent' => $this->config['Privacy:InformationalBannerContent'],
+      'infoBannerButton' => $this->config['Privacy:InformationalBannerButton'],
+      'infoBannerVersion' => $this->config['Privacy:InformationalBannerVersion']
+    ));
   }
 
   /**

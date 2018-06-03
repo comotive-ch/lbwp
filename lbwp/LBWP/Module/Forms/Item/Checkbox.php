@@ -4,6 +4,7 @@ namespace LBWP\Module\Forms\Item;
 
 use LBWP\Module\Forms\Component\FormHandler;
 use LBWP\Util\ArrayManipulation;
+use LBWP\Util\Strings;
 
 /**
  * This will display a checkbox field
@@ -27,6 +28,26 @@ class Checkbox extends Base
   protected function setParamConfig()
   {
     $this->paramConfig = ArrayManipulation::deepMerge($this->paramConfig, array(
+      'compact' => array(
+        'name' => 'Kompakte Anordnung der Auswahlfelder',
+        'type' => 'radio',
+        'values' => array(
+          'ja' => 'Ja',
+          'nein' => 'Nein'
+        )
+      ),
+      'multicolumn' => array(
+        'name' => 'Datenspeicher: Trennung in Spalten',
+        'type' => 'radio',
+        'help' => '
+          Normalerweise wird für dieses Feld im Datenspeicher eine Spalte erstellt, in welchem die getroffene Auswahl mit Komma separiert wird.
+          Sofern diese Einstellung aktiviert wird, erscheint im Datenspeicher und Export eine Spalte pro getroffener Auswahl.
+        ',
+        'values' => array(
+          'ja' => 'Ja',
+          'nein' => 'Nein'
+        )
+      ),
       'content' => array(
         'name' => 'Auswahlmöglichkeiten',
         'type' => 'textfieldArray',
@@ -34,6 +55,10 @@ class Checkbox extends Base
         'separator' => Base::MULTI_ITEM_VALUES_SEPARATOR
       )
     ));
+
+    // Set defaults for new fields
+    $this->params['compact'] = 'nein';
+    $this->params['multicolumn'] = 'nein';
   }
 
   /**
@@ -64,8 +89,11 @@ class Checkbox extends Base
    */
   public function getElement($args, $content)
   {
+    $this->addFormFieldConditions($args['conditions']);
     // This makes the name attribute an array for multiple values
     $args['nameArray'] = true;
+    $classes = $this->params['class'];
+    $classes .= ($this->get('compact') == 'ja') ? ' field-compact' : '';
     $attr = $this->getDefaultAttributes($args);
 
     // Make the field
@@ -74,9 +102,23 @@ class Checkbox extends Base
 
     foreach ($values as $key => $value) {
       $checked = '';
-      if (stristr($this->getValue($args), strip_tags($key))) {
-        $checked = ' checked="checked"';
+      $compare = strip_tags($key);
+
+      // Handle returns of arrays and strings as well
+      $selection = $this->getValue($args);
+      if (is_array($selection)) {
+        $checked = '';
+        foreach ($selection as $id => $element) {
+          if ($element['colname'] == $compare) {
+            $checked = ' checked="checked"';
+          }
+        }
+      } else {
+        if (stristr($selection, $compare)) {
+          $checked = ' checked="checked"';
+        }
       }
+
       $field .= '
         <label class="label-checkbox">
           <input type="checkbox" value="' . strip_tags($key) . '"' . $attr . $checked . ' />
@@ -85,11 +127,19 @@ class Checkbox extends Base
       ';
     }
 
+    // Wrapper element for the field list
+    $field = '<div class="field-list">' . $field . '</div>';
+
+    // Special case if there shound be a physical label
+    if (isset($args['empty_label'])) {
+      $args['feldname'] = '';
+    }
+
     // Display a send button
     $html = Base::$template;
     $html = str_replace('{id}', $this->get('id'), $html);
     $html = str_replace('{label}', $args['feldname'], $html);
-    $html = str_replace('{class}', trim('checkbox-field ' . $this->params['class']), $html);
+    $html = str_replace('{class}', trim('checkbox-field ' . trim($classes)), $html);
     $html = str_replace('{field}', $field, $html);
 
     return $html;
@@ -104,11 +154,55 @@ class Checkbox extends Base
     // Get the value from post, if set
     if (isset($_POST[$this->get('id')])) {
       $value = $_POST[$this->get('id')];
+      // This should always be an array, but check anyway for legacy strings
       if (is_array($value)) {
-        return implode(', ', $value);
+        // Differ between multicol (which creates separate columns in datatable) and classic concat string
+        if ($this->params['multicolumn'] == 'ja') {
+          $return = array();
+          // Get every selectable checkbox to prefill the array
+          $unselected = $this->prepareContentValues($this->getContent());
+          // First, add everything as not selected, thus maintaining the users order of the fields
+          foreach ($unselected as $selection) {
+            $key = Strings::forceSlugString($this->get('feldname') . '-' . $selection);
+            $return[$key] = array(
+              'key' => $key,
+              'name' => $this->get('feldname'),
+              'colname' => $selection,
+              'value' => ''
+            );
+          }
+
+          // Now just override the value with a calculatable mark, if selected
+          foreach ($value as $selection) {
+            $key = Strings::forceSlugString($this->get('feldname') . '-' . $selection);
+            $return[$key]['value'] = '1';
+          }
+
+          return $return;
+        } else {
+          return implode(', ', $value);
+        }
       } else {
         return $value;
       }
+    }
+
+    // If there is no post value, but it is a form sending, handle everything as unselected if multicolumn
+    // This is needed because if one doesn't make a selection at all, the whole _POST var is missing, thus data wouldn't be added
+    if ($this->params['multicolumn'] == 'ja' && $_POST['lbwpFormSend'] == 1) {
+      $return = array();
+      $unselected = $this->prepareContentValues($this->getContent());
+      // Now, add all selectables with empty value
+      foreach ($unselected as $selection) {
+        $key = Strings::forceSlugString($this->get('feldname') . '-' . $selection);
+        $return[$key] = array(
+          'key' => $key,
+          'name' => $this->get('feldname'),
+          'colname' => $selection,
+          'value' => ''
+        );
+      }
+      return $return;
     }
 
     return '';

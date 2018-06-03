@@ -386,6 +386,7 @@ LbwpFormEditor.Action = {
 			}
 		});
 	},
+
 	/**
 	 * Load all conditions related to current field
 	 */
@@ -432,13 +433,13 @@ LbwpFormEditor.Action = {
 		jQuery(".field-conditions").html(html);
 
 		LbwpFormEditor.Action.conditionEvents(key);
-
 	},
 
 	/**
 	 * Return a condition row
 	 */
-	getConditionRow: function (option, value) {
+	getConditionRow: function (option, value)
+	{
 		var html = '<tr><td><select>'
 		for (var key in LbwpFormEditor.Data.Items) {
 			var selected = key == option ? "selected" : "";

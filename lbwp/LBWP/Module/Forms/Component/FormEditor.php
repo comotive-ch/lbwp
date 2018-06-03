@@ -84,6 +84,10 @@ class FormEditor extends Base
     wp_enqueue_script('jquery-ui-sortable');
     wp_enqueue_script('jquery-ui-accordion');
 
+    // Add inline assets for editor features
+    add_action('admin_footer', array($this, 'onAdminFooter'));
+    add_action('admin_enqueue_scripts', array($this, 'onEnqueueAssets'));
+
     // Ditch on possible jquery ui css
     add_action('admin_enqueue_scripts', array($this, 'preventJqueryUiLoading'));
 
@@ -127,12 +131,18 @@ class FormEditor extends Base
           createNewForm : "' . esc_js(__('Neues Formular erstellen', 'lbwp')) . '",
           editorLoading : "' . esc_js(__('Einen Moment. Der Editor wird geladen.', 'lbwp')) . '",
           confirmDelete : "' . esc_js(__('Wollen sie dieses Element wirklich löschen?', 'lbwp')) . '",
-          conditionText : "' . esc_js(__('Sie können diese Action unter definierten Umständen ausführen:', 'lbwp')) . '",
+          conditionText : "' . esc_js(__('Sie können diese Action unter definierten Umständen ausführen.', 'lbwp')) . '",
           conditionAndSelection : "' . esc_js(__('Alle Konditionen müssen zutreffen', 'lbwp')) . '",
           conditionOrSelection : "' . esc_js(__('Eine Kondition muss zutreffen', 'lbwp')) . '",
           conditionValue : "' . esc_js(__('Wert', 'lbwp')) . '",
           conditionField : "' . esc_js(__('Formularfeld', 'lbwp')) . '",
           conditionAdd : "' . esc_js(__('Kondition hinzufügen', 'lbwp')) . '",
+          itemConditionText : "' . esc_js(__('Sie können das Verhalten des Feldes mittels Konditionen steuern.', 'lbwp')) . '",
+          itemConditionField : "' . esc_js(__('Feld', 'lbwp')) . '",
+          itemConditionType : "' . esc_js(__('Operator', 'lbwp')) . '",
+          itemConditionValue : "' . esc_js(__('Wert', 'lbwp')) . '",
+          itemConditionAction : "' . esc_js(__('Verhalten', 'lbwp')) . '",
+          itemConditionValuePlaceholder : "' . esc_js(__('Leer', 'lbwp')) . '",
           deletedAction : "<p>' . esc_js(__('Die Aktion wurde gelöscht.', 'lbwp')) . '</p>",
           deletedField : "<p>' . esc_js(__('Das Feld wurde gelöscht.', 'lbwp')) . '</p>",
           useFromFieldHeading : "' . esc_js(__('Formular-Feld verwenden', 'lbwp')) . '",
@@ -352,6 +362,8 @@ class FormEditor extends Base
             <li>' . __('Felder anklicken und hier die Einstellungen bearbeiten.', 'lbwp') . '</li>
           </ol>
 			  </div>
+			  <h3 class="hndle hndle-conditions"><span>' . __('Konditionen bearbeiten', 'lbwp') . '</span></h3>
+			  <div class="inside field-conditions"></div>
 	    </div>
     ';
   }
@@ -419,7 +431,7 @@ class FormEditor extends Base
           </ol>
 			  </div>
 			  <h3 class="hndle hndle-conditions"><span>' . __('Konditionen bearbeiten', 'lbwp') . '</span></h3>
-			   <div class="inside field-conditions"></div>
+			  <div class="inside field-conditions"></div>
 	    </div>
     ';
   }
@@ -508,5 +520,110 @@ class FormEditor extends Base
     // End the select and return
     $html .= '</select>';
     return $html;
+  }
+
+  /**
+   * Enqueue all assets needed
+   */
+  public function onEnqueueAssets()
+  {
+    // Assets for media upload / inserting images
+    wp_enqueue_media();
+    // Our own asset
+    $url = File::getResourceUri() . '/js/lbwp-form-field-editor.js';
+    wp_enqueue_script('lbwp-form-field-editor', $url, array('jquery'), LbwpCore::REVISION);
+  }
+
+  /**
+   * Prints needed html/js in admin footer
+   */
+  public function onAdminFooter()
+  {
+    // Print our HTML template code
+    $this->printModalEditor();
+    $this->printStyles();
+  }
+
+  /**
+   * @return string the thickbox output to be opened
+   */
+  protected function printModalEditor()
+  {
+    echo  '
+      <div class="media-modal-backdrop-editor" style="display:none;"></div>
+      <div id="formFieldEditorContainer">
+        <h2>' . __('Inhalt bearbeiten', 'lbwp') . '</h2>
+    ';
+    wp_editor('', 'formFieldEditor');
+    echo '
+        <div class="buttons">
+          <a class="form-field-editor-save button-primary">' . __('Übernehmen', 'lbwp') . '</a>
+          <a class="form-field-editor-close button">' . __('Schliessen', 'lbwp') . '</a>
+        </div>
+      </div>
+    ';
+  }
+
+  /**
+   * Styles are simple, don't need a file here
+   */
+  protected function printStyles()
+  {
+    echo '
+      <style type="text/css">
+        #formFieldEditorContainer {
+          /* positioning in the middle */
+          position:fixed;
+          top: 0;
+          right: 0;
+          left: 0;
+          bottom: -10000px;
+          width:800px;
+          height:670px;
+          margin: auto;
+          z-index:10010;
+          /* styling of the box */
+          border:1px solid #333;
+          padding:30px;
+          background-color:#fff;
+        }
+        .media-modal-backdrop-editor {
+          position: fixed;
+          top: 0;
+          left: 0;
+          right: 0;
+          bottom: 0;
+          min-height: 360px;
+          background: #000;
+          opacity: .7;
+          z-index: 10000;
+        }
+        #formFieldEditorContainer .buttons {
+          text-align:right;
+          margin-top:20px;
+        }
+        .edit-with-tinymce {
+          cursor:pointer;
+        }
+        .editor-form-field-content {
+          width:100%;
+          box-sizing: border-box;
+          border:1px solid #ccc;
+          margin-top:15px;
+          padding:10px;
+          overflow:auto;
+          cursor:pointer;
+        }
+        .editor-form-field-content img {
+          max-width:100%;
+        }
+        .editor-form-field-content img.alignleft {
+          margin:0px 10px 10px 0px;
+        }
+        .editor-form-field-content img.alighright {
+          margin:0px 0px 10px 10px;
+        }
+      </style>
+    ';
   }
 } 

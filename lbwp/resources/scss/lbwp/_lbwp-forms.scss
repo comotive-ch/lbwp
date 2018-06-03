@@ -48,28 +48,36 @@ $lbwpFormInputFields: "select, input[type=date], input[type=text], input[type=em
 }
 
 @mixin lbwpFormRadioAndCheckboxDefaults($itemMargin:5px) {
-	.forms-item {
-		&.checkbox-field, &.radio-field {
-			.default-container {
-				@include lbwpClearfix;
-			}
-			.label-checkbox {
-				float: left;
-				clear: both;
-				position: relative;
-				margin-bottom: $itemMargin;
-				&:last-child {
-					margin-bottom: 0;
-				}
-			}
-			input {
-				margin-left: 0;
-				vertical-align: top;
-			}
-			.beside-checkbox {
-				cursor: default;
-				display: inline;
-			}
+	.field-list {
+		display: flex;
+		flex-direction: column;
+		flex-wrap: wrap;
+		align-items: flex-start;
+		justify-content: space-between;
+	}
+	.label-checkbox {
+		display: block;
+		margin-bottom: $itemMargin;
+		cursor: default;
+		&:last-child {
+			margin-bottom: 0;
+		}
+		input, .beside-checkbox {
+			margin: 0;
+			vertical-align: middle;
+		}
+		.beside-checkbox {
+			display: inline;
+			padding-left: 5px;
+		}
+	}
+
+	.field-compact {
+		.field-list {
+			flex-direction: row;
+		}
+		.label-checkbox {
+			width: calc(50% - 10px);
 		}
 	}
 }
@@ -175,7 +183,7 @@ $lbwpFormInputFields: "select, input[type=date], input[type=text], input[type=em
 			align-items: flex-start;
 		}
 
-		@if($textInputFieldPadding) {
+		@if ($textInputFieldPadding) {
 			&.textarea-field {
 				.default-label {
 					margin-top: $textInputFieldPadding;

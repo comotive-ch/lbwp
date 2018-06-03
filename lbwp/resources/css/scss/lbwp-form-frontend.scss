@@ -16,29 +16,12 @@ $lbwpFormValidationColorError: red;
 	}
 
 	// checkboxes and radios
-	.label-checkbox {
-		display: block;
-		margin: 0 0 5px 0;
-		&:last-child {
-			margin: 0;
-		}
-		input, .beside-checkbox {
-			margin: 0;
-			display: inline-block;
-			vertical-align: middle;
-		}
-		.beside-checkbox {
-			padding: 0 0 0 5px;
-			width: 90%;
-			// don't work for < IE11
-			//width: calc(100% - 25px);
-		}
-	}
+	@include lbwpFormRadioAndCheckboxDefaults;
 
 	// zip and city input
 	input[type="text"].zip-field-part {
 		display: inline-block;
-		width:22%;
+		width: 22%;
 	}
 
 	input[type="text"].city-field-part {
@@ -62,7 +45,7 @@ $lbwpFormValidationColorError: red;
 // overwrite table-layout for forms in widgets
 @media only screen {
 	.lbwp-form-widget {
-		@include lbwpFormTableLayout($reset:true);
+		@include lbwpFormTableLayout($reset: true);
 	}
 }
 
@@ -74,7 +57,7 @@ $lbwpFormValidationColorError: red;
 		.default-label {
 			margin: 0;
 		}
-		.default-container{
+		.default-container {
 			padding-top: 0;
 		}
 	}
@@ -90,7 +73,9 @@ $lbwpFormValidationColorError: red;
 @include lbwpFormSetAnchorTopGap() {
 	display: block;
 	visibility: hidden;
-};
+}
+
+;
 
 @include lbwpFormInputFieldErrorStyles() {
 	border-color: $lbwpFormValidationColorError;
@@ -102,4 +87,6 @@ $lbwpFormValidationColorError: red;
 .outer-wrap .content-wrapper .lbwp-form-override input[type="password"],
 .outer-wrap .content-wrapper .lbwp-form-override input[type="email"],
 .outer-wrap .content-wrapper .lbwp-form-override input[type="search"],
-.outer-wrap .content-wrapper .lbwp-form-override textarea { padding:6px 10px 6px 10px !important; }
+.outer-wrap .content-wrapper .lbwp-form-override textarea {
+	padding: 6px 10px 6px 10px !important;
+}

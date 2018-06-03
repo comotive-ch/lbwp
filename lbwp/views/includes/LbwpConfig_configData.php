@@ -205,8 +205,7 @@ $this->configData['Various']['items']['RedirectAttachmentDetail'] = array(
 $this->configData['Privacy'] = array(
   'title' => 'Datenschutz Einstellungen',
   'description' => '
-    Einstellungen um den Datenschutz für Ihre Besucher zu optimieren.
-    <em>Die Einstellungen sind teilweise noch in Entwicklung und werden spätestens am 25. Mai mit der Inkrafttretung der EU-DSGVO aktiv.</em>
+    Einstellungen um Ihre Datenschutz-Massnahmen für die Besucher transparenter zu machen.
   ',
   'visible' => true,
   'items' => array()
@@ -233,6 +232,13 @@ $this->configData['Privacy']['items']['InformationalBannerContent'] = array(
   'typeConfig' => array(),
   'title' => 'Banner Inhalt',
   'description' => 'Der Inhalt des Banners sollte so kurz wie möglich sein und auf die Datenschutzerklärung verlinken.'
+);
+
+$this->configData['Privacy']['items']['InformationalBannerButton'] = array(
+  'type' => 'text',
+  'typeConfig' => array(),
+  'title' => 'Banner Button',
+  'description' => 'Text für den Button um den Informations-Banner zu bestätigen / schliessen. Der Button zeigt den Text "OK", sofern keine Beschriftung eingegeben wird.'
 );
 
 $this->configData['Privacy']['items']['InformationalBannerVersion'] = array(
@@ -276,7 +282,7 @@ $this->configData['NotFoundSettings']['items']['Title'] = array(
   'type' => 'text',
   'typeConfig' => array(),
   'title' => 'Überschrift',
-  'description' => 'Überschrift für die 404 Seite'
+  'description' => 'Überschrift für die 404 Seite.'
 );
 
 $this->configData['NotFoundSettings']['items']['UsePermanentRedirect'] = array(

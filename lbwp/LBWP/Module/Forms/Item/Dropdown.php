@@ -68,6 +68,7 @@ class Dropdown extends Base
    */
   public function getElement($args, $content)
   {
+    $this->addFormFieldConditions($args['conditions']);
     $attr = $this->getDefaultAttributes($args);
 
     // Make the field
