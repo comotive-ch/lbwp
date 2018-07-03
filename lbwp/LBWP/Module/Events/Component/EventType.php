@@ -65,6 +65,16 @@ class EventType extends Base
       WordPress::registerTaxonomy(self::EVENT_TAXONOMY, 'Kategorie', 'Kategorien', '', array(
         'rewrite' => array('slug' => 'event-category')
       ), array(self::EVENT_TYPE));
+
+      // Register filters to be used upon
+      WordPress::restrictPostTable(array(
+        'type' => self::EVENT_TYPE,
+        'taxonomy' => self::EVENT_TAXONOMY,
+        'all_label' => __('Alle Kategorien', 'lbwp'),
+        'hide_empty' => false,
+        'show_count' => true,
+        'orderby' => 'name',
+      ));
     }
   }
 
@@ -84,6 +94,9 @@ class EventType extends Base
     $helper->addTextarea('post_excerpt', 'event-main', 'Kurzbeschreibung', 65);
     $helper->addInputText('event-location', 'event-main', 'Veranstaltungsort');
     $helper->addAddressLocation('event-address', 'event-main');
+    $helper->addInputText('event-map-url', 'event-main', 'Karten-Link', array(
+      'description' => 'Optionaler Link um z.B. eine Kartenansicht auf Google Maps zu verlinken'
+    ));
 
     // Subscription features
     $helper->addMetabox('event-subscribe', 'Anmeldung zur Veranstaltung', 'normal');
@@ -104,6 +117,11 @@ class EventType extends Base
     $helper->addTextarea('subscribe-end-alternate-text', 'event-subscribe', 'Text nach Anmeldeschluss', 65, array(
       'description' => 'Text, der angezeigt wird, wenn der Anmeldeschluss abgelaufen ist (Leer lassen, wenn kein Text angezeigt werden soll).'
     ));
+
+    // Features to deactivate display of elements
+    $helper->addMetabox('event-hiders', 'Steuerung der Darstellung', 'normal');
+    $helper->addCheckbox('hide-ics-download', 'event-hiders', 'Kalender-Download ausblenden');
+    $helper->addCheckbox('hide-map-url', 'event-hiders', 'Karten-Link ausblenden');
   }
 
   /**

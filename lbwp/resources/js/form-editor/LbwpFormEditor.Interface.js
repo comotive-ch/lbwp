@@ -23,9 +23,7 @@ LbwpFormEditor.Interface = {
 	 */
 	cleanInterface: function () {
 		// Remove metaboxes (make invisible, because parts of it are needed)
-		jQuery('.postbox-container').hide();
-		// Remove permalink box
-		jQuery('#edit-slug-box').hide();
+		jQuery('.postbox-container, #postdivrich, #edit-slug-box').hide();
 		// Switch to 1 column layout
 		jQuery('#post-body').removeClass('columns-2').addClass('columns-1');
 		// Create form container with loading text

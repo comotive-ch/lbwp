@@ -101,8 +101,10 @@ var LbwpForm = {
 			LbwpForm.runConditions('focused', jQuery(this));
 		});
 
-		// Initially, trigger a change on every data-name element
-		jQuery('[data-name]').trigger('change');
+		// Initially, trigger a change on every data-field element
+		skipLbwpFormValidation = true;
+		jQuery('[data-field]').trigger('change');
+		skipLbwpFormValidation = false;
 	},
 
 	/**
@@ -114,7 +116,7 @@ var LbwpForm = {
 	{
 		var condition = {};
 		var test = false;
-		var field = element.data('name');
+		var field = element.data('field');
 		var formId = element.closest('.lbwp-form').attr('id');
 		var item = null, value = null;
 		var conditions = LbwpForm.getConditions(formId);
@@ -134,21 +136,21 @@ var LbwpForm = {
 				// Some conditions need to be run on change, one only on focus
 				if (condition.operator == 'focused' && type == 'focused') {
 					// Get the item and immediately run the action
-					item = jQuery('[data-name=' + condition.target + ']');
+					item = jQuery('[data-field=' + condition.target + ']');
 					LbwpForm.triggerItemAction(item, condition.action);
 				} else if (condition.operator != 'focused' && type == 'changed') {
 					// Get the item to compare its value
-					item = jQuery('[data-name="' + field + '"]');
+					item = jQuery('[data-field="' + field + '"]');
 					value = item.val();
 
 					// Special value compare method for certain types of inputs
 					switch (item.attr('type')) {
 						case 'radio':
-							value = jQuery('[data-name="' + field + '"]:checked').val();
+							value = jQuery('[data-field="' + field + '"]:checked').val();
 							break;
 						case 'checkbox':
 							value = '';
-							jQuery('[data-name="' + field + '"]:checked').each(function() {
+							jQuery('[data-field="' + field + '"]:checked').each(function() {
 								value += jQuery(this).val() + ' ';
 							});
 							break;
@@ -171,7 +173,7 @@ var LbwpForm = {
 
 					// If the test didn't fail, trigger the target
 					if (test) {
-						LbwpForm.triggerItemAction(jQuery('[data-name="' + condition.target + '"]'), condition.action);
+						LbwpForm.triggerItemAction(jQuery('[data-field="' + condition.target + '"]'), condition.action);
 					}
 				}
 			}

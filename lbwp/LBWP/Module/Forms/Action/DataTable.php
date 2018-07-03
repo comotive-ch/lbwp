@@ -34,6 +34,10 @@ class DataTable extends Base
     'help' => 'Speichert Daten in einer Tabelle ab',
     'group' => 'Häufig verwendet'
   );
+  /**
+   * @var array blacklist of items that shouldnt provide infos to actions
+   */
+  protected $blacklistGetdata = array('required-note');
 
   /**
    * Extend the parameter configuration for the editor
@@ -198,6 +202,14 @@ class DataTable extends Base
     $backend = $this->core->getDataTableBackend();
     $state = true;
 
+    $backupData = $data;
+    // Remove blacklisted item types
+    foreach ($data as $key => $item) {
+      if ($item['item'] instanceof ItemBase && in_array($item['item']->get('key'), $this->blacklistGetdata)) {
+        unset($data[$key]);
+      }
+    }
+
     // Override form id with another, if given
     if (isset($this->params['form_id']) && intval($this->params['form_id']) > 0) {
       $formId = intval($this->params['form_id']);
@@ -216,7 +228,7 @@ class DataTable extends Base
 
     // Send a notification, if configured and adding worked
     if ($state && $this->params['notify_mail_setting'] > 0) {
-      $this->sendNotification($data);
+      $this->sendNotification($backupData);
     }
 
     // All went well if the pointer comes here
@@ -291,7 +303,7 @@ class DataTable extends Base
 
     // Also input the form data if needed
     if (stristr($content, SendMail::FORM_CONTENT_VARIABLE) !== false) {
-      $table = SendMail::getDataHtmlTable($data);
+      $table = SendMail::getDataHtmlTable($data, true);
       $content = str_replace(SendMail::FORM_CONTENT_VARIABLE, $table, $content);
     }
 
@@ -367,7 +379,7 @@ class DataTable extends Base
               $selectables = $item->prepareContentValues($item->getContent());
               foreach ($selectables as $selectable) {
                 $key = Strings::forceSlugString($item->get('feldname') . '-' . $selectable);
-                if ($row[$key] == 'X') {
+                if ($row[$key] == 'X' || $row[$key] == '1') {
                   $values[] = $selectable;
                 }
               }

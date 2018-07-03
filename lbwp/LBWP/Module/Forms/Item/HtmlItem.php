@@ -31,7 +31,15 @@ class HtmlItem extends Base
         'type' => 'textarea',
         'help' => 'Sie können den Inhalt im Editor bearbeiten und damit Formatierungen anwenden und Bilder in das Formular einfügen.',
         'editor' => true
-      )
+      ),
+      'show_anyway' => array(
+        'name' => 'Inhalt auch in E-Mails anzeigen?',
+        'type' => 'radio',
+        'values' => array(
+          'ja' => 'Ja',
+          'nein' => 'Nein'
+        )
+      ),
     ));
 
     unset($this->paramConfig['feldname']);
@@ -50,6 +58,7 @@ class HtmlItem extends Base
     $this->params['description'] = 'Text / HTML Element';
     $this->params['text'] = '';
     $this->params['default_text'] = '';
+    $this->params['show_anyway'] = 0;
   }
 
   /**
@@ -60,6 +69,23 @@ class HtmlItem extends Base
   public function getElement($args, $content)
   {
     $this->addFormFieldConditions($args['conditions']);
+
+    // Display a send button
+    $html = Base::$template;
+    $html = str_replace('{id}', $this->get('id'), $html);
+    $html = str_replace('{label}', $args['label'], $html);
+    $html = str_replace('{class}', trim('required-note ' . $this->params['class']), $html);
+    $html = str_replace('{field}', $this->getHtmlContent($args), $html);
+
+    return $html;
+  }
+
+  /**
+   * @param array $args
+   * @return string
+   */
+  protected function getHtmlContent($args)
+  {
     $text = $this->params['text'];
     // Replace the hacky shortcode thingies
     $text = str_replace(array('&lceil;', '⌈'), '[', $text);
@@ -74,16 +100,8 @@ class HtmlItem extends Base
     }
 
     // Add a hidden field with name to be accessed by condition framework
-    $text .= '<span data-name="' . $this->get('id') . '"></span>';
-
-    // Display a send button
-    $html = Base::$template;
-    $html = str_replace('{id}', $this->get('id'), $html);
-    $html = str_replace('{label}', $args['label'], $html);
-    $html = str_replace('{class}', trim('required-note ' . $this->params['class']), $html);
-    $html = str_replace('{field}', do_shortcode($text), $html);
-
-    return $html;
+    $text .= '<span data-field="' . $this->get('id') . '"></span>';
+    return do_shortcode($text);
   }
 
   /**
@@ -92,6 +110,6 @@ class HtmlItem extends Base
    */
   public function getValue($args = array())
   {
-    return '';
+    return $this->getHtmlContent($args);
   }
 } 

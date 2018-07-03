@@ -262,7 +262,7 @@ abstract class Base
 
     // First, set the id and name
     $attr .= ' name="' . $name . '" id="' . $this->get('id') . '"';
-    $attr .= ' data-name="' . $this->get('id') . '"';
+    $attr .= ' data-field="' . $this->get('id') . '"';
 
     // Is a class set?
     if (strlen($class) > 0) {

@@ -18,6 +18,10 @@ class Posttype extends Base
    */
   const FORM_SLUG = 'lbwp-form';
   /**
+   * @var string the categorizing taxonomy
+   */
+  const CAT_TAX = 'lbwp-form-category';
+  /**
    * Called after component construction
    */
   public function load()
@@ -48,9 +52,24 @@ class Posttype extends Base
   public function initialize()
   {
     WordPress::registerType(self::FORM_SLUG, 'Formular', 'Formulare', array(
-      'show_in_menu' => 'forms',
+      'menu_icon' => 'dashicons-welcome-widgets-menus',
+      'menu_position' => 44,
+      'taxonomy' => array(self::CAT_TAX),
       'publicly_queryable' => false,
       'exclude_from_search' => true
+    ));
+
+    // Register a categorizing taxonomy (just for internal filtering)
+    WordPress::registerTaxonomy(self::CAT_TAX, 'Kategorie', 'Kategorien', '', array(), array(self::FORM_SLUG));
+
+    // Register filters to be used upon
+    WordPress::restrictPostTable(array(
+      'type' => self::FORM_SLUG,
+      'taxonomy' => self::CAT_TAX,
+      'all_label' => __('Alle Kategorien', 'lbwp'),
+      'hide_empty' => false,
+      'show_count' => true,
+      'orderby' => 'name',
     ));
   }
 

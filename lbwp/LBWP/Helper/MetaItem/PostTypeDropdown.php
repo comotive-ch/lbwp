@@ -75,7 +75,7 @@ class PostTypeDropdown
       $args['items'][$postItem->ID] = array(
         'title' => self::getPostElementName($postItem, $postTypeMap),
         'data' => array(
-          'url' => admin_url('post.php?post=' . $postItem->ID . '&action=edit&ui=show-as-modal'),
+          'url' => admin_url('post.php?post=' . $postItem->ID . '&action=edit&ui=show-as-modal&parent=' . $_GET['post']),
           'html' => esc_attr(call_user_func($callback, $postItem, $postTypeMap)),
           'is-modal' => 1
         )
@@ -175,7 +175,7 @@ class PostTypeDropdown
     }
 
     // Edit link for modals
-    $editLink = admin_url('post.php?post=' . $item->ID . '&action=edit&ui=show-as-modal');
+    $editLink = admin_url('post.php?post=' . $item->ID . '&action=edit&ui=show-as-modal&parent=' . $_GET['post']);
 
     return '
       <div class="mbh-chosen-inline-element">

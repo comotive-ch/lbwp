@@ -18,9 +18,16 @@ body.modal-backend {
 
 
 	// Remove some elements
-	#wpadminbar, #adminmenuback, #adminmenuwrap, .page-title-action, #wpfooter,
+	#adminmenuback, #adminmenuwrap, .page-title-action, #wpfooter,
 	#view-post-btn, #delete-action {
 		display:none;
+	}
+	#wpadminbar {
+		background-color:#f1f1f1;
+		height:0px !important;
+		a, div, ul {
+			visibility:hidden;
+		}
 	}
 	// Remove the preview link from messages
 	.notice-success p a {
@@ -185,6 +192,14 @@ ul.wp-submenu li a img { display:none; }
 .wpseo-is-primary-term, .yoast-issue-counter, .yoast-issue-added, #ure-sidebar, #gf_dashboard_message,
 #toplevel_page_wpseo_dashboard .update-plugins, .frash-notice, .yoast-notice-go-premium {
 	display:none !important;
+}
+
+.wp-admin {
+	&.post-type-lbwp-form {
+		.postbox-container, #postdivrich, #edit-slug-box {
+			display:none;
+		}
+	}
 }
 
 /* Disable and fix nextscripts crap */

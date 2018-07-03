@@ -77,7 +77,7 @@ class CrossReference
       $dropdown['items'][$item->ID] = array(
         'title' => PostTypeDropdown::getPostElementName($item),
         'data' => array(
-          'url' => admin_url('post.php?post=' . $item->ID . '&action=edit&ui=show-as-modal'),
+          'url' => admin_url('post.php?post=' . $item->ID . '&action=edit&ui=show-as-modal&parent=' . $_GET['post']),
           'html' => esc_attr(call_user_func($callback, $item, array())),
           'is-modal' => 1
         )

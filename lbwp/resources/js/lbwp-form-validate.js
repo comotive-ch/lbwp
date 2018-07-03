@@ -216,6 +216,9 @@
 		 * Runs on every required field
 		 */
 		function updateChange() {
+			// Maybe skip validate if ordered to do so
+			if (skipLbwpFormValidation) return;
+
 			var correct = val.correct === true ? correctAll : val.correct;
 
 			if (!(correct.indexOf(this.type) > -1)) {
@@ -362,3 +365,4 @@
 		return this;
 	};
 }(jQuery));
+var skipLbwpFormValidation = false;

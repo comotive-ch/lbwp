@@ -12,6 +12,14 @@ LbwpFormEditor.Form = {
 	 */
 	internalId : 1,
 	/**
+	 * @var int timeout id for temporary keyup event distraction
+	 */
+	keyupTimeoutId : 0,
+	/**
+	 * @var array currently selected fields
+	 */
+	fieldSelection : [],
+	/**
 	 * The operators a condition can have
 	 */
 	fieldConditionOperators : {
@@ -101,11 +109,41 @@ LbwpFormEditor.Form = {
 		});
 
 		// load settigs for forms-item
-		jQuery("#editor-form-tab .lbwp-form " + LbwpFormEditor.Core.validFieldSelector).unbind("click").click(function (e) {
-			e.preventDefault();
-			jQuery(this).siblings(".selected").removeClass("selected");
-			var formItem = jQuery(this).find("label").attr("for");
-			LbwpFormEditor.Form.loadEdits(LbwpFormEditor.Core.handleKey(formItem));
+		jQuery("#editor-form-tab .lbwp-form " + LbwpFormEditor.Core.validFieldSelector).unbind("click").click(function (evt) {
+			evt.preventDefault();
+			// Make sure to flush html of both views and mark everything as unselected
+			jQuery("#editor-form-tab").find(".field-settings, .field-conditions").html('');
+			jQuery(".forms-item.selected").removeClass("selected");
+			var i = 0, id = 0;
+			var fieldTitle = '', conditionTitle = '';
+			var selectedElement = jQuery(this);
+			var selectedId = selectedElement.data('editor-id');
+			var isSelected = jQuery.inArray(selectedId, LbwpFormEditor.Form.fieldSelection) !== -1;
+
+			// Calculate which fields should be selected
+			if (evt.ctrlKey) {
+				LbwpFormEditor.Form.handleCtrlSelection(isSelected, selectedId);
+			} else if (evt.shiftKey) {
+				LbwpFormEditor.Form.handleShiftSelection(isSelected, selectedId);
+			} else {
+				LbwpFormEditor.Form.fieldSelection = [selectedElement.data('editor-id')];
+			}
+
+			// Decide what to do depending on number of selected fields
+			if (LbwpFormEditor.Form.fieldSelection.length == 1) {
+				fieldTitle = LbwpFormEditor.Text.titleEditField;
+				conditionTitle = LbwpFormEditor.Text.titleEditCondition;
+				var element = jQuery('[data-editor-id=' + LbwpFormEditor.Form.fieldSelection[0] + ']');
+				LbwpFormEditor.Form.loadEdits(LbwpFormEditor.Form.getKey(element));
+			} else {
+				fieldTitle = LbwpFormEditor.Text.titleEditMultiField;
+				conditionTitle = LbwpFormEditor.Text.titleEditMultiCondition;
+				LbwpFormEditor.Form.loadMultiEdits();
+			}
+
+			// Change the titles of the edit screens
+			jQuery('.field-settings-title').text(fieldTitle);
+			jQuery('.condition-settings-title').text(conditionTitle);
 		}).hover(function () {
 			jQuery(this).find('.default-container').append('<span class="delete dashicons dashicons-trash"></span>');
 			jQuery(this).find('.delete').click(function (event) {
@@ -120,6 +158,63 @@ LbwpFormEditor.Form = {
 		}, function () {
 			jQuery(this).find('.delete').remove();
 		});
+	},
+
+	/**
+	 * Get the key of an element
+	 * @param element
+	 * @returns {*}
+	 */
+	getKey : function(element)
+	{
+		return LbwpFormEditor.Core.handleKey(element.find("label").attr("for"));
+	},
+
+	/**
+	 * Handle CTRL Key multi selection
+	 * @param isSelected is the current selected element already in the selection
+	 * @param selectedId the id of the currently selected element
+	 */
+	handleCtrlSelection : function(isSelected, selectedId)
+	{
+		// Select or unselect, but don't do anything if the last item would be unselected
+		if (isSelected && LbwpFormEditor.Form.fieldSelection.length > 1) {
+			// Unselect it, as clicked and already in selection
+			LbwpFormEditor.Form.fieldSelection = LbwpFormEditor.Form.fieldSelection.filter(function(elementId) {
+				return selectedId != elementId;
+			});
+		} else if (!isSelected) {
+			LbwpFormEditor.Form.fieldSelection.push(selectedId);
+		}
+	},
+
+	/**
+	 * Handle multi selection width Shift key
+	 * @param isSelected is the current selected element already in the selection
+	 * @param selectedId the id of the currently selected elementd
+	 */
+	handleShiftSelection : function(isSelected, selectedId)
+	{
+		var current = 0, i = 0;
+		var smallest = 10000, largest = 0;
+
+		// Add the current selection if not already present
+		if (!isSelected) {
+			LbwpFormEditor.Form.fieldSelection.push(selectedId);
+		}
+
+		// Calculate the smallest and largest item id
+		for (i in LbwpFormEditor.Form.fieldSelection) {
+			current = LbwpFormEditor.Form.fieldSelection[i];
+			if (current < smallest) smallest = current;
+			if (current > largest) largest = current;
+		}
+
+		// Flush the array to rebuild it from smallest to largest
+		LbwpFormEditor.Form.fieldSelection = [];
+		for (i = smallest; i <= largest; i++) {
+			LbwpFormEditor.Form.fieldSelection.push(i);
+		}
 	},
 
 	/**
@@ -225,6 +320,184 @@ LbwpFormEditor.Form = {
 	},
 
 	/**
+	 * Load fields and conditions that are the same for multi selection to be mass edited
+	 */
+	loadMultiEdits : function()
+	{
+		var i = 0, cdi = 0, id = 0;
+		var key = '', element = null;
+
+		// First of all, load a default text into the field element
+		LbwpFormEditor.Form.loadMultiFieldEditor();
+
+		// Multiple selected, mark them all as selected
+		for (i in LbwpFormEditor.Form.fieldSelection) {
+			id = LbwpFormEditor.Form.fieldSelection[i];
+			element = jQuery('[data-editor-id=' + id + ']');
+			key = LbwpFormEditor.Form.getKey(element);
+			element.addClass('selected');
+		}
+
+		// From the last key, get comparable reference conditions
+		var compareConditions = LbwpFormEditor.Form.getConditions(key);
+		var similarConditions = LbwpFormEditor.Form.getSimilarConditions(compareConditions);
+		var html = "<p>" + LbwpFormEditor.Text.itemMultiConditionText + "</p>";
+
+		// Add the interface parts for similar conditons, if given
+		if (similarConditions.length > 0) {
+			// Show currently created conditions
+			for (i in similarConditions) {
+				html += LbwpFormEditor.Form.getConditionRow(
+					similarConditions[i].field,
+					similarConditions[i].operator,
+					similarConditions[i].value,
+					similarConditions[i].action
+				);
+			}
+		}
+
+		html += '<div class="field-condition-container"></div>';
+		html += '<a href="#" class="addCond button">' + LbwpFormEditor.Text.conditionAdd + '</a>';
+		jQuery("#editor-form-tab .field-conditions").html(html);
+		// Attach the events to work with conditions
+		LbwpFormEditor.Form.conditionEvents();
+	},
+
+	/**
+	 * Get similar conditions in current selection
+	 * @param compareConditions
+	 */
+	getSimilarConditions : function(compareConditions)
+	{
+		var similarConditions = [];
+		var comparableConditions = [];
+		var matches = 0;
+		var i = 0, c = 0, x = 0, id = 0;
+		var key = '', element = null;
+
+		// Only proceed if there is something to compare
+		if (compareConditions.length > 0) {
+			// Loop trough each condition, comparing it with every condition of every selected field
+			for (c in compareConditions) {
+				// Assume the condition is found in every field
+				matches = 0;
+				for (i in LbwpFormEditor.Form.fieldSelection) {
+					id = LbwpFormEditor.Form.fieldSelection[i];
+					key = LbwpFormEditor.Form.getKey(jQuery('[data-editor-id=' + id + ']'));
+					comparableConditions = LbwpFormEditor.Form.getConditions(key);
+					// Loop trough each condition and compare
+					for (x in comparableConditions) {
+						if (LbwpFormEditor.Form.compareConditions(compareConditions[c], comparableConditions[x])) {
+							matches++;
+						}
+					}
+				}
+
+				// After searching, the number of matches must match the number of fields
+				if (matches == LbwpFormEditor.Form.fieldSelection.length) {
+					similarConditions.push(compareConditions[c]);
+				}
+			}
+		}
+
+		return similarConditions;
+	},
+
+	/**
+	 * Get similar conditions in current selection
+	 * @param compareConditions
+	 */
+	getNonSimilarConditions : function(compareConditions)
+	{
+		var nonSimilarConditions = [];
+		var comparableConditions = [];
+		var matches = 0;
+		var i = 0, c = 0, x = 0, id = 0;
+		var key = '', element = null;
+
+		// Only proceed if there is something to compare
+		if (compareConditions.length > 0) {
+			// Loop trough each condition, comparing it with every condition of every selected field
+			for (c in compareConditions) {
+				// Assume the condition is found in every field
+				matches = 0;
+				for (i in LbwpFormEditor.Form.fieldSelection) {
+					id = LbwpFormEditor.Form.fieldSelection[i];
+					key = LbwpFormEditor.Form.getKey(jQuery('[data-editor-id=' + id + ']'));
+					comparableConditions = LbwpFormEditor.Form.getConditions(key);
+					// Loop trough each condition and compare
+					for (x in comparableConditions) {
+						if (LbwpFormEditor.Form.compareConditions(compareConditions[c], comparableConditions[x])) {
+							matches++;
+						}
+					}
+				}
+
+				// After searching, the number of matches must match the number of fields
+				if (matches != LbwpFormEditor.Form.fieldSelection.length) {
+					nonSimilarConditions.push(compareConditions[c]);
+				}
+			}
+		}
+
+		return nonSimilarConditions;
+	},
+
+	/**
+	 *
+	 * @param c1
+	 * @param c2
+	 */
+	compareConditions : function(c1, c2)
+	{
+		return (
+			c1.value == c2.value &&
+			c1.action == c2.action &&
+			c1.field == c2.field &&
+			c1.operator == c2.operator
+		);
+	},
+
+	/**
+	 * Display all edited fields in multi select mode
+	 */
+	loadMultiFieldEditor : function()
+	{
+		var html = '';
+
+		// Basic entry line, then make a list of all elements
+		html += '<p><strong>' + LbwpFormEditor.Text.multiSelectEditFieldsText + '</strong></p><ul>';
+
+		// Get the name of each edited element
+		for (i in LbwpFormEditor.Form.fieldSelection) {
+			id = LbwpFormEditor.Form.fieldSelection[i];
+			element = jQuery('[data-editor-id=' + id + ']');
+			key = LbwpFormEditor.Form.getKey(element);
+			html += '<li>' + LbwpFormEditor.Data.Items[key].params[0].value + '</li>';
+		}
+
+		// Close the list and print
+		html += '</ul>';
+		jQuery("#editor-form-tab .field-settings").html(html);
+	},
+
+	/**
+	 * Gets the conditions of an element, if there are any
+	 * @param key
+	 */
+	getConditions : function(key)
+	{
+		var params = LbwpFormEditor.Data.Items[key].params;
+		for (var i in params) {
+			if (params[i].key == "conditions" && params[i].value != "") {
+				return LbwpFormEditor.Core.decodeObjectString(params[i].value);
+			}
+		}
+
+		return [];
+	},
+
+	/**
 	 * Load all conditions related to current field
 	 */
 	loadConditions: function(key)
@@ -253,9 +526,10 @@ LbwpFormEditor.Form = {
 
 		html += '<div class="field-condition-container"></div>';
 		html += '<a href="#" class="addCond button">' + LbwpFormEditor.Text.conditionAdd + '</a>';
-		jQuery(".field-conditions").html(html);
+		jQuery("#editor-form-tab .field-conditions").html(html);
 
-		LbwpFormEditor.Form.conditionEvents(key);
+		// Attach the events to work with conditions
+		LbwpFormEditor.Form.conditionEvents();
 	},
 
 	/**
@@ -327,14 +601,14 @@ LbwpFormEditor.Form = {
 	/**
 	 * Sets all events related to conditions
 	 */
-	conditionEvents: function (key)
+	conditionEvents: function ()
 	{
 		// adds a new Condition
 		jQuery(".field-conditions .addCond").off('click').on('click', function (e) {
 			e.preventDefault();
 			jQuery(".field-conditions .field-condition-container").append(LbwpFormEditor.Form.getConditionRow("", "", "", ""));
-			LbwpFormEditor.Form.conditionEvents(key);
-			LbwpFormEditor.Form.saveFieldConditions(key);
+			LbwpFormEditor.Form.conditionEvents();
+			LbwpFormEditor.Form.saveFieldConditions();
 		});
 
 		// Deletes a condition
@@ -342,26 +616,46 @@ LbwpFormEditor.Form = {
 			e.preventDefault();
 			var check = confirm(LbwpFormEditor.Text.confirmDelete);
 			if (check) jQuery(this).closest('table.field-condition').remove();
-			LbwpFormEditor.Form.saveFieldConditions(key);
+			LbwpFormEditor.Form.saveFieldConditions();
 		});
 
 		// Save whole condition array on keyup in any field of a condition
 		jQuery(".field-conditions table input").off('keyup').on('keyup', function () {
-			LbwpFormEditor.Form.saveFieldConditions(key);
+			// Clear previous timeout if there is
+			if (LbwpFormEditor.Form.keyupTimeoutId > 0) {
+				clearTimeout(LbwpFormEditor.Form.keyupTimeoutId);
+			}
+			LbwpFormEditor.Form.keyupTimeoutId = setTimeout(function() {
+				LbwpFormEditor.Form.saveFieldConditions();
+			}, 350);
 		});
 
 		// Save whole condition array on change in any field of a condition
 		jQuery(".field-conditions table select, .field-conditions table input").off('change').on('change', function () {
-			LbwpFormEditor.Form.saveFieldConditions(key);
+			LbwpFormEditor.Form.saveFieldConditions();
 		});
 	},
 
 	/**
+	 * This works both in single and multi selection mode
 	 * Save the field conditions to our json array
-	 * @param key
 	 */
-	saveFieldConditions : function(key)
+	saveFieldConditions : function()
 	{
+		if (LbwpFormEditor.Form.fieldSelection.length == 1) {
+			LbwpFormEditor.Form.saveConditionsSingle();
+		} else {
+			LbwpFormEditor.Form.saveConditionsMulti();
+		}
+	},
+
+	/**
+	 * Saves all conditions on a single selected field
+	 */
+	saveConditionsSingle : function()
+	{
+		var element = jQuery('[data-editor-id=' + LbwpFormEditor.Form.fieldSelection[0] + ']');
+		var key = LbwpFormEditor.Form.getKey(element);
 		var params = LbwpFormEditor.Data.Items[key].params;
 		var conditions = [];
 
@@ -383,6 +677,73 @@ LbwpFormEditor.Form = {
 
 		LbwpFormEditor.Data.Items[key].params[i].value = LbwpFormEditor.Core.encodeObjectString(conditions);
 		LbwpFormEditor.Core.updateJsonField();
+	},
+
+	/**
+	 * Saves similar conditions on all selected fields, but keeps non similar intact
+	 */
+	saveConditionsMulti : function()
+	{
+		var i = 0, si = 0, c = null;
+		var nonSimilarConditions = [], conditions = [];
+		var saveableConditions = [];
+		var element, key, params;
+
+		// Get the similar conditions to save (all visible)
+		var similarConditions = [];
+		jQuery('#editor-form-tab .field-condition').each(function() {
+			var table = jQuery(this);
+			// Get the variables for this conditions
+			similarConditions.push({
+				'field' : table.find('.conditionField').val(),
+				'operator' : table.find('.conditionOperator').val(),
+				'value' : table.find('.conditionValue').val(),
+				'action' : table.find('.conditionAction').val()
+			});
+		});
+
+		// Now loop trough each of our fields saving the non-similar and similar conditions
+		for (i in LbwpFormEditor.Form.fieldSelection) {
+			element = jQuery('[data-editor-id=' + LbwpFormEditor.Form.fieldSelection[i] + ']');
+			key = LbwpFormEditor.Form.getKey(element);
+			params = LbwpFormEditor.Data.Items[key].params;
+
+			// Search for the correct index to get data from and save to
+			for (si in params) {
+				if (params[si].key == "conditions") break;
+			}
+
+			// Calculate the previous, non similar conditions
+			nonSimilarConditions = [];
+			if (params[si].value.length > 0) {
+				conditions = LbwpFormEditor.Core.decodeObjectString(params[si].value);
+				nonSimilarConditions = LbwpFormEditor.Form.getNonSimilarConditions(conditions);
+			}
+
+			// Now we have everything to save it back to our array and update it
+			conditions = [];
+			for (i in nonSimilarConditions)
+				conditions.push(nonSimilarConditions[i]);
+			for (i in similarConditions)
+				conditions.push(similarConditions[i]);
+
+			// Save to a temporary variable - we save at the end, because nonSimilar would make problem
+			saveableConditions.push({
+				"key" : key,
+				"index" : parseInt(si),
+				"conditions" : LbwpFormEditor.Core.encodeObjectString(conditions)
+			});
+		}
+
+		// If there is something to save, save it
+		if (saveableConditions.length > 0) {
+			for (i in saveableConditions) {
+				c = saveableConditions[i];
+				LbwpFormEditor.Data.Items[c['key']].params[c['index']].value = c['conditions'];
+			}
+			// After all is done, save the main json field
+			LbwpFormEditor.Core.updateJsonField();
+		}
 	},
 
 	/**
@@ -622,11 +983,17 @@ LbwpFormEditor.Form = {
 
 	onAfterHtmlUpdate : function()
 	{
-		// Add an icon ti all that is invisible and a class to make it blurry
+		// Add an icon to all that is invisible and a class to make it blurry
 		jQuery('[data-init-invisible=1]').each(function() {
 			var container = jQuery(this).closest('.default-container');
 			container.closest('.forms-item').addClass('field-invisible');
 			container.append('<span class="dashicons dashicons-hidden icon-invisible"></span>');
+		});
+
+		// Add an internal selection id to every field, this makes multiselect easier and faster
+		var internalId = 1;
+		jQuery("#editor-form-tab .lbwp-form " + LbwpFormEditor.Core.validFieldSelector).each(function() {
+			jQuery(this).attr('data-editor-id', internalId++);
 		})
 	}
 };

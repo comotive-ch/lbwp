@@ -48,13 +48,10 @@ class FormHandler extends Base
   protected $actions = array(
     'sendmail' => '\\LBWP\\Module\\Forms\\Action\\SendMail',
     'datatable' => '\\LBWP\\Module\\Forms\\Action\\DataTable',
+    'web2lead' => '\\LBWP\\Module\\Forms\\Action\\Salesforce',
     'auto-close' => '\\LBWP\\Module\\Forms\\Action\\AutoClose',
     'savesession' => '\\LBWP\\Module\\Forms\\Action\\SaveSession',
   );
-  /**
-   * @var array blacklist of items that should provide infos to actions
-   */
-  protected $blacklistGetdata = array('required-note');
   /**
    * @var int provides ids trhought all created items
    */
@@ -150,7 +147,7 @@ class FormHandler extends Base
   /**
    * @var string allowed tags in shortcode (for strip_tags)
    */
-  const ALLOWED_TAGS = '<h1><h2><h3><h4><h5><p><div><span><strong><em><a><img>';
+  const ALLOWED_TAGS = '<h1><h2><h3><h4><h5><p><div><span><strong><em><a><img><ul><ol><li><hr>';
   /**
    * @var string after submit cookie prefix
    */
@@ -533,29 +530,33 @@ class FormHandler extends Base
     $this->executingForm = true;
 
     foreach ($this->currentItems as $item) {
-      if (!in_array($item->get('key'), $this->blacklistGetdata)) {
-        $values = array(
-          'id' => $item->get('id'),
-          'item' => $item,
-          'name' => $item->get('feldname'),
-          'value' => $item->getValue()
-        );
+      $values = array(
+        'id' => $item->get('id'),
+        'item' => $item,
+        'name' => $item->get('feldname'),
+        'value' => $item->getValue()
+      );
 
-        // Check if the value is an array and implode it while preserving the array
-        // We made it this way for backwards compat on all actions that dont implement valueArray
-        if (is_array($values['value'])) {
-          $values['valueArray'] = $values['value'];
-          // Reset value to empty string and add up with keys and values
-          $values['value'] = array();
-          foreach ($values['valueArray'] as $key => $value) {
+      // Check if the value is an array and implode it while preserving the array
+      // We made it this way for backwards compat on all actions that dont implement valueArray
+      if (is_array($values['value'])) {
+        $values['valueArray'] = $values['value'];
+        // Reset value to empty string and add up with keys and values
+        $values['value'] = array();
+        foreach ($values['valueArray'] as $key => $value) {
+          if (strlen($value['value']) > 0) {
             $values['value'][] = $value['colname'];
           }
-          $values['value'] = implode(', ', $values['value']);
         }
-
-        // Add the fieldset to our data array
-        $data[] = $values;
+        if (count($values['value']) > 0) {
+          $values['value'] = implode(', ', $values['value']);
+        } else {
+          $values['value'] = '';
+        }
       }
+
+      // Add the fieldset to our data array
+      $data[] = $values;
     }
 
     $this->executingForm = false;

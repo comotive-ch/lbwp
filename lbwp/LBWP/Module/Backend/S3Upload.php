@@ -26,6 +26,8 @@ class S3Upload extends \LBWP\Module\Base
    */
   const JPEG_QUALITY = 96;
   const MAX_IMAGE_SIZE = 1920;
+  const ACL_PUBLIC = 'public-read';
+  const ACL_PRIVATE = 'private';
 
   /**
    * call parent constructor and initialize the module
@@ -351,7 +353,7 @@ class S3Upload extends \LBWP\Module\Base
 
     $options = array(
       'SourceFile' => $localFile,
-      'ACL' => 'public-read',
+      'ACL' => self::ACL_PUBLIC,
       'CacheControl' => 'max-age=' . (315360000),
       'Expires' => gmdate('D, d M Y H:i:s \G\M\T', time() + 315360000),
       'Bucket' => CDN_BUCKET_NAME,
@@ -375,6 +377,41 @@ class S3Upload extends \LBWP\Module\Base
     } else {
       return false;
     }
+  }
+
+  /**
+   * @param string $key the url or key (urls are converted to keys)
+   * @param string $acl the new acl to set
+   */
+  public function setAccessControl($key, $acl)
+  {
+    if (Strings::isURL($key)) {
+      $key = substr($key, strpos($key, CDN_BUCKET_NAME) + strlen(CDN_BUCKET_NAME) + 1);
+    }
+
+    $s3 = AwsFactoryV3::getS3Service();
+    $s3->putObjectAcl(array(
+      'Bucket' => CDN_BUCKET_NAME,
+      'Key' => $key,
+      'ACL' => $acl
+    ));
+  }
+
+  /**
+   * @param string $key the url or key (urls are converted to keys)
+   * @return \Aws\Result
+   */
+  public function getRawObject($key)
+  {
+    if (Strings::isURL($key)) {
+      $key = substr($key, strpos($key, CDN_BUCKET_NAME) + strlen(CDN_BUCKET_NAME) + 1);
+    }
+
+    $s3 = AwsFactoryV3::getS3Service();
+    return $s3->getObject(array(
+      'Bucket' => CDN_BUCKET_NAME,
+      'Key' => $key
+    ));
   }
 
   /**

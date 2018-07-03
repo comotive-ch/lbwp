@@ -19,7 +19,6 @@ class Core extends \LBWP\Module\Base
    * @var MenuHandler this handles the menus
    */
   protected $components = array(
-    '\LBWP\Module\Forms\Component\MenuHandler' => NULL,
     '\LBWP\Module\Forms\Component\Posttype' => NULL,
     '\LBWP\Module\Forms\Component\FormHandler' => NULL,
     '\LBWP\Module\Forms\Component\FormEditor' => NULL,
@@ -62,14 +61,6 @@ class Core extends \LBWP\Module\Base
   public function loadWidgets()
   {
     register_widget('\LBWP\Module\Forms\Widget');
-  }
-
-  /**
-   * @return MenuHandler the menu handler instance
-   */
-  public function getMenuHandler()
-  {
-    return $this->components['\LBWP\Module\Forms\Component\MenuHandler'];
   }
 
   /**

@@ -5,6 +5,7 @@ namespace LBWP\Module\Forms\Action;
 use LBWP\Module\Forms\Item\Base as BaseItem;
 use LBWP\Module\Forms\Item\Hiddenfield;
 use LBWP\Module\Forms\Item\Textfield;
+use LBWP\Module\Forms\Item\HtmlItem;
 use LBWP\Util\External;
 use LBWP\Util\File;
 use LBWP\Util\Strings;
@@ -117,7 +118,7 @@ class SendMail extends Base
     $this->params['key'] = $key;
     // Set the defaults (will be overridden with current data on execute)
     $this->params['betreff'] = 'Kontaktformular ausgefüllt';
-    $this->params['email'] = 'Ihre E-Mail-Adresse';
+    $this->params['email'] = '';
   }
 
   /**
@@ -205,7 +206,7 @@ class SendMail extends Base
    */
   protected function appendMailBody($data, &$mail, $replyTo)
   {
-    $table = self::getDataHtmlTable($data);
+    $table = self::getDataHtmlTable($data, false);
 
     $html = '
       <p>' . __('Ein Formular auf Ihrer Webseite wurde ausgefüllt', 'lbwp') . ':</p>
@@ -248,9 +249,10 @@ class SendMail extends Base
   /**
    * Create a very simple html table from input data
    * @param array $data list of data fields
+   * @param bool $skipempty skips empty entries
    * @return string html table
    */
-  public static function getDataHtmlTable($data)
+  public static function getDataHtmlTable($data, $skipempty)
   {
     $table = '<table width="100%" cellpadding="5" cellspacing="0" border="0">';
     // Let developers add their own rows to the table
@@ -259,7 +261,7 @@ class SendMail extends Base
     // Loop trought the fields data
     foreach ($data as $field) {
       // There are some field id's that can be skipped
-      if (!isset($field['item']) || ($field['item'] instanceof BaseItem && $field['item']->get('show_in_mail_action') != 1)) {
+      if (!isset($field['item']) || ($field['item'] instanceof BaseItem && $field['item']->get('show_in_mail_action') != 1 && !($field['item'] instanceof HtmlItem))) {
         $name = strtolower($field['name']);
         if (
           $name == 'tsid' ||
@@ -270,20 +272,30 @@ class SendMail extends Base
         ) {
           continue;
         }
+      } else if ($field['item'] instanceof HtmlItem) {
+        if ($field['item']->get('show_anyway') == 'ja') {
+          $field['name'] = '';
+        } else {
+          continue;
+        }
       }
 
       // Check the value
-      if (!isset($field['value']) || strlen($field['value']) == 0) {
+      if (!isset($field['value']) || strlen($field['value']) == 0 && !$skipempty) {
         $field['value'] = __('Nicht ausgefüllt', 'lbwp');
       }
 
-      // Print the field
-      $table .= '
-        <tr>
-          <td width="25%">' . $field['name'] . ':</td>
-          <td width="75%">' . $field['value'] . '</td>
-        </tr>
-      ';
+      if (isset($field['value']) && strlen($field['value']) > 0) {
+        $displayName = $field['name'];
+        if (strlen($displayName) > 0) $displayName .= ':';
+        // Print the field
+        $table .= '
+          <tr>
+            <td width="25%">' . $displayName . '</td>
+            <td width="75%">' . $field['value'] . '</td>
+          </tr>
+        ';
+      }
     }
 
     // Let developers add their own rows to the table

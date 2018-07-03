@@ -729,7 +729,7 @@ abstract class Core extends BaseComponent
     }
 
     // Edit link for modals
-    $editLink = admin_url('post.php?post=' . $item->ID . '&action=edit&ui=show-as-modal');
+    $editLink = admin_url('post.php?post=' . $item->ID . '&action=edit&ui=show-as-modal&parent=' . $_GET['post']);
 
     return '
       <div class="mbh-chosen-inline-element">

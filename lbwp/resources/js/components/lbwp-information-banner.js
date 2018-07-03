@@ -36,11 +36,14 @@ var LbwpInfoBanner = {
 		// If the element is to be shown, show it
 		if (active) {
 			LbwpInfoBanner.element.removeAttr('style');
-			jQuery('body').prepend(LbwpInfoBanner.element);
+			jQuery('body')
+				.addClass('lbwp-has-info-banner')
+				.prepend(LbwpInfoBanner.element);
 			LbwpInfoBanner.element.addClass('show');
 		} else {
 			// Not active, so remove the item from DOM
 			LbwpInfoBanner.element.remove();
+			jQuery('body').removeClass('lbwp-has-info-banner');
 		}
 	},
 
@@ -52,6 +55,7 @@ var LbwpInfoBanner = {
 		jQuery('.lbwp-close-info-banner').click(function() {
 			jQuery.cookie(lbwpInfoBannerConfig.cookieId, 1, { expires: (365*10) , path: '/' });
 			LbwpInfoBanner.element.remove();
+			jQuery('body').removeClass('lbwp-has-info-banner');
 		});
 	},
 

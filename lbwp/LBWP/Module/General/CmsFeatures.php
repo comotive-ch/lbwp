@@ -174,6 +174,9 @@ class CmsFeatures extends \LBWP\Module\Base
       MaintenanceMode::init();
     }
 
+    remove_filter('the_title', 'capital_P_dangit', 11);
+    remove_filter('the_content', 'capital_P_dangit', 11);
+    remove_filter('comment_text', 'capital_P_dangit', 31);
     // Globally used widgets
     add_action('widgets_init', array($this, 'registerGlobalWidgets'));
     add_filter('wp_mail_from', array($this, 'replaceEmailFrom'), 50);
@@ -239,6 +242,7 @@ class CmsFeatures extends \LBWP\Module\Base
       $classes .= 'modal-backend';
       // Allow to open it in modal once again after saving
       $_SESSION['open-modal-' . $_GET['post']] = true;
+      $_SESSION['parent-id-' . $_GET['post']] = $_GET['parent'];
     }
 
     if ($_SERVER['REQUEST_METHOD'] == 'GET' && isset($_GET['post']) && !isset($_GET['ui'])) {

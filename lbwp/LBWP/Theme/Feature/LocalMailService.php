@@ -61,6 +61,9 @@ class LocalMailService
     'localmail' => array(
       'class' => '\LBWP\Helper\Mail\Local'
     ),
+    'development' => array(
+      'class' => '\LBWP\Helper\Mail\Development'
+    ),
     'amazon-ses' => array(
       'class' => '\LBWP\Helper\Mail\AmazonSES'
     )
@@ -176,7 +179,8 @@ class LocalMailService
       'show_ui' => true,
       'menu_icon' => 'dashicons-email-alt',
       'menu_position' => 43,
-      'supports' => array('title', 'editor')
+      'supports' => array('title', 'editor'),
+      'rewrite' => false
     ), '');
   }
 

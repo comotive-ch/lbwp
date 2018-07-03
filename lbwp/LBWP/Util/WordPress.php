@@ -429,15 +429,20 @@ class WordPress
       $taxonomy = $item['taxonomy'];
       if ($typenow == $type) {
         $selected = isset($_GET[$taxonomy]) ? $_GET[$taxonomy] : '';
-        wp_dropdown_categories(array(
+        $html = wp_dropdown_categories(array(
           'show_option_all' => $item['all_label'],
           'taxonomy' => $taxonomy,
           'name' => $taxonomy,
           'orderby' => $item['orderby'],
           'selected' => $selected,
+          'echo' => false,
           'show_count' => $item['show_count'],
           'hide_empty' => $item['hide_empty'],
         ));
+        // Only display if there is at least one option
+        if (Strings::contains($html, '<option')) {
+          echo $html;
+        }
       };
     }
   }
@@ -572,6 +577,32 @@ class WordPress
       'src' => self::getImageUrl($attachment->ID, $size),
       'title' => $attachment->post_title
     );
+  }
+
+  /**
+   * @param string $url the attachments full export url
+   * @return int the attachment id (or 0 if not found)
+   */
+  public static function getAttachmentIdFromUrl($url)
+  {
+    // Check if it could be an attachment url
+    if (!Strings::contains($url, CDN_NAME)) {
+      return 0;
+    }
+
+    // Search for that one as part of an attachment guid
+    $sql = '
+      SELECT ID FROM {sql:postTable} WHERE
+      post_type = "attachment" AND guid LIKE {filePath}
+    ';
+
+    $db = WordPress::getDb();
+    $attachmentId = intval($db->get_var(Strings::prepareSql($sql, array(
+      'postTable' => $db->posts,
+      'filePath' => '%' . $url . '%'
+    ))));
+
+    return $attachmentId;
   }
 
   /**

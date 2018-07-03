@@ -131,6 +131,10 @@ class FormEditor extends Base
           createNewForm : "' . esc_js(__('Neues Formular erstellen', 'lbwp')) . '",
           editorLoading : "' . esc_js(__('Einen Moment. Der Editor wird geladen.', 'lbwp')) . '",
           confirmDelete : "' . esc_js(__('Wollen sie dieses Element wirklich löschen?', 'lbwp')) . '",
+          titleEditField : "' . esc_js(__('Feld bearbeiten', 'lbwp')) . '",
+          titleEditCondition : "' . esc_js(__('Konditionen bearbeiten', 'lbwp')) . '",
+          titleEditMultiField : "' . esc_js(__('Mehrere Felder bearbeiten', 'lbwp')) . '",
+          titleEditMultiCondition : "' . esc_js(__('Gemeinsame Konditionen bearbeiten', 'lbwp')) . '",
           conditionText : "' . esc_js(__('Sie können diese Action unter definierten Umständen ausführen.', 'lbwp')) . '",
           conditionAndSelection : "' . esc_js(__('Alle Konditionen müssen zutreffen', 'lbwp')) . '",
           conditionOrSelection : "' . esc_js(__('Eine Kondition muss zutreffen', 'lbwp')) . '",
@@ -138,11 +142,13 @@ class FormEditor extends Base
           conditionField : "' . esc_js(__('Formularfeld', 'lbwp')) . '",
           conditionAdd : "' . esc_js(__('Kondition hinzufügen', 'lbwp')) . '",
           itemConditionText : "' . esc_js(__('Sie können das Verhalten des Feldes mittels Konditionen steuern.', 'lbwp')) . '",
+          itemMultiConditionText : "' . esc_js(__('Sie können das Verhalten aller markierten Felder mittels Konditionen steuern. Neue Konditionen werden für alle Felder hinzugefügt. Das Löschen führt dazu, dass die Kondition für alle Felder gelöscht wird.', 'lbwp')) . '",
           itemConditionField : "' . esc_js(__('Feld', 'lbwp')) . '",
           itemConditionType : "' . esc_js(__('Operator', 'lbwp')) . '",
           itemConditionValue : "' . esc_js(__('Wert', 'lbwp')) . '",
           itemConditionAction : "' . esc_js(__('Verhalten', 'lbwp')) . '",
           itemConditionValuePlaceholder : "' . esc_js(__('Leer', 'lbwp')) . '",
+          multiSelectEditFieldsText : "' . esc_js(__('Sie bearbeiten mehrere Felder:', 'lbwp')) . '",
           deletedAction : "<p>' . esc_js(__('Die Aktion wurde gelöscht.', 'lbwp')) . '</p>",
           deletedField : "<p>' . esc_js(__('Das Feld wurde gelöscht.', 'lbwp')) . '</p>",
           useFromFieldHeading : "' . esc_js(__('Formular-Feld verwenden', 'lbwp')) . '",
@@ -354,7 +360,7 @@ class FormEditor extends Base
   {
     return '
       <div class="postbox">
-        <h3 class="hndle"><span>' . __('Feld bearbeiten', 'lbwp') . '</span></h3>
+        <h3 class="hndle"><span class="field-settings-title">' . __('Feld bearbeiten', 'lbwp') . '</span></h3>
         <div class="inside field-settings">
           <p>' . __('So funktioniert\'s:', 'lbwp') . '</p>
           <ol>
@@ -362,7 +368,7 @@ class FormEditor extends Base
             <li>' . __('Felder anklicken und hier die Einstellungen bearbeiten.', 'lbwp') . '</li>
           </ol>
 			  </div>
-			  <h3 class="hndle hndle-conditions"><span>' . __('Konditionen bearbeiten', 'lbwp') . '</span></h3>
+			  <h3 class="hndle hndle-conditions"><span class="condition-settings-title">' . __('Konditionen bearbeiten', 'lbwp') . '</span></h3>
 			  <div class="inside field-conditions"></div>
 	    </div>
     ';
@@ -498,6 +504,7 @@ class FormEditor extends Base
     $html = '<select name="page_id" id="page_id">';
     $args = array(
       'echo' => false,
+      'post_status' => array('draft', 'pending', 'future', 'publish'),
       'value_field' => 'id',
       'show_option_none' => __('Keine Seite zur Weiterleitung ausgewählt', 'lbwp'),
       'option_none_value' => 0
@@ -509,7 +516,7 @@ class FormEditor extends Base
         $args['lang'] = $language;
         $dropdownHtml = wp_dropdown_pages($args);
         $html .= '<optgroup label="' . Multilang::getLanguageName($language) . '">' . Strings::xpath($dropdownHtml, '//option', false) . '</optgroup>';
-        // After the first loop, remove show_option_none to prevent havoc
+        // After the first loop, remove show_option_none to prevent apocalypse
         unset($args['show_option_none'], $args['option_none_value']);
       }
     } else {

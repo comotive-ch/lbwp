@@ -339,7 +339,7 @@ class ChosenDropdown
   public static function getUserHtmlCallback($user)
   {
     // Edit link for modals
-    $editLink = admin_url('user-edit.php?user_id=' . $user->ID . '&ui=show-as-modal');
+    $editLink = admin_url('user-edit.php?user_id=' . $user->ID . '&ui=show-as-modal&parent=' . $_GET['post']);
 
     // Get a list of roles of the user
     global $wp_roles;

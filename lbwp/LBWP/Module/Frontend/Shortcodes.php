@@ -37,7 +37,8 @@ class Shortcodes extends \LBWP\Module\Base
    */
   public function forwardShortcode($args)
   {
-    // See which arguments are given (0|url, 1|from)
+    $code = 301;
+    // See which arguments are given (0|url, 1|from, 2|code)
     if (isset($args[0])) {
       $url = $args[0];
     }
@@ -49,6 +50,13 @@ class Shortcodes extends \LBWP\Module\Base
     }
     if (isset($args['from'])) {
       $fromDate = $args['from'];
+    }
+
+    if (isset($args[2])) {
+      $code = $args[2];
+    }
+    if (isset($args['code'])) {
+      $code = $args['code'];
     }
 
     // Declare the redirect as ready to executed
@@ -67,7 +75,7 @@ class Shortcodes extends \LBWP\Module\Base
       $url = str_replace('&amp;', '&', $url);
       $url = str_replace('&#038;', '&', $url);
 
-      header('Location: ' . $url, null, 301);
+      header('Location: ' . $url, null, $code);
       exit;
     }
   }

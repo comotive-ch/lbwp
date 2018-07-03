@@ -151,6 +151,9 @@ class Frontend extends Base
       $event->endTime = $eventEnd;
       $event->location = get_post_meta($event->ID, 'event-location', true);
       $event->address = get_post_meta($event->ID, 'event-address', true);
+      $event->mapUrl = get_post_meta($event->ID, 'event-map-url', true);
+      $event->hideMapUrl = get_post_meta($event->ID, 'hide-map-url', true) == 'on';
+      $event->hideIcsDownload = get_post_meta($event->ID, 'hide-ics-download', true) == 'on';
       $event->subscribeActive = get_post_meta($event->ID, 'subscribe-active', true) == 'on';
       $event->subscribeAltText = get_post_meta($event->ID, 'subscribe-end-alternate-text', true);
 
@@ -207,6 +210,7 @@ class Frontend extends Base
       'showSubscriptionInfo' => true,
       'showLocation' => true,
       'showAddressAfterLocation' => true,
+      'showMapLinks' => true,
       'showCalendarDownload' => false
     ), $display);
 
@@ -324,7 +328,17 @@ class Frontend extends Base
     }
 
     // Display a calendar file download for outlook etc.
-    if ($display['showCalendarDownload'] && $event->startTime > 0) {
+    if ($display['showMapLinks'] && !$event->hideMapUrl && strlen($event->mapUrl) > 0) {
+      $html .= '
+        <dl>
+          <dt>' . __('Karte', 'lbwp') . '</dt>
+          <dd><a href="' . $event->mapUrl . '" target="_blank">' . __('Ort auf der Karte anzeigen', 'lbwp') . '</a></dd>
+        </dl>
+      ';
+    }
+
+    // Display a calendar file download for outlook etc.
+    if ($display['showCalendarDownload'] && !$event->hideIcsDownload && $event->startTime > 0) {
       $html .= '
         <dl>
           <dt>' . __('Download', 'lbwp') . '</dt>
