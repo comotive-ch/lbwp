@@ -147,7 +147,7 @@ class FormHandler extends Base
   /**
    * @var string allowed tags in shortcode (for strip_tags)
    */
-  const ALLOWED_TAGS = '<h1><h2><h3><h4><h5><p><div><span><strong><em><a><img><ul><ol><li><hr>';
+  const ALLOWED_TAGS = '<h1><h2><h3><h4><h5><p><div><span><strong><em><a><img><ul><ol><li><hr><br>';
   /**
    * @var string after submit cookie prefix
    */
@@ -317,6 +317,7 @@ class FormHandler extends Base
 
     // Add a honeypot field and a token
     $security = '<input type="hidden" name="form-token" value="' . base64_encode(md5(AUTH_KEY)) . '" />' . PHP_EOL;
+    $security.= '<input type="hidden" name="lbwpHiddenFormFields" id="lbwpHiddenFormFields" value="" />' . PHP_EOL;
     $security.= '<input type="text" name="email_to_' . md5(NONCE_KEY) . '" class="field_email_to" />' . PHP_EOL;
 
     // Add the form and button code and close the form
@@ -363,8 +364,14 @@ class FormHandler extends Base
 
     // Load form data from fields
     $data = $this->getFormData();
+
+    // Check form data / required fields, end execution if required fields are empty
+    if (!$this->checkRequiredFields($data)) {
+      $this->executionError = true;
+    }
+
     // Check if there are actions to execute
-    if (is_array($this->currentActions) && count($this->currentActions) > 0) {
+    if (!$this->executionError && is_array($this->currentActions) && count($this->currentActions) > 0) {
       // Execute. Error can be true from a field that does spam checks
       $this->executionError = $this->fieldError;
       $data = $this->filterNonDataFields($data);
@@ -412,6 +419,30 @@ class FormHandler extends Base
 
     // If we come here, something didn't work
     return $this->formErrorMessage;
+  }
+
+  /**
+   * @param array $data the form fields and data
+   * @return bool true if valid, false if required fields are missing
+   */
+  protected function checkRequiredFields($data)
+  {
+    foreach ($data as $field) {
+      $value = $compare = $field['item']->getValue();
+      // If the value is an array, concat all values to a comparable string
+      if (is_array($value)) {
+        $value = '';
+        foreach ($compare as $item) {
+          $value .= $item['value'];
+        }
+      }
+
+      if ($field['item']->get('pflichtfeld') == 'ja' && strlen($value) == 0) {
+        return false;
+      }
+    }
+
+    return true;
   }
 
   /**
@@ -528,6 +559,7 @@ class FormHandler extends Base
   {
     $data = array();
     $this->executingForm = true;
+    $hiddenFields = explode(',', $_POST['lbwpHiddenFormFields']);
 
     foreach ($this->currentItems as $item) {
       $values = array(
@@ -536,6 +568,11 @@ class FormHandler extends Base
         'name' => $item->get('feldname'),
         'value' => $item->getValue()
       );
+
+      // Check if the field was visible, if not, don't add it at all
+      if (in_array($values['id'], $hiddenFields)) {
+        continue;
+      }
 
       // Check if the value is an array and implode it while preserving the array
       // We made it this way for backwards compat on all actions that dont implement valueArray

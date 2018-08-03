@@ -64,6 +64,8 @@ class FrontendLogin
     if ('POST' == $_SERVER['REQUEST_METHOD']) {
       $user = wp_signon('', false);
       if (!is_wp_error($user)) {
+        // Let user decide with a filter what happens
+        do_action('FrontendLogin_after_successful_login', $user);
         if (isset($_POST['redirect_to']) && Strings::isURL($_POST['redirect_to'])) {
           wp_safe_redirect($_POST['redirect_to']);
         } else {

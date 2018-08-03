@@ -359,7 +359,9 @@ LbwpFormEditor.Action = {
 				wrap.append('\
 					<div id="reference"><span class="close">X</span>\
 					<h3>' + LbwpFormEditor.Text.useFromFieldHeading + '</h3>\
-					<p>' + LbwpFormEditor.Text.useFromFieldText + '</p>' + fields + '\
+					<p>' + LbwpFormEditor.Text.useFromFieldText + '</p>\
+					<p><label><input type="checkbox" id="useFromAttach" />' + LbwpFormEditor.Text.useFromFieldCheckbox + '</label></p>'
+						+ fields + '\
 					</div>\
 				');
 
@@ -368,9 +370,14 @@ LbwpFormEditor.Action = {
 				ref.children("a").click(function (e) {
 					e.preventDefault();
 					var dest = elem.parent().find("input");
-					var currentVal = dest.val();
-					if (currentVal.length > 0) currentVal += ' ';
-					dest.val(currentVal + "field:" + jQuery(this).attr("href")).change();
+					var attach = jQuery('#useFromAttach').is(':checked');
+					if (attach) {
+						var currentVal = dest.val();
+						if (currentVal.length > 0) currentVal += ' ';
+						dest.val(currentVal + "field:" + jQuery(this).attr("href")).change();
+					} else {
+						dest.val("field:" + jQuery(this).attr("href")).change();
+					}
 					jQuery("#reference").remove();
 				});
 

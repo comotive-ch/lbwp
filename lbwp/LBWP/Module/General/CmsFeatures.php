@@ -14,6 +14,7 @@ use LBWP\Util\File;
 use LBWP\Util\Multilang;
 use LBWP\Util\Strings;
 use LBWP\Util\WordPress;
+use Nzz\AdvertPaas\Theme\Component\LoginManager;
 
 /**
  * This module holds serveral backend/frontend CMS features
@@ -172,6 +173,11 @@ class CmsFeatures extends \LBWP\Module\Base
   {
     if ($this->config['Various:MaintenanceMode'] == 1) {
       MaintenanceMode::init();
+    }
+
+    // Try autologin if given
+    if (isset($_GET['lbwp-autologin'])) {
+      $this->tryAutoLogin($_GET['lbwp-autologin']);
     }
 
     remove_filter('the_title', 'capital_P_dangit', 11);
@@ -595,6 +601,22 @@ class CmsFeatures extends \LBWP\Module\Base
     $patterns[] = array('body' => '\p{Arabic}|\p{Armenian}|\p{Bengali}|\p{Bopomofo}|\p{Braille}|\p{Buhid}|\p{Canadian_Aboriginal}|\p{Cherokee}|\p{Cyrillic}|\p{Devanagari}|\p{Ethiopic}|\p{Georgian}|\p{Greek}|\p{Gujarati}|\p{Gurmukhi}|\p{Han}|\p{Hangul}|\p{Hanunoo}|\p{Hebrew}|\p{Hiragana}|\p{Inherited}|\p{Kannada}|\p{Katakana}|\p{Khmer}|\p{Lao}|\p{Limbu}|\p{Malayalam}|\p{Mongolian}|\p{Myanmar}|\p{Ogham}|\p{Oriya}|\p{Runic}|\p{Sinhala}|\p{Syriac}|\p{Tagalog}|\p{Tagbanwa}|\p{Tamil}|\p{Telugu}|\p{Thaana}|\p{Thai}|\p{Tibetan}|\p{Yi}');
 
     return $patterns;
+  }
+
+  /**
+   * Explicitly uses secure=true to only work on https
+   * @param string $key a key to autologin that must be stored within a matching transient
+   */
+  protected function tryAutoLogin($key)
+  {
+    $userId = intval(get_transient('lbwp-autologin-' . $key));
+    // The transient is a valid key and still existing, if it returns a user
+    if ($userId > 0) {
+      wp_set_auth_cookie($userId, false, defined('WP_FORCE_SSL') && WP_FORCE_SSL);
+    }
+    // Always redirect to the profile, which might be showing login screen if cookie wasn't set
+    header('Location: ' . get_edit_profile_url($userId), null, 307);
+    exit;
   }
 
   /**

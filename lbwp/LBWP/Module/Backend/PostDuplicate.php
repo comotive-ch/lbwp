@@ -19,7 +19,8 @@ class PostDuplicate extends \LBWP\Module\Base
   protected $globalMetaBlacklist = array(
     '_edit_lock',
     '_edit_last',
-    'snap_isAutoPosted'
+    'snap_isAutoPosted',
+    'subscribeInfo'
   );
 
   /**
@@ -32,11 +33,6 @@ class PostDuplicate extends \LBWP\Module\Base
     add_filter('page_row_actions', array($this, 'addDuplicateLink'), 10, 2);
     add_action('admin_init', array($this, 'checkForDuplicationRequest'));
     add_action('admin_menu', array($this, 'allowUserPostTypes'));
-
-    // Special inline hooks for tribe events duplication
-    add_filter('duplicate_post_tribe_events_has_callback', '__return_true', 10);
-    add_filter('duplicate_post_tribe_events', array($this, 'duplicateTribeEvent'), 10, 2);
-    add_action('after_duplicate_tribe_events', array($this, 'duplicateTicketsForEvent'), 10, 2);
   }
 
   /**
@@ -89,8 +85,6 @@ class PostDuplicate extends \LBWP\Module\Base
     if (!isset($_GET['_nonce']) || !wp_verify_nonce($_GET['_nonce'], 'PostDuplicateNonce')) {
       return false;
     }
-
-
 
     $postId = intval($_GET['post']);
     $post = get_post($postId, ARRAY_A);
@@ -172,77 +166,5 @@ class PostDuplicate extends \LBWP\Module\Base
     // Send back to the original page
     wp_redirect(admin_url('post.php?action=edit&post=' . $newPostId));
     exit;
-  }
-
-  /**
-   * @param array $post the post data
-   * @param array $meta the meta data
-   * @return int new post id
-   */
-  public function duplicateTribeEvent($post, $meta)
-  {
-    $post['EventStartDate'] = date('Y-m-d', strtotime($meta['_EventStartDate']));
-    $post['EventStartHour'] = date('h', strtotime($meta['_EventStartDate']));
-    $post['EventStartMinute'] = date('i', strtotime($meta['_EventStartDate']));
-    $post['EventEndDate'] = date('Y-m-d', strtotime($meta['_EventEndDate']));
-    $post['EventEndHour'] = date('h', strtotime($meta['_EventEndDate']));
-    $post['EventEndMinute'] = date('j', strtotime($meta['_EventEndDate']));
-
-    unset($meta['_EventRecurrence']);
-
-    $post = array_merge($post, $meta);
-
-    return \TribeEventsAPI::createEvent($post);
-  }
-
-  /**
-   * When duplicating tribe_event posts, look for tickets if the TribeWooTickets plugin is loaded
-   * @param $postId the old tribe_event post id
-   * @param $newPostId the new tribe_event post id
-   */
-  public function duplicateTicketsForEvent($postId, $newPostId)
-  {
-    if (class_exists('\TribeWooTickets')) {
-      $tribeWooTickets = \TribeWooTickets::get_instance();
-      $tickets = \TribeWooTickets::get_event_tickets($postId);
-      foreach ($tickets as $ticket) {
-        // copy Woo Ticket object
-        $newTicket = new \TribeEventsTicketObject();
-        foreach (get_object_vars($ticket) as $fieldKey => $fieldValue) {
-          $newTicket->$fieldKey = $fieldValue;
-        }
-        unset($newTicket->ID);
-
-        // copy meta
-        $customFields = get_post_custom($ticket->ID);
-        $rawData = array();
-        foreach ($customFields as $metaKey => $metaValue) {
-          $value = (is_array($metaValue) && count($metaValue) > 0) ? $metaValue[0] : $metaValue;
-
-          //transform special woo ticket fields...
-          if (strpos($metaKey, '_') === 0 && in_array($metaKey, array('_sku', '_stock'))) {
-            $rawData['ticket_woo' . $metaKey] = $value;
-          } else {
-            $rawData[$metaKey] = $value;
-          }
-        }
-
-        // Insert the new ticket
-        $tribeWooTickets->save_ticket($newPostId, $newTicket, $rawData);
-
-        // Now, $newTicket has its ->ID prop set by wp_insert_post, so we also assign terms
-        $taxonomies = get_object_taxonomies('product');
-        foreach ($taxonomies as $tax) {
-          $terms = wp_get_object_terms($ticket->ID, $tax);
-          $term = array();
-
-          foreach ($terms as $t) {
-            $term[] = $t->slug;
-          }
-
-          wp_set_object_terms($newTicket->ID, $term, $tax);
-        }
-      }
-    }
   }
 }

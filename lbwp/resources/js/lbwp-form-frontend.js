@@ -7,6 +7,10 @@ var LbwpForm = {
 	 */
 	runningConditions : false,
 	/**
+	 * @var int id for the timeout to run invisibility update
+	 */
+	invisibleUpdateTimeout : 0,
+	/**
 	 * Called on page load, registering events and such
 	 */
 	initialize : function()
@@ -16,6 +20,7 @@ var LbwpForm = {
 		LbwpForm.handleItemWrapping();
 		LbwpForm.hideInvisibleFields();
 		LbwpForm.handleFieldConditions();
+		LbwpForm.updateInvisibleFieldInfo();
 	},
 
 	/**
@@ -181,6 +186,7 @@ var LbwpForm = {
 
 		// Finished running conditions
 		LbwpForm.runningConditions = false;
+		LbwpForm.updateInvisibleFieldInfo();
 		return true;
 	},
 
@@ -221,6 +227,32 @@ var LbwpForm = {
 				item.trigger('change');
 				break;
 		}
+	},
+
+	/**
+	 * Update infos on invisible fields to use in backend validation
+	 */
+	updateInvisibleFieldInfo : function()
+	{
+		if (LbwpForm.invisibleUpdateTimeout > 0) {
+			clearTimeout(LbwpForm.invisibleUpdateTimeout);
+		}
+
+		LbwpForm.invisibleUpdateTimeout = setTimeout(function() {
+			var list = '';
+			jQuery('[data-field]:not(:visible)').each(function () {
+				var field = jQuery(this);
+				// Make an exception for hidden fields
+				if (field.prop('tagName').toLowerCase() == 'input' && field.attr('type') == 'hidden') {
+					return true;
+				}
+				var id = field.data('field');
+				if (list.indexOf(id) == -1) {
+					list += id + ',';
+				}
+			});
+			jQuery('#lbwpHiddenFormFields').val(list.substring(0, list.length-1));
+		}, 100);
 	},
 
 	/**

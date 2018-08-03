@@ -285,16 +285,25 @@ class SendMail extends Base
         $field['value'] = __('Nicht ausgefüllt', 'lbwp');
       }
 
+      // Display the actual table row
       if (isset($field['value']) && strlen($field['value']) > 0) {
         $displayName = $field['name'];
         if (strlen($displayName) > 0) $displayName .= ':';
         // Print the field
-        $table .= '
-          <tr>
-            <td width="25%">' . $displayName . '</td>
-            <td width="75%">' . $field['value'] . '</td>
-          </tr>
-        ';
+        if (strlen($field['name']) > 0) {
+          $table .= '
+            <tr>
+              <td width="25%">' . $field['name'] . ':</td>
+              <td width="75%">' . $field['value'] . '</td>
+            </tr>
+          ';
+        } else {
+          $table .= '
+            <tr>
+              <td colspan="2">' . $field['value'] . '</td>
+            </tr>
+          ';
+        }
       }
     }
 

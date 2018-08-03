@@ -45,9 +45,8 @@ class DataDisplay
     // Prepare the data
     $table = $this->backend->getTable($formId);
     $tableName = $this->getTableName($formId);
-    $columns = $this->getColumns($table);
-    $rawTable = $this->getRawTable($columns, $table['data']);
-    $hasEntries = count($rawTable) > 0;
+    $columns = array_keys($table['fields']);
+    $rawTable = $this->getRawTable($table['data'], $table['fields']);
 
     // Get the actual action config, from form id to have an eventual event
     $handler = FormCore::getInstance()->getFormHandler();
@@ -62,7 +61,7 @@ class DataDisplay
       <div class="wrap">
         <h2>Datenspeicher ' . $tableName . '</h2>
         <input type="hidden" id="eventId" value="' . $eventId . '" />
-        ' . $this->getUserOptions($formId, $hasEntries) . '<br />
+        ' . $this->getUserOptions($formId) . '<br />
         ' . $this->getTableHtml($columns, $rawTable, $formId, $eventId, $table['fields']) . '<br />
         ' . $this->getEventSummaryHtml($formId, $eventId) . '
         ' . $this->getEventUnfilledHtml($formId, $eventId) . '
@@ -91,25 +90,17 @@ class DataDisplay
 
   /**
    * @param int $formId display various user options
-   * @param bool $hasEntries some menus can only be displayed if there are entries
    * @return string html code for options
    */
-  protected function getUserOptions($formId, $hasEntries)
+  protected function getUserOptions($formId)
   {
-    $additionalMenus = '';
-    if ($hasEntries) {
-      $additionalMenus .= '
-        <li> | <a href="?page=' . $_GET['page'] . '&table=' . $_GET['table'] . '&newrow">Neuen Datensatz anfügen</a></li>
-      ';
-    }
-
     return '
       <ul class="subsubsub">
         <li><a href="?page=' . $_GET['page'] . '&table=' . $_GET['table'] . '&flushtable" onclick="return confirm(\'Tabelle wirklich leeren?\')">Tabelle leeren</a></li>
         <li> | <a href="?page=' . $_GET['page'] . '&table=' . $_GET['table'] . '&deletetable" onclick="return confirm(\'Tabelle wirklich löschen?\')">Tabelle löschen</a></li>
         <li> | <a href="#export-csv-utf8" class="export" data-type="csv" data-encoding="utf8">Export als CSV (UTF-8)</a></li>
         <li> | <a href="#export-csv-iso" class="export" data-type="csv" data-encoding="iso">Export als CSV (Excel)</a></li>
-        ' . $additionalMenus . '
+        <li> | <a href="?page=' . $_GET['page'] . '&table=' . $_GET['table'] . '&newrow">Neuen Datensatz anfügen</a></li>
       </ul>
     ';
   }
@@ -128,12 +119,6 @@ class DataDisplay
     // Force fields to be an array
     $fields = ArrayManipulation::forceArray($fields);
 
-    // If there is no data, show it
-    if (count($columns) == 0) {
-      $columns[] = 'Keine Daten';
-      $data[0]['Keine Daten'] = 'Es befinden sich noch keine Daten in der Tabelle.';
-    }
-
     // Load event infos, if needed
     if ($eventId > 0) {
       $info = EventType::getSubscribeInfo($eventId);
@@ -148,7 +133,7 @@ class DataDisplay
         $printedName = $fields[$colName];
       }
       $htmlColumns .= '<th class="manage-column"><strong>' . $printedName . '</strong></th>';
-      $exportOptions .= '<option value="' . $colName . '" selected="selected">' . $colName . '</option>' . PHP_EOL;
+      $exportOptions .= '<option value="' . $colName . '" selected="selected">' . $printedName . '</option>' . PHP_EOL;
     }
 
     // Create the export form
@@ -216,6 +201,11 @@ class DataDisplay
         ';
         $html .= '</tr>';
       }
+    }
+
+    // If there is no data, show an erroneus row
+    if (count($data) == 0) {
+      $html .= '<tr><td>&nbsp;</td><td colspan="' . count($columns) . '">In dieser Tabelle sind noch keine Daten gespeichert.</td></tr>';
     }
 
     // Close the body and table and return
@@ -487,35 +477,17 @@ class DataDisplay
   }
 
   /**
-   * @param array $table the full data table
-   * @return array list of all possible cell keys
-   */
-  protected function getColumns($table)
-  {
-    $columns = array();
-    foreach ($table['data'] as $row) {
-      foreach ($row as $key => $value) {
-        if (!in_array($key, $columns)) {
-          $columns[] = $key;
-        }
-      }
-    }
-
-    return $columns;
-  }
-
-  /**
-   * @param array $columns list of possible data entries
    * @param array $data the actual data rows
+   * @param array $fields key/value pair of field and its name
    * @return array array containing empty values for all fields
    */
-  protected function getRawTable($columns, $data)
+  protected function getRawTable($data, $fields)
   {
     $rawData = array();
 
     foreach ($data as $row) {
       $rawRow = array();
-      foreach ($columns as $key) {
+      foreach ($fields as $key => $value) {
         if (isset($row[$key])) {
           $rawRow[$key] = $row[$key];
         } else {

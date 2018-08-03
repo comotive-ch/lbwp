@@ -1,0 +1,94 @@
+$errorColor : #F2D0C6;
+
+.crm-navigation {
+	a.crm-tab {
+		&.error {
+			background-color:$errorColor;
+		}
+	}
+}
+
+.tab-container {
+	display: none;
+	padding-top: 10px;
+
+	.form-table {
+		margin-top: 0;
+
+		textarea {
+			margin-right: 4px;
+			float: left;
+		}
+
+		th {
+			padding: 10px 10px 10px 0;
+		}
+
+		td {
+			padding: 10px;
+		}
+
+	}
+
+	// contact editor stylings
+	.contact-editor-container {
+		margin-bottom: 30px;
+
+		h4 {
+			font-size: 1rem;
+		}
+
+		.contact-table-container {
+
+			.contact-table {
+				table-layout: fixed;
+
+				thead {
+					th {
+						&.th-salutation {
+							width: 10%;
+						}
+
+						&.th-buttons {
+							width: 5%;
+						}
+					}
+				}
+
+				tbody {
+					td {
+						input,
+						select {
+							width: 100%;
+						}
+
+						&:last-child {
+							text-align: center;
+						}
+					}
+				}
+			}
+
+			.add-contact, .copy-main-contact {
+				margin-top: 10px;
+			}
+		}
+	}
+
+	.field-error {
+		border:2px solid darken($errorColor, 10);
+	}
+
+	.chosen-container {
+		width: 25em !important;
+	}
+}
+
+#your-profile {
+	display: none;
+}
+
+.profile-category-list {
+	list-style-type: square;
+	margin: 7px 0px 0px 20px;
+}

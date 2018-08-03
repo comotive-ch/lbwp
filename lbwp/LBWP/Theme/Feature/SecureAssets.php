@@ -139,7 +139,7 @@ class SecureAssets
       $meta = ArrayManipulation::forceArray(wp_get_attachment_metadata($attachmentId));
       // Only rewrite, if the asset is secured
       if (isset($meta['secured_asset']) && $meta['secured_asset'] == 1) {
-        $tag->setAttribute('href', $this->getProxyPath($attachmentId));
+        $tag->setAttribute('href', self::getProxyPath($attachmentId));
       }
 
       $fragment->appendXML($doc->saveXML($tag));
@@ -151,7 +151,7 @@ class SecureAssets
    * @param int $attachmentId the attachment id
    * @return string the url to be used for downloading
    */
-  public function getProxyPath($attachmentId)
+  public static function getProxyPath($attachmentId)
   {
     $key = get_post_meta($attachmentId, '_wp_attached_file', true);
     return get_bloginfo('url') . '/wp-file-proxy.php?key=' . urlencode($key);

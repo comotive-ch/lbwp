@@ -314,13 +314,15 @@ class LocalMailService
       if (is_array($data) && count($data) > 0 && count($data[0]) >= count($fields)) {
         $info = $this->importStaticListData($postId, $data, $fields, $fileName);
       } else {
-        $info = 'Datei ' . $fileName . ' konnte nicht importiert werden (Leer oder ungültiges Format)';
+        $info = 'Datei ' . $fileName . ' konnte nicht importiert werden (Leer oder ungültiges Format) und wurde gelöscht.';
       }
 
       // Set the current list as last imported, also add an info that the import worked
       $lastImportedList = $selectedList;
       update_post_meta($postId, 'last-imported-list', $selectedList);
       update_post_meta($postId, 'last-import-info', $info);
+      // After import, delete the whole attachment no matter if the import worked
+      wp_delete_attachment($selectedList);
     }
 
     // Display the metabox field to upload the list
@@ -502,7 +504,7 @@ class LocalMailService
 
     // Save the new list data and return with success
     update_post_meta($postId, 'list-data', $listData);
-    return 'Datei ' . $file . ' importiert am ' . Date::getTime(Date::EU_DATETIME) . ' Uhr';
+    return 'Datei ' . $file . ' importiert am ' . Date::getTime(Date::EU_DATETIME) . ' Uhr. Datei wurde nach dem Import gelöscht.';
   }
 
   /**

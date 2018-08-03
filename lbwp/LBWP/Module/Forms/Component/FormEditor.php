@@ -152,6 +152,7 @@ class FormEditor extends Base
           deletedAction : "<p>' . esc_js(__('Die Aktion wurde gelöscht.', 'lbwp')) . '</p>",
           deletedField : "<p>' . esc_js(__('Das Feld wurde gelöscht.', 'lbwp')) . '</p>",
           useFromFieldHeading : "' . esc_js(__('Formular-Feld verwenden', 'lbwp')) . '",
+          useFromFieldCheckbox : "' . esc_js(__('Feld-Inhalt anhängen statt überschreiben', 'lbwp')) . '",
           useFromFieldText : "' . esc_js(__('Klicken Sie auf ein Formular-Feld um dessen Inhalt für das gewählte Aktionsfeld zu verwenden', 'lbwp')) . '",
           addOption : "' . esc_js(__('Option hinzufügen', 'lbwp')) . '"
         };

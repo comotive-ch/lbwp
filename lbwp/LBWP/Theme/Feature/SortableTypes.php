@@ -116,7 +116,11 @@ class SortableTypes
   public function addSortingMenus()
   {
     foreach ($this->config as $config) {
-      add_submenu_page('edit.php?post_type=' . $config['type'], 'Sortierung', 'Sortierung', 'publish_posts', self::PAGE_PREFIX . $config['type'], array($this, 'displaySortInterface'));
+      if (!isset($config['custom-menu'])) {
+        add_submenu_page('edit.php?post_type=' . $config['type'], 'Sortierung', 'Sortierung', 'publish_posts', self::PAGE_PREFIX . $config['type'], array($this, 'displaySortInterface'));
+      } else {
+        add_submenu_page($config['custom-menu']['slug'], $config['custom-menu']['name'], $config['custom-menu']['name'], 'publish_posts', self::PAGE_PREFIX . $config['type'], array($this, 'displaySortInterface'));
+      }
     }
   }
 
@@ -162,16 +166,26 @@ class SortableTypes
       'order' => 'ASC'
     ));
 
+    // Tell if we should display images or not
+    $images = !(isset($this->config[$type]['noImages']) && $this->config[$type]['noImages']);
+
     // Create the list items
     foreach ($items as $item) {
-      $url = get_the_post_thumbnail_url($item->ID, 'thumbnail');
-      $html .= '
-        <li class="attachment save-ready" data-order="' . $item->menu_order . '" data-id="' . $item->ID . '">
+      $image = '';
+      if ($images) {
+        $url = get_the_post_thumbnail_url($item->ID, 'thumbnail');
+        $image = '
           <div class="attachment-preview">
             <div class="thumbnail">
               <div class="centered"><img src="' . $url . '" alt="' . $item->post_title . '"></div>
             </div>
           </div>
+        ';
+      }
+
+      $html .= '
+        <li class="attachment save-ready" data-order="' . $item->menu_order . '" data-id="' . $item->ID . '">
+          ' . $image . '
           <div class="attachment-title">
             <span>' . $item->post_title . '</span>
           </div>

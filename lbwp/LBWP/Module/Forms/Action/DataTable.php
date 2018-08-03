@@ -166,6 +166,7 @@ class DataTable extends Base
     if (intval($this->params['form_id']) == 0) {
       // Create the table in the list if not a referenced table (which also creates an empty data table)
       $backend = $this->core->getDataTableBackend();
+      $backend->updateTableFields($form->ID);
       $backend->updateTableList($form->ID, $this->params['name']);
     }
   }
@@ -337,7 +338,7 @@ class DataTable extends Base
   {
     return '
       <style type="text/css">
-        body, table, td, p { font-family: Arial, Helvetica, sans-serif !important; }
+        body, table, td, p, ul, li, * { font-family: Arial, Helvetica, sans-serif !important; }
       </style>
     ';
   }
@@ -365,10 +366,13 @@ class DataTable extends Base
         // Radio / Checkbox / Dropdown get a special treatment
         switch ($class) {
           case 'radio':
-            $script .= 'jQuery("input[name=' . $item->get('id') . '][value=\'' . esc_js($row[$cellKey]) . '\'").attr("checked", "checked");' . PHP_EOL;
+            // Double escape strings \' to \\' in order to esc_js *and* escape the query selector
+            $value = html_entity_decode(str_replace('\\\'','\\\\\'', esc_js($row[$cellKey])));
+            $script .= 'jQuery("input[name=' . $item->get('id') . '][value=\'' . $value . '\'").attr("checked", "checked");' . PHP_EOL;
             break;
           case 'dropdown':
-            $script .= 'jQuery("select[name=' . $item->get('id') . '] option[value=\'' . esc_js($row[$cellKey]) . '\'").attr("selected", "selected");' . PHP_EOL;
+            $value = html_entity_decode(str_replace('\\\'','\\\\\'', esc_js($row[$cellKey])));
+            $script .= 'jQuery("select[name=' . $item->get('id') . '] option[value=\'' . $value . '\'").attr("selected", "selected");' . PHP_EOL;
             break;
           // Checkboxes are a tad more complicated to solve
           case 'checkbox':

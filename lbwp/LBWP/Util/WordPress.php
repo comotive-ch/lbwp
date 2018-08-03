@@ -26,6 +26,10 @@ class WordPress
    * @var array post types to be restricted with taxonomies
    */
   protected static $restrictPostTables = array();
+  /**
+   * @var array additional columns for post tables
+   */
+  protected static $postTableColumns = array();
 
   /**
    * Registers a taxonomy
@@ -402,6 +406,55 @@ class WordPress
     }
 
     return $objects;
+  }
+
+  /**
+   * @param array $args contains post_type, meta_key, multiple, heading, callback (optional)
+   */
+  public static function addPostTableColumn($args)
+  {
+    // Register the filters, if first call
+    if (count(self::$postTableColumns) == 0) {
+      add_filter('manage_posts_columns', array('\LBWP\Util\WordPress', 'addPostTableColumnHeader'));
+      add_action('manage_posts_custom_column', array('\LBWP\Util\WordPress', 'addPostTableColumnCell'), 10, 2);
+    }
+
+    self::$postTableColumns[$args['column_key']] = $args;
+  }
+
+  /**
+   * @param $columns
+   * @return mixed
+   */
+  public static function addPostTableColumnHeader($columns)
+  {
+    foreach (self::$postTableColumns as $config) {
+      if ($config['post_type'] == $_GET['post_type']) {
+        $columns[$config['column_key']] = $config['heading'];
+      }
+    }
+
+    return $columns;
+  }
+
+  /**
+   * @param $key
+   * @param $postId
+   */
+  public static function addPostTableColumnCell($key, $postId)
+  {
+    if (isset(self::$postTableColumns[$key])) {
+      $config = self::$postTableColumns[$key];
+      // Get the meta value of the post
+      $value = get_post_meta($postId, $config['meta_key'], $config['single']);
+      // See if there is a callback
+      if (isset($config['callback']) && is_callable($config['callback'])) {
+        call_user_func($config['callback'], $value, $postId);
+      } else {
+        // If there is no callback, simple print the value of the meta field
+        echo $value;
+      }
+    }
   }
 
   /**
@@ -859,14 +912,36 @@ class WordPress
    * @param string $taxonomy the taxonomy
    * @return string name of the first found assigned term in that taxonomy, or empty string, if none
    */
-  public static function getFirstTermName($postId, $taxonomy = 'category')
+  public static function getFirstTerm($postId, $taxonomy = 'category')
   {
     $terms = wp_get_post_terms($postId, $taxonomy);
     if (is_array($terms) && count($terms) > 0) {
-      return $terms[0]->name;
+      return $terms[0];
     }
 
-    return '';
+    return false;
+  }
+
+  /**
+   * @param int $postId the post id
+   * @param string $taxonomy the taxonomy
+   * @return string name of the first found assigned term in that taxonomy, or empty string, if none
+   */
+  public static function getFirstTermName($postId, $taxonomy = 'category')
+  {
+    $term = self::getFirstTerm($postId, $taxonomy);
+    return ($term != false) ? $term->name : '';
+  }
+
+  /**
+   * @param int $postId the post id
+   * @param string $taxonomy the taxonomy
+   * @return string name of the first found assigned term in that taxonomy, or empty string, if none
+   */
+  public static function getFirstTermSlug($postId, $taxonomy = 'category')
+  {
+    $term = self::getFirstTerm($postId, $taxonomy);
+    return ($term != false) ? $term->slug : '';
   }
 
   /**

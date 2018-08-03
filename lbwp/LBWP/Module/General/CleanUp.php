@@ -80,6 +80,7 @@ class CleanUp extends \LBWP\Module\Base
     add_filter('comment_moderation_text', array($this, 'getSpamlessCommentNotification'), 10, 2);
     add_action('phpmailer_init', array($this, 'preventMassMail'));
     add_action('wp', array($this, 'preventMass404'), 50);
+    add_Filter('the_privacy_policy_link', '__return_empty_string');
     remove_action('wp_head', 'wp_generator');
   }
 

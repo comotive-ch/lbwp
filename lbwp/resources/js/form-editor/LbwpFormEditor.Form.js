@@ -675,6 +675,9 @@ LbwpFormEditor.Form = {
 			if (params[i].key == "conditions") break;
 		}
 
+		// Remove eventual duplicates
+		conditions = LbwpFormEditor.Form.removeDuplicateConditions(conditions);
+
 		LbwpFormEditor.Data.Items[key].params[i].value = LbwpFormEditor.Core.encodeObjectString(conditions);
 		LbwpFormEditor.Core.updateJsonField();
 	},
@@ -684,10 +687,10 @@ LbwpFormEditor.Form = {
 	 */
 	saveConditionsMulti : function()
 	{
-		var i = 0, si = 0, c = null;
+		var i = 0, j = 0, t = 0, si = 0, c = null;
 		var nonSimilarConditions = [], conditions = [];
 		var saveableConditions = [];
-		var element, key, params;
+		var element, key, params, remove;
 
 		// Get the similar conditions to save (all visible)
 		var similarConditions = [];
@@ -722,10 +725,13 @@ LbwpFormEditor.Form = {
 
 			// Now we have everything to save it back to our array and update it
 			conditions = [];
-			for (i in nonSimilarConditions)
-				conditions.push(nonSimilarConditions[i]);
-			for (i in similarConditions)
-				conditions.push(similarConditions[i]);
+			for (j in nonSimilarConditions)
+				conditions.push(nonSimilarConditions[j]);
+			for (j in similarConditions)
+				conditions.push(similarConditions[j]);
+
+			// Remove eventual duplicates
+			conditions = LbwpFormEditor.Form.removeDuplicateConditions(conditions);
 
 			// Save to a temporary variable - we save at the end, because nonSimilar would make problem
 			saveableConditions.push({
@@ -744,6 +750,31 @@ LbwpFormEditor.Form = {
 			// After all is done, save the main json field
 			LbwpFormEditor.Core.updateJsonField();
 		}
+	},
+
+	/**
+	 * Removes duplicate conditions from the array
+	 * @param conditions
+	 */
+	removeDuplicateConditions : function (conditions)
+	{
+		var i = 0, j = 0;
+		var uniqueConditions = [];
+
+		for (i in conditions) {
+			var exists = false;
+			for (j in uniqueConditions) {
+				if (LbwpFormEditor.Form.compareConditions(conditions[i], uniqueConditions[j])) {
+					exists = true;
+				}
+			}
+			// Add to unique conditions if not exists
+			if (!exists) {
+				uniqueConditions.push(conditions[i]);
+			}
+		}
+
+		return uniqueConditions;
 	},
 
 	/**

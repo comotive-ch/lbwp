@@ -26,7 +26,7 @@ class Cookie
     if (self::$offset == 0)
       self::$offset = time() + (5 * 365 * 24 * 3600);
     if (!isset($_COOKIE['lbwpcookie'])) {
-      setcookie('lbwpcookie',serialize(array()),self::$offset,'/');
+      setcookie('lbwpcookie',serialize(array()),self::$offset,'/',COOKIE_DOMAIN,defined('WP_FORCE_SSL'),true);
     } else {
       self::$data = unserialize(stripslashes($_COOKIE['lbwpcookie']));
     }
@@ -44,7 +44,7 @@ class Cookie
   {
     self::initialize();
     self::$data[$key] = $value;
-    setcookie('lbwpcookie',serialize(self::$data),self::$offset,'/');
+    setcookie('lbwpcookie',serialize(self::$data),self::$offset,'/',COOKIE_DOMAIN,defined('WP_FORCE_SSL'),true);
   }
 
   /**

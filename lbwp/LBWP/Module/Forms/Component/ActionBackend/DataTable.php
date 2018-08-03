@@ -234,18 +234,15 @@ class DataTable extends Base
   protected function addNewRow($tableKey, $data, $tsid, $action, $eventId = 0)
   {
     $row = array();
-    $fields = array();
     foreach ($data as $item) {
       if (isset($item['valueArray'])) {
         // Have an own column for each selected value in the array
         foreach ($item['valueArray'] as $value) {
-          $fields[$value['key']] = $value['colname'];
           $row[$value['key']] = $value['value'];
         }
       } else {
         // Have a single value to be added to the row
         $cellKey = Strings::forceSlugString($item['name']);
-        $fields[$cellKey] = $item['name'];
         // If storage id cell, update the id
         if ($cellKey == 'tsid') {
           $item['value'] = $tsid;
@@ -259,12 +256,6 @@ class DataTable extends Base
     $table = WordPress::getJsonOption($tableKey);
     $table['data'][] = $row;
     $table['changed'] = current_time('timestamp');
-    // Set the named fields
-    if (is_array($table['fields'])) {
-      $table['fields'] = array_merge($table['fields'], $fields);
-    } else {
-      $table['fields'] = $fields;
-    }
     WordPress::updateJsonOption($tableKey, $table);
 
     // Add event subscription info, if needed
@@ -293,12 +284,13 @@ class DataTable extends Base
       }
     }
 
+    // Reset to an empty row, filling it with new data (that way, removed fields are actually removed)
+    $row = array();
     // Override data in that row, except for the tsid
     foreach ($data as $item) {
       if (isset($item['valueArray'])) {
         // Have an own column for each selected value in the array
         foreach ($item['valueArray'] as $value) {
-          $fields[$value['key']] = $value['colname'];
           $row[$value['key']] = $value['value'];
         }
       } else {
@@ -306,9 +298,10 @@ class DataTable extends Base
         $cellKey = Strings::forceSlugString($item['name']);
         if ($cellKey != 'tsid') {
           $row[$cellKey] = $item['value'];
+        } else {
+          $row[$cellKey] = $tsid;
         }
       }
-
     }
 
     // Override the row in our referenced table
@@ -476,7 +469,7 @@ class DataTable extends Base
     $key = self::TABLE_OPTION_PREFIX . $formId;
     $table = WordPress::getJsonOption($key);
     // Get a key list of the first row
-    $keys = array_keys($table['data'][0]);
+    $keys = array_keys($table['fields']);
     // Create an empty row from that
     $row = array();
     foreach ($keys as $field) {
@@ -507,6 +500,57 @@ class DataTable extends Base
   }
 
   /**
+   * Generates new fields list for the data table
+   * @param int $formId the form
+   */
+  public function updateTableFields($formId)
+  {
+    $key = self::TABLE_OPTION_PREFIX . $formId;
+    $table = WordPress::getJsonOption($key);
+    $table['fields'] = $this->getTableFieldFromForm($formId);
+    WordPress::updateJsonOption($key, $table);
+  }
+
+  /**
+   * @param int $formId the form id
+   * @return array list of key/values pairs for table fields
+   */
+  protected function getTableFieldFromForm($formId)
+  {
+    $fields = array();
+
+    // Get the current items from context
+    $formHandler = FormCore::getInstance()->getFormHandler();
+    $items = $formHandler->getCurrentItems();
+    // TODO Not yet implemented as not needed: Load from ID, if nothing given
+    if (!is_array($items) || count($items) == 0) {
+
+    }
+
+    // Set the field keys and values
+    foreach ($items as $item) {
+      if ($item->get('multicolumn') == 'ja') {
+        $key = Strings::forceSlugString($item->get('feldname'));
+        $selection = $item->prepareContentValues($item->getContent());
+        foreach ($selection as $item) {
+          $fields[$key . '-' . Strings::forceSlugString($item)] = $item;
+        }
+      } else {
+        $key = Strings::forceSlugString($item->get('feldname'));
+        $fields[$key] = $item->get('feldname');
+      }
+    }
+
+    // Always add the default fields at the end
+    $fields['ursprungsformular'] = 'Ursprungsformular';
+    $fields['user-ip-adresse'] = 'IP-Adresse';
+    $fields['zeitstempel'] = 'Datum / Zeit';
+    $fields['tsid'] = 'Datensatz-ID';
+
+    return $fields;
+  }
+
+  /**
    * @param int $formId the form whose table to get
    * @return array the table data array
    */
@@ -525,6 +569,7 @@ class DataTable extends Base
   {
     $table = $this->getTable($formId);
     $table['data'] = array();
+    $table['fields'] = $this->getTableFieldFromForm($formId);
     $table['changed'] = current_time('timestamp');
     $key = self::TABLE_OPTION_PREFIX . $formId;
     $this->flushEventSubscriberInfo($eventId);

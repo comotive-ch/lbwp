@@ -5,6 +5,7 @@ namespace LBWP\Module\Forms\Action;
 use LBWP\Module\Forms\Item\Base as BaseItem;
 use LBWP\Module\Forms\Item\Hiddenfield;
 use LBWP\Module\Forms\Item\Textfield;
+use LBWP\Module\General\Cms\SystemLog;
 use LBWP\Util\External;
 use LBWP\Util\File;
 use LBWP\Util\Strings;
@@ -35,7 +36,7 @@ class Salesforce extends Base
    */
   protected $modes = array(
     'prod' => 'https://webto.salesforce.com/servlet/servlet.WebToLead?encoding=UTF-8',
-    'dev' => 'https://test.salesforce.com/servlet/servlet.WebToLead?encoding=UTF-8'
+    'dev' => 'https://{instance}.salesforce.com/servlet/servlet.WebToLead?encoding=UTF-8'
   );
 
   protected $fields = array(
@@ -95,6 +96,13 @@ class Salesforce extends Base
           'prod' => 'Produktionsumgebung',
           'dev' => 'Testumgebung'
         )
+      ),
+      'instance' => array(
+        'name' => 'Test-Instanz ID',
+        'type' => 'textfield',
+        'help' => '
+          Wenn Sie in der Test-Instanz eingeloggt sind, ist dies die Zeichenkette vor .salesforce.com im Browserfenster z.b. "cs71"
+        '
       )
     ));
   }
@@ -115,8 +123,9 @@ class Salesforce extends Base
   public function execute($data)
   {
     // Prepare the post data to be send to salesforce
+    $returnUrl = get_bloginfo('url');
     $postData = array(
-      'retURL' => get_bloginfo('url'),
+      'retURL' => $returnUrl,
       'submit' => 'send'
     );
 
@@ -127,22 +136,28 @@ class Salesforce extends Base
 
     // Send data to salesforce
     $url = $this->modes[$this->params['mode']];
+    if (strlen($this->params['instance']) > 0 && $this->params['mode'] == 'dev') {
+      $url = str_replace('{instance}', $this->params['instance'], $url);
+    }
+
     $options = array(
       CURLOPT_HEADER => true,
+      CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
       CURLOPT_FOLLOWLOCATION => true,
       CURLOPT_RETURNTRANSFER => true,
       CURLOPT_SSL_VERIFYHOST => false,
       CURLOPT_SSL_VERIFYPEER => false,
-      CURLOPT_POST => true,
+      CURLOPT_USERAGENT => 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/67.0.3396.99 Safari/537.36',
+      CURLOPT_CUSTOMREQUEST => 'POST',
       CURLOPT_CONNECTTIMEOUT => 10,
       CURLOPT_TIMEOUT => 10,
-      CURLOPT_MAXREDIRS => 5,
+      CURLOPT_MAXREDIRS => 10,
       CURLOPT_POSTFIELDS => $postData
     );
 
     $res = curl_init($url);
     curl_setopt_array($res, $options);
-    $headers = curl_exec($res);
-    return Strings::contains($headers, 'HTTP/1.1 200 OK');
+    $content = curl_exec($res);
+    return Strings::contains($content, $returnUrl);
   }
 } 

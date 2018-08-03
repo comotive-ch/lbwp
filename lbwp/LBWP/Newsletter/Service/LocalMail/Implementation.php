@@ -241,6 +241,13 @@ class Implementation extends Base implements Definition
     $mails = array();
     $uniqueAdresses = array();
     $listIdMap = array();
+    // Is autologin used in this email
+    $autologin = false;
+    if (Strings::contains($html, '{autologin}')) {
+      $autologin = true;
+      $loginUrl = apply_filters('Lbwp_Autologin_Link_Target', get_bloginfo('url'));
+      $loginValidity = apply_filters('Lbwp_Autologin_Link_Validity', 2);
+    }
     // Data table helper for statistics
     $key = 'localmail_stats_' . $newsletter->getId();
     $stats = new LbwpData($key);
@@ -288,6 +295,17 @@ class Implementation extends Base implements Definition
           // Replace some custom code fields
           $personalizedHtml = str_replace('_listId', $emailListId, $personalizedHtml);
           $personalizedHtml = str_replace('_emailId', $memberId, $personalizedHtml);
+
+          // If the contact provides a user id, create them a autologin transient
+          if ($autologin) {
+            if (isset($recipient['userid']) && $recipient['userid'] > 0) {
+              $key = md5(SECURE_AUTH_SALT . $recipient['email']) . sha1(AUTH_SALT . $recipient['userid']);
+              set_transient('lbwp-autologin-' . $key, $recipient['userid'], $loginValidity * 86400);
+              $personalizedHtml = str_replace('{autologin}', Strings::attachParam('lbwp-autologin', $key, $loginUrl), $personalizedHtml);
+            } else {
+              $personalizedHtml = str_replace('{autologin}', $loginUrl, $personalizedHtml);
+            }
+          }
 
           // Create a new mailing entry
           $mails[] = array(
