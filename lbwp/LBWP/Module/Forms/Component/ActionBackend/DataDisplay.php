@@ -27,6 +27,10 @@ class DataDisplay
    * @var int the alt counter for the table display
    */
   protected $altCounter = 0;
+  /**
+   * @var array excel formular starting strings
+   */
+  protected $excelFormulaChars = array('-', '+', '*', '/', '=');
 
   /**
    * @param DataTableBackend $backend
@@ -45,7 +49,7 @@ class DataDisplay
     // Prepare the data
     $table = $this->backend->getTable($formId);
     $tableName = $this->getTableName($formId);
-    $columns = array_keys($table['fields']);
+    $columns = $this->getColumns($table, $table['fields']);
     $rawTable = $this->getRawTable($table['data'], $table['fields']);
 
     // Get the actual action config, from form id to have an eventual event
@@ -477,6 +481,31 @@ class DataDisplay
   }
 
   /**
+   * @param array $table the full data table
+   * @param array $fields the fields available
+   * @return array list of all possible cell keys
+   */
+  protected function getColumns($table, &$fields)
+  {
+    if (is_array($fields)) {
+      return array_keys($table['fields']);
+    }
+
+    $columns = array();
+    foreach ($table['data'] as $row) {
+      foreach ($row as $key => $value) {
+        if (!in_array($key, $columns)) {
+          $columns[] = $key;
+          // Make a fields array by ref, for backwards comp
+          $fields[$key] = $key;
+        }
+      }
+    }
+
+    return $columns;
+  }
+
+  /**
    * @param array $data the actual data rows
    * @param array $fields key/value pair of field and its name
    * @return array array containing empty values for all fields
@@ -513,10 +542,10 @@ class DataDisplay
     // Export the data
     if (isset($_POST['export'])) {
       if ($_POST['export'] == 'csv' && $_POST['type'] == 'utf8') {
-        $this->sendCsv($name, $columns, $data, false, $formId, $eventId, $fields);
+        $this->sendCsv($name, $columns, $data, false, $formId, $eventId, $fields, false);
       }
       if ($_POST['export'] == 'csv' && $_POST['type'] == 'iso') {
-        $this->sendCsv($name, $columns, $data, true, $formId, $eventId, $fields);
+        $this->sendCsv($name, $columns, $data, true, $formId, $eventId, $fields, true);
       }
     }
 
@@ -565,7 +594,7 @@ class DataDisplay
     $columns['subscribe-link'] = 'subscribe-link';
 
     // Export as actual csv with the existing method, but no event id
-    $this->sendCsv('unfilled-' . $name, $columns, $data, $utf8decode, 0, 0);
+    $this->sendCsv('unfilled-' . $name, $columns, $data, $utf8decode, 0, 0, array(), false);
   }
 
   /**
@@ -577,8 +606,9 @@ class DataDisplay
    * @param int $formId the form id, to check for an event
    * @param int $eventId eventual event id
    * @param array $fields translated field names
+   * @param bool $preventFormulas prevent excel from making formulas from values
    */
-  protected function sendCsv($name, $columns, $data ,$utf8decode, $formId, $eventId, $fields)
+  protected function sendCsv($name, $columns, $data ,$utf8decode, $formId, $eventId, $fields, $preventFormulas)
   {
     ob_end_clean();
     $filename = Strings::forceSlugString($name) . '.csv';
@@ -618,6 +648,9 @@ class DataDisplay
       $printedRow = array();
       foreach ($columns as $key) {
         $value = $row[$key];
+        if ($preventFormulas && in_array($value[0], $this->excelFormulaChars)) {
+          $value = "\t" . $value;
+        }
         if ($utf8decode) {
           $printedRow[$key] = utf8_decode($value);
         } else {

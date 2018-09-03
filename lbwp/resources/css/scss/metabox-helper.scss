@@ -276,8 +276,15 @@ body.modal-backend.post-type-onepager-item #wpwrap {
 	font-style: italic;
 }
 
+
 .add-new-dropdown-item input {
 	min-width: 200px;
+
+	@media #{$lbwpAdminMediumBreakpoint} {
+		width: 100%;
+		min-width: auto;
+	}
+
 }
 
 .add-new-dropdown-item input.error {

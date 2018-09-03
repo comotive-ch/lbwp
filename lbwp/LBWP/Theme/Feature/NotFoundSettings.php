@@ -38,7 +38,11 @@ class NotFoundSettings
   public static function getTitle()
   {
     $config = LbwpCore::getInstance()->getConfig();
-    return apply_filters('the_title', $config['NotFoundSettings:Title']);
+    if (strlen($config['NotFoundSettings:Title']) > 0) {
+      return apply_filters('the_title', $config['NotFoundSettings:Title']);
+    }
+
+    return __('Page not found');
   }
 
   /**

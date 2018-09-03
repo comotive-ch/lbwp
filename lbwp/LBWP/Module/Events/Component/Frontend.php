@@ -44,7 +44,7 @@ class Frontend extends Base
   {
     $query = array(
       'post_type' => EventType::EVENT_TYPE,
-      'post_status' => 'publish',
+      'post_status' => array('publish', 'future'),
       'posts_per_page' => $config['max_events'],
       'orderby' => 'meta_value_num',
       'order' => 'ASC',

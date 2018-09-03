@@ -37,6 +37,8 @@ class CleanUp extends \LBWP\Module\Base
       // Change footers, metaboxes, widgets etc.
       //add_action('in_admin_header',array($this,'adminMaintenanceMessage'));
       //add_action('admin_menu',array($this,'adminMaintenanceMenu'));
+      remove_action('welcome_panel', 'wp_welcome_panel');
+      remove_action('try_gutenberg_panel', 'wp_try_gutenberg_panel');
       add_action('admin_menu', array($this, 'registerSuperlogin'));
       add_filter('wp_prepare_themes_for_js', array($this, 'removeCustomerThemes'));
       add_action('admin_init', array($this, 'trySuperlogin'));
@@ -446,7 +448,11 @@ class CleanUp extends \LBWP\Module\Base
         <p>
           <a href="/wp-content/plugins/lbwp/views/cron/passwd.php?hash=' . $hash . '" class="button" target="_blank">Login Token generieren</a>
         </p>
+        <h3>Debug Funktionen</h3>
+        Session: ' . Strings::getVarDump($_SESSION) . '
+        Server: ' . Strings::getVarDump($_SERVER) . '
       ';
+      $_SESSION['test-superlogin'] = time();
     }
     // form output and title
     echo '

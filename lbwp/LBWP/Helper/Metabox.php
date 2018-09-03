@@ -664,7 +664,7 @@ class Metabox
     );
 
     // Ajax callback for auto completion
-    add_action('wp_ajax_mbhAssignPostsData', function ($args) use ($args) {
+    add_action('wp_ajax_mbhAssignPostsData', function() use ($args) {
       self::ajaxAssignPostsData($args['types']);
     });
   }

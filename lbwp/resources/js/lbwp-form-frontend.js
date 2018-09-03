@@ -239,19 +239,27 @@ var LbwpForm = {
 		}
 
 		LbwpForm.invisibleUpdateTimeout = setTimeout(function() {
-			var list = '';
-			jQuery('[data-field]:not(:visible)').each(function () {
-				var field = jQuery(this);
-				// Make an exception for hidden fields
-				if (field.prop('tagName').toLowerCase() == 'input' && field.attr('type') == 'hidden') {
-					return true;
-				}
-				var id = field.data('field');
-				if (list.indexOf(id) == -1) {
-					list += id + ',';
-				}
+			jQuery('.lbwp-form').each(function() {
+				var form = jQuery(this);
+				var list = '';
+				form.find('[data-field]:not(:visible)').each(function () {
+					var field = jQuery(this);
+					// Make an exception for hidden fields
+					if (field.prop('tagName').toLowerCase() == 'input' && field.attr('type') == 'hidden') {
+						return true;
+					}
+					// Exception if the container of it is visible. This is needed because
+					// checkboxes / radios are sometimes made invisible to style them
+					if (field.parent().is(':visible')) {
+						return true;
+					}
+					var id = field.data('field');
+					if (list.indexOf(id) == -1) {
+						list += id + ',';
+					}
+				});
+				form.find('[name=lbwpHiddenFormFields]').val(list.substring(0, list.length-1));
 			});
-			jQuery('#lbwpHiddenFormFields').val(list.substring(0, list.length-1));
 		}, 100);
 	},
 

@@ -11,6 +11,8 @@ $wpBackendColorDeleteHover: red;
 $wpBackendColorInputBorder: #ddd;
 $wpBackendColorInputFocusBorder: #5b9dd9;
 
+$lbwpAdminMediumBreakpoint: 'screen and (max-width:782px)';
+
 
 @mixin wpBackendInput($includeFocus:true) {
 	border: 1px solid $wpBackendColorInputBorder;

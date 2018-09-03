@@ -728,8 +728,12 @@ abstract class Core extends BaseComponent
       }
     }
 
+    $parentId = intval($_GET['post']);
+    if ($parentId == 0 && isset($_POST['postId'])) {
+      $parentId = intval($_POST['postId']);
+    }
     // Edit link for modals
-    $editLink = admin_url('post.php?post=' . $item->ID . '&action=edit&ui=show-as-modal&parent=' . $_GET['post']);
+    $editLink = admin_url('post.php?post=' . $item->ID . '&action=edit&ui=show-as-modal&parent=' . $parentId);
 
     return '
       <div class="mbh-chosen-inline-element">

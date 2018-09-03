@@ -151,8 +151,6 @@ class Subscribe extends Base
     $newsletter = Core::getModule('NewsletterBase');
     $service = $newsletter->getService();
 
-
-
     // Subscribe the user
     if ($service->isWorking()) {
       return $service->subscribe($subscription, $listId);

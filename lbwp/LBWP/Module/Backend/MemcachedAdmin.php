@@ -225,7 +225,7 @@ class MemcachedAdmin extends \LBWP\Module\Base
    */
   public function flushCache($keyword = '')
   {
-    global $lbwpNodes, $table_prefix;
+    global $table_prefix;
 
     $params = array(
       CACHE_FLUSH_KEY => CACHE_FLUSH_SECRET,
@@ -325,6 +325,9 @@ class MemcachedAdmin extends \LBWP\Module\Base
       $html .= '</pre>';
       $html .= '<pre style="float:left;width:45%;">Read Connection:';
       $html .= Strings::getVarDump($wp_object_cache->getReadConnection()->info());
+      $html .= '</pre>';
+      $html .= '<pre style="float:left;width:45%;">Active Sessions:';
+      $html .= Strings::getVarDump($wp_object_cache->getReadConnection()->getKeys('*SESSION_' . CUSTOMER_KEY . '_*'));
       $html .= '</pre>';
     }
 

@@ -4,6 +4,7 @@ namespace LBWP\Theme\Component\Crm;
 
 use LBWP\Helper\Metabox;
 use LBWP\Theme\Base\Component;
+use LBWP\Util\External;
 use LBWP\Util\Strings;
 use LBWP\Util\Templating;
 use LBWP\Util\ArrayManipulation;
@@ -45,6 +46,10 @@ class Core extends Component
    * @var int the edited user id
    */
   protected $editedUserId = 0;
+  /**
+   * @var \WP_User
+   */
+  protected $editingUser = null;
   /**
    * @var \WP_User
    */
@@ -94,8 +99,12 @@ class Core extends Component
     add_action('Lbwp_LMS_Metabox_' . self::FILTER_REF_KEY, array($this, 'addMemberMetabox'), 10, 3);
     add_filter('Lbwp_LMS_Data_' . self::FILTER_REF_KEY, array($this, 'getSegmentData'), 10, 2);
     add_filter('Lbwp_Autologin_Link_Validity', array($this, 'configureAutoLoginLink'));
+    // Cron to automatically send changes from the last 24h
+    add_action('cron_daily_7', array($this, 'sendTrackedUserChangeReport'));
 
     if ($this->userAdminData['editedIsMember']) {
+      // Set the editing user object
+      $this->editingUser = wp_get_current_user();
       // Include the tabs navigation and empty containers
       add_action('show_user_profile', array($this, 'addTabContainers'));
       add_action('edit_user_profile', array($this, 'addTabContainers'));
@@ -219,10 +228,18 @@ class Core extends Component
       $key = 'crmcf-' . $field['id'];
       // Need to be admin or have access to the field
       if ($this->userAdminData['userIsAdmin'] || (!$field['invisible'] && !$field['readonly'])) {
+        // Get the previous value for determining a change
+        $before = get_user_meta($this->editedUserId, $key, true);
+        $after = $_POST[$key];
         if (isset($_POST[$key])) {
-          update_user_meta($this->editedUserId, $key, $_POST[$key]);
+          update_user_meta($this->editedUserId, $key, $after);
         } else {
           delete_user_meta($this->editedUserId, $key);
+        }
+        // If the value changed, track it
+        if ($before != $after) {
+          $tab = $this->configuration['tabs'][$field['tab']];
+          $this->trackUserDataChange($field['title'], $tab, $before, $after);
         }
       }
     }
@@ -239,13 +256,152 @@ class Core extends Component
     // Go trough each category, validate inputs and save them
     foreach ($categories as $categoryId) {
       $key = 'crm-contacts-' . $categoryId;
-      $contacts = $this->validateInputContacts($_POST[$key]);
-      if (count($contacts) > 0) {
-        update_user_meta($this->editedUserId, $key, $contacts);
+      $oldContacts = get_user_meta($this->editedUserId, $key, true);
+      $newContacts = $this->validateInputContacts($_POST[$key]);
+      if (count($newContacts) > 0) {
+        update_user_meta($this->editedUserId, $key, $newContacts);
       } else {
         delete_user_meta($this->editedUserId, $key);
       }
+
+      // Now that they are saved, compare differences and track them
+      $this->compareContactBlocks($categoryId, $oldContacts, $newContacts);
     }
+  }
+
+  /**
+   * @paran int $category the category id
+   * @param array $before contacts before
+   * @param array $after contacts after save
+   */
+  protected function compareContactBlocks($category, $before, $after)
+  {
+    $category = self::getContactCategory($category);
+    // Decide which array has more entries
+    $c1 = count($before);
+    $c2 = count($after);
+    $max = ($c1 > $c2) ? $c1 : $c2;
+    // Loop trough and compare each contact by stringifying them
+    for ($i = 0; $i < $max;$i++) {
+      $oldContact = $this->stringifyContact($before[$i]);
+      $newContact = $this->stringifyContact($after[$i]);
+      // If not the same, track the change
+      if ($oldContact != $newContact) {
+        $this->trackUserDataChange($category['title'], __('Kontakte', 'lbwp'), $oldContact, $newContact);
+      }
+    }
+  }
+
+  /**
+   * @param array $contact the contact information
+   * @return string representation of the contact
+   */
+  protected function stringifyContact($contact)
+  {
+    // If the contact is invalid, return an empty string
+    if (!is_array($contact) || count($contact) == 0) {
+      return '';
+    }
+
+    // Translate the salutation if there is
+    if (isset($contact['salutation'])) {
+      $contact['salutation'] = $this->getSalutationByKey($contact['salutation']);
+    }
+
+    return implode('<br />', $contact);
+  }
+
+  /**
+   * @param string $title the field/content that is being changed
+   * @param string $category the category where data was saved
+   * @param mixed $before the previous value before the change
+   * @param mixed $after the new value after the change
+   */
+  protected function trackUserDataChange($title, $category, $before, $after)
+  {
+    $changes = ArrayManipulation::forceArray(get_option('crmLatestUserDataChanges'));
+
+    // Create e new changes array for the user, if not given
+    if (!isset($changes[$this->editedUserId])) {
+      $changes[$this->editedUserId] = array();
+    }
+
+    // Add the change to the array
+    $changes[$this->editedUserId][] = array(
+      'field' => $title,
+      'category' => $category,
+      'time' => date('H:i', current_time('timestamp')),
+      'before' => $before,
+      'after' => $after,
+      'author' => $this->editingUser->user_email
+    );
+
+    // Save back to our changes array
+    update_option('crmLatestUserDataChanges', $changes);
+  }
+
+  /**
+   * Send the changes report, if configured to do so
+   */
+  public function sendTrackedUserChangeReport()
+  {
+    $changes = ArrayManipulation::forceArray(get_option('crmLatestUserDataChanges'));
+    $company = $this->configuration['misc']['titleOverrideField'];
+
+    // If there's no report email to send to, just reset the option and leave
+    if (count($this->configuration['misc']['dataReportEmails']) == 0) {
+      update_option('crmLatestUserDataChanges', array());
+      return false;
+    }
+
+    // Prepare the html for the report
+    $html = '';
+    foreach ($changes as $id => $items) {
+      if (count($items) > 0) {
+        // Print the member name
+        $name = get_user_meta($id, $company, true);
+        $html .= '<h4>' . sprintf(__('Änderungen bei %s', 'lbwp'), $name) . '</h4>';
+        $html .= '
+          <table>
+            <tr>
+              <td><strong>' . __('Uhrzeit', 'lbwp') . '</strong></td>
+              <td><strong>' . __('Änderung in', 'lbwp') . '</strong></td>
+              <td><strong>' . __('Bisher', 'lbwp') . '</strong></td>
+              <td><strong>' . __('Neu', 'lbwp') . '</strong></td>
+              <td><strong>' . __('Autor', 'lbwp') . '</strong></td>
+            </tr>
+        ';
+        // Print all the changes to the member
+        foreach ($items as $change) {
+          $html .= '
+            <tr>
+              <td>' . $change['time'] . '</td>
+              <td>' . $change['category'] . ' > ' . $change['field'] . '</td>
+              <td>' . $change['before'] . '</td>
+              <td>' . $change['after'] . '</td>
+              <td>' . $change['author'] . '</td>
+            </tr>
+          ';
+        }
+        $html .= '</table><br>';
+      }
+    }
+
+    // Send the email
+    if (strlen($html) > 0) {
+      $mail = External::PhpMailer();
+      $mail->Subject = __('Änderungen von Mitglieder in den letzten 24h - ' . LBWP_HOST, 'lbwp');
+      $mail->Body = $html;
+      // Add recipients
+      foreach ($this->configuration['misc']['dataReportEmails'] as $email) {
+        $mail->addAddress($email);
+      }
+      // Send the mail
+      $mail->send();
+    }
+
+    // After sending, reset the array with en empty one
+    update_option('crmLatestUserDataChanges', array());
   }
 
   /**
