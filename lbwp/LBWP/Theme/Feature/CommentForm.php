@@ -157,11 +157,15 @@ class CommentForm
 
     // Display the form
     $formHtml = do_shortcode($formHtml);
+    // Invisible cancel link for WP add comment JS to work
+    $formHtml.= '<a href="#" id="cancel-comment-reply-link"></a>';
     $formHtml = str_replace('{additionalHtml}', $additionalHtml ,$formHtml);
 
     /** @var FormsCore $forms */
     $forms = LbwpCore::getModule('Forms');
     $forms->getFormHandler()->addFormAssets();
+    // Make sure the answer js is loaded correctly
+    wp_enqueue_script('comment-reply');
 
     echo $formHtml;
   }

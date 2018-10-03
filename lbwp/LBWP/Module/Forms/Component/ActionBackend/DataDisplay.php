@@ -644,20 +644,7 @@ class DataDisplay
     fputcsv($outstream, $printedColumns, ';', '"');
     // Print the data
     foreach ($data as $row) {
-      // Crazy utf-8 decoding since excel doesn't know that by default
-      $printedRow = array();
-      foreach ($columns as $key) {
-        $value = $row[$key];
-        if ($preventFormulas && in_array($value[0], $this->excelFormulaChars)) {
-          $value = "\t" . $value;
-        }
-        if ($utf8decode) {
-          $printedRow[$key] = utf8_decode($value);
-        } else {
-          $printedRow[$key] = $value;
-        }
-      }
-      fputcsv($outstream, $printedRow, ';', '"');
+      fputcsv($outstream, $this->preparePrintedRow($row, $columns, $utf8decode, $preventFormulas), ';', '"');
     }
 
     // If there is an event, output a newline and the summary for each line
@@ -669,7 +656,44 @@ class DataDisplay
       }
     }
 
+    // If the customer wants unfilled data as well, add it
+    if ($eventId > 0 && apply_filters('DataTable_include_unfilled_in_export', false)) {
+      $columns = array('email' => 'email');
+      $data = $this->getEventUnfilledData($eventId, $columns);
+      $columns['subscribe-link'] = 'subscribe-link';
+      fputcsv($outstream, array(), ';', '"');
+      fputcsv($outstream, $columns, ';', '"');
+      foreach ($data as $row) {
+        fputcsv($outstream, $this->preparePrintedRow($row, $columns, $utf8decode, $preventFormulas), ';', '"');
+      }
+    }
+
     fclose($outstream);
     exit;
+  }
+
+  /**
+   * @param $row
+   * @param $columns
+   * @param $utf8decode
+   * @param $preventFormulas
+   * @return array
+   */
+  protected function preparePrintedRow($row, $columns, $utf8decode, $preventFormulas)
+  {
+    $printedRow = array();
+    foreach ($columns as $key) {
+      $value = $row[$key];
+      if ($preventFormulas && in_array($value[0], $this->excelFormulaChars)) {
+        $value = "\t" . $value;
+      }
+      if ($utf8decode) {
+        $printedRow[$key] = utf8_decode($value);
+      } else {
+        $printedRow[$key] = $value;
+      }
+    }
+
+    return $printedRow;
   }
 } 

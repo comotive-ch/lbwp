@@ -83,7 +83,6 @@ class HTMLCache extends \LBWP\Module\Base
         $this->config['HTMLCache:CacheTime'],
         $this->config['HTMLCache:CacheTimeSingle']
       );
-      $this->expireTimedCacheAvoids();
       // set correct cache group (desktop always))
       $this->currentCacheGroup = getHtmlCacheGroup();
       // This avoids commenting users to cache an unapproved comment
@@ -93,6 +92,8 @@ class HTMLCache extends \LBWP\Module\Base
       add_action('wp_before_admin_bar_render',array($this, 'flushCacheFromAdminBar'));
       add_filter('output_buffer',array($this, 'setSiteToCache'), 10000);
       add_filter('the_password_form', array($this, 'avoidCacheFiltered'));
+      // Explicitly remove timed cookies
+      $this->expireTimedCacheAvoids();
 
       // manually delete cache for one site
       if ($_GET['htmlCache'] == 'invalidate') {
@@ -145,9 +146,9 @@ class HTMLCache extends \LBWP\Module\Base
    */
   protected function expireTimedCacheAvoids()
   {
-    if (isset($_SESSION['avoidCacheTimed'])) {
-      if (time() > $_SESSION['avoidCacheTimed']) {
-        unset($_SESSION['avoidCacheTimed']);
+    if (isset($_COOKIE['avoidCacheTimed'])) {
+      if (current_time('timestamp') > $_COOKIE['avoidCacheTimed']) {
+        setcookie('avoidCacheTimed', 0, current_time('timestamp'), '/', LBWP_HOST, defined('WP_FORCE_SSL'), true);
       }
     }
   }
@@ -157,7 +158,8 @@ class HTMLCache extends \LBWP\Module\Base
    */
   protected function avoidCacheTimed($time)
   {
-    $_SESSION['avoidCacheTimed'] = time() + $time;
+    $time = current_time('timestamp') + $time;
+    setcookie('avoidCacheTimed', $time, $time, '/', LBWP_HOST, defined('WP_FORCE_SSL'), true);
   }
 
   /**
@@ -383,7 +385,7 @@ class HTMLCache extends \LBWP\Module\Base
       return false;
     }
     // if the avoid cache for this call is set
-    if (isset($_SESSION['avoidCache']) && !isset($_SESSION['avoidCacheTimed'])) {
+    if (isset($_COOKIE['avoidCache']) || isset($_COOKIE['avoidCacheTimed'])) {
       return false;
     }
     // Only non admin page requests are cached

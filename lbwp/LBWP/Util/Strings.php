@@ -1171,7 +1171,7 @@ class Strings
     );
 
     // Make a json post, if needed
-    if ($json && $type == 'POST') {
+    if ($json && ($type == 'POST' || $type == 'PUT')) {
       $string = json_encode($data);
       $options[CURLOPT_POSTFIELDS] = $string;
       $options[CURLOPT_HTTPHEADER] = array(

@@ -74,6 +74,7 @@ class ListingTemplate
           'placeholder' => 'http(s)://'
         ));
         $helper->addInputText('link-text', $boxId, __('Linktext'),array('description' => 'Wenn du kein Linktext eingibst, wird «mehr» verwendet.'));
+        $helper->addInputText('class', $boxId, __('CSS-Klasse'));
       });
 
       // Return the metabox id for further use

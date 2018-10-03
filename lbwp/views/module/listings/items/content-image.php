@@ -46,8 +46,15 @@ if (strlen($itemLink) > 0 && Strings::isURL($itemLink)) {
     </a>';
 }
 
+// class name?
+$itemClassAttr = '';
+$className = get_post_meta($item->ID, 'class', true);
+if (strlen($className) > 0) {
+  $itemClassAttr = 'class="' . $className . '"';
+}
+
 echo '
-  <div>
+  <div ' . $itemClassAttr .'>
     ' . $imageHtml . '
     <div class="content">' . $content . '</div>
   </div>'

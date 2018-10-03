@@ -42,6 +42,7 @@ class Search
     'apiKey' => 'AIzaSyDcRBXI37rJlgSUCx1X0qy0cL_XVKKKFUE',  // Defaults to our main key
     'containerClasses' => 'lbwp-gss-results',     // Container class, can be multiple (sep. by space), if needed
     'filterResults' => false,                     // true filters the results (if post) for search term existence
+    'filterLanguageByUrl' => false,               // true filters the results by url (looking for starting language tag in url)
     'filterByBlacklist' => array(),               // Filters the results by wildcard blacklist
     'displayImages' => true,                      // Display images, if available
     'displayFiles' => false,                      // Skip file search results completely
@@ -146,7 +147,7 @@ class Search
       $data = json_decode(file_get_contents($url), true);
       $nativeResultCount = count($data['items']);
       // Filter the results as of config
-      $results = self::prepareAndFilterResults($data, $terms);
+      $results = self::prepareAndFilterResults($data, $terms, $language);
 
       // Show the results or print the error message
       if (count($results) > 0) {
@@ -270,11 +271,13 @@ class Search
   /**
    * @param array $data full engine search item results
    * @param array $terms the search terms given in
+   * @param string $language the language tag
    * @return array $results
    */
-  protected static function prepareAndFilterResults($data, $terms)
+  protected static function prepareAndFilterResults($data, $terms, $language)
   {
     $results = array();
+    $languages = Multilang::getLanguagesKeyValue();
 
     // If there are results, show them
     if (isset($data['items']) && count($data['items']) > 0) {
@@ -288,6 +291,30 @@ class Search
         }
         // If blacklisted, skip
         if ($isBlacklisted) continue;
+
+        // CHeck the language if needed
+        if (self::$apiConf['filterLanguageByUrl']) {
+          $parts = parse_url($item['link']);
+          // Does the URI start with the language tag
+          if (Strings::startsWith($parts['path'], '/' . $language . '/')) {
+            $allowed = true;
+          } else {
+            // If not, it's only allowed if it doesn't start with any other langage tag
+            $matches = 0;
+            $copy = $languages;
+            unset($copy[$language]);
+            foreach ($copy as $lang => $name) {
+              if (Strings::startsWith($parts['path'], '/' . $lang . '/')) {
+                $matches++;
+              }
+            }
+            // If no matches with other langs, the url is allowed
+            $allowed = ($matches == 0);
+          }
+
+          // If not allowed by above rules, skip the result
+          if (!$allowed) continue;
+        }
 
         // Extract the post name from the url
         $url = substr($item['link'], 0, -1);

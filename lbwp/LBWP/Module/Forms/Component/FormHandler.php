@@ -397,7 +397,7 @@ class FormHandler extends Base
         // Maybe set a submission cookie, if there were no errors and avoid cache for that user
         if (isset($args['after_submit']) && strlen($args['after_submit']) > 0) {
           $this->setSubmissionCookie($formDisplayId);
-          $_SESSION['avoidCache'] = true;
+          setcookie('avoidCache', 1, null, '/', LBWP_HOST, defined('WP_FORCE_SSL'), true);
         }
 
         // New kind of postID redirect?

@@ -87,7 +87,7 @@ class PiwikIntegration extends \LBWP\Module\Base
       'idSite' => $this->settings['siteId'],
     );
     $loginLink = 'https://' . $this->integration['domain'] . '/index.php?' . http_build_query($loginData);
-    $logoUrl = File::getResourceUri() . '/images/other/comotive-piwik.png';
+    $logoUrl = File::getResourceUri() . '/images/other/comotive-matomo.png';
 
     // Print html with logo and login link
     echo '

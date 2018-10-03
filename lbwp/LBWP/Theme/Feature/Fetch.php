@@ -36,7 +36,7 @@ class Fetch
       CURLOPT_HEADER => false,
       CURLOPT_FOLLOWLOCATION => true,
       CURLOPT_ENCODING => '',
-      CURLOPT_USERAGENT => 'Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.31 (KHTML, like Gecko) Chrome/26.0.1410.43 Safari/537.31 Comotive-Fetch-1.0',
+      CURLOPT_USERAGENT => 'Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.31 (KHTML, like Gecko) Chrome/26.0.1410.43 Safari/537.31',
       CURLOPT_AUTOREFERER => true,
       CURLOPT_CONNECTTIMEOUT => 30,
       CURLOPT_TIMEOUT => 30,
@@ -53,6 +53,7 @@ class Fetch
 
     // Use basic auth if requested
     if (strlen(self::$username) > 0) {
+      $options[CURLOPT_HTTPAUTH] = CURLAUTH_ANY;
       $options[CURLOPT_USERPWD] = self::$username . ':' . self::$password;
     }
 

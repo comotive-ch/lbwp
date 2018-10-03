@@ -6,6 +6,7 @@ use LBWP\Module\Events\Component\EventType;
 use LBWP\Module\Forms\Action\DataTable as DataTableAction;
 use LBWP\Module\Forms\Component\Base;
 use LBWP\Module\Forms\Core as FormCore;
+use LBWP\Module\Forms\Item\HtmlItem;
 use LBWP\Theme\Feature\LocalMailService;
 use LBWP\Util\ArrayManipulation;
 use LBWP\Util\Strings;
@@ -529,11 +530,22 @@ class DataTable extends Base
 
     // Set the field keys and values
     foreach ($items as $item) {
+      // Skip if certain types of items
+      if ($item instanceof HtmlItem) {
+        continue;
+      }
+
+      // Handle fields differently if multicolumn
       if ($item->get('multicolumn') == 'ja') {
         $key = Strings::forceSlugString($item->get('feldname'));
-        $selection = $item->prepareContentValues($item->getContent());
-        foreach ($selection as $item) {
-          $fields[$key . '-' . Strings::forceSlugString($item)] = $item;
+        $selections = $item->prepareContentValues($item->getContent());
+        foreach ($selections as $selection) {
+          $suffix = Strings::forceSlugString(html_entity_decode($selection, ENT_QUOTES));
+          if ($item->get('multicolumn_label_prefix') == 'ja') {
+            $fields[$key . '-' . $suffix] = $item->get('feldname') . ': ' . $selection;
+          } else {
+            $fields[$key . '-' . $suffix] = $selection;
+          }
         }
       } else {
         $key = Strings::forceSlugString($item->get('feldname'));

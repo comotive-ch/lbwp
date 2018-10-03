@@ -139,6 +139,9 @@ ul.wp-submenu li a img { display:none; }
 #focuspoint-dialog, .pointer-template, .focuspoint-image-template {
 	display:none;
 }
+.ui-dialog[aria-describedby=focuspoint-dialog] {
+	z-index: 581000 !important;
+}
 #focuspoint-image {
 	position:relative;
 	margin:auto;

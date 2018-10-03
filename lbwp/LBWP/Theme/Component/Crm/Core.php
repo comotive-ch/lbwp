@@ -114,6 +114,10 @@ class Core extends Component
       // Custom field save functions
       add_action('profile_update', array($this, 'saveCustomFieldData'));
       add_action('profile_update', array($this, 'saveContactData'));
+      // If configured, override user email with main contact
+      if (isset($this->configuration['mainContactMap'])) {
+        add_action('profile_update', array($this, 'syncMainContactEmail'));
+      }
     }
   }
 
@@ -127,6 +131,9 @@ class Core extends Component
       $this->editedUserId = intval(get_current_user_id());
     }
     $this->editedUser = get_user_by('id', $this->editedUserId);
+    if ($this->editedUser->ID > 0) {
+      $this->editedUser->profileCategories = ArrayManipulation::forceArray(get_user_meta($this->editedUserId, 'profile-categories', true));
+    }
   }
 
   /**
@@ -162,7 +169,7 @@ class Core extends Component
    */
   public function addCustomUserFields()
   {
-    $customFields = $this->getCustomFields($this->editedUser->roles[0]);
+    $customFields = $this->getCustomFields($this->editedUser->profileCategories);
     // Print the fields
     foreach ($customFields as $field) {
       echo Templating::getBlock($this->fieldTemplate, array(
@@ -222,7 +229,7 @@ class Core extends Component
   public function saveCustomFieldData()
   {
     // Save the custom fields as given
-    $customFields = $this->getCustomFields($this->editedUser->roles[0]);
+    $customFields = $this->getCustomFields($this->editedUser->profileCategories);
     // Print the fields
     foreach ($customFields as $field) {
       $key = 'crmcf-' . $field['id'];
@@ -266,6 +273,29 @@ class Core extends Component
 
       // Now that they are saved, compare differences and track them
       $this->compareContactBlocks($categoryId, $oldContacts, $newContacts);
+    }
+  }
+
+  /**
+   * Syncs the user_email field with the email of the roles respective main contact
+   */
+  public function syncMainContactEmail()
+  {
+    $role = $this->editedUser->roles[0];
+    $key = 'crm-contacts-' . $this->configuration['mainContactMap'][$role];
+    $contacts = get_user_meta($this->editedUserId, $key, true);
+
+    // If there is an email, override the user object
+    if (isset($contacts[0]) && Strings::checkEmail($contacts[0]['email'])) {
+      // Need to update with DB, as we would create an endless loop with update_user functions
+      $db = WordPress::getDb();
+      $db->update(
+        $db->users,
+        array('user_email' => $contacts[0]['email']),
+        array('ID' => $this->editedUserId)
+      );
+      // Therefore we also need to manually fix the cache
+      clean_user_cache($this->editedUserId);
     }
   }
 
@@ -432,7 +462,7 @@ class Core extends Component
   {
     // Get current profile categories
     $categories = self::getProfileCategoryList();
-    $current = ArrayManipulation::forceArray(get_user_meta($this->editedUserId, 'profile-categories', true));
+    $current = $this->editedUser->profileCategories;
 
     // Edit or readonly screens for members
     if ($this->userAdminData['userIsAdmin']) {
@@ -543,7 +573,7 @@ class Core extends Component
     // Return this within a little container and template
     return '
       <div class="contact-editor-container" 
-        data-target-tab="contacts"
+        data-target-tab="' . $category['tab'] . '"
         data-input-key="' . $key . '"
         data-max-contacts="' . $category['max-contacts'] . '"
         data-allow-delete="' . ($category['delete'] ? '1' : '0') . '"
@@ -584,6 +614,7 @@ class Core extends Component
     return array(
       'id' => $categoryId,
       'title' => $raw->post_title,
+      'tab' => get_post_meta($categoryId, 'tab', true),
       'visible' =>  $admin || get_post_meta($categoryId, 'cap-read', true) == 'on',
       'edit' => $admin || get_post_meta($categoryId, 'cap-edit', true) == 'on',
       'delete' => $admin || get_post_meta($categoryId, 'cap-delete', true) == 'on',
@@ -660,8 +691,8 @@ class Core extends Component
         <script type="text/javascript">
           var crmAdminData = ' . json_encode($this->userAdminData) . ';
         </script>
-        <script src="' . $uri . '/js/lbwp-crm-backend.js" type="text/javascript"></script>
-        <link rel="stylesheet" href="' . $uri . '/css/lbwp-crm-backend.css">
+        <script src="' . $uri . '/js/lbwp-crm-backend.js?v1.1" type="text/javascript"></script>
+        <link rel="stylesheet" href="' . $uri . '/css/lbwp-crm-backend.css?v1.1">
       ';
     }
   }
@@ -708,7 +739,7 @@ class Core extends Component
 
     // For custom fields
     $types = $this->getCustomFieldTypes();
-    $roles = $this->getSelectableRoles();
+    $categories = $this->getSelectableProfileCategories();
     WordPress::addPostTableColumn(array(
       'post_type' => self::TYPE_FIELD,
       'meta_key' => 'type',
@@ -721,16 +752,16 @@ class Core extends Component
     ));
     WordPress::addPostTableColumn(array(
       'post_type' => self::TYPE_FIELD,
-      'meta_key' => 'roles',
-      'column_key' => self::TYPE_FIELD . '_roles',
+      'meta_key' => 'profiles',
+      'column_key' => self::TYPE_FIELD . '_profiles',
       'single' => false,
       'heading' => __('Verfügbar für', 'lbwp'),
-      'callback' => function($values, $postId) use ($roles) {
+      'callback' => function($values, $postId) use ($categories) {
         $display = array();
         foreach ($values as $key) {
-          $display[] = $roles[$key];
+          $display[] = $categories[$key];
         }
-        echo implode(', ', $display);
+        echo implode('<br>', $display);
       }
     ));
     WordPress::addPostTableColumn(array(
@@ -1002,14 +1033,17 @@ class Core extends Component
     $helper->addInputText('max-contacts', 'settings', 'Max. Anzahl Kontakte', array(
       'description' => 'Wählen Sie z.B. "1" sofern in dieser Gruppe nur ein Kontakt erstellt werden darf'
     ));
+    $helper->addDropdown('tab', 'settings', 'Anzeigen in', array(
+      'items' => $this->configuration['tabs']
+    ));
 
     $helper = Metabox::get(self::TYPE_FIELD);
     $helper->addMetabox('settings', 'Einstellungen');
     $helper->addDropdown('type', 'settings', 'Feld-Typ', array(
       'items' => $this->getCustomFieldTypes()
     ));
-    $helper->addDropdown('roles', 'settings', 'Verfügbar für', array(
-      'items' => $this->getSelectableRoles(),
+    $helper->addDropdown('profiles', 'settings', 'Verfügbar für', array(
+      'items' => $this->getSelectableProfileCategories(),
       'multiple' => true
     ));
     $helper->addDropdown('tab', 'settings', 'Anzeigen in', array(
@@ -1052,21 +1086,18 @@ class Core extends Component
   }
 
   /**
-   * @return array key value pair of selectable member roles
+   * @return array a selectable list of categories
    */
-  protected function getSelectableRoles()
+  protected function getSelectableProfileCategories()
   {
-    $availableRoles = wp_roles();
-    $roles = array();
+    $list = self::getProfileCategoryList();
+    $categories = array();
 
-    // Map the roles to their key
-    foreach ($availableRoles->roles as $key => $role) {
-      if (in_array($key, $this->configuration['roles'])) {
-        $roles[$key] = $role['name'];
-      }
+    foreach ($list as $entry) {
+      $categories[$entry->ID] = $entry->post_title;
     }
 
-    return $roles;
+    return $categories;
   }
 
   /**
@@ -1128,10 +1159,10 @@ class Core extends Component
 
   /**
    * Get a comprehensible list of custom fields for the given role
-   * @param string $role a role slug (optional)
+   * @param array $categories list of profile categories
    * @return array a list of custom fields for that role
    */
-  public function getCustomFields($role = '')
+  public function getCustomFields($categories = array())
   {
     $allFields = wp_cache_get('crmCustomFields', 'CrmCore');
 
@@ -1149,7 +1180,7 @@ class Core extends Component
           'id' => $field->ID,
           'title' => $field->post_title,
           'type' => get_post_meta($field->ID, 'type', true),
-          'roles' => get_post_meta($field->ID, 'roles'),
+          'profiles' => get_post_meta($field->ID, 'profiles'),
           'tab' => get_post_meta($field->ID, 'tab', true),
           'segmenting-active' => get_post_meta($field->ID, 'segmenting-active', true) == 'on',
           'segmenting-slug' => get_post_meta($field->ID, 'segmenting-slug', true),
@@ -1171,9 +1202,14 @@ class Core extends Component
     }
 
     // Filter the fields by role if given
-    if (strlen($role) > 0) {
-      return array_filter($allFields, function ($item) use ($role) {
-        return in_array($role, $item['roles']);
+    if (count($categories) > 0) {
+      return array_filter($allFields, function($item) use ($categories) {
+        foreach ($categories as $categoryId) {
+          if (in_array($categoryId, $item['profiles'])) {
+            return true;
+          }
+        }
+        return false;
       });
     }
 

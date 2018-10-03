@@ -139,9 +139,9 @@ var CrmUserAdmin = {
 		// Remove the whole upper table
 		jQuery('.user-admin-color-wrap').closest('.form-table').hide();
 		// Remove most of the fields of the user table
-		jQuery('.user-role-wrap, .user-first-name-wrap, .user-last-name-wrap, .user-nickname-wrap, .user-display-name-wrap').hide();
+		jQuery('.user-user-login-wrap, .user-role-wrap, .user-first-name-wrap, .user-last-name-wrap, .user-nickname-wrap, .user-display-name-wrap').hide();
 		// Remove most of the fields of the email tabke
-		jQuery('.user-url-wrap, .user-googleplus-wrap, .user-twitter-wrap, .user-facebook-wrap').hide();
+		jQuery('.user-email-wrap, .user-url-wrap, .user-googleplus-wrap, .user-twitter-wrap, .user-facebook-wrap').hide();
 		// Also, remove the biographical fields
 		jQuery('.user-description-wrap, .user-profile-picture, .user-sessions-wrap').hide();
 		// Make email readonly as it is autoset

@@ -367,11 +367,34 @@ class DataTable extends Base
         switch ($class) {
           case 'radio':
             // Double escape strings \' to \\' in order to esc_js *and* escape the query selector
-            $value = html_entity_decode(str_replace('\\\'','\\\\\'', esc_js($row[$cellKey])));
+            if ($item->get('multicolumn') == 'ja') {
+              // Merge the selectable with the selected values
+              $selectables = $item->prepareContentValues($item->getContent());
+              foreach ($selectables as $selectable) {
+                $key = Strings::forceSlugString($item->get('feldname') . '-' . html_entity_decode($selectable, ENT_QUOTES));
+                if ($row[$key] == 'X' || $row[$key] == '1') {
+                  $value = html_entity_decode(str_replace('\\\'', '\\\\\'', esc_js($selectable)), ENT_QUOTES);
+                }
+              }
+            } else {
+              $value = html_entity_decode(str_replace('\\\'', '\\\\\'', esc_js($row[$cellKey])));
+            }
             $script .= 'jQuery("input[name=' . $item->get('id') . '][value=\'' . $value . '\'").attr("checked", "checked");' . PHP_EOL;
             break;
           case 'dropdown':
-            $value = html_entity_decode(str_replace('\\\'','\\\\\'', esc_js($row[$cellKey])));
+            // Double escape strings \' to \\' in order to esc_js *and* escape the query selector
+            if ($item->get('multicolumn') == 'ja') {
+              // Merge the selectable with the selected values
+              $selectables = $item->prepareContentValues($item->getContent());
+              foreach ($selectables as $selectable) {
+                $key = Strings::forceSlugString($item->get('feldname') . '-' . html_entity_decode($selectable, ENT_QUOTES));
+                if ($row[$key] == 'X' || $row[$key] == '1') {
+                  $value = html_entity_decode(str_replace('\\\'', '\\\\\'', esc_js($selectable)), ENT_QUOTES);
+                }
+              }
+            } else {
+              $value = html_entity_decode(str_replace('\\\'', '\\\\\'', esc_js($row[$cellKey])));
+            }
             $script .= 'jQuery("select[name=' . $item->get('id') . '] option[value=\'' . $value . '\'").attr("selected", "selected");' . PHP_EOL;
             break;
           // Checkboxes are a tad more complicated to solve
@@ -382,7 +405,7 @@ class DataTable extends Base
               $values = array();
               $selectables = $item->prepareContentValues($item->getContent());
               foreach ($selectables as $selectable) {
-                $key = Strings::forceSlugString($item->get('feldname') . '-' . $selectable);
+                $key = Strings::forceSlugString($item->get('feldname') . '-' . html_entity_decode($selectable, ENT_QUOTES));
                 if ($row[$key] == 'X' || $row[$key] == '1') {
                   $values[] = $selectable;
                 }

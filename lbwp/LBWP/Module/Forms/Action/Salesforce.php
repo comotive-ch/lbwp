@@ -38,15 +38,18 @@ class Salesforce extends Base
     'prod' => 'https://webto.salesforce.com/servlet/servlet.WebToLead?encoding=UTF-8',
     'dev' => 'https://{instance}.salesforce.com/servlet/servlet.WebToLead?encoding=UTF-8'
   );
-
+  /**
+   * @var array the fields that are sent to salesforce
+   */
   protected $fields = array(
-    'oid',
-    'lead_source',
-    'first_name',
-    'last_name',
-    'email',
-    'company',
-    'salutation'
+    'oid' => 'oid',
+    'lead_source' => 'lead_source',
+    'first_name' => 'first_name',
+    'last_name' => 'last_name',
+    'email' => 'email',
+    'company' => 'company',
+    'salutation' => 'salutation',
+    'campaign_id' => 'Campaign_ID'
   );
 
   /**
@@ -78,12 +81,16 @@ class Salesforce extends Base
         'type' => 'textfield'
       ),
       'company' => array(
-        'name' => 'Firma',
+        'name' => 'Firma (optional)',
         'type' => 'textfield'
       ),
       'salutation' => array(
         'name' => 'Anrede',
         'help' => 'Dieses Feld darf nur von Salesforce vorgebene Werte beinhalten.',
+        'type' => 'textfield'
+      ),
+      'campaign_id' => array(
+        'name' => 'Kampagnen-ID (optional)',
         'type' => 'textfield'
       ),
       'mode' => array(
@@ -130,8 +137,11 @@ class Salesforce extends Base
     );
 
     // Add the custom fields
-    foreach ($this->fields as $fieldId) {
-      $postData[$fieldId] = $this->getFieldContent($data, $this->params[$fieldId]);
+    foreach ($this->fields as $formField => $sfField) {
+      $content = $this->getFieldContent($data, $this->params[$formField]);
+      if (strlen($content) > 0) {
+        $postData[$sfField] = $content;
+      }
     }
 
     // Send data to salesforce

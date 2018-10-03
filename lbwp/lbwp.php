@@ -24,6 +24,9 @@ add_action('plugins_loaded', function() {
 register_activation_hook(__FILE__, array('\\LBWP\\Core', 'installPlugin'));
 register_deactivation_hook(__FILE__, array('\\LBWP\\Core','uninstallPlugin'));
 
+// Always start a session when not in cache mode (for now)
+session_start();
+
 // Include some global helper function
 require_once __DIR__ . '/views/functions.php';
 

@@ -48,6 +48,15 @@ class Checkbox extends Base
           'nein' => 'Nein'
         )
       ),
+      'multicolumn_label_prefix' => array(
+        'name' => 'Feld-Beschriftung pro Spalte voranstellen',
+        'type' => 'radio',
+        'help' => 'Damit die Spalten eindeutiger sind, kann der Feldname als Prefix vor jede generierte Spalte im Datenspeicher vorangestellt werden.',
+        'values' => array(
+          'ja' => 'Ja',
+          'nein' => 'Nein'
+        )
+      ),
       'content' => array(
         'name' => 'Auswahlmöglichkeiten',
         'type' => 'textfieldArray',
@@ -163,7 +172,7 @@ class Checkbox extends Base
           $unselected = $this->prepareContentValues($this->getContent());
           // First, add everything as not selected, thus maintaining the users order of the fields
           foreach ($unselected as $selection) {
-            $key = Strings::forceSlugString($this->get('feldname') . '-' . $selection);
+            $key = Strings::forceSlugString($this->get('feldname') . '-' . html_entity_decode($selection, ENT_QUOTES));
             $return[$key] = array(
               'key' => $key,
               'name' => $this->get('feldname'),

@@ -44,7 +44,7 @@ class Frontend extends Base
   {
     $query = array(
       'post_type' => EventType::EVENT_TYPE,
-      'post_status' => array('publish', 'future'),
+      'post_status' => 'publish',
       'posts_per_page' => $config['max_events'],
       'orderby' => 'meta_value_num',
       'order' => 'ASC',
@@ -211,7 +211,8 @@ class Frontend extends Base
       'showLocation' => true,
       'showAddressAfterLocation' => true,
       'showMapLinks' => true,
-      'showCalendarDownload' => false
+      'showCalendarDownload' => false,
+      'hideEndDate' => false
     ), $display);
 
     // Initialize data list and let developers add data
@@ -237,7 +238,7 @@ class Frontend extends Base
 
         // Show time if given
         $hasStartTime = $this->hasTime($event->startTime);
-        $hasEndTime = $this->hasTime($event->endTime);
+        $hasEndTime = $this->hasTime($event->endTime) && !$display['hideEndDate'];
         if ($hasStartTime && $hasEndTime) {
           $startTime = date_i18n($config['time_format'], $event->startTime);
           $endTime = date_i18n($config['time_format'], $event->endTime);
@@ -263,11 +264,15 @@ class Frontend extends Base
             <dt>' . __('Beginn', 'lbwp') . '</dt>
             <dd>' . $this->getDateTimeString($event->startTime, $config, $textdomain) . '</dd>
           </dl>
-          <dl>
-            <dt>' . __('Ende', 'lbwp') . '</dt>
-            <dd>' . $this->getDateTimeString($event->endTime, $config, $textdomain) . '</dd>
-          </dl>
         ';
+
+        if (!$display['hideEndDate']) {
+          $html .= '<dl>
+              <dt>' . __('Ende', 'lbwp') . '</dt>
+              <dd>' . $this->getDateTimeString($event->endTime, $config, $textdomain) . '</dd>
+            </dl>
+          ';
+        }
       }
 
     } else if ($event->startTime > 0 && $event->endTime == 0 && $display['showDates']) {
@@ -413,7 +418,12 @@ class Frontend extends Base
       //echo 'ORGANIZER;CN="' . get_bloginfo('name') . '":MAILTO:' . $email . PHP_EOL;
       echo 'LOCATION:' . self::getCombinedLocationAndAddress($event) . PHP_EOL;
       echo 'SUMMARY:' . trim(preg_replace('/\s\s+/', ' ', $event->post_title)) . PHP_EOL;
-      echo 'DESCRIPTION:' . strip_tags(trim(preg_replace('/\s\s+/', ' ', $event->post_content))) . PHP_EOL;
+      // USe excerpt if given or post content if not
+      if (strlen($event->post_excerpt) > 0) {
+        echo 'DESCRIPTION:' . strip_tags(trim(preg_replace('/\s\s+/', ' ', $event->post_excerpt))) . PHP_EOL;
+      } else {
+        echo 'DESCRIPTION:' . strip_tags(trim(preg_replace('/\s\s+/', ' ', $event->post_content))) . PHP_EOL;
+      }
       echo 'CLASS:PUBLIC' . PHP_EOL;
       echo 'DTSTART:' . date(Date::ICS_DATE, $event->startTime) . PHP_EOL;
       if (isset($event->endTime) && $event->endTime > 0) {

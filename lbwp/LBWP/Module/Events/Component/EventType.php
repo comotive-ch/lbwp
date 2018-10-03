@@ -56,7 +56,7 @@ class EventType extends Base
     WordPress::registerType(self::EVENT_TYPE, self::$singular, self::$plural, array(
       'menu_position' => 22,
       'menu_icon' => 'dashicons-calendar-alt',
-      'supports' => array('title', 'thumbnail'),
+      'supports' => array('editor', 'title', 'thumbnail'),
       'rewrite' => array('slug' => self::$rewrite)
     ), self::$letter);
 
@@ -87,7 +87,7 @@ class EventType extends Base
 
     // Add section for the main event information
     $helper->addMetabox('event-main', 'Informationen zur Veranstaltung', 'normal');
-    $helper->addEditor('post_content', 'event-main', 'Beschreibung', 10);
+    //$helper->addEditor('post_content', 'event-main', 'Beschreibung', 10);
     $helper->addDateTime('event-start', 'event-main', 'Beginn');
     $helper->addDateTime('event-end', 'event-main', 'Ende (optional)');
     // Add optional fields

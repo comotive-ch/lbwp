@@ -4,6 +4,7 @@ namespace LBWP\Theme\Feature;
 
 use LBWP\Module\Forms\Core as FormCore;
 use LBWP\Module\Frontend\HTMLCache;
+use LBWP\Util\External;
 use LBWP\Util\Multilang;
 use LBWP\Util\Strings;
 
@@ -184,6 +185,8 @@ class FrontendLogin
           'user_password' => $_POST['password'],
           'remember' => true
         ), false);
+        // Allow even more handling after login of the newly created user
+        do_action('FrontendRegistration_after_user_signon', $user, $_POST);
       }
 
       // No errors happened, redirect to success page
@@ -254,6 +257,140 @@ class FrontendLogin
     }
 
     return $formHtml;
+  }
+
+  /**
+   * @return string
+   */
+  public function processPasswordReset()
+  {
+    $html = $message = '';
+
+    // Handle the controller actions and messages
+    if (isset($_POST['sentForm'])) {
+      // Send a reset link by email
+      if ($_POST['sentForm'] == 'email-reset') {
+        $user = get_user_by('email', $_POST['email']);
+        // Send the email if the user is valid
+        if ($user instanceof \WP_User) {
+          // Generate Key and URL
+          $key = Strings::getRandom(40);
+          $url = get_permalink(apply_filters('FrontendReset_reset_page_id', 0));
+          $url = Strings::attachParam('ps', 'reset', $url);
+          $url = Strings::attachParam('u', $user->ID, $url);
+          $url = Strings::attachParam('key', $key, $url);
+
+          // Save the key to the user data
+          update_user_meta($user->ID, 'pw-reset-key', $key . '::' . current_time('timestamp'));
+
+          // Setup an email and send it
+          $email = External::PhpMailer();
+          $email->Subject = __('Passwort zurücksetzen', 'lbwp');
+          $email->Body = '
+            ' . __('Guten Tag', 'lbwp') . '<br>
+            <br>
+            ' . __('Es wurde ein Link generiert um ihr Passwort zurückzusetzen. Der Link ist 24h gültig.', 'lbwp') . '<br>
+            <br>
+            <a href="' . $url . '">' . $url . '</a><br>
+            <br>
+            ' . __('Sofern diese Anfrage nicht von Ihnen kam, kann diese E-Mail ignoriert werden.', 'lbwp') . '         
+          ';
+          $email->send();
+          $message = __('Ein Link um das Passwort zurückzusetzen wurde Ihnen per E-Mail geschickt.', 'lbwp');
+        } else {
+          $message = __('Ihr Profil wurde in der Datenbank nicht gefunden.', 'lbwp');
+        }
+      }
+
+      // Send a reset link by email
+      if ($_POST['sentForm'] == 'reset-password') {
+        $message = Strings::checkPasswords($_POST['new-pass'], $_POST['confirm-pass'], 10, 'lbwp');
+        $userId = intval($_POST['userid']);
+        // If comparison has no errors, save the password
+        if (strlen($message) == 0 && $userId > 0) {
+          // Check the reset key for its validity
+          $threshold = current_time('timestamp') - 86400;
+          list($key, $time) = explode('::', get_user_meta($userId, 'pw-reset-key', true));
+          // OK if key matches and threshold not met
+          if ($key == $_POST['resetkey'] && $time > $threshold) {
+            wp_set_password($_POST['new-pass'], $userId);
+            delete_user_meta($userId, 'pw-reset-key');
+            $message = __('Ihr Passwort wurde erfolgreich geändert.', 'lbwp');
+          } else {
+            $message = __('Ihr Link ist nicht mehr gültig. Bitte fordern Sie einen neuen Link an.', 'lbwp');
+          }
+
+          // Allow extending the message (for example with a login link)
+          $message = apply_filters('FrontendReset_after_reset_message', $message);
+        }
+      }
+    }
+
+    // Add success message if given
+    if (strlen($message) > 0) {
+      $html .= '<p class="message message-success">' . $message . '</p>';
+    }
+
+    // Do one of the process steps if needed
+    if (isset($_GET['ps']) && isset($_GET['key']) && $_GET['ps'] == 'reset') {
+      $html .= $this->displayPasswordResetForm();
+    } else {
+      $html .= $this->displayResetEmailLinkForm();
+    }
+
+    return $html;
+  }
+
+  /**
+   * @return string html
+   */
+  protected function displayResetEmailLinkForm()
+  {
+    $shortcode = '
+      [lbwp:form button="' . __('Absenden', 'lbwp') . '" id="email-reset" weiterleitung="' . get_permalink() . '" action="' . get_permalink() . '" skip_execution="1"]
+        [lbwp:formItem key="textfield" pflichtfeld="ja" id="email" feldname="' . __('E-Mail-Adresse', 'lbwp') . '" type="email"]
+      [/lbwp:form]
+    ';
+
+    $html =
+      '<div id="email-link-reset-form">' . PHP_EOL
+      . do_shortcode($shortcode) . PHP_EOL
+    . '</div>';
+
+    // Add validation and css
+    $core = FormCore::getInstance();
+    if ($core instanceof FormCore) {
+      FormCore::getInstance()->getFormHandler()->addFormAssets();
+    }
+    return $html;
+  }
+
+  /**
+   * @return string html
+   */
+  protected function displayPasswordResetForm()
+  {
+    $shortcode = '
+      [lbwp:form button="' . __('Absenden', 'lbwp') . '" id="reset-password" weiterleitung="' . get_permalink() . '" action="' . get_permalink() . '" skip_execution="1"]
+        [lbwp:formItem key="textfield" pflichtfeld="ja" id="new-pass" feldname="' . __('Neues Passwort', 'lbwp') . '" type="password"]
+        [lbwp:formItem key="textfield" pflichtfeld="ja" id="confirm-pass" feldname="' . __('Passwort wiederholen', 'lbwp') . '" type="password"]
+        [lbwp:formItem key="hiddenfield" id="resetkey" feldname="resetkey" vorgabewert="' . $_GET['key'] . '"]
+        [lbwp:formItem key="hiddenfield" id="userid" feldname="userid" vorgabewert="' . $_GET['u'] . '"]
+      [/lbwp:form]
+    ';
+
+    $html =
+      '<div id="email-link-reset-form">' . PHP_EOL
+      . do_shortcode($shortcode) . PHP_EOL
+    . '</div>';
+
+    // Add validation and css
+    $core = FormCore::getInstance();
+    if ($core instanceof FormCore) {
+      FormCore::getInstance()->getFormHandler()->addFormAssets();
+    }
+
+    return $html;
   }
 
   /**

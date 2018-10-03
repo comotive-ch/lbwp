@@ -860,7 +860,7 @@ class Metabox
   public function addPagesDropdown($key, $boxId, $title, $args = array())
   {
     $items = array(0 => __('Bitte Seite auswählen', 'lbwp'));
-    $pages = get_pages();
+    $pages = get_pages($args);
 
     foreach ($pages as $page) {
       $items[$page->ID] = $page->post_title;

@@ -102,7 +102,8 @@ class OutputFilter extends \LBWP\Module\Base
     }
 
     // Allow to print output on post type single headers and do various stuff in header
-    add_action('wp_head', array($this, 'addHeaderFilters'), 10);
+    // This has 0 priority so that late css/js is loaded before everything else
+    add_action('wp_head', array($this, 'addHeaderFiltersEarly'), 0);
     // Register JSON LD output for posts
     add_action('wp_head_single_post', array('\LBWP\Helper\Tracking\MicroData', 'printArticleData'));
     // Remove CSS identifiers
@@ -510,7 +511,7 @@ class OutputFilter extends \LBWP\Module\Base
   /**
    * Run various wp_head start
    */
-  public function addHeaderFilters()
+  public function addHeaderFiltersEarly()
   {
     $this->runSingularHeadFilters();
     // Add a template comment that is much later replaced in an output buffer
