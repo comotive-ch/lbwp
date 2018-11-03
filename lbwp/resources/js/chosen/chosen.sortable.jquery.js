@@ -50,15 +50,23 @@
       $chosen.find('.chosen-choices').sortable({
         'placeholder' : 'ui-state-highlight',
         'items'       : 'li:not(.search-field)',
-        //'update'      : _update,
+				'cancel'			: 'a,button',
+				// Update the actual select,
+        'update'      : function() {
+					var $options = $select.chosenOrder();
+					$select.children().remove();
+					$select.append($options);
+					// Update array indizes of chosen elements for next sort
+					$choices = $chosen.find('.chosen-choices .search-choice');
+					$choices.each(function(index, element) {
+						jQuery(element).find('.search-choice-close').data('option-array-index', index);
+					});
+					// If possible save order immediately
+					//if (typeof(MetaboxHelper) != "undefined") {
+					//	MetaboxHelper.handleAutosaveChosenSortable(jQuery(this), $select);
+					//}
+				},
         'tolerance'   : 'pointer'
-      });
-
-      // Intercept form submit & order the chosens
-      $select.closest('form').on('submit', function(){
-        var $options = $select.chosenOrder();
-        $select.children().remove();
-        $select.append($options);
       });
 
     });

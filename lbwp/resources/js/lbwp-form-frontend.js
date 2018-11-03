@@ -158,6 +158,8 @@ var LbwpForm = {
 							jQuery('[data-field="' + field + '"]:checked').each(function() {
 								value += jQuery(this).val() + ' ';
 							});
+							// Make sure to trim last space for single comparisons
+							value = value.trim();
 							break;
 					}
 

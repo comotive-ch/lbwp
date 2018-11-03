@@ -446,7 +446,10 @@ class WordPress
     if (isset(self::$postTableColumns[$key])) {
       $config = self::$postTableColumns[$key];
       // Get the meta value of the post
-      $value = get_post_meta($postId, $config['meta_key'], $config['single']);
+      $value = '';
+      if (isset($config['meta_key'])) {
+        $value = get_post_meta($postId, $config['meta_key'], $config['single']);
+      }
       // See if there is a callback
       if (isset($config['callback']) && is_callable($config['callback'])) {
         call_user_func($config['callback'], $value, $postId);

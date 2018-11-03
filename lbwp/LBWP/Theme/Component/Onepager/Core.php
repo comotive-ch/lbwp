@@ -218,7 +218,7 @@ abstract class Core extends BaseComponent
         'show_ui' => true,
         'show_in_nav_menus' => false,
         'show_in_menu' => false,
-        'supports' => array('title')
+        'supports' => array('title', 'revisions')
       )
     );
   }

@@ -187,7 +187,7 @@ ul.wp-submenu li a img { display:none; }
 .yoast-ga-content #customdimensions-tab, #wpseo-dismiss-recalculate, .custom-sidebars-box,
 .yoast-ga-content #debugmode-tab, #nav-tab-lingotek, .wpseo-tab-add-keyword,
 .post-type-lbwp-snippet #wpseo_meta, .post-type-lbwp-form #wpseo_meta, .wpseo-metabox-buy-premium,
-.post-type-lbwp-list #wpseo_meta, .post-type-lbwp-listitem #wpseo_meta, .yoast-alert,
+.post-type-lbwp-list #wpseo_meta, .post-type-lbwp-listitem #wpseo_meta, .yoast-alerts,
 .vc_license-activation-notice, #wpseo-dashboard-overview .onpage, .submitbox #wpseo-score,
 #eml-options-media-tabs a:nth-child(4), #wpuxss-eml-form-taxonomies .postbox:nth-child(6),
 .settings_page_afbia_settings_page .credits-container, #pll-module-wpml, #pll-module-share-slugs,
@@ -207,6 +207,13 @@ ul.wp-submenu li a img { display:none; }
 
 /* Disable and fix nextscripts crap */
 ul.nsx_tabs { margin-top:20px !important; }
+
+.media-sidebar {
+	.download-link {
+		float: right;
+		padding: 1px 2px 5px 0px;
+	}
+}
 
 /* menu manager */
 .parent_page { font-weight: 700; }

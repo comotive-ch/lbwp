@@ -9,6 +9,7 @@ use LBWP\Module\General\Cms\SystemLog;
 use LBWP\Module\General\Multilang\OptionBridge;
 use LBWP\Module\General\Cms\PageSpeed;
 use LBWP\Core as LbwpCore;
+use LBWP\Theme\Feature\SecureAssets;
 use LBWP\Util\ArrayManipulation;
 use LBWP\Util\File;
 use LBWP\Util\Multilang;
@@ -190,6 +191,8 @@ class CmsFeatures extends \LBWP\Module\Base
     //add_action('shutdown', array($this, 'trackUncachedResponseTime'));
     add_filter('antispam_bee_patterns', array($this, 'addCustomSpamPatterns'));
     add_action('cron_job_test_cron', array($this, 'testAndLogCron'));
+    // Initialize secure assets
+    SecureAssets::init();
   }
 
   /**
@@ -477,6 +480,12 @@ class CmsFeatures extends \LBWP\Module\Base
   {
     if (!isset($types['vcf'])) {
       $types['vcf'] = 'text/vcard';
+    }
+    if (!isset($types['eps'])) {
+      $types['eps'] = 'application/postscript';
+    }
+    if (!isset($types['otf'])) {
+      $types['otf'] = 'application/vnd.ms-opentype';
     }
 
     return $types;

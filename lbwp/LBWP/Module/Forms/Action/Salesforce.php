@@ -35,8 +35,15 @@ class Salesforce extends Base
    * @var array configuration modes
    */
   protected $modes = array(
-    'prod' => 'https://webto.salesforce.com/servlet/servlet.WebToLead?encoding=UTF-8',
+    'prod' => 'https://{instance}.salesforce.com/servlet/servlet.WebToLead?encoding=UTF-8',
     'dev' => 'https://{instance}.salesforce.com/servlet/servlet.WebToLead?encoding=UTF-8'
+  );
+  /**
+   * @var array configuration mode defaults
+   */
+  protected $defaults = array(
+    'prod' => 'webto',
+    'dev' => 'test'
   );
   /**
    * @var array the fields that are sent to salesforce
@@ -104,11 +111,19 @@ class Salesforce extends Base
           'dev' => 'Testumgebung'
         )
       ),
-      'instance' => array(
+      'instance_dev' => array(
         'name' => 'Test-Instanz ID',
         'type' => 'textfield',
         'help' => '
           Wenn Sie in der Test-Instanz eingeloggt sind, ist dies die Zeichenkette vor .salesforce.com im Browserfenster z.b. "cs71"
+        '
+      ),
+      'instance_prod' => array(
+        'name' => 'Produktiv-Instanz ID',
+        'type' => 'textfield',
+        'help' => '
+          Sofern die Daten nicht in der Produktionsumgebung ankommen, muss wahrscheinlich eine Instanz-ID angegeben werden.
+          Üblicherweise lautet diese in der Regel "firmenname.my" oder nur "firmenname" in Kleinbuchstaben.
         '
       )
     ));
@@ -144,12 +159,12 @@ class Salesforce extends Base
       }
     }
 
-    // Send data to salesforce
-    $url = $this->modes[$this->params['mode']];
-    if (strlen($this->params['instance']) > 0 && $this->params['mode'] == 'dev') {
-      $url = str_replace('{instance}', $this->params['instance'], $url);
-    }
+    // Set instance name or the default for each type of stage
+    $mode = $this->params['mode'];
+    $instance = (strlen($this->params['instance_' . $mode]) > 0) ? $this->params['instance_' . $mode] : $this->defaults[$mode];
+    $url = str_replace('{instance}', $instance, $this->modes[$mode]);
 
+    // Send data to salesforce
     $options = array(
       CURLOPT_HEADER => true,
       CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,

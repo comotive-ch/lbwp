@@ -37,7 +37,7 @@ if (strlen($role)) {
   $subtitle = $role;
 }
 if (strlen($mail)) {
-  $subtitle .= ', ' . $mail;
+  $subtitle .= apply_filters('CoreListing_People_Subtitle_Divider', ', ') . $mail;
 }
 
 $content =

@@ -22,7 +22,7 @@ class SystemLog extends BaseSingleton
   /**
    * @var int the maximum number of entries
    */
-  const MAX_ENTRIES = 100;
+  public static $MAX_ENTRIES = 250;
 
   /**
    * Called at admin menu, allows us to add a submenu for admins
@@ -47,7 +47,7 @@ class SystemLog extends BaseSingleton
     echo '
       <div class="wrap">
         <h2>System-Log</h2>
-        <p>Diese Seite zeigt die letzten ' . self::MAX_ENTRIES . ' Log-Einträge des LBWP-Plugins an.</p>
+        <p>Diese Seite zeigt die letzten ' . self::$MAX_ENTRIES . ' Log-Einträge des LBWP-Plugins an.</p>
         <table class="wp-list-table widefat fixed striped">
           <thead>
             <tr>
@@ -122,7 +122,7 @@ class SystemLog extends BaseSingleton
     $type = Strings::forceSlugString($type);
 
     // See if we already reached the maximum entries in our log, remove oldest
-    if (count($log) >= self::MAX_ENTRIES) {
+    if (count($log) >= self::$MAX_ENTRIES) {
       array_shift($log);
     }
 

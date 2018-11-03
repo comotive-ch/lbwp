@@ -86,7 +86,8 @@
 				var name = this.name.replace("[]", ""); // if the name of a field is an array remove "[]"
 
 				// Is the field even visible? If not, its not required anymore
-				if (!fieldElement.is(':visible')) {
+
+				if (!fieldElement.parent().is(':visible')) {
 					return true;
 				}
 
@@ -251,7 +252,7 @@
 			var fieldElement = jQuery(this);
 
 			// Skip if the field is not visible
-			if (!fieldElement.is(':visible')) {
+			if (!fieldElement.parent().is(':visible')) {
 				return false;
 			}
 

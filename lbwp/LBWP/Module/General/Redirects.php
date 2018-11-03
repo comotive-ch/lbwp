@@ -3,6 +3,8 @@
 namespace LBWP\Module\General;
 
 use LBWP\Helper\PageSettings;
+use LBWP\Module\Backend\MemcachedAdmin;
+use LBWP\Module\Frontend\HTMLCache;
 use LBWP\Util\ArrayManipulation;
 use LBWP\Util\Strings;
 
@@ -208,6 +210,8 @@ class Redirects extends \LBWP\Module\Base
 
     // Save that new array
     update_option('lbwpUrlRedirects', $value);
+    // Also make sure to flush frontend cache
+    MemcachedAdmin::flushFrontendCacheHelper();
   }
 
   /**

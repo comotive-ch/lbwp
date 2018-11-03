@@ -94,12 +94,16 @@ class Textfield extends Base
 
     // Make the field
     $field = '<input type="' . $type . '" value="' . $this->getValue($args) . '"' . $attr . '/>';
+    $class = 'text-field ';
+    if ($type != 'text') {
+      $class .= $type . '-field ';
+    }
 
     // Create the full html block
     $html = Base::$template;
     $html = str_replace('{id}', $this->get('id'), $html);
     $html = str_replace('{label}', $args['feldname'], $html);
-    $html = str_replace('{class}', trim('text-field ' . $this->params['class']), $html);
+    $html = str_replace('{class}', trim($class . $this->params['class']), $html);
     $html = str_replace('{field}', $field, $html);
 
     return $html;

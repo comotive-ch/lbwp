@@ -154,7 +154,7 @@ class CronHandler extends \LBWP\Module\Base
   public function cleanRevisions()
   {
     // get all revisions where post_modified > 60 days
-    $treshold = Date::getTime(Date::SQL_DATETIME,time() - (60 * 86400));
+    $treshold = Date::getTime(Date::SQL_DATETIME,time() - (360 * 86400));
     $posts = $this->wpdb->get_results($this->wpdb->prepare('
       SELECT ID FROM '.$this->wpdb->posts.' WHERE
       post_type = "revision" AND post_modified < %s LIMIT 0,500

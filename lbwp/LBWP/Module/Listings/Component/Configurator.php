@@ -119,10 +119,15 @@ class Configurator extends Base
   {
     $this->templates[$key]['html'] = '';
     if (stristr($path, 'wp-content/themes') === false) {
-      $path = get_stylesheet_directory() . '/' . $path;
+      $full = get_stylesheet_directory() . '/' . $path;
+      if (!file_exists($full)) {
+        $full = get_template_directory() . '/' . $path;
+      }
+    } else {
+      $full = $path;
     }
 
-    $this->templates[$key]['path'] = $path;
+    $this->templates[$key]['path'] = $full;
   }
 
   /**

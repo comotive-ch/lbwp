@@ -8,6 +8,31 @@ $errorColor : #F2D0C6;
 	}
 }
 
+.crmcf-description {
+	.dashicons {
+		margin-top: 3px;
+		color: #aaa;
+		cursor: pointer;
+	}
+	label {
+		vertical-align: top;
+		line-height: 24px;
+		display: none;
+	}
+}
+
+.contact-help {
+	.dashicons {
+		color: #aaa;
+		cursor: pointer;
+	}
+	label {
+		margin-top:5px;
+		display:none;
+		font-weight:normal;
+	}
+}
+
 .tab-container {
 	display: none;
 	padding-top: 10px;

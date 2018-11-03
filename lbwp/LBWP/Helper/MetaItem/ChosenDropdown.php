@@ -4,7 +4,9 @@ namespace LBWP\Helper\MetaItem;
 
 use LBWP\Helper\MetaItem\Templates;
 use LBWP\Module\General\AuthorHelper;
+use LBWP\Util\ArrayManipulation;
 use LBWP\Util\Strings;
+use LBWP\Util\WordPress;
 
 /**
  * Helper object to provide chosen dropdowns
@@ -94,6 +96,15 @@ class ChosenDropdown
       $items = array(0 => array('title' => '')) + $items;
     }
 
+    // Only the current full selection is selectable values
+    if ($items == 'self') {
+      $value = ArrayManipulation::forceArrayAndInclude($value);
+      $items = array();
+      foreach ($value as $selection) {
+        $items[$selection] = $selection;
+      }
+    }
+
     $options = self::convertDropdownItemsToOptions($items, $value, $singleValue);
 
     $select = '
@@ -162,6 +173,27 @@ class ChosenDropdown
       ';
     }
 
+    // Let the user add new values to this dropdown
+    if (isset($chosenArguments['add_new_values'])) {
+      $html .= '
+        <script type="text/javascript">
+          jQuery(function() {
+            jQuery("#' . $key . '_add_item").on("click", function() {
+              var element = jQuery("#' . $key . '_added_text");
+              dropdown = jQuery("#' . $key . '");
+              dropdown.append(\'<option value="\' + element.val() + \'" selected="selected">\' + element.val() + \'</option>\');
+              dropdown.trigger("chosen:updated");
+              element.val("");
+            });
+          });
+        </script>
+        <div class="mbh-add-dropdown-value">
+          <input type="text" id="' . $key . '_added_text" />
+          <input type="button" class="button" id="' . $key . '_add_item" data-key="' . $key . '" value="Hinzufügen" />
+        </div>
+      ';
+    }
+
     return $html;
   }
 
@@ -215,6 +247,27 @@ class ChosenDropdown
   }
 
   /**
+   * Update the sort order of post ids
+   */
+  public static function updateSortOrder()
+  {
+    // Validate input data
+    $pos = stripos($_POST['flag'], '_');
+    $postId = intval(substr($_POST['flag'], 0, $pos));
+    $key = substr($_POST['flag'], $pos+1);
+    $list = array_map('intval', $_POST['ids']);
+
+    // Override the meta list, if all is good
+    if ($postId > 0 && strlen($key) > 0) {
+      self::saveToMeta($postId, $key, $list);
+    }
+
+    WordPress::sendJsonResponse(array(
+      'success' => true
+    ));
+  }
+
+  /**
    * @param $a
    * @param $b
    */
@@ -253,7 +306,10 @@ class ChosenDropdown
             $dataAttributes .= ' data-' . $dataKey . '="' . $dataValue . '"';
           }
         }
-        $options[$selectedValue] = '<option value="' . $selectedValue . '" selected="selected" ' . $dataAttributes . '>' . $title . '</option>';
+        // Only add if the selected value still exists in items
+        if (isset($items[$selectedValue])) {
+          $options[$selectedValue] = '<option value="' . $selectedValue . '" selected="selected" ' . $dataAttributes . '>' . $title . '</option>';
+        }
       }
     }
 

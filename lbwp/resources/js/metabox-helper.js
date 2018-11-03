@@ -60,6 +60,18 @@ var MetaboxHelper = {
 	},
 
 	/**
+	 * Automatically saves the order of the phoenix... the sortable. sorry.
+	 * @param element the dom element that has been sorted
+	 * @param list a list of ids in the new corrected order
+	 */
+	handleAutosaveChosenSortable : function(element, list)
+	{
+		var flag = element.closest('.mbh-input').find('select').attr('id');
+		// Save the new order of ids into the post meta
+		jQuery.post(ajaxurl + '?action=updateChosenSortOrder', { flag: flag, ids : list.val() });
+	},
+
+	/**
 	 * Handles ajav for dynamic post assignment search
 	 */
 	handleDynamicPostHelper : function()

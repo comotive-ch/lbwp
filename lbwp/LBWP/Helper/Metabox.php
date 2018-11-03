@@ -97,6 +97,7 @@ class Metabox
     // Generic ajax actions and listeners (just in case it is used)
     add_action('wp_ajax_newPostTypeItem', array('\LBWP\Helper\MetaItem\PostTypeDropdown', 'addNewPostTypeItem'));
     add_action('wp_ajax_trashAndRemoveItem', array('\LBWP\Helper\MetaItem\PostTypeDropdown', 'trashAndRemoveItem'));
+    add_action('wp_ajax_updateChosenSortOrder', array('\LBWP\Helper\MetaItem\ChosenDropdown', 'updateSortOrder'));
   }
 
   /**
@@ -880,7 +881,18 @@ class Metabox
   public function addUserDropdown($key, $boxId, $title, $args = array())
   {
     $items = array();
-    $users = get_users();
+    $users = get_users($args);
+
+    // Allow that nothing is selected
+    if (isset($args['allow_non_selection']) && $args['allow_non_selection']) {
+      $items[0] = array(
+        'title' => $args['non_selection_title'],
+        'data' => array(
+          'html' => $args['non_selection_title'],
+          'is-modal' => 0
+        )
+      );
+    }
 
     foreach ($users as $user) {
       $items[$user->ID] = array(

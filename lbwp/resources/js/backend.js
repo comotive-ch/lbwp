@@ -11,6 +11,10 @@ var LbwpBackend = {
 	 * @var bool false=invisible, true=active
 	 */
 	imageMediaModal : false,
+	/**
+	 * @var string the last media url that has been shown
+	 */
+	lastMediaUrlShown : '',
 
 	/**
 	 * Initialize all those helpers we need
@@ -20,6 +24,7 @@ var LbwpBackend = {
 		// Handle image cache-busting in image editor
 		LbwpBackend.handleImageCacheBusting();
 		LbwpBackend.handleUnwantedNotices();
+		LbwpBackend.pingForMediaModal();
 	},
 
 	/**
@@ -40,6 +45,79 @@ var LbwpBackend = {
 				}
 			}, 750);
 		}
+	},
+
+	/**
+	 * This handles and shows a direct download link for files underneath the
+	 * Input with the url for convenient downloading of files in a new window
+	 */
+	handleMediaDownloadLink : function()
+	{
+		setInterval(function() {
+			var element = jQuery('.media-sidebar [data-setting=url] input');
+			// If the element is present, print a link to the url beneath
+			if (element.length > 0) {
+				var url = element.val();
+				if (url != LbwpBackend.lastMediaUrlShown && !LbwpBackend.isImage(url)) {
+					var container = element.parent();
+					container.find('.download-link').remove();
+					container.append('<a href="' + url + '" class="download-link" target="_blank">Datei herunterladen</a>');
+					LbwpBackend.lastMediaUrlShown = url;
+				}
+			}
+		}, 2000);
+	},
+
+	/**
+	 * Handle the rewriting of secure asset links
+	 */
+	handleSecureAssets : function()
+	{
+		jQuery(document).on(
+			'click',
+			'#secured_asset',
+			function() {
+				if (jQuery(this).is(':checked')) {
+					var input = jQuery('[data-setting=url] input');
+					if (input.val().indexOf('/wp-file-proxy.php') < 0) {
+						var sub = input.val().indexOf('/files/');
+						if (sub > 0) {
+							var key = input.val().substring(sub + 7);
+							input.val(document.location.origin + '/wp-file-proxy.php?key=' + key);
+						}
+					}
+				}
+			}
+		);
+	},
+
+	/**
+	 * Check if it is an image
+	 * @param url
+	 * @returns {boolean}
+	 */
+	isImage : function(url)
+	{
+		return !(
+			url.indexOf('.jpg') < 0 &&
+			url.indexOf('.jpeg') < 0 &&
+			url.indexOf('.png') < 0 &&
+			url.indexOf('.gif') < 0
+		);
+	},
+
+	/**
+	 * Ping for media modal on a short basis to trigger more events
+	 */
+	pingForMediaModal : function()
+	{
+		LbwpBackend.pingMediaModal = setInterval(function() {
+			if (jQuery('.media-modal-content, .media-frame-content').length > 0) {
+				LbwpBackend.handleSecureAssets();
+				LbwpBackend.handleMediaDownloadLink();
+				clearInterval(LbwpBackend.pingMediaModal);
+			}
+		}, 2000);
 	},
 
 	/**

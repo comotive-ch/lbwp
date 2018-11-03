@@ -99,7 +99,7 @@ class Templating
     // Only do something if the string is an analyzeable url
     if (Strings::isURL($url)) {
       $parts = parse_url($url);
-      if ($parts['host'] != LBWP_HOST) {
+      if ($parts['host'] != LBWP_HOST || Strings::endsWith($url, '.pdf')) {
         return $prefix . 'target="_blank"';
       }
     }

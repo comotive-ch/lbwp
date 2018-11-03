@@ -1230,4 +1230,18 @@ class Strings
 
     return $url;
   }
+
+  /**
+   * @param string $url
+   * @param string $protocol
+   * @return string
+   */
+  public static function getSafeUrl($url, $protocol = 'https')
+  {
+    if (!self::checkURL($url)) {
+      $url = $protocol . '://' . $url;
+    }
+
+    return $url;
+  }
 }

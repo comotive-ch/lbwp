@@ -56,7 +56,7 @@ class S3Upload extends \LBWP\Module\Base
       add_filter('upload_dir', array($this, 'appendUploadHash'));
       // filters to handle file uploads, changes and deletions
       add_filter('wp_handle_upload', array($this, 'filterHandleUpload'));
-      add_filter('wp_delete_file', array($this, 'filterDeleteFile'));
+      add_filter('delete_attachment', array($this, 'filterDeleteFile'));
       // filters for uploading, only needed in admin
       add_filter('image_make_intermediate_size', array($this, 'filterHandleSizes'));
       add_filter('update_attached_file', array($this, 'filterUpdateAttachment'));
@@ -126,19 +126,35 @@ class S3Upload extends \LBWP\Module\Base
 
   /**
    * Filter which is fired when deleting media. This deletes it on S3 too.
-   * @param string $filename The name of the file to delete (123456789/filename.jpg)
-   * @return string The filename 1:1 since it's a filter
+   * @param int $attachmentId the id of a file
    */
-  public function filterDeleteFile($filename)
+  public function filterDeleteFile($attachmentId)
   {
-    if (stristr($filename, ASSET_KEY)) {
-      $filename = substr($filename, strpos($filename, ASSET_KEY) + strlen(ASSET_KEY) + 1);
+    $files = array();
+    // See if it is an image and we need to delete every size too
+    $data = wp_get_attachment_metadata($attachmentId);
+    if (is_array($data)) {
+      $files[] = $data['file'];
+      $folder = substr($data['file'], 0, strrpos($data['file'], '/') + 1);
+      foreach ($data['sizes'] as $size) {
+        $files[] = $folder . $size['file'];
+      }
+    } else {
+      // Normal file, just get the file name and key
+      $files[] = get_post_meta($attachmentId, '_wp_attached_file', true);
     }
-    $filename = ASSET_KEY . '/files/' . $filename;
 
-    $this->deleteFile($filename);
-    // Return it 1:1 we just needed to delete it from S3
-    return $filename;
+    // Filter out false positives and empty strings
+    $files = array_filter($files);
+
+    if (count($files) > 0) {
+      foreach ($files as $filename) {
+        if (strlen($filename) > 4 && Strings::contains($filename, '.')) {
+          $filename = ASSET_KEY . '/files/' . $filename;
+          $this->deleteFile($filename);
+        }
+      }
+    }
   }
 
   /**
@@ -357,7 +373,7 @@ class S3Upload extends \LBWP\Module\Base
       'CacheControl' => 'max-age=' . (315360000),
       'Expires' => gmdate('D, d M Y H:i:s \G\M\T', time() + 315360000),
       'Bucket' => CDN_BUCKET_NAME,
-      'Key' => str_replace(Core::getCdnProtocol() . '://' . Core::getCdnName() . '/', '', $url)
+      'Key' => $this->getKeyFromUrl($url)
     );
 
     // Add explicit mime type if given
@@ -377,6 +393,15 @@ class S3Upload extends \LBWP\Module\Base
     } else {
       return false;
     }
+  }
+
+  /**
+   * @param string $url the url of a file on the storage
+   * @return string $key the corresponding key
+   */
+  public function getKeyFromUrl($url)
+  {
+    return str_replace(Core::getCdnProtocol() . '://' . Core::getCdnName() . '/', '', $url);
   }
 
   /**

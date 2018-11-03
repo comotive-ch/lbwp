@@ -12,7 +12,7 @@ class PostDuplicate extends \LBWP\Module\Base
   /**
    * @var array Array with the duplicateable post types
    */
-  protected $duplicateableTypes = array('post', 'page', 'lbwp-form', 'lbwp-event', 'lbwp-table');
+  protected $duplicateableTypes = array('post', 'page', 'lbwp-form', 'lbwp-event', 'lbwp-table', 'crm-custom-field');
   /**
    * @var array global meta data duplication blacklist
    */
@@ -105,7 +105,7 @@ class PostDuplicate extends \LBWP\Module\Base
     $blacklist = apply_filters('duplicate_post_meta_key_blacklist', $this->globalMetaBlacklist);
     foreach($meta as $key => $value) {
       if (!in_array($key, $blacklist)) {
-        $fmeta[$key] = maybe_unserialize($value[0]);
+        $fmeta[$key] = count($value) == 1 ? $value[0] : $value;
       }
     }
 
@@ -153,7 +153,13 @@ class PostDuplicate extends \LBWP\Module\Base
 
     // Save the post meta data
     foreach ($fmeta as $k => $v) {
-      update_post_meta($newPostId, $k, $v);
+      if (is_array($v)) {
+        foreach ($v as $iv) {
+          add_post_meta($newPostId, $k, $iv);
+        }
+      } else {
+        update_post_meta($newPostId, $k, $v);
+      }
     }
 
     // Clean the cache for this post (Since we changed the db directly)

@@ -27,14 +27,20 @@ var CrmUserAdmin = {
 		jQuery('.add-contact').off('click').on('click', function() {
 			var container = jQuery(this).closest('.contact-editor-container');
 			var keyPrefix = container.data('input-key');
+			var hiddenFields = container.data('hidden-fields');
 			var allowNeutral = container.data('allow-neutral') == 1;
 			var allowDelete = container.data('allow-delete') == 1;
+			var optionalEmail = container.data('optional-email') == 1;
 			var body = container.find('tbody');
 
 			// Define the required fields, options and delete button
 			var deleteBtn = '';
 			var required = ' required="required"';
+			var emailRequired = ' required="required"';
 			var options = crmAdminData.defaultSalutations;
+			if (optionalEmail) {
+				emailRequired = '';
+			}
 			if (allowNeutral) {
 				required = '';
 				options = crmAdminData.neutralSalutations;
@@ -43,16 +49,30 @@ var CrmUserAdmin = {
 				deleteBtn = '<a href="javascript:void(0)" class="dashicons dashicons-trash delete-contact"></a>';
 			}
 
+			// Add core fields as needed
+			var html = '<tr>';
+			if (jQuery.inArray('salutation', hiddenFields) < 0)
+				html += '<td><select name="' + keyPrefix + '[salutation][]">' + options + '</select></td>';
+			if (jQuery.inArray('firstname', hiddenFields) < 0)
+				html += '<td><input type="text" name="' + keyPrefix + '[firstname][]" ' + required + ' /></td>';
+			if (jQuery.inArray('lastname', hiddenFields) < 0)
+				html += '<td><input type="text" name="' + keyPrefix + '[lastname][]" ' + required + ' /></td>';
+			if (jQuery.inArray('email', hiddenFields) < 0)
+				html += '<td><input type="text" name="' + keyPrefix + '[email][]" ' + emailRequired + ' /></td>';
+
+			// See if there are custom fields
+			var customFields = container.find('.contact-custom-field');
+			if (customFields.length > 0) {
+				customFields.each(function() {
+					html += '<td><input type="text" name="' + keyPrefix + '[' + jQuery(this).data('cfkey') + '][]" /></td>'
+				})
+			}
+
+			// Delete button and close row
+			html += '<td>' + deleteBtn + '</td></tr>';
+
 			// Integrate the new row
-			body.append(
-				'<tr>' +
-					'<td><select name="' + keyPrefix + '[salutation][]">' + options + '</select></td>' +
-					'<td><input type="text" name="' + keyPrefix + '[firstname][]" ' + required + ' /></td>' +
-					'<td><input type="text" name="' + keyPrefix + '[lastname][]" ' + required + ' /></td>' +
-					'<td><input type="text" name="' + keyPrefix + '[email][]"  required="required" /></td>' +
-					'<td>' + deleteBtn + '</td>' +
-				'</tr>'
-			);
+			body.append(html);
 			// Make sure to remove no results info
 			body.find('.no-contacts').remove();
 			// Update visibility of add buttons
@@ -65,6 +85,16 @@ var CrmUserAdmin = {
 		jQuery('.delete-contact').off('click').on('click', function() {
 			var button = jQuery(this);
 			var body = button.closest('tbody');
+			var container = body.closest('.contact-editor-container');
+			var minContacts = container.data('min-contacts');
+			var numberContacts = body.find('tr').length;
+
+			// If we have same number of contacts as minimum, disallow deletion
+			if (minContacts == numberContacts) {
+				alert(crmAdminData.text.deleteImpossible.replace('{number}', minContacts));
+				return;
+			}
+
 			if (confirm(crmAdminData.text.sureToDelete)) {
 				button.closest('tr').remove();
 			}
@@ -148,6 +178,8 @@ var CrmUserAdmin = {
 		jQuery('.user-email-wrap input').attr('readonly', 'readonly');
 		// Make use of proper html5 validation
 		profile.removeAttr('novalidate');
+		// Make the form a proper upload form, just in case
+		profile.attr('enctype', 'multipart/form-data');
 
 		// If not admin, remove even more
 		if (!crmAdminData.userIsAdmin) {
@@ -174,6 +206,7 @@ var CrmUserAdmin = {
 		CrmUserAdmin.hideAddOnMaxContacts();
 		// Add our own required field handler
 		CrmUserAdmin.handleRequiredFields();
+		CrmUserAdmin.handleHelpIcons();
 	},
 
 	/**
@@ -201,6 +234,24 @@ var CrmUserAdmin = {
 		if (crmAdminData.saveUserButton.length > 0) {
 			jQuery('#submit').val(crmAdminData.saveUserButton);
 		}
+	},
+
+	/**
+	 * Opens and closes all help labels
+	 */
+	handleHelpIcons : function()
+	{
+		jQuery('.crmcf-description .dashicons, .contact-help .dashicons').on('click', function() {
+			var help = jQuery(this).next();
+			if (help.is(':visible')) {
+				help.css('display', 'none');
+			} else {
+				help.css('display', 'block');
+			}
+		});
+
+		// Remove all help icons that don't provide any text
+		jQuery('.crmcf-description label:empty, .contact-help label:empty').parent().hide();
 	},
 
 	/**

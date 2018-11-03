@@ -170,6 +170,10 @@ class CleanUp extends \LBWP\Module\Base
    */
   public function obfuscateLoginError($error)
   {
+    // Handle some of our custom error messages
+    if (Strings::contains($error, '<!--authentication-prevented-->')) {
+      return $error;
+    }
     return sprintf(
       __('Deine Anmeldung ist fehlgeschlagen. Gib deinen Benutzernamen und dein Passwort erneut ein. <a href="%s">Hast du das Passwort vergessen?</a>'),
       get_bloginfo('url') . '/wp-login.php?action=lostpassword'

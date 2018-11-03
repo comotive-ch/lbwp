@@ -2,8 +2,12 @@
 
 namespace LBWP\Theme\Component\Crm;
 
+use LBWP\Core as LbwpCore;
+use LBWP\Helper\Import\Csv;
 use LBWP\Helper\Metabox;
+use LBWP\Module\Backend\S3Upload;
 use LBWP\Theme\Base\Component;
+use LBWP\Theme\Feature\SortableTypes;
 use LBWP\Util\External;
 use LBWP\Util\Strings;
 use LBWP\Util\Templating;
@@ -43,6 +47,10 @@ class Core extends Component
    */
   protected $userAdminData = array();
   /**
+   * @var array of inactive user ids, if given
+   */
+  protected $inactiveUserIds = null;
+  /**
    * @var int the edited user id
    */
   protected $editedUserId = 0;
@@ -64,7 +72,10 @@ class Core extends Component
           <th><label for="crmcf-{fieldName}">{fieldLabel}{fieldRequired}</label></th>
           <td>
             {fieldContent}
-            <span class="description"><label for="crmcf-{fieldName}">{fieldDescription}</label></span>
+            <span class="description crmcf-description">
+              <span class="dashicons dashicons-editor-help"></span>
+              <label for="crmcf-{fieldName}">{fieldDescription}</label>
+            </span>
           </td>
         </tr>
       </tbody>
@@ -85,11 +96,14 @@ class Core extends Component
     // Invoke member admin scripts and menu stuff
     if (is_admin()) {
       // Various actions sorted by run time
+      add_action('current_screen', array($this, 'preventUserOnDashboard'), 10);
       add_action('admin_init', array($this, 'addCategorizationMetaboxes'), 50);
       add_action('admin_menu', array($this, 'hideMenusFromMembers'), 50);
+      add_action('admin_menu', array($this, 'addExportView'), 100);
       add_action('admin_footer', array($this, 'invokeMemberAdminScripts'));
       // Save user data
       add_action('profile_update', array($this, 'saveMemberData'));
+      add_action('user_register', array($this, 'syncCoreToCustomFields'));
       add_action('save_post_' . self::TYPE_FIELD, array($this, 'invalidateCaches'));
       // Add custom fields as columns in admin tables
       $this->addAdminTableColumns();
@@ -101,6 +115,8 @@ class Core extends Component
     add_filter('Lbwp_Autologin_Link_Validity', array($this, 'configureAutoLoginLink'));
     // Cron to automatically send changes from the last 24h
     add_action('cron_daily_7', array($this, 'sendTrackedUserChangeReport'));
+    // Tell disabled users that they're not allowed anymore
+    add_filter('authenticate', array($this, 'preventDisabledUserLogin'), 100, 1);
 
     if ($this->userAdminData['editedIsMember']) {
       // Set the editing user object
@@ -111,14 +127,30 @@ class Core extends Component
       // Include custom fields as of configuration and callbacks
       add_action('show_user_profile', array($this, 'addCustomUserFields'));
       add_action('edit_user_profile', array($this, 'addCustomUserFields'));
-      // Custom field save functions
-      add_action('profile_update', array($this, 'saveCustomFieldData'));
-      add_action('profile_update', array($this, 'saveContactData'));
-      // If configured, override user email with main contact
-      if (isset($this->configuration['mainContactMap'])) {
-        add_action('profile_update', array($this, 'syncMainContactEmail'));
-      }
+      // Custom save functions
+      add_action('profile_update', array($this, 'onMemberProfileUpdate'));
     }
+  }
+
+  /**
+   * When a member profile is saved / updated
+   */
+  public function onMemberProfileUpdate()
+  {
+    // Save custom fields and contact data
+    $this->saveCustomFieldData();
+    $this->saveContactData();
+    // If configured, override user email with main contact
+    if (isset($this->configuration['mainContactMap'])) {
+      $this->syncMainContactEmail();
+    }
+    // If configured, merge a specified custom field into the display_name
+    if (isset($this->configuration['misc']['syncDisplayNameField'])) {
+      $this->syncDisplayName();
+    }
+
+    // At last, make sure to flush user cache, as we may do database edits
+    clean_user_cache($this->editedUserId);
   }
 
   /**
@@ -169,6 +201,13 @@ class Core extends Component
    */
   public function addCustomUserFields()
   {
+    // Add disabling checkbox and profile categories view or edit field
+    if ($this->userAdminData['userIsAdmin']) {
+      echo $this->getDisableMemberEditor();
+    }
+    echo $this->getProfileCategoriesEditor();
+
+    // Get all Custom fields to print their html
     $customFields = $this->getCustomFields($this->editedUser->profileCategories);
     // Print the fields
     foreach ($customFields as $field) {
@@ -182,8 +221,7 @@ class Core extends Component
       ));
     }
 
-    // Add profile categories view or edit field
-    echo $this->getProfileCategoriesEditor();
+
     // Add the contact UIs
     echo $this->getProfileContactsEditor();
   }
@@ -218,6 +256,18 @@ class Core extends Component
         $checked = checked($value, 1, false);
         $html .= '<input type="checkbox" ' . $attr . ' value="1" ' . $checked . ' />';
         break;
+      case 'file':
+        // Display upload field only if not readonly
+        if (!$field['readonly']) {
+          $html .= '<input type="file" ' . $attr . ' />';
+        }
+        // Display the download link, if the file available
+        if (strlen($value) > 0) {
+          $html .= '<p>
+            <a href="/wp-file-proxy.php?key=' . $value . '" target="_blank">' . sprintf(__('Datei "%s" herunterladen', 'lbwp'), File::getFileOnly($value)) . '</a>
+          </p>';
+        }
+        break;
     }
 
     return $html;
@@ -226,7 +276,7 @@ class Core extends Component
   /**
    * Saves the custom user fields with loose validation
    */
-  public function saveCustomFieldData()
+  protected function saveCustomFieldData()
   {
     // Save the custom fields as given
     $customFields = $this->getCustomFields($this->editedUser->profileCategories);
@@ -237,12 +287,26 @@ class Core extends Component
       if ($this->userAdminData['userIsAdmin'] || (!$field['invisible'] && !$field['readonly'])) {
         // Get the previous value for determining a change
         $before = get_user_meta($this->editedUserId, $key, true);
-        $after = $_POST[$key];
-        if (isset($_POST[$key])) {
-          update_user_meta($this->editedUserId, $key, $after);
+        if ($field['type'] == 'file') {
+          if ($_FILES[$key]['error'] == 0) {
+            /** @var S3Upload $upload */
+            $upload = LbwpCore::getModule('S3Upload');
+            $url = $upload->uploadLocalFile($_FILES[$key], true);
+            $file = $upload->getKeyFromUrl($url);
+            $upload->setAccessControl($file, S3Upload::ACL_PRIVATE);
+            // But actually save only the file name without asset key
+            $after = str_replace(ASSET_KEY . '/files/', '', $file);
+            update_user_meta($this->editedUserId, $key, $after);
+          }
         } else {
-          delete_user_meta($this->editedUserId, $key);
+          $after = $_POST[$key];
+          if (isset($_POST[$key])) {
+            update_user_meta($this->editedUserId, $key, $after);
+          } else {
+            delete_user_meta($this->editedUserId, $key);
+          }
         }
+
         // If the value changed, track it
         if ($before != $after) {
           $tab = $this->configuration['tabs'][$field['tab']];
@@ -255,8 +319,13 @@ class Core extends Component
   /**
    * Saves all the contacts of the profile
    */
-  public function saveContactData()
+  protected function saveContactData()
   {
+    // No need to do anything, when there are no concats
+    if (!isset($_POST['crm-contact-categories'])) {
+      return;
+    }
+
     // Save all given contacts
     $categories = array_map('intval', $_POST['crm-contact-categories']);
 
@@ -279,7 +348,7 @@ class Core extends Component
   /**
    * Syncs the user_email field with the email of the roles respective main contact
    */
-  public function syncMainContactEmail()
+  protected function syncMainContactEmail()
   {
     $role = $this->editedUser->roles[0];
     $key = 'crm-contacts-' . $this->configuration['mainContactMap'][$role];
@@ -294,8 +363,41 @@ class Core extends Component
         array('user_email' => $contacts[0]['email']),
         array('ID' => $this->editedUserId)
       );
-      // Therefore we also need to manually fix the cache
-      clean_user_cache($this->editedUserId);
+    }
+  }
+
+  /**
+   * Sync a custom field with the user->display_name field
+   */
+  protected function syncDisplayName()
+  {
+    $key = $this->configuration['misc']['syncDisplayNameField'];
+    if (strlen($key) > 0) {
+      $db = WordPress::getDb();
+      $db->update(
+        $db->users,
+        array('display_name' => get_user_meta($this->editedUserId, $key, true)),
+        array('ID' => $this->editedUserId)
+      );
+    }
+  }
+
+  /**
+   * Syncs some core fields to custom fields
+   * @param int $userId
+   */
+  public function syncCoreToCustomFields($userId)
+  {
+    // Skip, if not an actual crm role
+    if (!in_array($_POST['role'], $this->configuration['roles'])) {
+      return;
+    }
+
+    if (isset($this->configuration['syncCoreFields'])) {
+      // Map the post keys into the corresponding crm fields
+      foreach ($this->configuration['syncCoreFields'] as $key => $field) {
+        update_user_meta($userId, $field, $_POST[$key]);
+      }
     }
   }
 
@@ -315,8 +417,8 @@ class Core extends Component
     for ($i = 0; $i < $max;$i++) {
       $oldContact = $this->stringifyContact($before[$i]);
       $newContact = $this->stringifyContact($after[$i]);
-      // If not the same, track the change
-      if ($oldContact != $newContact) {
+      // If not the same, track the change (do compare without html)
+      if (strip_tags($oldContact) != strip_tags($newContact)) {
         $this->trackUserDataChange($category['title'], __('Kontakte', 'lbwp'), $oldContact, $newContact);
       }
     }
@@ -392,24 +494,24 @@ class Core extends Component
         $name = get_user_meta($id, $company, true);
         $html .= '<h4>' . sprintf(__('Änderungen bei %s', 'lbwp'), $name) . '</h4>';
         $html .= '
-          <table>
+          <table style="width:100%;" width="100%">
             <tr>
-              <td><strong>' . __('Uhrzeit', 'lbwp') . '</strong></td>
-              <td><strong>' . __('Änderung in', 'lbwp') . '</strong></td>
-              <td><strong>' . __('Bisher', 'lbwp') . '</strong></td>
-              <td><strong>' . __('Neu', 'lbwp') . '</strong></td>
-              <td><strong>' . __('Autor', 'lbwp') . '</strong></td>
+              <td style="width:5%;border-bottom:2px solid #bbb" width="5%"><strong>' . __('Uhrzeit', 'lbwp') . '</strong></td>
+              <td style="width:20%;border-bottom:2px solid #bbb" width="10%"><strong>' . __('Änderung in', 'lbwp') . '</strong></td>
+              <td style="width:30%;border-bottom:2px solid #bbb" width="10%"><strong>' . __('Bisher', 'lbwp') . '</strong></td>
+              <td style="width:30%;border-bottom:2px solid #bbb" width="10%"><strong>' . __('Neu', 'lbwp') . '</strong></td>
+              <td style="width:15%;border-bottom:2px solid #bbb" width="15%"><strong>' . __('Autor', 'lbwp') . '</strong></td>
             </tr>
         ';
         // Print all the changes to the member
         foreach ($items as $change) {
           $html .= '
             <tr>
-              <td>' . $change['time'] . '</td>
-              <td>' . $change['category'] . ' > ' . $change['field'] . '</td>
-              <td>' . $change['before'] . '</td>
-              <td>' . $change['after'] . '</td>
-              <td>' . $change['author'] . '</td>
+              <td style="border-bottom:1px solid #999">' . $change['time'] . '</td>
+              <td style="border-bottom:1px solid #999">' . $change['category'] . ' > ' . $change['field'] . '</td>
+              <td style="border-bottom:1px solid #999">' . $change['before'] . '</td>
+              <td style="border-bottom:1px solid #999">' . $change['after'] . '</td>
+              <td style="border-bottom:1px solid #999">' . $change['author'] . '</td>
             </tr>
           ';
         }
@@ -441,15 +543,13 @@ class Core extends Component
   protected function validateInputContacts($candidates)
   {
     $contacts = array();
-    for ($i = 0; $i < count($candidates['email']); ++$i) {
-      if (Strings::checkEmail($candidates['email'][$i])) {
-        $contacts[] = array(
-          'salutation' => $candidates['salutation'][$i],
-          'firstname' => $candidates['firstname'][$i],
-          'lastname' => $candidates['lastname'][$i],
-          'email' => $candidates['email'][$i]
-        );
+    $countKey = array_keys($candidates)[0];
+    for ($i = 0; $i < count($candidates[$countKey]); ++$i) {
+      $contact = array();
+      foreach (array_keys($candidates) as $key) {
+        $contact[$key] = $candidates[$key][$i];
       }
+      $contacts[] = $contact;
     }
 
     return $contacts;
@@ -487,8 +587,31 @@ class Core extends Component
       <table class="form-table" data-target-tab="main">
 	      <tbody>
 	        <tr class="profile-categories-wrap">
-            <th><label for="profile_categories">Zugewiesene Gruppen</label></th>
+            <th><label for="profile_categories">Zugewiesene Kategorien</label></th>
             <td>' . $html . '</td>
+	        </tr>
+        </tbody>
+      </table>
+    ';
+  }
+
+  /**
+   * @return string html to disable a member
+   */
+  protected function getDisableMemberEditor()
+  {
+    $checked = checked(get_user_meta($this->editedUserId, 'member-disabled', true), 1, false);
+    // Print the output and UI
+    return '
+      <table class="form-table" data-target-tab="main">
+	      <tbody>
+	        <tr class="disable-member-wrap">
+            <th><label for="disable-member">Status</label></th>
+            <td>
+              <label>
+                <input type="checkbox" id="disable-member" name="disableMember" value="1" ' . $checked . ' /> Mitglied ist deaktiviert
+              </label>
+            </td>
 	        </tr>
         </tbody>
       </table>
@@ -508,6 +631,8 @@ class Core extends Component
       $contactCategories = array_unique(array_merge($contactCategories, $categories));
     }
 
+    // Make sure there are no empty values in it after merging
+    $contactCategories = array_filter($contactCategories);
     // Sort by number so that topmost IDs are top
     sort($contactCategories, SORT_NUMERIC);
 
@@ -547,16 +672,48 @@ class Core extends Component
       '<a href="javascript:void(0)" class="dashicons dashicons-trash delete-contact"></a>' : '';
     // Some fields are only required if neutral is not allowed
     $required = $category['allow-neutral'] ? '' : ' required="required"';
+    $emailRequired = $category['optional-email'] ? '' : ' required="required"';
+
+    $cfHeadings = '';
+    if (!in_array('salutation', $category['hiddenfields']))
+      $cfHeadings .= '<th class="th-salutation">Anrede</th>';
+    if (!in_array('firstname', $category['hiddenfields']))
+      $cfHeadings .= '<th class="th-firstname">Vorname</th>';
+    if (!in_array('lastname', $category['hiddenfields']))
+      $cfHeadings .= '<th class="th-lastname">Nachname</th>';
+    if (!in_array('email', $category['hiddenfields']))
+      $cfHeadings .= '<th class="th-email">E-Mail-Adresse</th>';
+    foreach ($category['fields'] as $field) {
+      $cfKey = Strings::forceSlugString($field);
+      $cfHeadings .= '<th class="contact-custom-field th-' . $cfKey . '" data-cfkey="' . $cfKey . '">' . $field . '</th>';
+    }
 
     // Display available contacts
     if (count($contacts) > 0) {
       foreach ($contacts as $contact) {
+        $html .= '<tr>';
+        // See what core fields we actually need
+        if (!in_array('salutation', $category['hiddenfields'])) {
+          $html .= '<td><select name="' . $key . '[salutation][]">' . $this->getSalutationOptions($category['allow-neutral'], $contact['salutation']) . '</select></td>';
+        }
+        if (!in_array('firstname', $category['hiddenfields'])) {
+          $html .= '<td><input type="text" name="' . $key . '[firstname][]" ' . $required . ' value="' . esc_attr($contact['firstname']) . '" /></td>';
+        }
+        if (!in_array('lastname', $category['hiddenfields'])) {
+          $html .= '<td><input type="text" name="' . $key . '[lastname][]" ' . $required . ' value="' . esc_attr($contact['lastname']) . '" /></td>';
+        }
+        if (!in_array('email', $category['hiddenfields'])) {
+          $html .= '<td><input type="text" name="' . $key . '[email][]" ' . $emailRequired . ' value="' . esc_attr($contact['email']) . '" /></td>';
+        }
+
+        // Additional fields if available
+        foreach ($category['fields'] as $field) {
+          $cfKey = Strings::forceSlugString($field);
+          $html .= '<td><input type="text" name="' . $key . '[' . $cfKey . '][]" value="' . esc_attr($contact[$cfKey]) . '" /></td>';
+        }
+
+        // Delete button and close row
         $html .= '
-          <tr>
-            <td><select name="' . $key . '[salutation][]">' . $this->getSalutationOptions($category['allow-neutral'], $contact['salutation']) . '</select></td>
-            <td><input type="text" name="' . $key . '[firstname][]" ' . $required . ' value="' . esc_attr($contact['firstname']) . '" /></td>
-            <td><input type="text" name="' . $key . '[lastname][]" ' . $required . ' value="' . esc_attr($contact['lastname']) . '" /></td>
-            <td><input type="text" name="' . $key . '[email][]"  required="required" value="' . esc_attr($contact['email']) . '" /></td>
             <td>' . $delBtn . '</td>
           </tr>
         ';
@@ -575,19 +732,26 @@ class Core extends Component
       <div class="contact-editor-container" 
         data-target-tab="' . $category['tab'] . '"
         data-input-key="' . $key . '"
-        data-max-contacts="' . $category['max-contacts'] . '"
+        data-hidden-fields="' . esc_attr(json_encode($category['hiddenfields'])) . '"
+        data-max-contacts="' . intval($category['max-contacts']) . '"
+        data-min-contacts="' . intval($category['min-contacts']) . '"
         data-allow-delete="' . ($category['delete'] ? '1' : '0') . '"
         data-allow-neutral="' . ($category['allow-neutral'] ? '1' : '0') . '"
+        data-optional-email="' . ($category['optional-email'] ? '1' : '0') . '"
         >
-        <h4>' . $category['title'] . '</h4>
+        <h4>
+          ' . $category['title'] . '
+          <span class="description contact-help">
+            <span class="dashicons dashicons-editor-help"></span>
+            <label>' . $category['description'] . '</label>
+          </span>
+        </h4>
+        
         <div class="contact-table-container">
           <table class="widefat contact-table">
             <thead>
               <tr>
-                <th class="th-salutation">Anrede</th>
-                <th class="th-firstname">Vorname</th>
-                <th class="th-lastname">Nachname</th>
-                <th class="th-email">E-Mail-Adresse</th>
+                ' . $cfHeadings . '
                 <th class="th-buttons">&nbsp;</th>
               </tr>
             </thead>
@@ -614,13 +778,18 @@ class Core extends Component
     return array(
       'id' => $categoryId,
       'title' => $raw->post_title,
+      'description' => get_post_meta($categoryId, 'description', true),
+      'fields' => array_filter(get_post_meta($categoryId, 'custom-fields')),
       'tab' => get_post_meta($categoryId, 'tab', true),
       'visible' =>  $admin || get_post_meta($categoryId, 'cap-read', true) == 'on',
       'edit' => $admin || get_post_meta($categoryId, 'cap-edit', true) == 'on',
       'delete' => $admin || get_post_meta($categoryId, 'cap-delete', true) == 'on',
       'add' => $admin || get_post_meta($categoryId, 'cap-add', true) == 'on',
       'allow-neutral' => get_post_meta($categoryId, 'neutral-salutation', true) == 'on',
+      'optional-email' => get_post_meta($categoryId, 'optional-email', true) == 'on',
+      'hiddenfields' => array_filter(get_post_meta($categoryId, 'hidden-fields')),
       'max-contacts' => intval(get_post_meta($categoryId, 'max-contacts', true)),
+      'min-contacts' => intval(get_post_meta($categoryId, 'min-contacts', true))
     );
   }
 
@@ -659,6 +828,13 @@ class Core extends Component
     if (is_array($_POST['profileCategories'])) {
       $categories = array_map('intval', $_POST['profileCategories']);
       update_user_meta($userId, 'profile-categories', $categories);
+    }
+
+    // Member disablement
+    if (isset($_POST['disableMember']) && $_POST['disableMember'] == 1) {
+      update_user_meta($userId, 'member-disabled', 1);
+    } else {
+      delete_user_meta($userId, 'member-disabled');
     }
 
     // Make sure to flush segment caching
@@ -718,6 +894,16 @@ class Core extends Component
       }
     ));
 
+    WordPress::addPostTableColumn(array(
+      'post_type' => self::TYPE_PROFILE_CAT,
+      'column_key' => self::TYPE_PROFILE_CAT . '_id',
+      'single' => true,
+      'heading' => __('ID', 'lbwp'),
+      'callback' => function($key, $postId) {
+        echo $postId;
+      }
+    ));
+
     // For contact categories
     WordPress::addPostTableColumn(array(
       'post_type' => self::TYPE_CONTACT_CAT,
@@ -734,6 +920,15 @@ class Core extends Component
       'heading' => __('Neutr. Anrede', 'lbwp'),
       'callback' => function($value, $postId) {
         echo ($value == 'on') ? __('Erlaubt', 'lbwp') : __('Nicht erlaubt', 'lbwp');
+      }
+    ));
+    WordPress::addPostTableColumn(array(
+      'post_type' => self::TYPE_CONTACT_CAT,
+      'column_key' => self::TYPE_CONTACT_CAT . '_id',
+      'single' => true,
+      'heading' => __('ID', 'lbwp'),
+      'callback' => function($key, $postId) {
+        echo $postId;
       }
     ));
 
@@ -772,6 +967,15 @@ class Core extends Component
       'heading' => __('Anzeige im Tab', 'lbwp'),
       'callback' => function($key, $postId) {
         echo $this->configuration['tabs'][$key];
+      }
+    ));
+    WordPress::addPostTableColumn(array(
+      'post_type' => self::TYPE_FIELD,
+      'column_key' => self::TYPE_FIELD . '_id',
+      'single' => true,
+      'heading' => __('ID', 'lbwp'),
+      'callback' => function($key, $postId) {
+        echo $postId;
       }
     ));
   }
@@ -821,6 +1025,20 @@ class Core extends Component
   {
     $userId = get_current_user_id();
     return $this->isMember($userId);
+  }
+
+  /**
+   * If a user goes to his dashboard (which shouldn't happen) redirect to profile
+   */
+  public function preventUserOnDashboard()
+  {
+    if ($this->userAdminData['userIsMember']) {
+      $screen = get_current_screen();
+      if ($screen->base == 'dashboard') {
+        header('Location: ' . get_admin_url() . 'profile.php', null, 301);
+        exit;
+      }
+    }
   }
 
   /**
@@ -879,6 +1097,23 @@ class Core extends Component
   }
 
   /**
+   * @param $user
+   * @return mixed
+   */
+  public function preventDisabledUserLogin($user)
+  {
+    if (in_array($user->ID, $this->getInactiveUserIds())) {
+      // This has a comment in it so that CleanUp module can display the message
+      $user = new \WP_Error(
+        'authentication_prevented',
+        __('Ihr Benutzerkonto ist im Moment deaktiviert. <!--authentication-prevented-->', 'lbwp')
+      );
+    }
+
+    return $user;
+  }
+
+  /**
    * @return array list of contacts of a specified category, contains profile categories of the assigned members
    */
   protected function getContactsByCategory($categoryId)
@@ -888,7 +1123,8 @@ class Core extends Component
     if (!is_array($contacts)) {
       $db = WordPress::getDb();
       $contacts = array();
-      $fields = $this->getCustomFields();
+      $fields = $this->getCustomFields(false);
+      $disabledUsers = $this->getInactiveUserIds();
       // Reduce this to segmentation fields
       $segmentFields = array();
       foreach ($fields as $field) {
@@ -909,6 +1145,11 @@ class Core extends Component
 
         // Attach member profile categories to each contact for lter filtering
         foreach ($raw as $result) {
+          // If the user is disabled, skip it
+          if (in_array($result->user_id, $disabledUsers)) {
+            continue;
+          }
+          // Unserialize and merge
           $userContacts = maybe_unserialize($result->meta_value);
           $metaFields = array(
             'userid' => $result->user_id,
@@ -940,6 +1181,201 @@ class Core extends Component
 
     // If category doesn't exist, return an empty array
     return array();
+  }
+
+  /**
+   * Add Submenu to users to add a crm export feature
+   */
+  public function addExportView()
+  {
+    add_submenu_page(
+      'users.php',
+      'CRM Export',
+      'CRM Export',
+      'administrator',
+      'crm-export',
+      array($this, 'displayExportView')
+    );
+  }
+
+  /**
+   * Display the export UI (which is simple for the moment
+   */
+  public function displayExportView()
+  {
+    $html = '';
+    // Maybe export data, if needed
+    $this->runExportView();
+    // Get role names to map
+    $roles = WordPress::getRoles();
+    $roles = $roles->get_names();
+
+    // Functions / UI to create data exports for members
+    $html .= 'Rolle:  <select name="field-role">';
+    foreach ($this->configuration['roles'] as $key) {
+      $html .= '<option value="' . $key . '">' . $roles[$key] . '</option>"';
+    }
+    $html .= '
+      </select>
+      <input type="submit" name="field-export" value="Daten-Export starten" />
+      <hr>
+    ';
+
+    // Functions / UI to create contact exports for members
+    $html .= 'Rolle / Kontaktart:  <select name="contact-role">';
+    foreach ($this->configuration['roles'] as $key) {
+      $html .= '<option value="' . $key . '">' . $roles[$key] . '</option>"';
+    }
+    $html .= '</select><select name="contact-category">';
+    foreach (self::getContactCategoryList() as $category) {
+      $html .= '<option value="' . $category->ID . '">' . $category->post_title . '</option>';
+    }
+    $html .= '
+      </select>
+      <input type="submit" name="contact-export" value="Kontakte-Export starten" />
+    ';
+
+    // Print the wrapper and html
+    echo '
+      <div class="wrap">
+        <h1 class="wp-heading-inline">CRM Export</h1>
+        <p>
+          Es stehen Ihnen für den Moment grundlegende Export-Funktionen zur Verfügung.<br>
+          Funktionen um feiner granuliertere Exporte zu erzeugen folgen in einem späteren Release.
+        </p>
+        <hr class="wp-header-end">
+        <form method="post">
+          ' . $html . '
+        </form>
+        <br class="clear">
+      </div>
+    ';
+  }
+
+  /**
+   * Run export if desired
+   */
+  protected function runExportView()
+  {
+    // Do a full data export
+    if (isset($_POST['field-export']) && isset($_POST['field-role'])) {
+      $role = Strings::forceSlugString($_POST['field-role']);
+      $this->downloadFieldExport($role);
+    }
+
+    // Do a contact list export
+    if (isset($_POST['contact-export']) && isset($_POST['contact-role'])) {
+      $role = Strings::forceSlugString($_POST['contact-role']);
+      $category = intval($_POST['contact-category']);
+      $this->downloadContactExport($role, $category);
+    }
+  }
+
+  /**
+   * @param string $role the role to export field data from
+   */
+  protected function downloadFieldExport($role)
+  {
+    // Get all members and all fields to prepare for the export
+    $members = $this->getMembersByRole($role);
+    $fields = $this->getCustomFields(false);
+
+    // Begin output data array
+    $data = array('columns' => array());
+
+    // Create a heading column
+    foreach ($fields as $field) {
+      $data['columns'][] = $field['title'];
+    }
+
+    // Now for each member, create a new row
+    foreach ($members as $member) {
+      $row = array();
+      foreach ($fields as $field) {
+        $row[] = get_user_meta($member->ID, 'crmcf-' . $field['id'], true);
+      }
+      $data[] = $row;
+    }
+
+    $file = 'daten-export-' . date('Y-m-d') . '.csv';
+    Csv::downloadFile($data, $file);
+  }
+
+  /**
+   * @param string $role the role to export contacts of
+   * @param int $category the contact category we need to get
+   */
+  protected function downloadContactExport($role, $category)
+  {
+    $members = $this->getMembersByRole($role);
+    $category = self::getContactCategory($category);
+
+    // Begin output data array
+    $data = array('columns' => array());
+    $columns = array();
+
+    // Add the custom fields in front
+    foreach ($this->configuration['export']['contact-fields'] as $key => $value) {
+      $data['columns'][] = $value;
+    }
+    // Now add the basic core fields
+    $fields = array(
+      'salutation' => 'Anrede',
+      'firstname' => 'Vorname',
+      'lastname' => 'Nachname',
+      'email' => 'E-Mail',
+    );
+    // Subtract the hidden fields
+    foreach ($category['hiddenfields'] as $field) {
+      unset($fields[$field]);
+    }
+    foreach ($fields as $key => $value) {
+      $columns[] = $key;
+      $data['columns'][] = $value;
+    }
+    // Finally, add the custom columns
+    foreach ($category['fields'] as $field) {
+      $columns[] = Strings::forceSlugString($field);
+      $data['columns'][] = $field;
+    }
+
+    // Now go on with the data per member
+    foreach ($members as $member) {
+      // Create the basic row (custom fields)
+      $base = array();
+      foreach ($this->configuration['export']['contact-fields'] as $key => $value) {
+        $base[] = get_user_meta($member->ID, $key, true);
+      }
+
+      // Get all contacts for that member
+      $contacts = get_user_meta($member->ID, 'crm-contacts-' . $category['id'], true);
+      // Create a row per contact
+      foreach ($contacts as $contact) {
+        $row = $base;
+        // Fill empty cells with key unknown
+        $fixed = array();
+        // Maintain correct sort order
+        foreach ($columns as $column) {
+          if (!isset($contact[$column])) {
+            $fixed[] = '';
+          } else {
+            if ($column == 'salutation') {
+              $fixed[] = $this->getSalutationByKey($contact[$column]);
+            } else {
+              $fixed[] = $contact[$column];
+            }
+          }
+        }
+        // Finaly pull it into our data stream
+        foreach ($fixed as $value) {
+          $row[] = $value;
+        }
+        $data[] = $row;
+      }
+    }
+
+    $file = 'kontakt-export-' . date('Y-m-d') . '.csv';
+    Csv::downloadFile($data, $file);
   }
 
   /**
@@ -999,6 +1435,19 @@ class Core extends Component
       'supports' => array('title'),
       'rewrite' => false
     ), 's');
+
+    // Register sortable types
+    SortableTypes::init(array(
+      self::TYPE_FIELD => array(
+        'type' => self::TYPE_FIELD,
+        'field' => 'menu_order',
+        'noImages' => true,
+        'custom-menu' => array(
+          'slug' => 'users.php',
+          'name' => 'Felder sortieren'
+        )
+      )
+    ));
   }
 
   /**
@@ -1015,26 +1464,52 @@ class Core extends Component
     // Configuration for contact categories
     $helper = Metabox::get(self::TYPE_CONTACT_CAT);
     $helper->addMetabox('settings', 'Einstellungen');
-    $helper->addCheckbox('cap-read', 'settings', 'Rechte für Benutzer', array(
-      'description' => 'Kann Kontakte sehen (Muss aktiv sein, damit weitere Rechte greifen)'
-    ));
-    $helper->addCheckbox('cap-edit', 'settings', '&nbsp;', array(
-      'description' => 'Kann Kontakte bearbeiten'
-    ));
-    $helper->addCheckbox('cap-delete', 'settings', '&nbsp;', array(
-      'description' => 'Kann Kontakte löschen'
-    ));
-    $helper->addCheckbox('cap-add', 'settings', '&nbsp;', array(
-      'description' => 'Kann Kontakte hinzufügen'
-    ));
-    $helper->addCheckbox('neutral-salutation', 'settings', 'Adressdaten', array(
-      'description' => 'Neutrale Anrede ermöglichen (Felder für Anrede, Vorname, Nachname sind optional)'
-    ));
     $helper->addInputText('max-contacts', 'settings', 'Max. Anzahl Kontakte', array(
-      'description' => 'Wählen Sie z.B. "1" sofern in dieser Gruppe nur ein Kontakt erstellt werden darf'
+      'description' => 'Wählen Sie z.B. "1" sofern in dieser Gruppe nur ein Kontakt erstellt werden darf.'
+    ));
+    $helper->addInputText('min-contacts', 'settings', 'Min. Anzahl Kontakte', array(
+      'description' => 'Geben Sie hier eine Zahl ein, wenn die Kontaktart eine Mindestzahl an Kontakten voraussetzt.'
     ));
     $helper->addDropdown('tab', 'settings', 'Anzeigen in', array(
       'items' => $this->configuration['tabs']
+    ));
+    $helper->addTextarea('description', 'settings', 'Beschreibung', 70, array(
+      'description' => 'Eine optionale Feldbeschreibung (wie dieser hier).'
+    ));
+    $helper->addDropdown('custom-fields', 'settings', 'Zusätzliche Felder', array(
+      'multiple' => true,
+      'sortable' => true,
+      'items' => 'self',
+      'add_new_values' => true
+    ));
+    $helper->addMetabox('settings-cap', 'Zugriffsrechte');
+    $helper->addCheckbox('cap-read', 'settings-cap', 'Rechte für Benutzer', array(
+      'description' => 'Kann Kontakte sehen (Muss aktiv sein, damit weitere Rechte greifen)'
+    ));
+    $helper->addCheckbox('cap-edit', 'settings-cap', '&nbsp;', array(
+      'description' => 'Kann Kontakte bearbeiten'
+    ));
+    $helper->addCheckbox('cap-delete', 'settings-cap', '&nbsp;', array(
+      'description' => 'Kann Kontakte löschen'
+    ));
+    $helper->addCheckbox('cap-add', 'settings-cap', '&nbsp;', array(
+      'description' => 'Kann Kontakte hinzufügen'
+    ));
+    $helper->addMetabox('settings-fields', 'Pflichtfelder');
+    $helper->addCheckbox('neutral-salutation', 'settings-fields', 'Adressdaten', array(
+      'description' => 'Neutrale Anrede ermöglichen (Felder für Anrede, Vorname, Nachname sind optional)'
+    ));
+    $helper->addCheckbox('optional-email', 'settings-fields', 'E-Mail-Feld', array(
+      'description' => 'Das E-Mail Feld ist optional'
+    ));
+    $helper->addDropdown('hidden-fields', 'settings-fields', 'Felder ausblenden', array(
+      'multiple' => true,
+      'items' => array(
+        'salutation' => 'Anrede',
+        'firstname' => 'Vorname',
+        'lastname' => 'Nachname',
+        'email' => 'E-Mail-Adresse'
+      )
     ));
 
     $helper = Metabox::get(self::TYPE_FIELD);
@@ -1049,7 +1524,7 @@ class Core extends Component
     $helper->addDropdown('tab', 'settings', 'Anzeigen in', array(
       'items' => $this->configuration['tabs']
     ));
-    $helper->addInputText('description', 'settings', 'Beschreibung', array(
+    $helper->addTextarea('description', 'settings', 'Beschreibung', 70, array(
       'description' => 'Eine optionale Feldbeschreibung (wie dieser hier).'
     ));
 
@@ -1071,6 +1546,20 @@ class Core extends Component
     $helper->addInputText('segmenting-slug', 'segments', 'Feldname für E-Mails', array(
       'description' => 'Sollte möglichst nur Kleinbuchstaben und Bindestriche verwenden.'
     ));
+
+    $helper->addMetabox('data-history', 'Historisierung');
+    $helper->addHtml('info', 'data-history', '
+      <p>Bitte noch keine Einstellungen verändern. Diese Funktion befindet sich in der Entwicklungsphase.</p>
+    ');
+    $helper->addCheckbox('history-active', 'data-history', 'Aktivieren', array(
+      'description' => 'Historisierung der Feld-Daten aktivieren'
+    ));
+    $helper->addDropdown('versions', 'data-history', 'Versionen', array(
+      'multiple' => true,
+      'items' => 'self',
+      'add_new_values' => true,
+      'description' => 'Beim Hinzufügen einer neuen Version werden die aktuelle Feld-Daten archiviert, sobald die Feld-Einstellungen gespeichert werden.'
+    ));
   }
 
   /**
@@ -1081,7 +1570,8 @@ class Core extends Component
     return array(
       'textfield' => 'Einzeiliges Textfeld',
       'textarea' => 'Mehrzeiliges Textfeld',
-      'checkbox' => 'Checkbox'
+      'checkbox' => 'Checkbox',
+      'file' => 'Datei-Upload'
     );
   }
 
@@ -1118,7 +1608,8 @@ class Core extends Component
       'text' => array(
         'requiredFieldsMessage' => __('Es wurden nicht alle Pflichtfelder ausgefüllt', 'lbwp'),
         'noContactsYet' => __('Es sind noch keine Kontakte in dieser Kategorie vorhanden.', 'lbwp'),
-        'sureToDelete' => __('Möchten Sie den Kontakt wirklich löschen?', 'lbwp')
+        'sureToDelete' => __('Möchten Sie den Kontakt wirklich löschen?', 'lbwp'),
+        'deleteImpossible' => __('Löschen nicht möglich. Mindestens {number} Kontakt/e sind erforderlich.', 'lbwp')
       )
     );
   }
@@ -1129,6 +1620,53 @@ class Core extends Component
   public function invalidateCaches()
   {
     wp_cache_delete('crmCustomFields', 'CrmCore');
+    do_action('crm_on_cache_invalidation');
+  }
+
+  /**
+   * @param $role
+   * @param string $orderby
+   * @param string $order
+   * @param bool $inactives
+   * @return array
+   */
+  public function getMembersByRole($role, $orderby = 'display_name', $order = 'ASC', $inactives = false)
+  {
+    $users = get_users(array(
+      'role' => $role,
+      'orderby' => $orderby,
+      'order' => $order
+    ));
+
+    // Filter all inactive users out if needed
+    if (!$inactives) {
+      $userIds = $this->getInactiveUserIds();
+      $users = array_filter($users, function($user) use ($userIds) {
+        return !in_array($user->ID, $userIds);
+      });
+    }
+
+    return $users;
+  }
+
+  /**
+   * @return array
+   */
+  protected function getInactiveUserIds()
+  {
+    if (!is_array($this->inactiveUserIds)) {
+      $sql = '
+        SELECT user_id FROM {sql:userMetaTable}
+        WHERE meta_key = "member-disabled" AND meta_value = 1
+      ';
+
+      $db = WordPress::getDb();
+      $this->inactiveUserIds = $db->get_col(Strings::prepareSql($sql, array(
+        'userMetaTable' => $db->usermeta
+      )));
+    }
+
+    return $this->inactiveUserIds;
   }
 
   /**
@@ -1162,7 +1700,7 @@ class Core extends Component
    * @param array $categories list of profile categories
    * @return array a list of custom fields for that role
    */
-  public function getCustomFields($categories = array())
+  public function getCustomFields($categories)
   {
     $allFields = wp_cache_get('crmCustomFields', 'CrmCore');
 
@@ -1202,7 +1740,7 @@ class Core extends Component
     }
 
     // Filter the fields by role if given
-    if (count($categories) > 0) {
+    if (is_array($categories)) {
       return array_filter($allFields, function($item) use ($categories) {
         foreach ($categories as $categoryId) {
           if (in_array($categoryId, $item['profiles'])) {

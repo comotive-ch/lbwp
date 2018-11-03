@@ -65,6 +65,23 @@ class SecureAssets
       // If not in admin, return rewrite assets to proxy urls
       add_filter('the_content', array($this, 'rewriteProxyAttachmentUrl'));
     }
+
+    // If the attachment url is requested, rewrite to proxy path
+    add_filter('wp_get_attachment_url', array($this, 'rewriteAttachmentUrl'), 20, 2);
+  }
+
+  /**
+   * @param string $url the current url
+   * @param int $id attachment id
+   * @return string $url
+   */
+  public function rewriteAttachmentUrl($url, $id)
+  {
+    if ($this->isSecureAsset($id) && $_POST['action'] != 'save-attachment-compat') {
+      return self::getProxyPath($id);
+    }
+
+    return $url;
   }
 
   /**
@@ -136,15 +153,24 @@ class SecureAssets
        */
       $href = $tag->attributes->getNamedItem('href')->nodeValue;
       $attachmentId = WordPress::getAttachmentIdFromUrl($href);
-      $meta = ArrayManipulation::forceArray(wp_get_attachment_metadata($attachmentId));
       // Only rewrite, if the asset is secured
-      if (isset($meta['secured_asset']) && $meta['secured_asset'] == 1) {
+      if ($this->isSecureAsset($attachmentId)) {
         $tag->setAttribute('href', self::getProxyPath($attachmentId));
       }
 
       $fragment->appendXML($doc->saveXML($tag));
       return $tag;
     });
+  }
+
+  /**
+   * @param int $id the attachment id
+   * @return bool true, if the asset is secured
+   */
+  public function isSecureAsset($id)
+  {
+    $meta = ArrayManipulation::forceArray(wp_get_attachment_metadata($id));
+    return isset($meta['secured_asset']) && $meta['secured_asset'] == 1;
   }
 
   /**

@@ -110,8 +110,21 @@ class Radio extends Base
 
     foreach ($values as $key => $value) {
       $checked = '';
-      if ($this->getValue($args) == strip_tags($key)) {
-        $checked = ' checked="checked"';
+      $compare = strip_tags($key);
+
+      // Handle returns of arrays and strings as well
+      $selection = $this->getValue($args);
+      if (is_array($selection)) {
+        $checked = '';
+        foreach ($selection as $id => $element) {
+          if ($element['colname'] == $compare) {
+            $checked = ' checked="checked"';
+          }
+        }
+      } else {
+        if (stristr($selection, $compare)) {
+          $checked = ' checked="checked"';
+        }
       }
       $radioAttr = str_replace(
         'id="' . $this->get('id') . '"',
@@ -167,7 +180,6 @@ class Radio extends Base
         // Now just override the value with a calculatable mark, if selected
         $key = Strings::forceSlugString($this->get('feldname') . '-' . $value);
         $return[$key]['value'] = '1';
-
         return $return;
       } else {
         return $value;
