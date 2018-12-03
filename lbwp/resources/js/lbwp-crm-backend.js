@@ -207,6 +207,8 @@ var CrmUserAdmin = {
 		// Add our own required field handler
 		CrmUserAdmin.handleRequiredFields();
 		CrmUserAdmin.handleHelpIcons();
+		CrmUserAdmin.handleHistoryIcons();
+		CrmUserAdmin.handleCustomFieldTables();
 	},
 
 	/**
@@ -255,6 +257,40 @@ var CrmUserAdmin = {
 	},
 
 	/**
+	 * Handle displaying of field history
+	 */
+	handleHistoryIcons : function()
+	{
+		// Show fields that have a history
+		if (crmAdminData.userIsAdmin) {
+			jQuery('[data-history=1]').each(function () {
+				var container = jQuery(this).closest('td');
+				container.find('.crmcf-history').show();
+			});
+		}
+
+		// Handle displaying of the history
+		jQuery('.crmcf-history .dashicons').on('click', function() {
+			jQuery(this).closest('.tab-container').find('[data-history=1]').each(function() {
+				var container = jQuery(this).closest('td');
+				var field = container.find('.crmcf-input');
+				var data = {
+					user_id: crmAdminData.editedUserId,
+					key: field.data('field-key')
+				};
+				// Get the history block and replace the whole container
+				jQuery.post(ajaxurl + '?action=getCrmFieldHistory', data, function (response) {
+					if (response.success) {
+						field.remove();
+						container.find('.crmcf-history').remove();
+						container.prepend('<div class="history-container">' + response.html + '</div>');
+					}
+				});
+			});
+		});
+	},
+
+	/**
 	 * We use html5 required validation, but sometimes fields from other tabs than the current are
 	 * required and the user doesn't see that. We help here by posting a message and marking the tab
 	 */
@@ -287,7 +323,7 @@ var CrmUserAdmin = {
 	 */
 	makeUiVisible : function()
 	{
-		jQuery('#your-profile').show();
+		jQuery('#profile-page').show();
 	},
 
 	/**
@@ -335,6 +371,38 @@ var CrmUserAdmin = {
 
 		// Now, finally, make the UI visible
 		CrmUserAdmin.makeUiVisible();
+	},
+
+	/**
+	 * Handle adding and deletion of table rows
+	 */
+	handleCustomFieldTables : function()
+	{
+		// Add a new row
+		jQuery('.add-crmcf-row').on('click', function() {
+			var table = jQuery(this.closest('.crmcf-table'));
+			var key = table.data('key');
+			var readonly = table.data('readonly');
+			var disabled = table.data('disabled');
+			var columns = table.find('thead td[data-slug]');
+
+			// Create the row html
+			var row = '<tr>';
+			jQuery.each(columns, function(id, column) {
+				row += '<td><input type="text" name="' + key + '[' + jQuery(column).data('slug') + '][]" /></td>';
+			});
+			row += '<td class="crmcf-head"><span class="dashicons dashicons-trash delete-crmcf-row"></span></td>';
+			row += '</tr>';
+			// And append the new row to the table
+			table.append(row);
+		});
+
+		// Delete an existing row
+		jQuery(document).on('click', '.delete-crmcf-row', function() {
+			if (confirm("Möchten Sie diese Zeile wirklich löschen?")) {
+				jQuery(this).closest('tr').remove();
+			}
+		});
 	}
 };
 

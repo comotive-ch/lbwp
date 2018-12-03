@@ -16,6 +16,7 @@ use LBWP\Util\File;
 use LBWP\Util\Strings;
 use LBWP\Util\WordPress;
 use LBWP\Util\Multilang;
+use LBWP\Util\LbwpData;
 use LBWP\Newsletter\Core as NLCore;
 use LBWP\Newsletter\Service\LocalMail\Implementation as ServiceImplementation;
 use LBWP\Core as LbwpCore;
@@ -50,7 +51,7 @@ class LocalMailService
     'mailServiceId' => 'localmail',
     'mailServiceConfig' => array(),
     'maxRowsDisplayInBackend' => 500,
-    'maxMailsPerSendPeriod' => 30,
+    'maxMailsPerSendPeriod' => 20,
     'unsubscribeSalt' => '9t2hoeg24tgrhg'
   );
 
@@ -677,6 +678,14 @@ class LocalMailService
     // Load the mails of this mailing
     $mails = ArrayManipulation::forceArray(get_option('LocalMail_Mailing_' . $mailingId));
 
+    // Data table helper for statistics
+    $newsletterId = $this->getNewsletterIdByMailingId($mailingId);
+    if ($newsletterId > 0) {
+      $key = 'localmail_stats_' . $newsletterId;
+      $stats = new LbwpData($key);
+      update_post_meta($newsletterId, 'statistics_key', $key);
+    }
+
     // Log if there is a sending with no mails
     if (count($mails) == 0) {
       SystemLog::add('LocalMailService', 'critical', 'Tried to send mailing ' . $mailingId . ' with no mails!');
@@ -714,6 +723,11 @@ class LocalMailService
 
       // Set a cache key to prevent multi-sending the same mail
       wp_cache_set($securityKey, 1, 'LocalMail', 600);
+
+      // Update the statistics row, as the mail is sent now
+      if ($newsletterId > 0) {
+        $stats->mergeRow(md5($mail['recipient']), array('sent' => 1));
+      }
 
       // Log the sent email
       SystemLog::add('LocalMailService', 'debug', 'sending email to "' . $mail['recipient'] . '"', array(
@@ -796,6 +810,21 @@ class LocalMailService
     }
 
     return $data;
+  }
+
+  /**
+   * @param string $mailingId
+   * @return int the internal newsletter id
+   */
+  protected function getNewsletterIdByMailingId($mailingId)
+  {
+    $db = WordPress::getDb();
+    $sql = 'SELECT post_id FROM {sql:postMeta} WHERE meta_key = {metaKey} AND meta_value = {metaValue}';
+    return intval($db->get_var(Strings::prepareSql($sql, array(
+      'postMeta' => $db->postmeta,
+      'metaKey' => 'serviceMailingId',
+      'metaValue' => $mailingId
+    ))));
   }
 
   /**

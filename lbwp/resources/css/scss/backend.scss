@@ -225,3 +225,37 @@ ul.nsx_tabs { margin-top:20px !important; }
 .sibling_list .menu-item-settings { width: auto !important; padding: 6px 6px 8px 10px !important; }
 .sibling_list p.description-thin { width: 100% !important; margin: 0 !important; }
 .sibling_list .menu-item-handle .item-title { margin-right: 75px !important; }
+
+
+// LBWP data table
+body[class*="data-tables"] {
+	#wpbody-content {
+		padding-bottom: 0;
+	}
+	#wpfooter {
+		display: none;
+	}
+}
+
+#lbwp-data-table.rendered {
+	thead {
+		tr {
+		display: block;
+			width: 100%;
+      position: relative;
+		}
+		th {
+			word-break: normal;
+		}
+	}
+
+	tfoot {
+		display: none;
+	}
+
+	tbody {
+		display: block;
+    overflow-y: scroll;
+		max-height: calc(100vh - 270px);
+	}
+}

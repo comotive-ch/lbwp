@@ -3,7 +3,10 @@
  * @author Michael Sebel <michael@comotive.ch>
  */
 var MetaboxHelper = {
-
+	/**
+	 * By default do not prevent adding of new dropdown items
+	 */
+	preventAdd : false,
 	/**
 	 * Called on loading DOM
 	 */
@@ -29,13 +32,10 @@ var MetaboxHelper = {
 			var eventCallerElement = jQuery(this);
 			// search relative .media-uploader
 			var editorContainer = eventCallerElement.closest('.mbh-field').find('.media-uploader');
-
 			// reset selected image id
 			editorContainer.find('.field-attachment-id').val('').trigger('change');
-
 			// remove css class "has-attachment"
 			editorContainer.removeClass('has-attachment');
-
 			// reset image wrapper
 			editorContainer.find('.wrapper').html('');
 			editorContainer.find('.wrapper').attr('style', '');

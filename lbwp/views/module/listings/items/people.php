@@ -27,22 +27,28 @@ if (strlen($imageUrl)) {
 // e-mail
 $mail = get_post_meta($item->ID, 'email', true);
 if (strlen($mail)) {
-  $mail = '<a href="' . Strings::convertToEntities('mailto:' . $mail) . '">' . Strings::convertToEntities($mail) . '</a>';
+  $mail = '<span class="mail"><a href="' . Strings::convertToEntities('mailto:' . $mail) . '">' . Strings::convertToEntities($mail) . '</a></span>';
 }
 
-// subtitle
-$subtitle = '';
+// phone
+$phone = get_post_meta($item->ID, 'phone', true);
+if (strlen($phone)) {
+  $phone = '<span class="phone"><a href="tel:' . str_replace(' ', '', trim($phone)) . '">' . $phone . '</a></span>';
+}
+
+// roles
 $role = get_post_meta($item->ID, 'role', true);
 if (strlen($role)) {
-  $subtitle = $role;
+  $role = '<span class="role">' . $role . '</span>';
 }
-if (strlen($mail)) {
-  $subtitle .= apply_filters('CoreListing_People_Subtitle_Divider', ', ') . $mail;
+$role2 = get_post_meta($item->ID, 'role-2', true);
+if (strlen($role2)) {
+  $role2 = '<span class="role-2">' . $role2 . '</span>';
 }
 
 $content =
   '<h3>' . $title . '</h3>
-  <p class="subtitle">' . $subtitle . '</p>' .
+  <p class="attr">' . $role . $role2 . $mail . $phone . '</p>' .
   wpautop(get_post_meta($item->ID, 'description', true))
 ;
 

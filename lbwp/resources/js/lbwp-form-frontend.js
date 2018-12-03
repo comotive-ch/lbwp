@@ -17,6 +17,7 @@ var LbwpForm = {
 	{
 		LbwpForm.moveEmailField();
 		LbwpForm.preventDoubleClick();
+		LbwpForm.handleUploadFields();
 		LbwpForm.handleItemWrapping();
 		LbwpForm.hideInvisibleFields();
 		LbwpForm.handleFieldConditions();
@@ -45,14 +46,32 @@ var LbwpForm = {
 		// On click, set the button as disabled and add a disabled class
 		sendButtons.on('mousedown', function() {
 			var button = jQuery(this);
-			button.prop('disabled', 'disabled');
-			button.attr('disabled', 'disabled');
-			button.addClass('lbwp-button-disabled');
+			LbwpForm.lockDownForm(button);
 			// Check (twice!) if we need to release it, due to errors
 			setTimeout(LbwpForm.checkFormEnable, 250);
 			setTimeout(LbwpForm.checkFormEnable, 1000);
 			return true;
 		});
+	},
+
+	/**
+	 * Locks the form by locking the button
+	 */
+	lockDownForm : function(button)
+	{
+		button.prop('disabled', 'disabled');
+		button.attr('disabled', 'disabled');
+		button.addClass('lbwp-button-disabled');
+	},
+
+	/**
+	 * Unlocks the form by unlocking the button
+	 */
+	unlockForm : function(button)
+	{
+		button.removeProp('disabled');
+		button.removeAttr('disabled');
+		button.removeClass('lbwp-button-disabled');
 	},
 
 	/**
@@ -64,9 +83,7 @@ var LbwpForm = {
 			var form = jQuery(this);
 			if (form.hasClass('validation-errors')) {
 				var button = form.find('input[name=lbwpFormSend]');
-				button.removeProp('disabled');
-				button.removeAttr('disabled');
-				button.removeClass('lbwp-button-disabled');
+				LbwpForm.unlockForm(button);
 			}
 		})
 	},
@@ -286,6 +303,98 @@ var LbwpForm = {
 			var element = jQuery(this);
 			element.closest('.forms-item').hide();
 		});
+	},
+
+	/**
+	 * Handle all upload fields in a form
+	 */
+	handleUploadFields : function()
+	{
+		jQuery('.lbwp-form .upload-field').each(function() {
+			var field = jQuery(this);
+			field.find('.default-container').dmUploader(
+				LbwpForm.getUploaderObject(field)
+			);
+		});
+	},
+
+	/**
+	 * Get the uploader configuration for the field
+	 */
+	getUploaderObject : function()
+	{
+		return {
+			url: '/wp-content/plugins/lbwp/views/api/upload.php',
+			multiple: false,
+			/**
+			 * Handle a new file that is added, reset old one possibly
+			 * @param id the internal id of the upload object
+			 * @param file the file object containing all file infos
+			 */
+			onNewFile: function(id, file) {
+				var container = jQuery(this);
+				var state = container.find('.upload-state-container');
+				// Reset the hidden field as a new upload starts
+				container.find('input[type=hidden]').val('');
+				// Update the state of the file
+				state.addClass('in-progress');
+				var info = state.find('.progress-text');
+				info.text(info.data('template').replace('{filename}', file.name));
+				var number = state.find('.progress-number');
+				number.text(number.data('template').replace('{number}', '0'));
+				state.find('.progress .progress-bar').css('width', '0%');
+				// Lockdown of the form
+				var button = container.closest('.lbwp-form').find('input[name=lbwpFormSend]');
+				LbwpForm.lockDownForm(button);
+			},
+			/**
+			 * Update the progress bar and info
+			 * @param id the internal id of the upload object
+			 * @param percent the percentage of progress
+			 */
+			onUploadProgress: function(id, percent) {
+				var container = jQuery(this);
+				var state = container.find('.upload-state-container');
+				var number = state.find('.progress-number');
+				number.text(number.data('template').replace('{number}', percent));
+				state.find('.progress .progress-bar').css('width', percent + '%');
+			},
+			/**
+			 * @param id the internal id of the upload object
+			 * @param data the response data from the upload url
+			 */
+			onUploadSuccess: function(id, data) {
+				var container = jQuery(this);
+				var state = container.find('.upload-state-container');
+				// Set the hidden field to the current complete upload
+				container.find('input[type=hidden]').val(data.url);
+
+				// Update the state of the file as finished
+				console.log(data);
+				state.removeClass('in-progress');
+				state.find('.progress-text').text(data.message);
+				state.find('.progress-number').text('');
+				state.find('.progress .progress-bar').css('width', '0%');
+
+				// On success, remove required attribute and errors if given
+				if (data.status == 'success') {
+					container.find('input[type=file]').removeAttr('required');
+					container.find('.lbwp-form-error').remove();
+				}
+				// Unlock the form
+				var button = container.closest('.lbwp-form').find('input[name=lbwpFormSend]');
+				LbwpForm.unlockForm(button);
+			},
+			/**
+			 * Adds data to our post requests
+			 */
+			extraData : function() {
+				var field = jQuery(this).find('input[type=hidden]');
+				return {
+					cfgKey : field.data('cfg-key')
+				};
+			}
+		};
 	}
 };
 

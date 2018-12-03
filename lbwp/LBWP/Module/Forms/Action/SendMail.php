@@ -316,6 +316,15 @@ class SendMail extends Base
   }
 
   /**
+   * @return string an html template
+   */
+  public function getHtmlTemplate($template = self::DEFAULT_TEMPLATE_KEY)
+  {
+    $this->setParamConfig();
+    return $this->htmlTemplates[$template];
+  }
+
+  /**
    * @param array $variables the replace vars for the template
    * @return string the finished html template
    */

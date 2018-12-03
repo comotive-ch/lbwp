@@ -182,6 +182,35 @@ class SecureAssets
     $key = get_post_meta($attachmentId, '_wp_attached_file', true);
     return get_bloginfo('url') . '/wp-file-proxy.php?key=' . urlencode($key);
   }
+
+  /**
+   * @param $key
+   * @return string
+   */
+  public static function getProxyPathWithKey($key)
+  {
+    $key = str_replace(ASSET_KEY . '/files/', '', $key);
+    return get_bloginfo('url') . '/wp-file-proxy.php?key=' . urlencode($key);
+  }
+
+  /**
+   * @param $key
+   * @return string
+   */
+  public static function forceSecureKey($key)
+  {
+    return str_replace(ASSET_KEY . '/files/', '', $key);
+  }
+
+  /**
+   * @param $url
+   * @return string
+   */
+  public static function extractKeyFromUrl($url)
+  {
+    $key = substr($url, stripos($url, '?key=') + 5);
+    return ASSET_KEY . '/files/' . urldecode($key);
+  }
 }
 
 

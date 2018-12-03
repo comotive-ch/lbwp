@@ -54,6 +54,12 @@ class Strings
    */
   const ALPHA_NUMERIC_LOW = '/[^A-Za-z0-9\-\_]/i';
   /**
+   * Regulärer Ausdruck der a-z,A-Z und 0-9 erlaubt.
+   * Weiterhin sind - und _ erlaubt (Für Files gedacht).
+   * @var string
+   */
+  const ALPHA_NUMERIC_LOW_FILES = '/[^A-Za-z0-9\-\_\.\/]/i';
+  /**
    * @var string a html quote
    */
   const HTML_QUOTE = '&quot;';
@@ -374,6 +380,17 @@ class Strings
   }
 
   /**
+   * Aus gegebener Variable alle Zeichen entfernen.
+   * Entfernt wird alles ausser a-zA-Z0-9.
+   * Zudem sind "-" und "_" für erlaubt
+   * @param string $Value Zu bearbeitender Dateiname
+   */
+  public static function alphaNumLowFiles(&$Value)
+  {
+    $Value = preg_replace(self::ALPHA_NUMERIC_LOW_FILES, "", $Value);
+  }
+
+  /**
    * HTML kodieren, Wert wird für Ausgaben zurückgegeben.
    * @param string $sString Zu kodierender String
    * @return string Kodierter String
@@ -636,7 +653,7 @@ class Strings
   {
     return str_replace(
       array('ä', 'ö', 'ü', 'Ä', 'Ö', 'Ü', 'é', 'è', 'ê', 'É', 'È', 'â', 'á', 'à', 'ç', ' ', '"', '`', '´', 'Ã¼'),
-      array('a', 'o', 'u', 'A', 'O', 'U', 'e', 'e', 'e', 'E', 'E', 'a', 'a', 'a', 'c', '',  '',  '',  '',  'u'),
+      array('a', 'o', 'u', 'A', 'O', 'U', 'e', 'e', 'e', 'E', 'E', 'a', 'a', 'a', 'c', '', '', '', '', 'u'),
       $string
     );
   }
@@ -1136,6 +1153,38 @@ class Strings
     }
 
     return $url;
+  }
+
+  /**
+   * @param string $key
+   * @param string $url
+   * @return string
+   */
+  public static function removeParam($key, $url)
+  {
+    $parts = parse_url($url);
+    parse_str($parts['query'], $params);
+    unset($params[$key]);
+    $parts['query'] = http_build_query($params);
+    return self::buildUrlString($parts);
+  }
+
+  /**
+   * @param $urlData
+   * @return string
+   */
+  public static function buildUrlString($urlData)
+  {
+    $scheme = isset($urlData['scheme']) ? $urlData['scheme'] . '://' : '';
+    $host = isset($urlData['host']) ? $urlData['host'] : '';
+    $port = isset($urlData['port']) ? ':' . $urlData['port'] : '';
+    $user = isset($urlData['user']) ? $urlData['user'] : '';
+    $pass = isset($urlData['pass']) ? ':' . $urlData['pass'] : '';
+    $pass = ($user || $pass) ? "$pass@" : '';
+    $path = isset($urlData['path']) ? $urlData['path'] : '';
+    $query = isset($urlData['query']) ? '?' . $urlData['query'] : '';
+    $fragment = isset($urlData['fragment']) ? '#' . $urlData['fragment'] : '';
+    return "$scheme$user$pass$host$port$path$query$fragment";
   }
 
   /**

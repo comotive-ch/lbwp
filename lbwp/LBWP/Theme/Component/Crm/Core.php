@@ -5,6 +5,7 @@ namespace LBWP\Theme\Component\Crm;
 use LBWP\Core as LbwpCore;
 use LBWP\Helper\Import\Csv;
 use LBWP\Helper\Metabox;
+use LBWP\Module\Backend\MemcachedAdmin;
 use LBWP\Module\Backend\S3Upload;
 use LBWP\Theme\Base\Component;
 use LBWP\Theme\Feature\SortableTypes;
@@ -76,6 +77,9 @@ class Core extends Component
               <span class="dashicons dashicons-editor-help"></span>
               <label for="crmcf-{fieldName}">{fieldDescription}</label>
             </span>
+            <span class="history crmcf-history">
+              <span class="dashicons dashicons-share-alt2"></span>
+            </span>
           </td>
         </tr>
       </tbody>
@@ -100,11 +104,14 @@ class Core extends Component
       add_action('admin_init', array($this, 'addCategorizationMetaboxes'), 50);
       add_action('admin_menu', array($this, 'hideMenusFromMembers'), 50);
       add_action('admin_menu', array($this, 'addExportView'), 100);
-      add_action('admin_footer', array($this, 'invokeMemberAdminScripts'));
+      add_action('admin_head', array($this, 'invokeMemberAdminScripts'));
+      add_action('pre_get_users', array($this, 'invokeUserTableQuery'));
       // Save user data
       add_action('profile_update', array($this, 'saveMemberData'));
       add_action('user_register', array($this, 'syncCoreToCustomFields'));
       add_action('save_post_' . self::TYPE_FIELD, array($this, 'invalidateCaches'));
+      // XHR actions
+      add_action('wp_ajax_getCrmFieldHistory', array($this, 'getCrmFieldHistory'));
       // Add custom fields as columns in admin tables
       $this->addAdminTableColumns();
     }
@@ -211,9 +218,21 @@ class Core extends Component
     $customFields = $this->getCustomFields($this->editedUser->profileCategories);
     // Print the fields
     foreach ($customFields as $field) {
+      $title = $field['title'];
+      // If there are versions, add the version to the title
+      if ($field['history-active'] && count($field['versions']) > 0) {
+        $version = array_values(array_slice($field['versions'], -1))[0];
+        $title .= ' ' . $version;
+        $field['title'] .= ' ' . $version;
+      }
+      // If checkbox, do not show the checkbox name as title (its shown in a label)
+      if ($field['type'] == 'checkbox') {
+        $title = '';
+      }
+
       echo Templating::getBlock($this->fieldTemplate, array(
         '{fieldName}' => $field['id'],
-        '{fieldLabel}' => $field['title'],
+        '{fieldLabel}' => $title,
         '{tabName}' => $field['tab'],
         '{fieldDescription}' => $field['description'],
         '{fieldRequired}' => ($field['required']) ? ' <span class="required">*</span>' : '',
@@ -227,22 +246,29 @@ class Core extends Component
   }
 
   /**
-   * @param array $field the field array
-   * @return string the custom field content
+   * @param array $field
+   * @param string $key
+   * @param bool $forceReadonly
+   * @param bool $forceDisabled
+   * @return string
    */
-  protected function getCustomFieldContent($field)
+  protected function getCustomFieldContent($field, $key = '', $forceReadonly = false, $forceDisabled = false)
   {
     // Get the current field content, if given
     $html = '';
-    $key = 'crmcf-' . $field['id'];
+    if (strlen($key) == 0) $key = 'crmcf-' . $field['id'];
     $value = get_user_meta($this->editedUserId, $key, true);
 
     // Define attributes for the input field
-    $attr = 'id="' . $key . '" name="' . $key . '" class="regular-text"';
+    $attr = 'id="' . $key . '" name="' . $key . '" data-field-key="' . $key . '" class="crmcf-input regular-text"';
     if ($field['required'])
       $attr .= ' required="required"';
-    if ($field['readonly'] && $this->userAdminData['userIsMember'])
+    if (($field['readonly'] && $this->userAdminData['userIsMember']) || $forceReadonly)
       $attr .= ' readonly="readonly"';
+    if ($forceDisabled)
+      $attr .= ' disabled="disabled"';
+    if ($field['history-active'])
+      $attr .= ' data-history="1"';
 
     // Display html for the field
     switch ($field['type']) {
@@ -254,7 +280,23 @@ class Core extends Component
         break;
       case 'checkbox':
         $checked = checked($value, 1, false);
-        $html .= '<input type="checkbox" ' . $attr . ' value="1" ' . $checked . ' />';
+        $html .= '
+            <label>
+              <input type="checkbox" ' . $attr . ' value="1" ' . $checked . ' />
+              ' . $field['title'] . '
+            </label>
+            ';
+        break;
+      case 'dropdown':
+        $html .= '<select ' . $attr . '>';
+        foreach ($field['field-values'] as $option) {
+          $selected = selected($value, $option, false);
+          $html .= '<option value="' . $option . '" ' . $selected . '>' . $option . '</option>';
+        }
+        $html .= '</select>';
+        break;
+      case 'table':
+        $html .= $this->getCustomFieldTableHtml($field, $key, $value, $forceReadonly, $forceDisabled);
         break;
       case 'file':
         // Display upload field only if not readonly
@@ -263,14 +305,66 @@ class Core extends Component
         }
         // Display the download link, if the file available
         if (strlen($value) > 0) {
-          $html .= '<p>
-            <a href="/wp-file-proxy.php?key=' . $value . '" target="_blank">' . sprintf(__('Datei "%s" herunterladen', 'lbwp'), File::getFileOnly($value)) . '</a>
-          </p>';
+          $html .= '<p><a href="/wp-file-proxy.php?key=' . $value . '" target="_blank">' . sprintf(__('Datei "%s" herunterladen', 'lbwp'), File::getFileOnly($value)) . '</a></p>';
         }
         break;
     }
 
     return $html;
+  }
+
+  /**
+   * @param array $field
+   * @param string $key
+   * @param bool $forceReadonly
+   * @param bool $forceDisabled
+   * @return string
+   */
+  protected function getCustomFieldTableHtml($field, $key, $value, $forceReadonly, $forceDisabled)
+  {
+    $html = '<table class="crmcf-table" data-key="' . $key . '" data-readonly="' . ($forceReadonly ? 1 : 0) . '" data-disabled="' . ($forceDisabled ? 1 : 0) . '">';
+
+    // Get the field configuration of that table and print the columns
+    $fields = $this->getTableColumnConfiguration($field);
+    $html .= '<thead><tr>';
+    foreach ($fields as $slug => $name) {
+      $html .= '<td class="crmcf-head" data-slug="' . $slug . '">' . $name . '</td>';
+    }
+    $button = (!$forceReadonly) ? '<span class="dashicons dashicons-plus add-crmcf-row"></span>' : '';
+    $html .= '<td class="crmcf-head">' . $button . '</td>';
+    $html .= '</tr></thead><tbody>';
+
+    // Print the current data if given
+    if (is_array($value)) {
+      reset($value);
+      $first = key($value);
+      for ($i = 0; $i < count($value[$first]); ++$i) {
+        $html .= '<tr>';
+        foreach ($fields as $slug => $name) {
+          $attr = '';
+          $attr .= $forceReadonly ? ' readonly="readonly"' : '';
+          $attr .= $forceDisabled ? ' disabled="disabled"' : '';
+          $html .= '<td><input type="text" name="' . $key . '[' . $slug . '][]" value="' . esc_attr($value[$slug][$i]) . '" ' . $attr . ' /></td>';
+        }
+        $html .= '<td class="crmcf-head"><span class="dashicons dashicons-trash delete-crmcf-row"></span></td></tr>';
+      }
+    }
+
+    $html .= '</tbody></table>';
+    return $html;
+  }
+
+  /**
+   * @param $field
+   * @return array
+   */
+  protected function getTableColumnConfiguration($field)
+  {
+    $config = array();
+    foreach ($field['field-values'] as $colName) {
+      $config[Strings::forceSlugString($colName)] = $colName;
+    }
+    return $config;
   }
 
   /**
@@ -636,13 +730,28 @@ class Core extends Component
     // Sort by number so that topmost IDs are top
     sort($contactCategories, SORT_NUMERIC);
 
-    // Get the contact editing screen for all the categories
-    $index = 0;
+    $sortedCategories = array();
     foreach ($contactCategories as $categoryId) {
       $category = $this->getContactCategory($categoryId);
       if ($category['visible']) {
-        $html .= $this->getContactsEditorHtml($category, ++$index);
+        $sortedCategories[] = $category;
       }
+    }
+
+    // Order by sort
+    usort($sortedCategories, function($a, $b) {
+      if ($a['sort'] > $b['sort']) {
+        return 1;
+      } else if ($a['sort'] < $b['sort']) {
+        return -1;
+      }
+      return 0;
+    });
+
+    // Get the contact editing screen for all the categories
+    $index = 0;
+    foreach ($sortedCategories as $category) {
+      $html .= $this->getContactsEditorHtml($category, ++$index);
     }
 
     return $html;
@@ -767,6 +876,58 @@ class Core extends Component
   }
 
   /**
+   * Provides HTML block for the crm field history
+   */
+  public function getCrmFieldHistory()
+  {
+    $id = intval(str_replace('crmcf-', '', $_POST['key']));
+    $field = $this->getCustomFieldById($id);
+    // Check if the history can be displayed
+    if (!$this->userAdminData['userIsAdmin'] || !$this->isHistoryField($field)) {
+      WordPress::sendJsonResponse(array(
+        'success' => false
+      ));
+    }
+
+    // Initialize the html for the field
+    $html = '<table class="crmcf-history-table">';
+    // First, make sure the history is in reverse order (Starting with the latest
+    $versions = array_reverse($field['versions']);
+    $html .= '<thead><tr>';
+    foreach ($versions as $version) {
+      $html .= '<th>' . $version . '</th>';
+    }
+    $html .= '</tr></thead><tbody>';
+    foreach ($versions as $i => $version) {
+      $key = 'crmcf-' .  $id;
+      $readonly = false;
+      if ($i > 0) {
+        $key .= '_' . $version;
+        $readonly = true;
+      }
+      $html .= '<td>' . $this->getCustomFieldContent($field, $key, $readonly, $readonly) . '</td>';
+    }
+
+    $html .= '</tbody></table>';
+
+
+    // Send the generated html that represents all versions of the field
+    WordPress::sendJsonResponse(array(
+      'success' => true,
+      'html' => $html
+    ));
+  }
+
+  /**
+   * @param array $field the custom field
+   * @return bool true if the field is a history field
+   */
+  public function isHistoryField($field)
+  {
+    return (is_array($field) && $field['history-active']);
+  }
+
+  /**
    * @param int $categoryId a category id
    * @return array the contact object
    */
@@ -779,6 +940,7 @@ class Core extends Component
       'id' => $categoryId,
       'title' => $raw->post_title,
       'description' => get_post_meta($categoryId, 'description', true),
+      'sort' => intval(get_post_meta($categoryId, 'sort', true)),
       'fields' => array_filter(get_post_meta($categoryId, 'custom-fields')),
       'tab' => get_post_meta($categoryId, 'tab', true),
       'visible' =>  $admin || get_post_meta($categoryId, 'cap-read', true) == 'on',
@@ -855,7 +1017,7 @@ class Core extends Component
   public function invokeMemberAdminScripts()
   {
     $screen = get_current_screen();
-    if ($screen->base == 'user-edit' || $screen->base == 'profile') {
+    if ($screen->base == 'user-edit' || $screen->base == 'profile' || $screen->base == 'users_page_crm-export') {
       $uri = File::getResourceUri();
       // Include usage of chosen
       wp_enqueue_script('jquery-cookie');
@@ -874,10 +1036,26 @@ class Core extends Component
   }
 
   /**
+   * @param \WP_User_Query $query
+   */
+  public function invokeUserTableQuery($query)
+  {
+    if (!isset($_GET['order']) && !isset($_GET['orderby'])) {
+      $query->set('orderby', 'display_name');
+      $query->set('order', 'ASC');
+    }
+  }
+
+  /**
    * Adds various columns to custom types tables
    */
   protected function addAdminTableColumns()
   {
+    add_filter('manage_users_columns', array($this, 'addUserTableColumnHeader'));
+    add_action('manage_users_custom_column', array($this, 'addUserTableColumnCell'), 10, 3);
+    add_action('restrict_manage_users', array($this, 'restrictUserTableFilter'));
+    add_filter('users_list_table_query_args', array($this, 'userTableFilterByStatus'));
+
     // For profile categories
     WordPress::addPostTableColumn(array(
       'post_type' => self::TYPE_PROFILE_CAT,
@@ -978,6 +1156,103 @@ class Core extends Component
         echo $postId;
       }
     ));
+  }
+
+
+
+  /**
+   * @param $columns
+   * @return mixed
+   */
+  public function addUserTableColumnHeader($columns)
+  {
+    // Add the status, and remove the count posts
+    $columns['crm-status'] = 'Status';
+    unset($columns['posts']);
+
+    // Also, add custom configured custom fields
+    if (isset($this->configuration['customUserColumns'])) {
+      foreach ($this->configuration['customUserColumns'] as $field => $name) {
+        $columns[$field] = $name;
+      }
+    }
+
+    return $columns;
+  }
+
+  /**
+   * @param mixed $value
+   * @param string $field
+   * @param int $userId
+   */
+  public function addUserTableColumnCell($value, $field, $userId)
+  {
+    // Check for a custom field
+    if (Strings::startsWith($field, 'crmcf-')) {
+      $value = get_user_meta($userId, $field, true);
+    }
+
+    // If it is the status
+    if ($field == 'crm-status') {
+      $value = __('Aktiv', 'lbwp');
+      if (get_user_meta($userId, 'member-disabled', true) == 1) {
+        $value = '<em>' . __('Inaktiv', 'lbwp') . '<em>';
+      }
+    }
+
+    return $value;
+  }
+
+  /**
+   * Make the user able to filter by active state
+   */
+  public function restrictUserTableFilter()
+  {
+    $current = $_GET['status-filter'];
+    echo '
+      <select name="status-filter" id="status-filter" style="display:none;margin:0px 15px 4px 0px;">
+        <option value="">Aktive & Inaktive anzeigen</option>
+        <option value="active" ' . selected($current, 'active', false) . '>Nur Aktive anzeigen</option>
+        <option value="inactive" ' . selected($current, 'inactive', false) . '>Nur Inaktive anzeigen</option>
+      </select>
+      <script type="text/javascript">
+        jQuery(function() {
+          // Move and re-style
+          var dropdown = jQuery("#status-filter");
+          jQuery(".tablenav-pages").prepend(dropdown);
+          dropdown = jQuery("#status-filter");
+          dropdown.css("display", "inline");
+          // Add functionality
+          dropdown.on("change", function() {
+            document.location.href = "/wp-admin/users.php?status-filter=" + jQuery(this).val();
+          });
+        });
+      </script>
+    ';
+  }
+
+  /**
+   * Add query arguments if needed
+   */
+  public function userTableFilterByStatus($args)
+  {
+    if (isset($_GET['status-filter']) && strlen($_GET['status-filter']) > 0) {
+      $args['meta_query'] = array();
+      if ($_GET['status-filter'] == 'active') {
+        $args['meta_query'][] = array(
+          'key' => 'member-disabled',
+          'compare' => 'NOT EXISTS'
+        );
+      } else if ($_GET['status-filter'] == 'inactive') {
+        $args['meta_query'][] = array(
+          'key' => 'member-disabled',
+          'value' => 1,
+          'compare' => '='
+        );
+      }
+    }
+
+    return $args;
   }
 
   /**
@@ -1211,28 +1486,50 @@ class Core extends Component
     $roles = $roles->get_names();
 
     // Functions / UI to create data exports for members
-    $html .= 'Rolle:  <select name="field-role">';
+    $html .= '<div><label class="field-description">Rolle:</label>  <select name="field-role">';
     foreach ($this->configuration['roles'] as $key) {
       $html .= '<option value="' . $key . '">' . $roles[$key] . '</option>"';
     }
     $html .= '
-      </select>
-      <input type="submit" name="field-export" value="Daten-Export starten" />
+      </select></div>
+      <div>
+        <label class="field-description">Status:</label>
+        <span>
+          <label>
+            <input type="radio" name="member-status" value="active" checked="checked"> Nur Aktive
+          </label>
+          <label>
+            <input type="radio" name="member-status" value="inactive"> Nur Inaktive
+          </label>
+          <label>
+            <input type="radio" name="member-status" value="all"> Alle
+          </label>
+        </span>
+      </div>
+      <div>
+        <label class="field-description">Versionierte Felder:</label>
+        <label>
+          <input type="checkbox" name="use-history" value="1"> Alle Versionen exportieren 
+        </label>
+      </div>
+      <input type="submit" class="button-primary" name="field-export" value="Daten-Export starten" />
+      
       <hr>
     ';
 
     // Functions / UI to create contact exports for members
-    $html .= 'Rolle / Kontaktart:  <select name="contact-role">';
+    $html .= '<div><label class="field-description">Rolle:</label>  <select name="contact-role">';
     foreach ($this->configuration['roles'] as $key) {
-      $html .= '<option value="' . $key . '">' . $roles[$key] . '</option>"';
+      $html .= '<option value="' . $key . '">' . $roles[$key] . '</option>';
     }
-    $html .= '</select><select name="contact-category">';
+
+    $html .= '</select></div><div><label class="field-description">Kontaktart:</label><select name="contact-category">';
     foreach (self::getContactCategoryList() as $category) {
       $html .= '<option value="' . $category->ID . '">' . $category->post_title . '</option>';
     }
     $html .= '
-      </select>
-      <input type="submit" name="contact-export" value="Kontakte-Export starten" />
+      </select></div>
+      <input type="submit" class="button-primary" name="contact-export" value="Kontakte-Export starten" />
     ';
 
     // Print the wrapper and html
@@ -1276,23 +1573,58 @@ class Core extends Component
    */
   protected function downloadFieldExport($role)
   {
+    // Are we exporting history
+    $history = intval($_POST['use-history']) == 1;
+    // See if we need to get inactives
+    $inactives = false;
+    if ($_POST['member-status'] != 'active') {
+      $inactives = true;
+    }
+
     // Get all members and all fields to prepare for the export
-    $members = $this->getMembersByRole($role);
+    $members = $this->getMembersByRole($role, 'display_name', 'ASC', $inactives);
+    $inactives = $this->getInactiveUserIds();
     $fields = $this->getCustomFields(false);
 
+    // If we only show inactives, sort out all active members
+    if ($_POST['member-status'] == 'inactive') {
+      foreach ($members as $key => $member) {
+        if (!in_array($member->ID, $inactives)) {
+          unset($members[$key]);
+        }
+      }
+    }
+
     // Begin output data array
-    $data = array('columns' => array());
+    $data = array('columns' => array('Status'));
 
     // Create a heading column
     foreach ($fields as $field) {
-      $data['columns'][] = $field['title'];
+      if ($history && $field['history-active']) {
+        foreach (array_reverse($field['versions']) as $version) {
+          $data['columns'][] = $field['title'] . ' ' . $version;
+        }
+      } else {
+        $data['columns'][] = $field['title'];
+      }
     }
 
     // Now for each member, create a new row
     foreach ($members as $member) {
       $row = array();
+      $row[] = in_array($member->ID, $inactives) ? 'Inaktiv' : 'Aktiv';
       foreach ($fields as $field) {
-        $row[] = get_user_meta($member->ID, 'crmcf-' . $field['id'], true);
+        if ($history && $field['history-active']) {
+          foreach (array_reverse($field['versions']) as $id => $version) {
+            // If the version is not the newest, add the suffix to our key
+            $key = 'crmcf-' . $field['id'];
+            if ($id > 0) $key .= '_' . $version;
+            $row[] = get_user_meta($member->ID, $key, true);
+          }
+        } else {
+          $row[] = get_user_meta($member->ID, 'crmcf-' . $field['id'], true);
+        }
+
       }
       $data[] = $row;
     }
@@ -1402,6 +1734,54 @@ class Core extends Component
   }
 
   /**
+   * Saves versions, if a new one is added, the previous one is archived
+   * @param int $postId
+   * @param array $field
+   * @param string $boxId
+   * @return array|string
+   */
+  public function saveCustomFieldVersion($postId, $field, $boxId)
+  {
+    // Validate and save the field
+    $new = $_POST[$postId . '_' . $field['key']];
+    $prev = get_post_meta($postId, $field['key']);
+
+    // See if the tables have turned (contents have changed)
+    if (serialize($new) == serialize($prev) || !is_array($new)) {
+      // Return, nothing to save
+      return $new;
+    }
+
+    // Build an array of key (version) and change (same, archive, new)
+    $newVersionId = count(array_keys($new)) - 1;
+    $archiveVersionId = ($newVersionId - 1);
+    $version = $new[$archiveVersionId];
+
+    // Archive the old version by renaming the meta fields in db
+    if (count($new) > 1 && strlen($version) > 0) {
+      $db = WordPress::getDb();
+      $sql = 'UPDATE {sql:userMeta} SET meta_key = {versionedKey} WHERE meta_key = {currentKey}';
+      $db->query(Strings::prepareSql($sql, array(
+        'userMeta' => $db->usermeta,
+        'currentKey' => 'crmcf-' . $postId,
+        'versionedKey' => 'crmcf-' . $postId . '_' . $version
+      )));
+
+      // Flush all user-like caches asynchronously
+      MemcachedAdmin::flushByKeyword('*user_meta_*');
+      MemcachedAdmin::flushByKeyword('*users_*');
+    }
+
+    // Save the new version config
+    delete_post_meta($postId, $field['key']);
+    foreach ($new as $version) {
+      add_post_meta($postId, $field['key'], $version, false);
+    }
+
+    return $new;
+  }
+
+  /**
    * Adds post types for member and contact categorization
    */
   public function addCategorizationPostTypes()
@@ -1476,6 +1856,9 @@ class Core extends Component
     $helper->addTextarea('description', 'settings', 'Beschreibung', 70, array(
       'description' => 'Eine optionale Feldbeschreibung (wie dieser hier).'
     ));
+    $helper->addInputText('sort', 'settings', 'Sortiernummer', array(
+      'description' => 'Eine optionale Sortiernummer, damit die Reihenfolge der Kontaktarten in jeder Kombination stimmt.'
+    ));
     $helper->addDropdown('custom-fields', 'settings', 'Zusätzliche Felder', array(
       'multiple' => true,
       'sortable' => true,
@@ -1514,6 +1897,7 @@ class Core extends Component
 
     $helper = Metabox::get(self::TYPE_FIELD);
     $helper->addMetabox('settings', 'Einstellungen');
+    $helper->addHtml('field-scripts', 'settings', $this->getFieldUiScripts());
     $helper->addDropdown('type', 'settings', 'Feld-Typ', array(
       'items' => $this->getCustomFieldTypes()
     ));
@@ -1548,9 +1932,6 @@ class Core extends Component
     ));
 
     $helper->addMetabox('data-history', 'Historisierung');
-    $helper->addHtml('info', 'data-history', '
-      <p>Bitte noch keine Einstellungen verändern. Diese Funktion befindet sich in der Entwicklungsphase.</p>
-    ');
     $helper->addCheckbox('history-active', 'data-history', 'Aktivieren', array(
       'description' => 'Historisierung der Feld-Daten aktivieren'
     ));
@@ -1558,8 +1939,89 @@ class Core extends Component
       'multiple' => true,
       'items' => 'self',
       'add_new_values' => true,
+      'saveCallback' => array($this, 'saveCustomFieldVersion'),
       'description' => 'Beim Hinzufügen einer neuen Version werden die aktuelle Feld-Daten archiviert, sobald die Feld-Einstellungen gespeichert werden.'
     ));
+    $helper->addHtml('versions-script', 'data-history', $this->getVersionConfirmationScript());
+
+    $helper->addMetabox('multi-values', 'Feldinformationen für Tabellen / Dropdowns');
+    $helper->addParagraph('multi-values', 'Hier können Sie die Vorgabewerte für Dropdowns bzw. die Spaltenwerte für Tabellen angeben.');
+    $helper->addDropdown('field-values', 'multi-values', 'Versionen', array(
+      'multiple' => true,
+      'items' => 'self',
+      'add_new_values' => true
+    ));
+  }
+
+  /**
+   * @return string script that does confirmation messages when adding a new field version
+   */
+  protected function getVersionConfirmationScript()
+  {
+    return '
+      <script type="text/javascript">
+        jQuery(function() {
+          jQuery(".versions input[type=button]").on("click", function(e) {
+            var message = "";
+            var select = jQuery(".versions select");
+            var versions = jQuery.map(select.find("option") ,function(option) {
+              return option.value;
+            });
+            // Also get the newly added version
+            versions.push(jQuery(".mbh-add-dropdown-value input[type=text]").val());
+            // If there is at least an old and a new version, make a confirm message
+            if (versions.length >= 2) {
+              var index = (versions.length - 1);
+              message = "Dadurch wird die neue Version *" + versions[index] + "* hinzugefügt und die Version *" + versions[index-1] + "* archiviert. Wenn Sie dies tun wollen, bitte Bestätigen Sie den Dialog mit OK. Die Aktion wird unwiederruflich durchgeführt, sobald das Feld mittels *Aktualisieren* gespeichert wird.";
+            }
+            
+            // If there is a confirm message, ask for it
+            if (message.length > 0 && !confirm(message)) {
+              MetaboxHelper.preventAdd = true;
+              setTimeout(function() {
+                MetaboxHelper.preventAdd = false;
+              }, 200);
+            }
+            return true;
+          });
+        });
+      </script>
+    ';
+  }
+
+  /**
+   * @return string html tag with scripts
+   */
+  protected function getFieldUiScripts()
+  {
+    return '
+      <script type="text/javascript">
+        jQuery(function() {
+          var select = jQuery("select[data-metakey=type]");
+          // On Change of the type field
+          select.on("change", function() {
+            var fieldType = jQuery(this).val();
+            var history = jQuery("#crm-custom-field__data-history");
+            var multivalues = jQuery("#crm-custom-field__multi-values");
+            // Basically allow history, but dont show multi values
+            history.show();
+            multivalues.hide();
+            // If it is a table, show multival and disable history
+            if (fieldType == "table") {
+              history.hide();
+              multivalues.show();
+            }
+            // If it is a dropdown, show multival
+            if (fieldType == "dropdown") {
+              multivalues.show();
+            }
+          });
+          
+          // On load trigger a change to the type to show fields
+          select.trigger("change");
+        });
+      </script>
+    ';
   }
 
   /**
@@ -1571,6 +2033,8 @@ class Core extends Component
       'textfield' => 'Einzeiliges Textfeld',
       'textarea' => 'Mehrzeiliges Textfeld',
       'checkbox' => 'Checkbox',
+      'dropdown' => 'Dropdown',
+      'table' => 'Tabelle',
       'file' => 'Datei-Upload'
     );
   }
@@ -1599,6 +2063,7 @@ class Core extends Component
     return array(
       'config' => $this->configuration,
       'editedIsMember' => $isMember || $this->isMember($_REQUEST['user_id']),
+      'editedUserId' => $_REQUEST['user_id'],
       'userIsMember' => $isMember,
       'userIsAdmin' => current_user_can('administrator'),
       'neutralSalutations' => $this->getSalutationOptions(true, ''),
@@ -1687,12 +2152,26 @@ class Core extends Component
    */
   public static function getContactCategoryList()
   {
-    return get_posts(array(
+    $categories = get_posts(array(
       'post_type' => self::TYPE_CONTACT_CAT,
       'posts_per_page' => -1,
       'orderby' => 'title',
       'order' => 'ASC'
     ));
+
+    // Order by sort
+    usort($categories, function($a, $b) {
+      $na = intval(get_post_meta($a->ID, 'sort', true));
+      $nb = intval(get_post_meta($b->ID, 'sort', true));
+      if ($na > $nb) {
+        return 1;
+      } else if ($na < $nb) {
+        return -1;
+      }
+      return 0;
+    });
+
+    return $categories;
   }
 
   /**
@@ -1720,6 +2199,9 @@ class Core extends Component
           'type' => get_post_meta($field->ID, 'type', true),
           'profiles' => get_post_meta($field->ID, 'profiles'),
           'tab' => get_post_meta($field->ID, 'tab', true),
+          'history-active' => get_post_meta($field->ID, 'history-active', true) == 'on',
+          'versions' => get_post_meta($field->ID, 'versions'),
+          'field-values' => get_post_meta($field->ID, 'field-values'),
           'segmenting-active' => get_post_meta($field->ID, 'segmenting-active', true) == 'on',
           'segmenting-slug' => get_post_meta($field->ID, 'segmenting-slug', true),
           'description' => get_post_meta($field->ID, 'description', true),
@@ -1753,5 +2235,21 @@ class Core extends Component
 
     // Or return all fields if no role was given
     return $allFields;
+  }
+
+  /**
+   * @param int $id the field id
+   * @return bool|array the field or false
+   */
+  protected function getCustomFieldById($id)
+  {
+    $fields = $this->getCustomFields(false);
+    foreach ($fields as $field) {
+      if ($field['id'] == $id) {
+        return $field;
+      }
+    }
+
+    return false;
   }
 }

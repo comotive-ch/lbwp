@@ -156,7 +156,7 @@ class RelatedPosts
     if ($taxonomy == 'category') {
       $terms = wp_get_post_categories($postId);
     } else {
-      $terms = wp_get_post_Tags($postId);
+      $terms = wp_get_post_tags($postId);
     }
 
     // Get the related posts, if possible
@@ -165,13 +165,17 @@ class RelatedPosts
       $selectableTerms = count($terms);
       $randomIndex = mt_rand(0, $selectableTerms - 1);
       $relatedTerm = $terms[$randomIndex];
-      $title = get_term_by('term_id', $relatedTerm, $taxonomy)->name;
 
-      // Get a list of posts related to the tag
       return get_posts(array(
-        $taxonomy . '__in' => array($relatedTerm),
         'post__not_in' => array($postId),
         'posts_per_page' => $postCount,
+        'tax_query' => array(
+          array(
+            'taxonomy' => $taxonomy,
+            'field' => 'slug',
+            'terms' => array($relatedTerm->slug)
+          )
+        )
       ));
     }
 

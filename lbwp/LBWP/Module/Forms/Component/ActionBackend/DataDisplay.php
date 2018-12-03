@@ -119,7 +119,7 @@ class DataDisplay
    */
   protected function getTableHtml($columns, $data, $formId, $eventId, $fields)
   {
-    $html = '<table class="widefat">';
+    $html = '<table class="widefat" id="lbwp-data-table">';
     // Force fields to be an array
     $fields = ArrayManipulation::forceArray($fields);
 
@@ -428,7 +428,7 @@ class DataDisplay
 
     // Javascript to edit and remove rows
     $html .= '
-      <script type="text/javascript" src="' . $path . '/js/data-table-backend.js?v1.1"></script>
+      <script type="text/javascript" src="' . $path . '/js/data-table-backend.js?v1.2"></script>
       <script type="text/javascript" src="' . $path . '/js/chosen/chosen.jquery.min.js"></script>
       <script type="text/javascript" src="' . $path . '/js/chosen/chosen.sortable.jquery.js"></script>
       <script type="text/javascript" src="/wp-includes/js/jquery/ui/jquery.ui.widget.min.js"></script>

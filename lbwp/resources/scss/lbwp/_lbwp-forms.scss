@@ -301,6 +301,27 @@ $lbwpFormInputFields: "select, input[type=date], input[type=text], input[type=em
 
 }
 
+@mixin lbwpFormUploadFieldState() {
+	.upload-state-container {
+		margin-top: 10px;
+  	line-height: 1;
+
+		.progress-text {
+			display: inline-block;
+		}
+
+		.progress {
+			//margin-top: 5px;
+		}
+
+		.progress-bar {
+
+		}
+
+		@content;
+	}
+}
+
 // validation
 .lbwp-form {
 	//	.validate-message.lbwp-form-warning label {

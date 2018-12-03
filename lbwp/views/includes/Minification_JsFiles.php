@@ -19,6 +19,7 @@ $fileList = array(
   'plugins/lbwp/resources/js/lbwp-helper-hashfilter.js',
   // Backend scripts
   'plugins/lbwp/resources/js/backend.js',
+  'plugins/lbwp/resources/js/lbwp-crm-backend.js',
   'plugins/lbwp/resources/js/metabox-helper.js',
   'plugins/lbwp/resources/js/jquery.multisort.js',
   'plugins/lbwp/resources/js/jquery-wpattachment.js',
@@ -40,11 +41,16 @@ $fileList = array(
   'themes/velovirusag/assets/scripts/velovirus.mapreduce.js',
   'themes/velovirusag/assets/scripts/velovirus.product.js',
   'themes/workzeitung/assets/scripts/workzeitung.js',
+  'themes/mobilesport/resources/scripts/frontend/filter.js',
+  'themes/mobilesport/resources/scripts/frontend/user.js',
+  'themes/mobilesport/resources/scripts/frontend/theme.js',
+  'themes/mobilesport/resources/scripts/frontend/shortlist.js',
   'themes/newhome-base/assets/scripts/theme.global.js',
   'themes/newhome-lounge/assets/scripts/lounge.js',
   'themes/hirslanden-videoblog/assets/scripts/theme.global.js',
   'themes/hirslanden/assets/scripts/theme.global.js',
   'themes/firefred/assets/scripts/firefred.js',
   'themes/badewelten/assets/scripts/theme.global.js',
-  'themes/lbwp-standard-02/assets/_standard/scripts/theme.lbwp-standard.js'
+  'themes/lbwp-standard-02/assets/_standard/scripts/theme.lbwp-standard.js',
+  'themes/threel-mycv/assets/scripts/3l-main.js'
 );

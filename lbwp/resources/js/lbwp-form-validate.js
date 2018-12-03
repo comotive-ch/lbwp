@@ -103,7 +103,7 @@
 							same = name;
 						}
 					});
-				} else if (!this.value.length && (this.type == "text" || this.type == "select-one")) { // Check if the value of "text", "select-one" or "textare" ar empty and set message
+				} else if (!this.value.length && (this.type == "text" || this.type == "file" || this.type == "select-one")) { // Check if the value of "text", "select-one" or "textare" ar empty and set message
 					setMessage(this, errorElem, "error");
 					error++;
 				} else if (!this.value.length && (this.type == "textarea")) { // Check if the value of "text", "select-one" or "textare" ar empty and set message

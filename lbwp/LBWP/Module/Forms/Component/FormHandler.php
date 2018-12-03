@@ -51,6 +51,7 @@ class FormHandler extends Base
     'web2lead' => '\\LBWP\\Module\\Forms\\Action\\Salesforce',
     'auto-close' => '\\LBWP\\Module\\Forms\\Action\\AutoClose',
     'savesession' => '\\LBWP\\Module\\Forms\\Action\\SaveSession',
+    'savedynamic' => '\\LBWP\\Module\\Forms\\Action\\SaveDynamic',
   );
   /**
    * @var int provides ids trhought all created items

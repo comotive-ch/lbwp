@@ -2,7 +2,6 @@
 
 namespace LBWP\Theme\Feature;
 
-use DocRaptor\PrinceOptions;
 use LBWP\Module\Frontend\HTMLCache;
 use LBWP\Util\ArrayManipulation;
 use LBWP\Util\File;

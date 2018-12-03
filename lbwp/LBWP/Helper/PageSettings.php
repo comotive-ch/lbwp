@@ -71,7 +71,7 @@ class PageSettings
    * @param string $description description of the section
    * @return string an error message if anything goes wrong
    */
-  public static function addSection($slug, $pageSlug, $title, $description)
+  public static function addSection($slug, $pageSlug, $title, $description = '')
   {
     if (isset(self::$configuration[$pageSlug])) {
       if (!isset(self::$configuration[$pageSlug]['sections'][$slug])) {

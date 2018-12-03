@@ -192,6 +192,26 @@ class LbwpData
   }
 
   /**
+   * Merges JSON data into an existing row by overriding or adding fields
+   * @param string $rowId the row id
+   * @param array $data the data array
+   * @return bool true/fals if saving worked
+   */
+  public function mergeRow($rowId, $data)
+  {
+    if ($this->rowExists($rowId)) {
+      $row = $this->getRow($rowId);
+      foreach ($data as $key => $value) {
+        $row['data'][$key] = $value;
+      }
+      // Save row back to database
+      return $this->updateRow($rowId, $row['data']);
+    }
+
+    return false;
+  }
+
+  /**
    * @param string $rowId the row
    * @return bool true if the deletion worked
    */
@@ -202,6 +222,22 @@ class LbwpData
       $this->db->query('
         DELETE FROM ' . $this->db->lbwp_data . '
         WHERE row_id = "' . $rowId . '" AND row_key = "' . $this->key . '"
+      ');
+      return true;
+    }
+
+    return false;
+  }
+
+  /**
+   * Flushed the whole given keyspace
+   */
+  public function flush()
+  {
+    if (strlen($this->key) > 0) {
+      $this->db->query('
+        DELETE FROM ' . $this->db->lbwp_data . '
+        WHERE row_key = "' . $this->key . '"
       ');
       return true;
     }

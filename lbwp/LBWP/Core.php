@@ -18,7 +18,7 @@ class Core
   /**
    * @var int Revisionnumber of the plugins (not svn revision, only for updates)
    */
-  const REVISION = 253;
+  const REVISION = 262;
   /**
    * @var int CSS/JS file version for cloudfront
    */

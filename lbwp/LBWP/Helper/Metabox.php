@@ -1127,6 +1127,9 @@ class Metabox
     if (isset($args['required']) && $args['required']) {
       $attr .= ' required="required"';
     }
+    if (isset($args['readonly']) && $args['readonly']) {
+      $attr .= ' readonly="readonly"';
+    }
 
     // Convert the configured format to the display format EU_DATE
     if (!$useIntegerConversion && strlen($value) > 0) {
@@ -1147,19 +1150,24 @@ class Metabox
     // Need of a time field?
     $timeField = '';
     if ($addTimeField) {
-      $timeField = '<input type="text" id="' . $key . '-time" name="' . $key . '-time" class="mbh-timefield" placeholder="00:00" value="' . esc_attr($time) . '" />';
+      $timeField = '<input type="text" id="' . $key . '-time" name="' . $key . '-time" class="mbh-timefield" placeholder="00:00" value="' . esc_attr($time) . '"' . $attr . ' />';
     }
 
     // Replace in the input field and add the js to use a picker
     $input = '
       <input type="text" id="' . $key . '" name="' . $key . '" class="mbh-datefield" value="' . esc_attr($value) . '"' . $attr . ' />
       ' . $timeField . '
-      <script type="text/javascript">
-        jQuery(function() {
-          jQuery("#' . $key . '").datepicker(' . Date::getDatePickerJson('de', $datepickerConfig) . ');
-        });
-      </script>
     ';
+
+    if (!isset($args['readonly'])) {
+      $input .= '
+        <script type="text/javascript">
+          jQuery(function() {
+            jQuery("#' . $key . '").datepicker(' . Date::getDatePickerJson('de', $datepickerConfig) . ');
+          });
+        </script>
+      ';
+    }
 
     $html = str_replace('{input}', $input, $html);
     return $html;
@@ -1522,9 +1530,14 @@ class Metabox
    */
   public function displayHtml($args)
   {
+    $template = 'empty';
+    if (isset($args['use_template'])) {
+      $template = $args['use_template'];
+    }
     $key = $args['post']->ID . '_' . $args['key'];
-    $html = $this->getTemplate($args, $key, 'empty');
+    $html = $this->getTemplate($args, $key, $template);
     $html = str_replace('{html}', $args['html'], $html);
+    $html = str_replace('{input}', $args['html'], $html);
 
     return $html;
   }

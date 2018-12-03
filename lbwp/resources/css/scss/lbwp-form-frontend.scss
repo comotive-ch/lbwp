@@ -75,8 +75,6 @@ $lbwpFormValidationColorError: red;
 	visibility: hidden;
 }
 
-;
-
 @include lbwpFormInputFieldErrorStyles() {
 	border-color: $lbwpFormValidationColorError;
 }

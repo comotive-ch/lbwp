@@ -39,6 +39,10 @@ class SimpleField
       $attr .= ' required="required"';
     }
 
+    if (isset($args['readonly']) && $args['readonly']) {
+      $attr .= ' readonly="readonly"';
+    }
+
     if (isset($args['placeholder']) && strlen($args['placeholder']) > 0) {
       $attr .= ' placeholder="' . esc_attr($args['placeholder']) . '"';
     }
@@ -75,6 +79,9 @@ class SimpleField
     $attr = ' style="width:' . $width . ';height:' . $args['height'] . 'px"';
     if (isset($args['required']) && $args['required']) {
       $attr .= ' required="required"';
+    }
+    if (isset($args['readonly']) && $args['readonly']) {
+      $attr .= ' readonly="readonly"';
     }
 
     // Replace in the input field

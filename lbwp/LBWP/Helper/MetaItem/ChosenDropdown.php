@@ -178,13 +178,16 @@ class ChosenDropdown
       $html .= '
         <script type="text/javascript">
           jQuery(function() {
-            jQuery("#' . $key . '_add_item").on("click", function() {
-              var element = jQuery("#' . $key . '_added_text");
-              dropdown = jQuery("#' . $key . '");
-              dropdown.append(\'<option value="\' + element.val() + \'" selected="selected">\' + element.val() + \'</option>\');
-              dropdown.trigger("chosen:updated");
-              element.val("");
-            });
+            setTimeout(function() {
+              jQuery("#' . $key . '_add_item").on("click", function() {
+                if (MetaboxHelper.preventAdd) return false;
+                var element = jQuery("#' . $key . '_added_text");
+                dropdown = jQuery("#' . $key . '");
+                dropdown.append(\'<option value="\' + element.val() + \'" selected="selected">\' + element.val() + \'</option>\');
+                dropdown.trigger("chosen:updated");
+                element.val("");
+              });
+            }, 1000);
           });
         </script>
         <div class="mbh-add-dropdown-value">

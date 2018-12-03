@@ -105,6 +105,7 @@ class ListingTemplate
         $helper->addInputText('lastname', $boxId, __('Nachname', 'lbwp'));
         $helper->addInputText('salutation', $boxId, __('Anrede', 'lbwp'));
         $helper->addInputText('role', $boxId, __('Funktion/Rolle', 'lbwp'));
+        $helper->addInputText('role-2', $boxId, __('Funktion/Rolle 2', 'lbwp'));
         $helper->addInputText('email', $boxId, __('E-Mail-Adresse', 'lbwp'));
         $helper->addInputText('phone', $boxId, __('Telefon', 'lbwp'));
         $helper->addEditor('description', $boxId, __('Beschreibung', 'lbwp'), 10);

@@ -104,4 +104,34 @@ jQuery(function() {
 			row.next().css('display', 'none');
 		}
 	});
+
+	// Fixed table header with scrollable body
+	var theTable = jQuery('#lbwp-data-table');
+	var headings = [];
+
+	// First collect all column width
+	theTable.find('thead th').each(function(index, element) {
+		w = jQuery(element).css('width');
+		jQuery(element).css('width', w);
+		headings[index] = w;
+	});
+
+	// Add the column width to each cell of each first row
+	theTable.find('tr:first-child').each(function() {
+		jQuery(this).find('td, th').each(function(i) {
+			if (headings[i].length > 0) {
+				jQuery(this)
+					.css('width', headings[i])
+					.css('min-width', headings[i])
+					.css('max-width', headings[i])
+				;
+			}
+		});
+	});
+
+	theTable
+		.addClass('rendered')
+		.find('tbody')
+			.css('max-height','calc(100vh - ' + (theTable.find('tbody').offset().top + 75) + 'px)');
+
 });

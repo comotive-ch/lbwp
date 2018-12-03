@@ -24,6 +24,7 @@ var LbwpBackend = {
 		// Handle image cache-busting in image editor
 		LbwpBackend.handleImageCacheBusting();
 		LbwpBackend.handleUnwantedNotices();
+		LbwpBackend.handleSimpleConfirm();
 		LbwpBackend.pingForMediaModal();
 	},
 
@@ -66,6 +67,19 @@ var LbwpBackend = {
 				}
 			}
 		}, 2000);
+	},
+
+	/**
+	 * Handle very simple generic JS confirms
+	 */
+	handleSimpleConfirm : function()
+	{
+		jQuery('a[data-lbwp-confirm]').click(function() {
+			if (confirm(jQuery(this).data('lbwp-confirm'))) {
+				return true;
+			}
+			return false;
+		});
 	},
 
 	/**

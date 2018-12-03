@@ -28,15 +28,16 @@ class CronHandler extends \LBWP\Module\Base
     if (defined('DOING_LBWP_CRON')) {
       // deleting auto-saves and revisions older than 60 days
       if ($this->features['Crons']['CleanRevisions'] == 1) {
-        add_action('cron_daily',array($this,'cleanRevisions'));
+        add_action('cron_daily_4',array($this,'cleanRevisions'));
       }
 
       // deleting comment spam older than 30 days (antispam-bee doesn't work...)
       if ($this->features['Crons']['CleanCommentSpam'] == 1) {
-        add_action('cron_daily',array($this,'cleanCommentSpam'));
+        add_action('cron_daily_4',array($this,'cleanCommentSpam'));
       }
 
       // Calculate daily/hourly total of requests per type/server
+      add_action('cron_daily_5',array($this, 'cleanLbwpDataTables'));
       add_action('cron_hourly', array($this, 'aggregatePersistentRequestsHourly'));
       add_action('cron_daily', array($this, 'aggregatePersistentRequestsDaily'));
     }
@@ -149,12 +150,12 @@ class CronHandler extends \LBWP\Module\Base
   }
 
   /**
-   * Cleans auto-saves and revision older than 60 days from the database
+   * Cleans auto-saves and revision older than 180 days from the database
    */
   public function cleanRevisions()
   {
-    // get all revisions where post_modified > 60 days
-    $treshold = Date::getTime(Date::SQL_DATETIME,time() - (360 * 86400));
+    // get all revisions where post_modified > 180 days
+    $treshold = Date::getTime(Date::SQL_DATETIME,time() - (180 * 86400));
     $posts = $this->wpdb->get_results($this->wpdb->prepare('
       SELECT ID FROM '.$this->wpdb->posts.' WHERE
       post_type = "revision" AND post_modified < %s LIMIT 0,500
@@ -178,6 +179,24 @@ class CronHandler extends \LBWP\Module\Base
     ',$treshold));
     foreach ($comments as $comment) {
       wp_delete_comment($comment->comment_ID,true);
+    }
+  }
+
+  /**
+   * Clean out old records of certain types
+   */
+  public function cleanLbwpDataTables()
+  {
+    // For now its just newsletter stats
+    $config = array('localmail_stats_' => 270);
+
+    foreach ($config as $field => $days) {
+      $threshold = Date::getTime(Date::SQL_DATETIME, current_time('timestamp') - (86400 * $days));
+      $this->wpdb->query('
+        DELETE FROM ' . $this->wpdb->prefix . 'lbwp_data WHERE
+        row_key LIKE "' . $field . '%" AND
+        row_modified < "' . $threshold . '"
+      ');
     }
   }
 }

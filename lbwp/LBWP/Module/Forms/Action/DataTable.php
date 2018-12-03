@@ -379,7 +379,7 @@ class DataTable extends Base
             } else {
               $value = html_entity_decode(str_replace('\\\'', '\\\\\'', esc_js($row[$cellKey])));
             }
-            $script .= 'jQuery("input[name=' . $item->get('id') . '][value=\'' . $value . '\'").attr("checked", "checked");' . PHP_EOL;
+            $script .= 'jQuery("input[name=' . $item->get('id') . '][value=\'' . $value . '\']").attr("checked", "checked");' . PHP_EOL;
             break;
           case 'dropdown':
             // Double escape strings \' to \\' in order to esc_js *and* escape the query selector
@@ -395,7 +395,7 @@ class DataTable extends Base
             } else {
               $value = html_entity_decode(str_replace('\\\'', '\\\\\'', esc_js($row[$cellKey])));
             }
-            $script .= 'jQuery("select[name=' . $item->get('id') . '] option[value=\'' . $value . '\'").attr("selected", "selected");' . PHP_EOL;
+            $script .= 'jQuery("select[name=' . $item->get('id') . '] option[value=\'' . $value . '\']").attr("selected", "selected");' . PHP_EOL;
             break;
           // Checkboxes are a tad more complicated to solve
           case 'checkbox':

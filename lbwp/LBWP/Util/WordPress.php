@@ -482,21 +482,37 @@ class WordPress
     global $typenow;
     foreach (self::$restrictPostTables as $item) {
       $type = $item['type'];
-      $taxonomy = $item['taxonomy'];
       if ($typenow == $type) {
-        $selected = isset($_GET[$taxonomy]) ? $_GET[$taxonomy] : '';
-        $html = wp_dropdown_categories(array(
-          'show_option_all' => $item['all_label'],
-          'taxonomy' => $taxonomy,
-          'name' => $taxonomy,
-          'orderby' => $item['orderby'],
-          'selected' => $selected,
-          'echo' => false,
-          'show_count' => $item['show_count'],
-          'hide_empty' => $item['hide_empty'],
-        ));
-        // Only display if there is at least one option
-        if (Strings::contains($html, '<option')) {
+        // Handle taxonomy restrictors
+        if (isset($item['taxonomy'])) {
+          $taxonomy = $item['taxonomy'];
+          $selected = isset($_GET[$taxonomy]) ? $_GET[$taxonomy] : '';
+          $html = wp_dropdown_categories(array(
+            'show_option_all' => $item['all_label'],
+            'taxonomy' => $taxonomy,
+            'name' => $taxonomy,
+            'orderby' => $item['orderby'],
+            'selected' => $selected,
+            'echo' => false,
+            'show_count' => $item['show_count'],
+            'hide_empty' => $item['hide_empty'],
+          ));
+          // Only display if there is at least one option
+          if (Strings::contains($html, '<option')) {
+            echo $html;
+          }
+        }
+
+        // Handle meta restrictors
+        if (isset($item['meta'])) {
+          $html = '
+            <select name="lbwp_meta[' . $item['meta'] . ']">
+              <option value="">' . $item['all_label'] . '</option>
+          ';
+          foreach ($item['options'] as $key => $value) {
+            $selected = selected($key, $_GET['lbwp_meta'][$item['meta']], false);
+            $html .= '<option value="' . $key . '"' . $selected . '>' . $value . '</option>';
+          }
           echo $html;
         }
       };
@@ -512,11 +528,23 @@ class WordPress
     global $pagenow;
     foreach (self::$restrictPostTables as $item) {
       $type = $item['type'];
-      $taxonomy = $item['taxonomy'];
       $vars = &$query->query_vars;
-      if ($pagenow == 'edit.php' && isset($vars['post_type']) && $vars['post_type'] == $type && isset($vars[$taxonomy]) && is_numeric($vars[$taxonomy]) && $vars[$taxonomy] != 0) {
-        $term = get_term_by('id', $vars[$taxonomy], $taxonomy);
-        $vars[$taxonomy] = $term->slug;
+
+      // Handle taxonomy filters
+      if (isset($item['taxonomy'])) {
+        $taxonomy = $item['taxonomy'];
+        if ($pagenow == 'edit.php' && isset($vars['post_type']) && $vars['post_type'] == $type && isset($vars[$taxonomy]) && is_numeric($vars[$taxonomy]) && $vars[$taxonomy] != 0) {
+          $term = get_term_by('id', $vars[$taxonomy], $taxonomy);
+          $vars[$taxonomy] = $term->slug;
+        }
+      }
+
+      // Handle at least one meta filter
+      if (isset($item['meta'])) {
+        if ($pagenow == 'edit.php' && isset($vars['post_type']) && $vars['post_type'] == $type && isset($_GET['lbwp_meta'][$item['meta']]) && strlen($_GET['lbwp_meta'][$item['meta']]) > 0) {
+          $vars['meta_key'] = $item['meta'];
+          $vars['meta_value'] = $_GET['lbwp_meta'][$item['meta']];
+        }
       }
     }
   }

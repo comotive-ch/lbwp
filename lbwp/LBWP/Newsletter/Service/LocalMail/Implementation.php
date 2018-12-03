@@ -318,6 +318,7 @@ class Implementation extends Base implements Definition
 
           // Track the recipient info into the stats of this newsletter
           $stats->updateRow($memberId, array_merge($recipient, array(
+            'sent' => 0,
             'opens' => 0,
             'clicks' => 0,
             'details' => array()

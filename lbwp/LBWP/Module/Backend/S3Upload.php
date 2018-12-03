@@ -24,7 +24,7 @@ class S3Upload extends \LBWP\Module\Base
   /**
    * Defaults
    */
-  const JPEG_QUALITY = 96;
+  const JPEG_QUALITY = 85;
   const MAX_IMAGE_SIZE = 1920;
   const ACL_PUBLIC = 'public-read';
   const ACL_PRIVATE = 'private';
@@ -133,7 +133,7 @@ class S3Upload extends \LBWP\Module\Base
     $files = array();
     // See if it is an image and we need to delete every size too
     $data = wp_get_attachment_metadata($attachmentId);
-    if (is_array($data)) {
+    if (is_array($data) && isset($data['file'])) {
       $files[] = $data['file'];
       $folder = substr($data['file'], 0, strrpos($data['file'], '/') + 1);
       foreach ($data['sizes'] as $size) {
@@ -419,6 +419,37 @@ class S3Upload extends \LBWP\Module\Base
       'Bucket' => CDN_BUCKET_NAME,
       'Key' => $key,
       'ACL' => $acl
+    ));
+  }
+
+  /**
+   * @param string $key the key asked
+   * @return bool true, if the file exists in the storage
+   */
+  public function fileExists($key)
+  {
+    $s3 = AwsFactoryV3::getS3Service();
+    return $s3->doesObjectExist(CDN_BUCKET_NAME, $key);
+  }
+
+  /**
+   * @param string $before the previous key
+   * @param string $after the new key
+   * @return bool true, if the file exists in the storage
+   */
+  public function renameFile($before, $after, $acl)
+  {
+    $s3 = AwsFactoryV3::getS3Service();
+    // Make a copy of the object and set ut public
+    $s3->copy(CDN_BUCKET_NAME, $before, CDN_BUCKET_NAME, $after);
+    $s3->putObjectAcl(array(
+      'Bucket' => CDN_BUCKET_NAME,
+      'Key' => $after,
+      'ACL' => $acl
+    ));
+    $s3->deleteObject(array(
+      'Bucket' => CDN_BUCKET_NAME,
+      'Key' => $before
     ));
   }
 

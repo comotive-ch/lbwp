@@ -32,6 +32,10 @@ class Textarea extends Base
       'rows' => array(
         'name' => 'Anzahl Zeilen',
         'type' => 'textfield'
+      ),
+      'maxlength' => array(
+        'name' => 'Maximale Anzahl Zeichen (optional)',
+        'type' => 'textfield'
       )
     ));
   }

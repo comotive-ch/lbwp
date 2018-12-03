@@ -15,7 +15,6 @@ use LBWP\Util\File;
 use LBWP\Util\Multilang;
 use LBWP\Util\Strings;
 use LBWP\Util\WordPress;
-use Nzz\AdvertPaas\Theme\Component\LoginManager;
 
 /**
  * This module holds serveral backend/frontend CMS features
@@ -40,6 +39,11 @@ class CmsFeatures extends \LBWP\Module\Base
     'hideeditbox-onepager-item' => true, // yes, lbwp missing
     'hideeditbox-lbwp-mailing-list' => true
   );
+  /**
+   * @var int the basic jpeg quality
+   */
+  const JPEG_QUALITY = 82;
+
   /**
    * call parent constructor and initialize the module
    */
@@ -185,14 +189,23 @@ class CmsFeatures extends \LBWP\Module\Base
     remove_filter('the_content', 'capital_P_dangit', 11);
     remove_filter('comment_text', 'capital_P_dangit', 31);
     // Globally used widgets
-    add_action('widgets_init', array($this, 'registerGlobalWidgets'));
     add_filter('wp_mail_from', array($this, 'replaceEmailFrom'), 50);
-    add_action('phpmailer_init', array($this, 'addReplyToEmail'), 50);
-    //add_action('shutdown', array($this, 'trackUncachedResponseTime'));
+    add_filter('jpeg_quality', array($this, 'setCompressionRate'));
     add_filter('antispam_bee_patterns', array($this, 'addCustomSpamPatterns'));
+    add_action('widgets_init', array($this, 'registerGlobalWidgets'));
+    add_action('phpmailer_init', array($this, 'addReplyToEmail'), 50);
     add_action('cron_job_test_cron', array($this, 'testAndLogCron'));
     // Initialize secure assets
     SecureAssets::init();
+  }
+
+  /**
+   * @param int $value the initial value
+   * @return int the new fixed value
+   */
+  public function setCompressionRate($value)
+  {
+    return self::JPEG_QUALITY;
   }
 
   /**
@@ -712,14 +725,5 @@ class CmsFeatures extends \LBWP\Module\Base
   public function addRssNamespace()
   {
     echo 'xmlns:media="http://search.yahoo.com/mrss/" ';
-  }
-
-  /**
-   * Tracks uncached response times
-   */
-  public function trackUncachedResponseTime()
-  {
-    global $lbwpTime;
-    //\StatsD::gauge('lbwp.gauges.requests.uncached', (microtime(true) - $lbwpTime) * 1000);
   }
 }

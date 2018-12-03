@@ -25,7 +25,11 @@ register_activation_hook(__FILE__, array('\\LBWP\\Core', 'installPlugin'));
 register_deactivation_hook(__FILE__, array('\\LBWP\\Core','uninstallPlugin'));
 
 // Always start a session when not in cache mode (for now)
-session_start();
+try {
+  session_start();
+} catch (Exception $e) {
+  // This actually works as a failover as it catches possible redis exceptions if redis is down
+}
 
 // Include some global helper function
 require_once __DIR__ . '/views/functions.php';

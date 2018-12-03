@@ -57,6 +57,33 @@ class AwsFactoryV3 {
     return new S3Client($config);
   }
 
+
+
+  /**
+   * returns an instance of the amazon s3 service object
+   * @return S3Client instance of the amazon s3 service object
+   */
+  public static function getS3CustomEndpointService($access, $secret, $endpoint, $region)
+  {
+    require_once self::getSdkPath() . 'aws-autoloader.php';
+
+    $config = array(
+      'credentials' => array(
+        'key' => $access,
+        'secret' => $secret,
+      ),
+      'signature_version' => 'v4',
+      'version' => '2006-03-01',
+      'region' => $region
+    );
+
+    // Set custom endpoint, if given when exoscale is active
+    $config['endpoint'] = 'https://' . $endpoint;
+    $config['use_path_style_endpoint'] = true;
+
+    return new S3Client($config);
+  }
+
   /**
    *
    * @return string Base path to the amazon aws sdk

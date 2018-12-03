@@ -5,6 +5,7 @@ namespace LBWP\Module\Backend;
 use LBWP\Core as LbwpCore;
 use LBWP\Util\ArrayManipulation;
 use LBWP\Util\Strings;
+use LBWP\Util\File;
 use LBWP\Util\WordPress;
 
 /**
@@ -33,6 +34,7 @@ class MigrationTools extends \LBWP\Module\Base
   {
     if (LbwpCore::isSuperlogin()) {
       add_action('admin_menu', array($this, 'registerMenus'));
+      add_action('wp_ajax_migrationToolsAttachmentFixing', array($this, 'processAttachmentFixing'));
     }
   }
 
@@ -104,8 +106,44 @@ class MigrationTools extends \LBWP\Module\Base
         ' . $this->displayTestForm() . '<br />
         ' . $this->displayExecutionForm() . '<br />
         ' . $this->displaySSLForm() . '<br />
+        ' . $this->displayAttachmentFixForm() . '<br />
         ' . $this->displayMetaAddForm() . '<br />
 		  </div>
+    ';
+  }
+
+  protected function displayAttachmentFixForm()
+  {
+    return '
+      <form method="post" action="?page=' . $_GET['page'] . '&runSslInfo">
+        <h3>Attachment Fixing</h3>
+        <p>
+          Startet einen Prozess um alle Attachments mit inkompatiblen Dateinamen zu finden.
+          Es werden alle umbenannten Attachments in der Datenbank auf dem Storage und in allen Feldern ersetzt.
+        </p>
+        <p>
+          <input type="button" name="startAttachmentFixing" value="Prozess starten" class="button-primary" />
+        </p>
+        <ul class="attachment-fixing-results"></ul>
+        <script type="text/javascript">
+          var attachmentFixPage = 1;
+          var attachmentsFixed = 0;
+          jQuery("input[name=startAttachmentFixing]").on("click", function() {
+            attachmentFixRun(attachmentFixPage);
+          });
+          
+          function attachmentFixRun(nr) {
+            jQuery.post(ajaxurl + "?action=migrationToolsAttachmentFixing", { page : nr }, function(response) {
+              var container = jQuery(".attachment-fixing-results");
+              jQuery.each(response.files, function(key, info) {
+                container.append("<li>" + (++attachmentsFixed) + ": " + info + "</li>");
+              });
+              // Call the next run now
+              attachmentFixRun(++attachmentFixPage);
+            });
+          }
+        </script>
+      </form>
     ';
   }
 
@@ -193,7 +231,7 @@ class MigrationTools extends \LBWP\Module\Base
   {
     if (isset($_GET['runMigration'])) {
       // Migrate and display the migration results
-      return $this->migrateData();
+      return $this->migrateData($_POST['searchValue'], $_POST['replaceValue']);
     } else {
       return $this->displayForm(
         'Daten können Migriert werden, jedoch nur Tabellen ohne serialisierte Werte. Bitte führe einen Test aus, bevor du den Migrieren Knopf drückst und erstelle ein Backup.',
@@ -292,6 +330,136 @@ class MigrationTools extends \LBWP\Module\Base
         <p><input type="submit" name="cmd' . $command . '" value="' . $buttonText . '" class="button-primary" /></p>
       </form>
     ';
+  }
+
+  /**
+   * Process fixing of attachments
+   */
+  public function processAttachmentFixing()
+  {
+    $result = array();
+    $page = intval($_REQUEST['page']);
+    $storage = LbwpCore::getModule('S3Upload');
+    // Set table configs to make data migrations but only do posts
+    $this->tables = array(
+      $this->wpdb->posts => array(
+        'id' => 'ID',
+        'fields' => array(
+          'post_content' => 'text'
+        )
+      )
+    );
+    // Get attachments to be transformed
+    $attachments = get_posts(array(
+      'post_type' => 'attachment',
+      'posts_per_page' => 100,
+      'paged' => $page
+    ));
+
+    foreach ($attachments as $attachment) {
+      $file = $fixed = File::getFileOnly($attachment->guid);
+      $extension = File::getExtension($file);
+      if (strlen($file) > 0 && (strlen($extension) == 4 || strlen($extension) == 5)) {
+        Strings::alphaNumLowFiles($fixed);
+      }
+      // Only if the fixed file is different we need to make changes
+      if ($file != $fixed) {
+        // Get the list of files to be renamed (before/after array
+        $list = $this->getFileList($attachment->ID);
+        // If the list has no entries, escape this loop
+        if (count($list) == 0) continue;
+        // If the first list entry is identical, esacpe as well
+        if ($list[0]['before'] == $list[0]['after']) continue;
+        // Rename on storage, if possible
+        $this->attFixRenameOnStorage($list, $storage);
+        // Rename local attachment data when given
+        $this->attFixRenameInDb($attachment->ID);
+
+        // Make sure to search replace the full db for the path
+        // Then, print all files into the output
+        foreach ($list as $file) {
+          $this->migrateData($file['before'], $file['after']);
+          $result[] = $file['before'] . ' > ' . $file['after'];
+        }
+      }
+    }
+
+    // Even if no result, let the server breathe
+    sleep(1);
+
+    WordPress::sendJsonResponse(array(
+      'files' => $result
+    ));
+  }
+
+  /**
+   * @param array $files before/after files to rename on storage
+   * @param S3Upload $storage
+   */
+  protected function attFixRenameOnStorage($files, $storage)
+  {
+    foreach ($files as $file) {
+      $before = ASSET_KEY . '/files/' . $file['before'];
+      $after = ASSET_KEY . '/files/' . $file['after'];
+      // Test if the before key exists
+      if ($storage->fileExists($before)) {
+        $storage->renameFile($before, $after, S3Upload::ACL_PUBLIC);
+      }
+    }
+  }
+
+  /**
+   * @param array $files before/after files to rename in local db
+   */
+  protected function attFixRenameInDb($id)
+  {
+    // Read meta informations and replace them with fix function
+    $data = wp_get_attachment_metadata($id);
+
+    if (is_array($data) && isset($data['file'])) {
+      Strings::alphaNumLowFiles($data['file']);
+      foreach ($data['sizes'] as $key => $size) {
+        Strings::alphaNumLowFiles($data['sizes'][$key]['file']);
+      }
+      wp_update_attachment_metadata($id, $data);
+    } else {
+      // Normal file, just get the file name and key
+      $file = get_post_meta($id, '_wp_attached_file', true);
+      Strings::alphaNumLowFiles($file);
+      update_post_meta($id, '_wp_attached_file', $file);
+    }
+  }
+
+  /**
+   * @param int $id the attachment id
+   * @return array the result
+   */
+  protected function getFileList($id)
+  {
+    $files = $result = array();
+    $data = wp_get_attachment_metadata($id);
+    if (is_array($data) && isset($data['file'])) {
+      $files[] = $data['file'];
+      $folder = substr($data['file'], 0, strrpos($data['file'], '/') + 1);
+      foreach ($data['sizes'] as $size) {
+        $files[] = $folder . $size['file'];
+      }
+    } else {
+      // Normal file, just get the file name and key
+      $files[] = get_post_meta($id, '_wp_attached_file', true);
+    }
+
+    // Make a before and after array
+    foreach ($files as $file) {
+      $after = $file;
+      Strings::alphaNumLowFiles($after);
+      $result[] = array(
+        'before' => $file,
+        'after' => $after
+      );
+    }
+
+    return $result;
   }
 
   /**
@@ -424,11 +592,8 @@ class MigrationTools extends \LBWP\Module\Base
   /**
    * Migrate the data (this only supports text fields as of now)
    */
-  protected function migrateData()
+  protected function migrateData($search, $replace)
   {
-    $search = $_POST['searchValue'];
-    $replace = $_POST['replaceValue'];
-
     $html = '<p><strong>Ersetze "' . $search . '" mit "' . $replace . '".</strong></p>';
 
     // Run test trough every table
