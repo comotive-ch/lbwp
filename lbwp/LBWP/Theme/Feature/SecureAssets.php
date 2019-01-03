@@ -66,8 +66,10 @@ class SecureAssets
       add_filter('the_content', array($this, 'rewriteProxyAttachmentUrl'));
     }
 
-    // If the attachment url is requested, rewrite to proxy path
-    add_filter('wp_get_attachment_url', array($this, 'rewriteAttachmentUrl'), 20, 2);
+    // If the attachment url is requested, rewrite to proxy path, but only if not in save mode
+    if (!isset($_REQUEST['action']) || $_REQUEST['action'] != 'save-attachment') {
+      add_filter('wp_get_attachment_url', array($this, 'rewriteAttachmentUrl'), 20, 2);
+    }
   }
 
   /**

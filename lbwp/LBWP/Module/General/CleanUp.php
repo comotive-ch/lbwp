@@ -21,6 +21,19 @@ use LBWP\Module\Forms\Component\Posttype as FormTypes;
 class CleanUp extends \LBWP\Module\Base
 {
   /**
+   * @var array overrides for the yoast wpseo_titles option
+   */
+  protected $noYoastTypes = array(
+    'lbwp-form' => true,
+    'lbwp-table' => true,
+    'lbwp-list' => true,
+    'lbwp-listitem' => true,
+    'lbwp-snippet' => true,
+    'lbwp-user-group' => true,
+    'onepager-item' => true, // yes, lbwp missing
+    'lbwp-mailing-list' => true
+  );
+  /**
    * call parent constructor and initialize the module
    */
   public function __construct()
@@ -175,7 +188,7 @@ class CleanUp extends \LBWP\Module\Base
       return $error;
     }
     return sprintf(
-      __('Deine Anmeldung ist fehlgeschlagen. Gib deinen Benutzernamen und dein Passwort erneut ein. <a href="%s">Hast du das Passwort vergessen?</a>'),
+      __('Ihre Anmeldung ist fehlgeschlagen. Geben Sie Ihren Benutzernamen und das Passwort erneut ein. <a href="%s">Passwort vergessen?</a>'),
       get_bloginfo('url') . '/wp-login.php?action=lostpassword'
     );
   }
@@ -186,12 +199,8 @@ class CleanUp extends \LBWP\Module\Base
    */
   public function removeMetaboxesFromTypes($type)
   {
-    switch ($type) {
-      case ListingTypes::TYPE_ITEM:
-      case ListingTypes::TYPE_LIST:
-      case FormTypes::FORM_SLUG:
-      case Snippets::TYPE_SNIPPET:
-        remove_meta_box('NS_SNAP_AddPostMetaTags', $type, 'advanced');
+    if (in_array($type, $this->noYoastTypes)) {
+      remove_meta_box('NS_SNAP_AddPostMetaTags', $type, 'advanced');
     }
   }
 
@@ -207,19 +216,15 @@ class CleanUp extends \LBWP\Module\Base
       wp_dequeue_style('wp-jquery-ui-dialog');
     }
 
-    switch ($current_screen->post_type) {
-      case ListingTypes::TYPE_ITEM:
-      case ListingTypes::TYPE_LIST:
-      case FormTypes::FORM_SLUG:
-      case Snippets::TYPE_SNIPPET:
-        wp_dequeue_style('wp-seo-metabox');
-        wp_dequeue_style('wp-seo-scoring');
-        wp_dequeue_style('wp-seo-snippet');
-        wp_dequeue_style('yoast-seo');
-        // Remove all friggin yoast js
-        wp_dequeue_script('yoast-seo');
-        wp_dequeue_script('wp-seo-metabox');
-        wp_dequeue_script('wpseo-admin-media');
+    if (in_array($current_screen->post_type, $this->noYoastTypes)) {
+      wp_dequeue_style('wp-seo-metabox');
+      wp_dequeue_style('wp-seo-scoring');
+      wp_dequeue_style('wp-seo-snippet');
+      wp_dequeue_style('yoast-seo');
+      // Remove all friggin yoast js
+      wp_dequeue_script('yoast-seo');
+      wp_dequeue_script('wp-seo-metabox');
+      wp_dequeue_script('wpseo-admin-media');
     }
   }
 

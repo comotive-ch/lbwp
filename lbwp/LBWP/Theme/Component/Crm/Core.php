@@ -85,6 +85,10 @@ class Core extends Component
       </tbody>
     </table>
   ';
+  /**
+   * @var array fields that can't yet be exported properly
+   */
+  protected $unexportableFields = array('table');
 
   /**
    * Initialize the component
@@ -490,7 +494,8 @@ class Core extends Component
     if (isset($this->configuration['syncCoreFields'])) {
       // Map the post keys into the corresponding crm fields
       foreach ($this->configuration['syncCoreFields'] as $key => $field) {
-        update_user_meta($userId, $field, $_POST[$key]);
+        $value = is_callable($field) ? call_user_func($field) : $_POST[$field];
+        update_user_meta($userId, $key, $value);
       }
     }
   }
@@ -550,6 +555,12 @@ class Core extends Component
     // Create e new changes array for the user, if not given
     if (!isset($changes[$this->editedUserId])) {
       $changes[$this->editedUserId] = array();
+    }
+
+    // Handle tables cheaply as of now
+    if (is_array($before) || is_array($after)) {
+      $before = '';
+      $after = 'Änderungen in Tabellen können<br>im Report nicht dargestellt werden';
     }
 
     // Add the change to the array
@@ -999,6 +1010,8 @@ class Core extends Component
       delete_user_meta($userId, 'member-disabled');
     }
 
+    // Sync core fields
+    $this->syncCoreToCustomFields($userId);
     // Make sure to flush segment caching
     $this->flushContactCache();
   }
@@ -1532,6 +1545,9 @@ class Core extends Component
       <input type="submit" class="button-primary" name="contact-export" value="Kontakte-Export starten" />
     ';
 
+    // Let developers add their own export scripts
+    $html = apply_filters('lbwp_crm_export_view_html', $html);
+
     // Print the wrapper and html
     echo '
       <div class="wrap">
@@ -1569,6 +1585,19 @@ class Core extends Component
   }
 
   /**
+   * @param string $role a specific role
+   * @return array the categories assigned to that role
+   */
+  protected function getCategoriesByRole($role)
+  {
+    $categories = array();
+
+    var_dump($categories);
+    exit;
+    return $categories;
+  }
+
+  /**
    * @param string $role the role to export field data from
    */
   protected function downloadFieldExport($role)
@@ -1584,7 +1613,8 @@ class Core extends Component
     // Get all members and all fields to prepare for the export
     $members = $this->getMembersByRole($role, 'display_name', 'ASC', $inactives);
     $inactives = $this->getInactiveUserIds();
-    $fields = $this->getCustomFields(false);
+    $categories = is_array($this->configuration['categoryByRole']) ? $this->configuration['categoryByRole'][$role] : false;
+    $fields = $this->getCustomFields($categories);
 
     // If we only show inactives, sort out all active members
     if ($_POST['member-status'] == 'inactive') {
@@ -1600,6 +1630,9 @@ class Core extends Component
 
     // Create a heading column
     foreach ($fields as $field) {
+      if (in_array($field['type'], $this->unexportableFields)) {
+        continue;
+      }
       if ($history && $field['history-active']) {
         foreach (array_reverse($field['versions']) as $version) {
           $data['columns'][] = $field['title'] . ' ' . $version;
@@ -1614,6 +1647,9 @@ class Core extends Component
       $row = array();
       $row[] = in_array($member->ID, $inactives) ? 'Inaktiv' : 'Aktiv';
       foreach ($fields as $field) {
+        if (in_array($field['type'], $this->unexportableFields)) {
+          continue;
+        }
         if ($history && $field['history-active']) {
           foreach (array_reverse($field['versions']) as $id => $version) {
             // If the version is not the newest, add the suffix to our key
@@ -1708,6 +1744,121 @@ class Core extends Component
 
     $file = 'kontakt-export-' . date('Y-m-d') . '.csv';
     Csv::downloadFile($data, $file);
+  }
+
+  /**
+   * @param $html
+   * @param $filename
+   */
+  protected function downloadPdfExport($html, $filename)
+  {
+    // Include the doc raptor autoloader to gain access to the classes
+    require_once ABSPATH . '/wp-content/plugins/lbwp/resources/libraries/docraptor/1.0.0/autoload.php';
+
+    // Get the PDF stream from doc raptor
+    $filename = Strings::forceSlugString($filename) . '.pdf';
+    $config = \DocRaptor\Configuration::getDefaultConfiguration();
+    $config->setUsername('H3CM2Yff0XwryukWJdB');
+    $docraptor = new \DocRaptor\DocApi();
+    $document = new \DocRaptor\Doc();
+
+    // Configure the document
+    $document->setTest(defined('LOCAL_DEVELOPMENT'));
+    $document->setJavascript(true);
+    $document->setName($filename);
+    $document->setIgnoreConsoleMessages(true);
+    $document->setDocumentType('pdf');
+    $document->setStrict('none');
+
+    // Set the document content by locally grabbing the full url
+    $document->setDocumentContent($html);
+    $stream = $docraptor->createDoc($document);
+
+    header('Content-Description: File Transfer');
+    header('Content-Disposition: attachment; filename=' . $filename);
+    header('Content-Type: application/octet-stream; charset=' . get_option('blog_charset'), true);
+    $outstream = fopen("php://output", 'w');
+    fputs($outstream, $stream);
+    fclose($outstream);
+    exit;
+  }
+
+  /**
+   * Downloads a custom configured export of CSV data
+   * @param string $file the filename for the export
+   * @param array $config the export configuration
+   */
+  public function downloadCustomExport($file, $config)
+  {
+    $data = $this->getCustomExportData($config);
+    Csv::downloadFile($data, $file);
+  }
+
+  /**
+   * @param array $config the export configuration
+   * @return array custom export data as of config
+   */
+  public function getCustomExportData($config)
+  {
+    $data = $columns = array();
+    // Get all members from the configured role
+    $members = $this->getMembersByRole($config['role']);
+    // Make the first columns line, contact fields are added later
+    foreach ($config['fields'] as $key => $name)
+      $columns[] = $name;
+    foreach ($config['categories'] as $key => $name)
+      $columns[] = $name;
+    foreach ($config['contactfields'] as $key => $name)
+      $columns[] = $name;
+    foreach ($config['contacts'] as $key => $name)
+      $columns[] = $name;
+    // Add the columns to data
+    $data[] = $columns;
+
+    // Gather data for each member
+    foreach ($members as $member) {
+      // Get the set of fields
+      $base = array();
+      foreach ($config['fields'] as $key => $name) {
+        $base[] = get_user_meta($member->ID, $key, true);
+      }
+      // Match every category of the member
+      $categories = get_user_meta($member->ID, 'profile-categories', true);
+      foreach ($config['categories'] as $key => $name) {
+        $base[] = in_array($key, $categories) ? '1' : '';
+      }
+
+      // Now get every desired contact and build a row out of it
+      $categories = array_keys($config['contacts']);
+      foreach ($config['contacts'] as $categoryId => $name) {
+        $contacts = ArrayManipulation::forceArray(get_user_meta($member->ID, 'crm-contacts-' . $categoryId, true));
+        foreach ($contacts as $contact) {
+          $person = array();
+          foreach ($config['contactfields'] as $key => $name) {
+            if (Strings::startsWith($key, 'salutation')) {
+              list($key, $type) = explode(':', $key);
+              switch ($contact[$key]) {
+                case 'male':
+                  $person[] = ($type == 'short') ? 'Herr' : 'Sehr geehrter Herr'; break;
+                case 'female':
+                  $person[] = ($type == 'short') ? 'Frau' : 'Sehr geehrte Frau'; break;
+                default:
+                  $person[] = 'Sehr geehrte Damen und Herren';
+              }
+            } else {
+              $person[] = strlen($contact[$key]) > 0 ? $contact[$key] : '';
+            }
+          }
+          foreach ($categories as $id) {
+            $person[] = ($id == $categoryId) ? '1' : '';
+          }
+          // Add a row to our data array
+          $data[] = array_merge($base, $person);
+        }
+      }
+    }
+
+    return $data;
   }
 
   /**
@@ -1854,7 +2005,7 @@ class Core extends Component
       'items' => $this->configuration['tabs']
     ));
     $helper->addTextarea('description', 'settings', 'Beschreibung', 70, array(
-      'description' => 'Eine optionale Feldbeschreibung (wie dieser hier).'
+      'description' => 'Eine optionale Feldbeschreibung (wie diese hier).'
     ));
     $helper->addInputText('sort', 'settings', 'Sortiernummer', array(
       'description' => 'Eine optionale Sortiernummer, damit die Reihenfolge der Kontaktarten in jeder Kombination stimmt.'

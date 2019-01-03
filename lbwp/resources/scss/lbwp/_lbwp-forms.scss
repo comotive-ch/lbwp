@@ -301,24 +301,81 @@ $lbwpFormInputFields: "select, input[type=date], input[type=text], input[type=em
 
 }
 
-@mixin lbwpFormUploadFieldState() {
+@mixin lbwpFormUploadFieldStateSpinner($spinnerSize: 20px, $spinnerColor: #333) {
+
 	.upload-state-container {
-		margin-top: 10px;
-  	line-height: 1;
 
-		.progress-text {
-			display: inline-block;
+		@-webkit-keyframes sk-scaleout {
+			0% {
+				-webkit-transform: scale(0)
+			}
+			100% {
+				-webkit-transform: scale(1.0);
+				opacity: 0;
+			}
 		}
 
-		.progress {
-			//margin-top: 5px;
+		@keyframes sk-scaleout {
+			0% {
+				-webkit-transform: scale(0);
+				transform: scale(0);
+			}
+			100% {
+				-webkit-transform: scale(1.0);
+				transform: scale(1.0);
+				opacity: 0;
+			}
 		}
 
-		.progress-bar {
+		&.in-progress {
+			.filename {
+				position: relative;
+				padding-right: $spinnerSize + 10px;
+				&:after {
+					content: '';
+					position: absolute;
+					right: 0;
+					width: $spinnerSize;
+					height: $spinnerSize;
+					background-color: $spinnerColor;
+					border-radius: 100%;
+					-webkit-animation: sk-scaleout 1.0s infinite ease-in-out;
+					animation: sk-scaleout 1.0s infinite ease-in-out;
 
+					@content;
+				}
+			}
+		}
+
+	}
+}
+
+@mixin lbwpFormUploadFieldState($marginTop: 10px, $spinner:false) {
+
+	.upload-state-container {
+
+		.filename {
+			span:not(:empty) {
+				margin-top: $marginTop;
+				display: inline-block;
+			}
+		}
+
+		&.in-progress {
+			.progress-bar {
+				height: 2px;
+				background: #333;
+			}
+		}
+
+		@if ($spinner) {
+			@include lbwpFormUploadFieldStateSpinner() {
+				top: $marginTop;
+			}
 		}
 
 		@content;
+
 	}
 }
 

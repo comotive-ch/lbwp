@@ -185,7 +185,7 @@ class DataTable extends Base
     }
 
     // If the maximum is not reached, see if we need to prefill the form from an existing row
-    if (isset($_GET['tsid']) && strlen($_GET['tsid']) > 8) {
+    if (isset($_GET['tsid']) && (strlen($_GET['tsid']) > 8 || $_GET['tsid'] == 'url')) {
       $this->prefillPostVars(Strings::forceSlugString($_GET['tsid']));
     }
 
@@ -353,14 +353,27 @@ class DataTable extends Base
     $formHandler = $this->core->getFormHandler();
     $formId = $formHandler->getCurrentForm()->ID;
     $backend = FormCore::getInstance()->getDataTableBackend();
-    $table = $backend->getTable($formId);
-    $row = $backend->getRowById($table['data'], $tsid);
+    // If data comes from the url, load it
+    if ($tsid == 'url') {
+      $row = json_decode(base64_decode($_GET['populate']), true);
+      foreach ($row as $key => $data) {
+        $row[$key] = strip_tags($data);
+      }
+    } else {
+      // If not, it needs to come from our table
+      $table = $backend->getTable($formId);
+      $row = $backend->getRowById($table['data'], $tsid);
+    }
 
     // If there is data, try prefilling the form fields
     if (is_array($row) && count($row) > 0) {
       $script = '';
       foreach ($formHandler->getCurrentItems() as $item) {
         $cellKey = $this->getTableCellKey($item->get('feldname'));
+        // If from url, use the id instead of the name
+        if ($tsid == 'url') {
+          $cellKey = Strings::forceSlugString($item->get('id'));
+        }
         $class = strtolower(get_class($item));
         $class = substr($class, strripos($class, '\\') + 1);
         // Radio / Checkbox / Dropdown get a special treatment

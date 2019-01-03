@@ -2,6 +2,7 @@
 
 namespace LBWP\Helper;
 
+use LBWP\Module\Frontend\HTMLCache;
 use LBWP\Util\Strings;
 use LBWP\Util\Multilang;
 use LBWP\Core as LbwpCore;
@@ -125,6 +126,34 @@ class Rewrite
       $fragment->appendXML($doc->saveXML($tag));
       return $tag;
     });
+  }
+
+  /**
+   * @param string $uri the uri that should trigger this redirect
+   * @param string $default the default to choose if language isn't readable
+   * @param array $config lang=>url config for redirection
+   */
+  public static function multilangRedirect($uri, $default, $config)
+  {
+    $compare = Strings::forceSlugString($_SERVER['REQUEST_URI']);
+    // Only run anything, if the comparison matches the given uri
+    if (strcasecmp($compare, $uri) == 0) {
+      $choosen = $default;
+      // First, make sure not to cache this request
+      HTMLCache::avoidCache();
+      $acceptLanguages = explode(';', strtolower($_SERVER['HTTP_ACCEPT_LANGUAGE']))[0];
+      // Search for a matching language in the accept string
+      foreach ($config as $language => $url) {
+        if (Strings::contains($acceptLanguages, $language)) {
+          var_dump($acceptLanguages, $language);
+          $choosen = $language; break;
+        }
+      }
+
+      // Redirect to the chosen language url
+      header('Location: ' . $config[$choosen], null, 301);
+      exit;
+    }
   }
 
   /**

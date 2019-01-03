@@ -30,6 +30,9 @@ $lbwpFormValidationColorError: red;
 		float: right;
 	}
 
+	// Upload field
+	@include lbwpFormUploadFieldState();
+
 }
 
 // input fields

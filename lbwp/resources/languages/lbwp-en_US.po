@@ -2,7 +2,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: LBWP\n"
 "POT-Creation-Date: 2015-08-03 11:05+0100\n"
-"PO-Revision-Date: 2018-05-22 10:33+0200\n"
+"PO-Revision-Date: 2018-12-12 11:06+0100\n"
 "Last-Translator: \n"
 "Language-Team: comotive <info@comotive.ch>\n"
 "Language: en_US\n"
@@ -212,11 +212,11 @@ msgstr "Please provide a value for \"%s\""
 
 #: /var/www/lbwp/wp-content/plugins/lbwp/LBWP/Module/Forms/Item/Calculation.php:37
 msgid "Tragen Sie das Ergebnis folgender Rechnung ein:"
-msgstr ""
+msgstr "Please solve the following calculation:"
 
 #: /var/www/lbwp/wp-content/plugins/lbwp/LBWP/Module/Forms/Item/Calculation.php:45
 msgid "Spamschutz: "
-msgstr ""
+msgstr "Spam protection"
 
 #: /var/www/lbwp/wp-content/plugins/lbwp/LBWP/Module/Forms/Action/SendMail.php:79
 msgid "Nicht ausgefüllt"

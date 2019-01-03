@@ -125,6 +125,7 @@ class DataDisplay
 
     // Load event infos, if needed
     if ($eventId > 0) {
+      $url = get_permalink($eventId);
       $info = EventType::getSubscribeInfo($eventId);
     }
 
@@ -165,12 +166,18 @@ class DataDisplay
     foreach ($data as $id => $row) {
       $class = $this->getAltClass();
       $html .= '<tr' . $class . '>';
+      // Additional options, if it is an event
+      $additional = '';
+      if ($eventId > 0) {
+        $additional = '<a href="' . Strings::attachParam('tsid', $row['tsid'], $url) . '" target="_blank" class="dashicons dashicons-admin-links"></a>';
+      }
       // Add the edit/delete features
       $html .= '
         <td class="options">
           <a class="dashicons dashicons-edit edit-row"></a>
           <a class="dashicons dashicons-yes save-row" data-index="' . $id . '" data-formid="' . $formId . '"></a>
           <a class="dashicons dashicons-no delete-row" data-index="' . $id . '" data-formid="' . $formId . '"></a>
+          ' . $additional . '
         </td>
       ';
       // Add the actual data

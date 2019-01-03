@@ -3,6 +3,7 @@
 namespace LBWP\Theme\Feature;
 
 use LBWP\Module\Listings\Core as ListingCore;
+use LBWP\Util\Multilang;
 
 /**
  * Allows a developer to add predefined listing items to their theme
@@ -99,13 +100,25 @@ class ListingTemplate
 
       // Add the fields
       add_action('admin_init', function() use($boxId) {
+        $isMultilang = Multilang::isActive();
+        $languages = Multilang::getLanguagesKeyValue();
         $helper = ListingCore::getInstance()->getHelper();
         $helper->addMetabox($boxId, __(sprintf('Einstellungen "%s"', 'Person'), 'lbwp'));
         $helper->addInputText('firstname', $boxId, __('Vorname', 'lbwp'));
         $helper->addInputText('lastname', $boxId, __('Nachname', 'lbwp'));
         $helper->addInputText('salutation', $boxId, __('Anrede', 'lbwp'));
         $helper->addInputText('role', $boxId, __('Funktion/Rolle', 'lbwp'));
+        if ($isMultilang) {
+          foreach ($languages as $code => $name) {
+            $helper->addInputText('role-' . $code, $boxId, __('Funktion/Rolle (Übersetzung ' . $name . ')', 'lbwp'));
+          }
+        }
         $helper->addInputText('role-2', $boxId, __('Funktion/Rolle 2', 'lbwp'));
+        if ($isMultilang) {
+          foreach ($languages as $code => $name) {
+            $helper->addInputText('role-2-' . $code, $boxId, __('Funktion/Rolle 2 (Übersetzung ' . $name . ')', 'lbwp'));
+          }
+        }
         $helper->addInputText('email', $boxId, __('E-Mail-Adresse', 'lbwp'));
         $helper->addInputText('phone', $boxId, __('Telefon', 'lbwp'));
         $helper->addEditor('description', $boxId, __('Beschreibung', 'lbwp'), 10);

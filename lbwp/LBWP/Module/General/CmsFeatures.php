@@ -195,8 +195,12 @@ class CmsFeatures extends \LBWP\Module\Base
     add_action('widgets_init', array($this, 'registerGlobalWidgets'));
     add_action('phpmailer_init', array($this, 'addReplyToEmail'), 50);
     add_action('cron_job_test_cron', array($this, 'testAndLogCron'));
+    // Disable block editor, until overridden with a higher filter
+    add_filter('use_block_editor_for_post', '__return_false', 1000);
     // Initialize secure assets
-    SecureAssets::init();
+    if (CDN_TYPE != CDN_TYPE_NONE) {
+      SecureAssets::init();
+    }
   }
 
   /**
@@ -499,6 +503,15 @@ class CmsFeatures extends \LBWP\Module\Base
     }
     if (!isset($types['otf'])) {
       $types['otf'] = 'application/vnd.ms-opentype';
+    }
+
+    // If a csv is uploaded and it has an excel mime, allow it, but change to text/plain so WP won't banter
+    if (isset($_FILES['async-upload'])) {
+      $allow = 'application/vnd.ms-excel';
+      if ($_FILES['async-upload']['type'] == $allow && File::getExtension($_FILES['async-upload']['name']) == '.csv') {
+        $_FILES['async-upload']['type'] = 'text/plain';
+        $types['csv'] = 'text/plain';
+      }
     }
 
     return $types;
