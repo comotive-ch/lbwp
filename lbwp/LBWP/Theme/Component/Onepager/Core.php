@@ -138,6 +138,10 @@ abstract class Core extends BaseComponent
    * The shortcode name
    */
   const SHORTCODE_NAME = 'lbwp:onepager';
+  /**
+   * The shortcode name for onepager menus
+   */
+  const SHORTCODE_OPMENU = 'lbwp:onepagermenu';
 
   /**
    * Internal setup, doesn't need to be overridden
@@ -145,6 +149,7 @@ abstract class Core extends BaseComponent
   public function setup()
   {
     add_shortcode(self::SHORTCODE_NAME, array($this, 'getPageHtml'));
+    add_shortcode(self::SHORTCODE_OPMENU, array($this, 'getMenuHtml'));
     // Register the post type and frontend actions
     add_action('init', array($this, 'addPosttype'));
     add_filter('body_class', array($this, 'addBodyClass'));
@@ -266,6 +271,7 @@ abstract class Core extends BaseComponent
           $args = array(
             'sortable' => true,
             'multiple' => true,
+            'auto_sort_save' => true,
             'containerClasses' => 'chosen-dropdown-item one-pager-content',
             'itemHtmlCallback' => $this->getNewItemCallback(),
             'metaDropdown' => array(

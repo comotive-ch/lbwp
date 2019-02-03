@@ -284,12 +284,14 @@ class Implementation extends Base implements Definition
           $personalizedHtml = $html;
           foreach ($recipient as $field => $value) {
             $personalizedHtml = str_replace('{' . $field . '}', $value, $personalizedHtml);
+            $personalizedHtml = str_replace(urlencode('{' . $field . '}'), $value, $personalizedHtml);
           }
 
           // Use variables on subject too
           $personalizedSubject = $subject;
           foreach ($recipient as $field => $value) {
             $personalizedSubject = str_replace('{' . $field . '}', $value, $personalizedSubject);
+            $personalizedSubject = str_replace(urlencode('{' . $field . '}'), $value, $personalizedSubject);
           }
 
           // Replace some custom code fields

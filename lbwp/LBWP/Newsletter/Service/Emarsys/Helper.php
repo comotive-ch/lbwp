@@ -26,7 +26,7 @@ class Helper
   /**
    * The API url default used to predefine it in settings
    */
-  const DEFAULT_API_URL = 'https://www.emarsys.net/api/v2/';
+  const DEFAULT_API_URL = 'https://api.emarsys.net/api/v2/';
   /**
    * @var int the reply code if a contact exists
    */
@@ -83,6 +83,10 @@ class Helper
         curl_setopt($ch, CURLOPT_CUSTOMREQUEST, 'PUT');
         curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($data));
         break;
+      case 'DELETE':
+        curl_setopt($ch, CURLOPT_CUSTOMREQUEST, 'DELETE');
+        curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($data));
+        break;
     }
 
     // Now set the URL
@@ -92,6 +96,7 @@ class Helper
 
     // Call the API and hope the best
     $response = curl_exec($ch);
+
     // Also, we need to (eventually) convert the string
     if (mb_detect_encoding($response) == 'ISO-8859-1') {
       $response = mb_convert_encoding($response, 'UTF-8', 'ISO-8859-1');
@@ -111,8 +116,9 @@ class Helper
    */
   protected function getAuthHeader()
   {
-    $nonce = uniqid('blw') . time();
-    $timestamp = gmdate("c");
+    $timestamp = current_time('timestamp') - (get_option('gmt_offset') * 3600);
+    $nonce = md5($timestamp . 'EmaRS3cr37');
+    $timestamp = date('Y-m-d\TH:i:s\Z', $timestamp);
     $passwordDigest = base64_encode(sha1($nonce . $timestamp . $this->secureKey, false));
 
     // Generate the header as of documentation
@@ -121,8 +127,8 @@ class Helper
       'Username="' . $this->userName . '", ' .
       'PasswordDigest="' . $passwordDigest . '", ' .
       'Nonce="' . $nonce . '", ' .
-      'Created="' . $timestamp . '", ',
-      'Content-Type: application/json'
+      'Created="' . $timestamp . '"' ,
+      'Content-Type: application/json"'
     );
   }
 
@@ -329,7 +335,7 @@ class Helper
    * @param array $data the data to post to the api
    * @return int the contact id
    */
-  public function updateContact($data)
+  public function updateContact($data, &$existing)
   {
     $data['key_field'] = self::KEY_FIELD_ID;
     $insert = $this->request('contact', $data, 'POST');
@@ -339,6 +345,7 @@ class Helper
 
     // The subscriber wasn't inserted, but already exists, update him
     if (isset($insert['replyCode']) && $insert['replyCode'] == self::CONTACT_EXISTS) {
+      $existing = true;
       $update = $this->request('contact', $data, 'PUT');
       if (isset($update['data']['id'])) {
         return intval($update['data']['id']);

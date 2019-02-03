@@ -223,14 +223,25 @@ abstract class Base
   {
     $html = '';
 
-    // Add a visible label to show that the item is a draft
+    // Set labels on certain states
+    $labelling = true;
+    $labelName = $labelText = '';
     if ($this->post->post_status == 'draft') {
+      $labelName = 'Entwurf';
+      $labelText = 'Dieses Element ist im Entwurfsstadium und nur im eingeloggten Zustand sichtbar.';
+    } else if ($this->post->post_status == 'private') {
+      $labelName = 'Privat';
+      $labelText = 'Dieses Element ist privat und nur im eingeloggten Zustand sichtbar.';
+    } else {
+      $labelling = false;
+    }
+
+    // Add a visible label to show that the item is a draft
+    if ($labelling) {
       $html .= '
         <div class="draft-label">
-          Entwurf          
-          <div class="label-notice">
-            Dieses Element ist im Entwurfsstadium und nur im eingeloggten Zustand sichtbar.
-          </div>
+          ' . $labelName . '        
+          <div class="label-notice">' . $labelText . ' </div>
         </div>
       ';
     }

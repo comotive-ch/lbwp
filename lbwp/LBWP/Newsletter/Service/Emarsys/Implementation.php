@@ -615,7 +615,8 @@ class Implementation extends Base implements Definition
 
     // Finally add/update contact and put the cntact on the
     $eventId = $this->getSetting('subscriptionEvent_' . Multilang::getConfureableFieldLang());
-    $this->api->updateContact($data);
+    $existing = false;
+    $this->api->updateContact($data, $existing);
     $this->api->addContactToList($email, $listId);
     $this->api->triggerEvent($eventId, $email);
 

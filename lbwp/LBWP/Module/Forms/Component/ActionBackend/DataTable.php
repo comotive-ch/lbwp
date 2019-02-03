@@ -128,11 +128,12 @@ class DataTable extends Base
           // Calculate some data for displaying
           $timestamp = strtotime($form->post_date);
           $table = $this->getTable($form->ID);
+          $entries = (is_array($table['data'])) ? count($table['data']) : 0;
           // Show the data row
           echo '
             <tr>
               <td><strong><a href="' . $baseUrl . '&table=' . $id . '">' . $name . '</a></strong></td>
-              <td>' . count($table['data']) . '</td>
+              <td>' . $entries . '</td>
               <td>' . (($table['changed'] == 0) ? '-' : date(Date::EU_DATETIME, $table['changed'])) . '</td>
               <td><abbr title="' . date(Date::EU_DATETIME, $timestamp) . '">' . date(Date::EU_DATE, $timestamp) . '</abbr></td>
             </tr>
@@ -730,18 +731,20 @@ class DataTable extends Base
     foreach ($tables as $formId => $name) {
       $action = $handler->getActionsOfType($formId, 'DataTable', true);
       $table = $this->getTable($formId);
-      if (count($table['data']) > 0 && $action->get('use_segments') == 1) {
-        $prefix = 'dynamicTarget_dataTable_' . $formId . '_';
-        // First, add the "all" segment which is always available
-        $targets[$prefix . 'all'] = 'Datenspeicher (' . $formId . '): ' . $name . ' (Alle)';
-        // If there is an event, add more segments
-        $eventId = $this->getSaveEventId($action);
-        if ($eventId > 0) {
-          $targets[$prefix . 'subscribed'] = 'Datenspeicher (' . $formId . '): ' . $name . ' (Angemeldete)';
-          $targets[$prefix . 'unsubscribed'] = 'Datenspeicher (' . $formId . '): ' . $name . ' (Abgemeldete)';
-          // Add the delta segment (mail to everyone who didn't answer yet) if emailid field is set
-          if (strlen($action->get('emailid_field')) > 0) {
-            $targets[$prefix . 'noanswer'] = 'Datenspeicher (' . $formId . '): ' . $name . ' (Keine Antwort)';
+      if (isset($table['data']) && is_array($table['data'])) {
+        if (count($table['data']) > 0 && $action->get('use_segments') == 1) {
+          $prefix = 'dynamicTarget_dataTable_' . $formId . '_';
+          // First, add the "all" segment which is always available
+          $targets[$prefix . 'all'] = 'Datenspeicher (' . $formId . '): ' . $name . ' (Alle)';
+          // If there is an event, add more segments
+          $eventId = $this->getSaveEventId($action);
+          if ($eventId > 0) {
+            $targets[$prefix . 'subscribed'] = 'Datenspeicher (' . $formId . '): ' . $name . ' (Angemeldete)';
+            $targets[$prefix . 'unsubscribed'] = 'Datenspeicher (' . $formId . '): ' . $name . ' (Abgemeldete)';
+            // Add the delta segment (mail to everyone who didn't answer yet) if emailid field is set
+            if (strlen($action->get('emailid_field')) > 0) {
+              $targets[$prefix . 'noanswer'] = 'Datenspeicher (' . $formId . '): ' . $name . ' (Keine Antwort)';
+            }
           }
         }
       }
@@ -763,7 +766,7 @@ class DataTable extends Base
       $action = $handler->getActionsOfType($formId, 'DataTable', true);
       if ($action == NULL) continue;
       $table = $this->getTable($formId);
-      if (count($table['data']) > 0 && $action->get('use_segments') == 1) {
+      if (is_array($table['data']) && count($table['data']) > 0 && $action->get('use_segments') == 1) {
         $prefix = 'dynamicTarget_dataTable_' . $formId . '_';
         if (count($table['data']) > 0) {
           $fields = array_keys($table['data'][0]);

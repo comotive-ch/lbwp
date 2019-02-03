@@ -1243,7 +1243,9 @@ class Metabox
     ';
 
     // Display everything in an empty full item
-    return str_replace('{html}', $html, Templates::getById('empty'));
+    $html = str_replace('{html}', $html, Templates::getById('empty'));
+    $html = str_replace('{containerClasses}', ' mbh-assign-posts', $html);
+    return $html;
   }
 
   /**

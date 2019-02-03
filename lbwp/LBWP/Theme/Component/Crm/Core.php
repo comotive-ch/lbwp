@@ -91,15 +91,28 @@ class Core extends Component
   protected $unexportableFields = array('table');
 
   /**
+   * Few things need to be registered pretty early
+   */
+  public function setup()
+  {
+    parent::setup();
+    // Filter virtual capabilities for users
+    add_filter('user_has_cap', array($this, 'filterVirtualCapabilities'), 10, 4);
+    // Tell disabled users that they're not allowed anymore
+    add_filter('authenticate', array($this, 'preventDisabledUserLogin'), 100, 1);
+  }
+
+  /**
    * Initialize the component
    */
   public function init()
   {
     // Create the data object that is used multiple times
-    $this->userAdminData = $this->getUserAdminData();
     $this->setEditedUserId();
+    $this->userAdminData = $this->getUserAdminData();
     // Register categorization post types and connections
     $this->addCategorizationPostTypes();
+    $this->maybeSetDefaultDisplayRole();
 
     // Invoke member admin scripts and menu stuff
     if (is_admin()) {
@@ -110,7 +123,7 @@ class Core extends Component
       add_action('admin_menu', array($this, 'addExportView'), 100);
       add_action('admin_head', array($this, 'invokeMemberAdminScripts'));
       add_action('pre_get_users', array($this, 'invokeUserTableQuery'));
-      // Save user data
+      // Save user data (hook even called for non crm roles)
       add_action('profile_update', array($this, 'saveMemberData'));
       add_action('user_register', array($this, 'syncCoreToCustomFields'));
       add_action('save_post_' . self::TYPE_FIELD, array($this, 'invalidateCaches'));
@@ -124,10 +137,9 @@ class Core extends Component
     add_action('Lbwp_LMS_Metabox_' . self::FILTER_REF_KEY, array($this, 'addMemberMetabox'), 10, 3);
     add_filter('Lbwp_LMS_Data_' . self::FILTER_REF_KEY, array($this, 'getSegmentData'), 10, 2);
     add_filter('Lbwp_Autologin_Link_Validity', array($this, 'configureAutoLoginLink'));
+    add_action('LBWP_SortableTypes_after_saving', array($this, 'invalidateCaches'));
     // Cron to automatically send changes from the last 24h
     add_action('cron_daily_7', array($this, 'sendTrackedUserChangeReport'));
-    // Tell disabled users that they're not allowed anymore
-    add_filter('authenticate', array($this, 'preventDisabledUserLogin'), 100, 1);
 
     if ($this->userAdminData['editedIsMember']) {
       // Set the editing user object
@@ -151,6 +163,7 @@ class Core extends Component
     // Save custom fields and contact data
     $this->saveCustomFieldData();
     $this->saveContactData();
+    $this->saveUserLogins();
     // If configured, override user email with main contact
     if (isset($this->configuration['mainContactMap'])) {
       $this->syncMainContactEmail();
@@ -180,10 +193,38 @@ class Core extends Component
   }
 
   /**
+   * @return bool
+   */
+  protected function getSubAccountConfig()
+  {
+    return
+     isset($this->configuration['allowSubAccounts'][$this->editedUser->roles[0]])
+      ? $this->configuration['allowSubAccounts'][$this->editedUser->roles[0]]
+       : false;
+  }
+
+  /**
+   * @return bool
+   */
+  protected function canManageSubAccounts()
+  {
+    $subconfig = $this->getSubAccountConfig();
+    return (
+      is_array($subconfig) &&
+      $subconfig['active'] === true &&
+      ArrayManipulation::anyValueMatch($this->editedUser->profileCategories, $subconfig['categories']));
+  }
+
+  /**
    * Add the tab containers as of config
    */
   public function addTabContainers()
   {
+    // See if we need to add the user login tab
+    if ($this->canManageSubAccounts()) {
+      $this->configuration['tabs']['subaccounts'] = __('Loginverwaltung', 'lbwp');
+    }
+
     $html = '<nav class="nav-tab-wrapper crm-navigation wp-clearfix">';
     // Open all the corresponding tabs and the navigation
     $activeClass = false;
@@ -216,6 +257,10 @@ class Core extends Component
     if ($this->userAdminData['userIsAdmin']) {
       echo $this->getDisableMemberEditor();
     }
+    // Show sub account editor if managing them is allowed
+    if ($this->canManageSubAccounts()) {
+      echo $this->getSubAccountEditor();
+    }
     echo $this->getProfileCategoriesEditor();
 
     // Get all Custom fields to print their html
@@ -247,6 +292,94 @@ class Core extends Component
 
     // Add the contact UIs
     echo $this->getProfileContactsEditor();
+  }
+
+  /**
+   * @return string the sub account editor html
+   */
+  protected function getSubAccountEditor()
+  {
+    $subconfig = $this->getSubAccountConfig();
+    $html = '<p>' . __('Sie können für weitere Personen ein Login erstellen und diesen Personen Rechte zuweisen.', 'lbwp') . '</p>';
+
+    // Get all users that are currently assigned
+    $users = $this->getSubAccountUsers($this->editedUser->ID);
+
+    // Print the table of the users
+    $html .= '
+      <table class="widefat subaccount-table">
+        <thead>
+          <tr>
+            <th class="th-email">E-Mail-Adresse</th>
+            <th class="th-firstname">Vorname</th>
+            <th class="th-lastname">Nachname</th>
+            <th class="th-password">Passwort ändern</th>
+            <th class="th-capabilities">Rechte ändern</th>
+            <th class="th-buttons">&nbsp;</th>
+          </tr>
+        </thead>
+        <tbody>
+    ';
+
+    // Display users or a message
+    if (count($users) > 0) {
+      foreach ($users as $user) {
+        // Build capabilities
+        $capabilities = ArrayManipulation::forceArray(get_user_meta($user->ID, 'crm-capabilities', true));
+        $capHtml = '';
+        foreach ($subconfig['capabilities'] as $key => $name) {
+          $checked = checked(true, in_array($key, $capabilities), false);
+          $capHtml .= '
+            <li>
+              <label><input type="checkbox" name="subaccs[' . $user->ID . '][capabilities][]" value="' . $key . '" ' . $checked . '>' . $name . '</label>
+            </li>
+          ';
+        }
+        // Build the according html
+        $html .= '
+          <tr>
+            <td>
+              <input type="hidden" name="subaccs[' . $user->ID . ']" value="' . $user->ID . '">
+              <input type="hidden" name="subaccs[' . $user->ID . '][delete]" value="0" class="delete-subacc-tick">
+              <input type="text" name="subaccs[' . $user->ID . '][email]" value="' . $user->user_email . '">
+            </td>
+            <td><input type="text" name="subaccs[' . $user->ID . '][firstname]" value="' . $user->get('first_name') . '"></td>
+            <td><input type="text" name="subaccs[' . $user->ID . '][lastname]" value="' . $user->get('last_name') . '"></td>
+            <td>
+              <input type="password" name="subaccs[' . $user->ID . '][password]" value="" style="display:none">
+              <a href="javascript:void(0)" class="crm-show-prev crm-toggle-remove">' . __('Passwort ändern', 'lbwp') . '</a>
+            </td>
+            <td>
+              <ul class="capabilities-selector" style="display:none">' . $capHtml . '</ul>
+              <a href="javascript:void(0)" class="crm-show-prev crm-toggle-remove">' . __('Rechte ändern', 'lbwp') . '</a>
+            </td>
+            <td><a href="javascript:void(0);" class="dashicons dashicons-trash delete-subaccount"></a></td>
+          </tr>
+        ';
+      }
+    } else {
+      $html .= '
+        <tr>
+          <td colspan="6">' . __('Sie haben bisher noch keine weiteren Logins erfasst', 'lbwp') . '</td>
+        </tr>
+      ';
+    }
+
+    // Close the table
+    $html .= '</tbody></table>';
+
+    // Provide UI to create a new user
+    $html .= '
+      <div class="crm-new-user-forms">
+        <input type="text" name="subaccount[email]" placeholder="' . __('E-MailAdresse', 'lbwp') . '" />
+        <input type="text" name="subaccount[firstname]" placeholder="' . __('Vorname', 'lbwp') . '" />
+        <input type="text" name="subaccount[lastname]" placeholder="' . __('Nachname', 'lbwp') . '" />
+        <input type="password" name="subaccount[password]" placeholder="' . __('Passwort eingeben', 'lbwp') . '" />
+        <a href="javascript:void(0)" class="button crm-add-user-button" data-state="closed" data-save="' . __('Login speichern', 'lbwp') . '">' . __('Login hinzufügen', 'lbwp') . '</a>
+      </div>
+    ';
+
+    return '<div data-target-tab="subaccounts">' . $html . '</div>';
   }
 
   /**
@@ -300,7 +433,8 @@ class Core extends Component
         $html .= '</select>';
         break;
       case 'table':
-        $html .= $this->getCustomFieldTableHtml($field, $key, $value, $forceReadonly, $forceDisabled);
+        $readonly = ($field['readonly'] && $this->userAdminData['userIsMember']) || $forceReadonly;
+        $html .= $this->getCustomFieldTableHtml($field, $key, $value, $readonly, $forceDisabled);
         break;
       case 'file':
         // Display upload field only if not readonly
@@ -335,6 +469,7 @@ class Core extends Component
       $html .= '<td class="crmcf-head" data-slug="' . $slug . '">' . $name . '</td>';
     }
     $button = (!$forceReadonly) ? '<span class="dashicons dashicons-plus add-crmcf-row"></span>' : '';
+    $delete = (!$forceReadonly) ? '<span class="dashicons dashicons-trash delete-crmcf-row"></span>' : '';
     $html .= '<td class="crmcf-head">' . $button . '</td>';
     $html .= '</tr></thead><tbody>';
 
@@ -350,7 +485,7 @@ class Core extends Component
           $attr .= $forceDisabled ? ' disabled="disabled"' : '';
           $html .= '<td><input type="text" name="' . $key . '[' . $slug . '][]" value="' . esc_attr($value[$slug][$i]) . '" ' . $attr . ' /></td>';
         }
-        $html .= '<td class="crmcf-head"><span class="dashicons dashicons-trash delete-crmcf-row"></span></td></tr>';
+        $html .= '<td class="crmcf-head">' . $delete . '</td></tr>';
       }
     }
 
@@ -444,6 +579,73 @@ class Core extends Component
   }
 
   /**
+   * Saves all user login data, if given
+   */
+  protected function saveUserLogins()
+  {
+    // Get the config to do everything correctly
+    $db = WordPress::getDb();
+    $subconfig = $this->getSubAccountConfig();
+
+    // Check for a new user to be added
+    if (isset($_POST['subaccount']) && ArrayManipulation::valuesNonEmptyStrings($_POST['subaccount'])) {
+      // Create the new user and get his ID
+      $id = wp_insert_user(array(
+        'role' => $subconfig['role'],
+        'user_pass' => $_POST['subaccount']['password'],
+        'user_login' => $_POST['subaccount']['email'],
+        'user_email' => $_POST['subaccount']['email'],
+        'first_name' => $_POST['subaccount']['firstname'],
+        'last_name' => $_POST['subaccount']['lastname']
+      ));
+
+      // Associate the actual main user
+      if (intval($id) > 0) {
+        update_user_meta($id, 'crm-main-account-id', $this->editedUser->ID);
+      }
+    }
+
+    // Delete or edit users
+    if (isset($_POST['subaccs']) && is_array($_POST['subaccs'])) {
+      foreach ($_POST['subaccs'] as $userId => $subaccount) {
+        if ($subaccount['delete'] == 0) {
+          // Edit the account manually in DB to prevent endless looping
+          $db->update(
+            $db->users,
+            array(
+              'user_login' => $subaccount['email'],
+              'user_email' => $subaccount['email']
+            ),
+            array(
+              'ID' => $userId
+            )
+          );
+
+          // Set basic meta
+          update_user_meta($userId, 'first_name', $subaccount['firstname']);
+          update_user_meta($userId, 'last_name', $subaccount['lastname']);
+
+          // Set or override capabilities meta
+          if (isset($subaccount['capabilities']) && is_array($subaccount['capabilities'])) {
+            update_user_meta($userId, 'crm-capabilities', $subaccount['capabilities']);
+          }
+
+          // Change the password if requested
+          if (strlen($subaccount['password']) > 0) {
+            wp_set_password($subaccount['password'], $userId);
+          }
+
+          // Clean cache of user as manual DB changes took place
+          clean_user_cache($userId);
+        } else {
+          // Delete the account
+          wp_delete_user($userId, 0);
+        }
+      }
+    }
+  }
+
+  /**
    * Syncs the user_email field with the email of the roles respective main contact
    */
   protected function syncMainContactEmail()
@@ -470,7 +672,8 @@ class Core extends Component
   protected function syncDisplayName()
   {
     $key = $this->configuration['misc']['syncDisplayNameField'];
-    if (strlen($key) > 0) {
+
+    if (strlen($key) > 0 && in_array($this->editedUser->roles[0], $this->configuration['roles'])) {
       $db = WordPress::getDb();
       $db->update(
         $db->users,
@@ -486,8 +689,9 @@ class Core extends Component
    */
   public function syncCoreToCustomFields($userId)
   {
+    $user = get_user_by('id', $userId);
     // Skip, if not an actual crm role
-    if (!in_array($_POST['role'], $this->configuration['roles'])) {
+    if (!in_array($user->roles[0], $this->configuration['roles'])) {
       return;
     }
 
@@ -647,6 +851,12 @@ class Core extends Component
    */
   protected function validateInputContacts($candidates)
   {
+    // Check if there even are candidates
+    if (!is_array($candidates) || count($candidates) == 0) {
+      return array();
+    }
+
+    // Validate the input contact
     $contacts = array();
     $countKey = array_keys($candidates)[0];
     for ($i = 0; $i < count($candidates[$countKey]); ++$i) {
@@ -1030,7 +1240,7 @@ class Core extends Component
   public function invokeMemberAdminScripts()
   {
     $screen = get_current_screen();
-    if ($screen->base == 'user-edit' || $screen->base == 'profile' || $screen->base == 'users_page_crm-export') {
+    if ($screen->base == 'user-edit' || $screen->base == 'users' || $screen->base == 'profile' || $screen->base == 'users_page_crm-export') {
       $uri = File::getResourceUri();
       // Include usage of chosen
       wp_enqueue_script('jquery-cookie');
@@ -1042,8 +1252,8 @@ class Core extends Component
         <script type="text/javascript">
           var crmAdminData = ' . json_encode($this->userAdminData) . ';
         </script>
-        <script src="' . $uri . '/js/lbwp-crm-backend.js?v1.1" type="text/javascript"></script>
-        <link rel="stylesheet" href="' . $uri . '/css/lbwp-crm-backend.css?v1.1">
+        <script src="' . $uri . '/js/lbwp-crm-backend.js?v=' . LbwpCore::REVISION . '" type="text/javascript"></script>
+        <link rel="stylesheet" href="' . $uri . '/css/lbwp-crm-backend.css?v' . LbwpCore::REVISION . '">
       ';
     }
   }
@@ -1190,6 +1400,11 @@ class Core extends Component
       }
     }
 
+    // If we're showing subaccounts, show assignment
+    if (isset($_GET['role']) && in_array($_GET['role'], $this->configuration['subaccountRoles'])) {
+      $columns['assignment'] = __('Zugehörigkeit', 'lbwp');
+    }
+
     return $columns;
   }
 
@@ -1213,6 +1428,15 @@ class Core extends Component
       }
     }
 
+    // Show an assignment to the main user
+    if ($field == 'assignment') {
+      $parentId = get_user_meta($userId, 'crm-main-account-id', true);
+      if ($parentId > 0) {
+        $url = '/wp-admin/user-edit.php?user_id=' . $parentId;
+        $value = '<a href="' . $url . '">' . get_user_by('id', $parentId)->display_name . '</a>';
+      }
+    }
+
     return $value;
   }
 
@@ -1228,19 +1452,6 @@ class Core extends Component
         <option value="active" ' . selected($current, 'active', false) . '>Nur Aktive anzeigen</option>
         <option value="inactive" ' . selected($current, 'inactive', false) . '>Nur Inaktive anzeigen</option>
       </select>
-      <script type="text/javascript">
-        jQuery(function() {
-          // Move and re-style
-          var dropdown = jQuery("#status-filter");
-          jQuery(".tablenav-pages").prepend(dropdown);
-          dropdown = jQuery("#status-filter");
-          dropdown.css("display", "inline");
-          // Add functionality
-          dropdown.on("change", function() {
-            document.location.href = "/wp-admin/users.php?status-filter=" + jQuery(this).val();
-          });
-        });
-      </script>
     ';
   }
 
@@ -1274,7 +1485,7 @@ class Core extends Component
    */
   public function hideMenusFromMembers()
   {
-    if ($this->currentIsMember()) {
+    if ($this->currentIsMember() || $this->currentIsSubAccount()) {
       global $menu;
       foreach ($menu as $key => $item) {
         if ($item[2] == 'index.php' || $item[2] == 'comotive-newsletter') {
@@ -1316,11 +1527,27 @@ class Core extends Component
   }
 
   /**
+   * @return bool tells if the user is a subaccount of a crm member
+   */
+  public function currentIsSubAccount()
+  {
+    // Can't be a sub account if the feature is not active
+    if (!isset($this->configuration['subaccountRoles'])) {
+      return false;
+    }
+
+    // Get the user and check the role
+    $userId = get_current_user_id();
+    $user = get_user_by('id', $userId);
+    return in_array($user->roles[0], $this->configuration['subaccountRoles']);
+  }
+
+  /**
    * If a user goes to his dashboard (which shouldn't happen) redirect to profile
    */
   public function preventUserOnDashboard()
   {
-    if ($this->userAdminData['userIsMember']) {
+    if ($this->userAdminData['userIsMember'] || $this->currentIsSubAccount()) {
       $screen = get_current_screen();
       if ($screen->base == 'dashboard') {
         header('Location: ' . get_admin_url() . 'profile.php', null, 301);
@@ -1402,6 +1629,18 @@ class Core extends Component
   }
 
   /**
+   * @param int $userId the user id
+   * @return \WP_User[] list of users associated with the account
+   */
+  protected function getSubAccountUsers($userId)
+  {
+    return get_users(array(
+      'meta_key' => 'crm-main-account-id',
+      'meta_value' => $userId
+    ));
+  }
+
+  /**
    * @return array list of contacts of a specified category, contains profile categories of the assigned members
    */
   protected function getContactsByCategory($categoryId)
@@ -1469,6 +1708,26 @@ class Core extends Component
 
     // If category doesn't exist, return an empty array
     return array();
+  }
+
+  /**
+   * @param array $capabilities
+   * @param $unused1
+   * @param $unused2
+   * @param $user
+   * @return array new capabilities
+   */
+  public function filterVirtualCapabilities($capabilities, $unused1, $unused2, $user)
+  {
+    $additional = ArrayManipulation::forceArray(
+      get_user_meta($user->ID, 'crm-capabilities', true)
+    );
+
+    foreach ($additional as $capability) {
+      $capabilities[$capability] = true;
+    }
+
+    return $capabilities;
   }
 
   /**
@@ -1582,19 +1841,6 @@ class Core extends Component
       $category = intval($_POST['contact-category']);
       $this->downloadContactExport($role, $category);
     }
-  }
-
-  /**
-   * @param string $role a specific role
-   * @return array the categories assigned to that role
-   */
-  protected function getCategoriesByRole($role)
-  {
-    $categories = array();
-
-    var_dump($categories);
-    exit;
-    return $categories;
   }
 
   /**
@@ -1910,17 +2156,10 @@ class Core extends Component
 
     // Archive the old version by renaming the meta fields in db
     if (count($new) > 1 && strlen($version) > 0) {
-      $db = WordPress::getDb();
-      $sql = 'UPDATE {sql:userMeta} SET meta_key = {versionedKey} WHERE meta_key = {currentKey}';
-      $db->query(Strings::prepareSql($sql, array(
-        'userMeta' => $db->usermeta,
-        'currentKey' => 'crmcf-' . $postId,
-        'versionedKey' => 'crmcf-' . $postId . '_' . $version
-      )));
-
+      $this->historizeVersion($version, $postId);
       // Flush all user-like caches asynchronously
-      MemcachedAdmin::flushByKeyword('*user_meta_*');
-      MemcachedAdmin::flushByKeyword('*users_*');
+      MemcachedAdmin::flushByKeyword('user_meta_');
+      MemcachedAdmin::flushByKeyword('users_');
     }
 
     // Save the new version config
@@ -1933,9 +2172,34 @@ class Core extends Component
   }
 
   /**
+   * @param string $version
+   * @param int $fieldId
+   */
+  public function historizeVersion($version, $fieldId)
+  {
+    $db = WordPress::getDb();
+    $sql = 'UPDATE {sql:userMeta} SET meta_key = {versionedKey} WHERE meta_key = {currentKey}';
+    $db->query(Strings::prepareSql($sql, array(
+      'userMeta' => $db->usermeta,
+      'currentKey' => 'crmcf-' . $fieldId,
+      'versionedKey' => 'crmcf-' . $fieldId . '_' . $version
+    )));
+  }
+
+  /**
+   * Set a backend display role if non is set, to prevent users from pressing "alle"
+   */
+  protected function maybeSetDefaultDisplayRole()
+  {
+    if (is_admin() && !isset($_GET['role']) && isset($this->configuration['misc']['defaultDisplayRole'])) {
+      $_GET['role'] = $_REQUEST['role'] = $this->configuration['misc']['defaultDisplayRole'];
+    }
+  }
+
+  /**
    * Adds post types for member and contact categorization
    */
-  public function addCategorizationPostTypes()
+  protected function addCategorizationPostTypes()
   {
     WordPress::registerType(self::TYPE_PROFILE_CAT, 'Profilkategorie', 'Profilkategorien', array(
       'show_in_menu' => 'users.php',
@@ -1989,7 +2253,9 @@ class Core extends Component
     $helper = Metabox::get(self::TYPE_PROFILE_CAT);
     $helper->addMetabox('settings', 'Einstellungen');
     $helper->addPostTypeDropdown('contact-categories', 'settings', 'Kontaktarten', self::TYPE_CONTACT_CAT, array(
-      'multiple' => true
+      'multiple' => true,
+      'sortable' => true,
+      'no_delete_callback' => true
     ));
 
     // Configuration for contact categories
@@ -2097,7 +2363,7 @@ class Core extends Component
 
     $helper->addMetabox('multi-values', 'Feldinformationen für Tabellen / Dropdowns');
     $helper->addParagraph('multi-values', 'Hier können Sie die Vorgabewerte für Dropdowns bzw. die Spaltenwerte für Tabellen angeben.');
-    $helper->addDropdown('field-values', 'multi-values', 'Versionen', array(
+    $helper->addDropdown('field-values', 'multi-values', 'Vorgabewerte', array(
       'multiple' => true,
       'items' => 'self',
       'add_new_values' => true
@@ -2211,10 +2477,12 @@ class Core extends Component
   protected function getUserAdminData()
   {
     $isMember = $this->currentIsMember();
+
     return array(
       'config' => $this->configuration,
       'editedIsMember' => $isMember || $this->isMember($_REQUEST['user_id']),
       'editedUserId' => $_REQUEST['user_id'],
+      'editedUserRole' => $this->editedUser->roles[0],
       'userIsMember' => $isMember,
       'userIsAdmin' => current_user_can('administrator'),
       'neutralSalutations' => $this->getSalutationOptions(true, ''),
@@ -2225,7 +2493,8 @@ class Core extends Component
         'requiredFieldsMessage' => __('Es wurden nicht alle Pflichtfelder ausgefüllt', 'lbwp'),
         'noContactsYet' => __('Es sind noch keine Kontakte in dieser Kategorie vorhanden.', 'lbwp'),
         'sureToDelete' => __('Möchten Sie den Kontakt wirklich löschen?', 'lbwp'),
-        'deleteImpossible' => __('Löschen nicht möglich. Mindestens {number} Kontakt/e sind erforderlich.', 'lbwp')
+        'deleteImpossible' => __('Löschen nicht möglich. Mindestens {number} Kontakt/e sind erforderlich.', 'lbwp'),
+        'sureToDeleteSubAccount' => __('Wollen Sie das Login zur Löschung markieren? Es wird erst permanent gelöscht, wenn Sie danach das Profil speichern.')
       )
     );
   }

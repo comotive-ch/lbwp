@@ -12,6 +12,16 @@ $errorColor : #F2D0C6;
 	display:none;
 }
 
+.crm-new-user-forms {
+	margin-top:20px;
+	input {
+		display:none;
+	}
+	&.open input {
+		display:inline;
+	}
+}
+
 body .history-container {
 	max-width:100%;
 
@@ -232,6 +242,49 @@ body .custom-field-table {
 
 	}
 
+}
 
+.subaccount-table {
+	table-layout: fixed;
 
+	thead {
+		th {
+			&.th-salutation {
+				width: 10%;
+			}
+
+			&.th-buttons {
+				width: 5%;
+			}
+		}
+	}
+
+	tbody {
+		td {
+			padding:5px 7px;
+			input[type=text],
+			input[type=password],
+			select {
+				width: 100%;
+			}
+
+			&:last-child {
+				text-align: center;
+			}
+		}
+
+		tr.mark-for-deletion {
+			opacity:0.6;
+			* {
+				text-decoration: line-through;
+			}
+		}
+	}
+
+	.capabilities-selector {
+		margin:0px;
+		li {
+			margin-bottom:2px;
+		}
+	}
 }

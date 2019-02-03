@@ -111,7 +111,7 @@ jQuery(function() {
 
 	// First collect all column width
 	theTable.find('thead th').each(function(index, element) {
-		w = jQuery(element).css('width');
+		var w = jQuery(element).css('width');
 		jQuery(element).css('width', w);
 		headings[index] = w;
 	});
@@ -120,11 +120,14 @@ jQuery(function() {
 	theTable.find('tr:first-child').each(function() {
 		jQuery(this).find('td, th').each(function(i) {
 			if (headings[i].length > 0) {
-				jQuery(this)
-					.css('width', headings[i])
-					.css('min-width', headings[i])
-					.css('max-width', headings[i])
-				;
+				var cell = jQuery(this);
+				var hasColspan = parseInt(cell.attr('colspan')) > 0;
+				if (!hasColspan) {
+					cell
+						.css('width', headings[i])
+						.css('min-width', headings[i])
+						.css('max-width', headings[i]);
+				}
 			}
 		});
 	});

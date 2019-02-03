@@ -324,7 +324,7 @@ class HTMLCache extends \LBWP\Module\Base
         'uri' => $_SERVER['REQUEST_URI'],
         'is404' => is_404(),
         'expires' => $expireTime,
-        'content' => $output
+        'content' => gzcompress($output, 1)
       );
 
       // Add content type headers if set

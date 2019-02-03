@@ -2,7 +2,8 @@
 
 namespace LBWP\Helper\Mail;
 
-use LBWP\Util\AwsFactory;
+use Aws\Ses\SesClient;
+use LBWP\Util\AwsFactoryV3;
 
 /**
  * Class for sending bulk mail trough AmazonSES
@@ -12,7 +13,7 @@ use LBWP\Util\AwsFactory;
 class AmazonSES extends Base
 {
   /**
-   * @var \AmazonSES instance of the actual mail sending object
+   * @var SesClient instance of the actual mail sending object
    */
   protected $instance = NULL;
   /**
@@ -27,10 +28,10 @@ class AmazonSES extends Base
    */
   public function configure($config = array())
   {
-    $this->instance = AwsFactory::getSesService(
+    $this->instance = AwsFactoryV3::getSesService(
       $config['accessKey'],
       $config['secretKey'],
-      'email.eu-west-1.amazonaws.com'
+      'eu-west-1'
     );
   }
 
@@ -50,16 +51,16 @@ class AmazonSES extends Base
   public function send()
   {
     // On local, assume it was sent, but don't send anything
-    if (defined('LOCAL_DEVELOPMENT')) {
+    /*if (defined('LOCAL_DEVELOPMENT')) {
       return true;
-    }
+    }*/
 
-    $response = $this->instance->send_email(
-      $this->data['from']['name'] . '<' . $this->data['from']['email'] . '>',
-      array(
+    $response = $this->instance->sendEmail(array(
+      'Source' => $this->data['from']['name'] . '<' . $this->data['from']['email'] . '>',
+      'Destination' => array(
         'ToAddresses' => $this->data['recipients']
       ),
-      array(
+      'Message' => array(
         'Subject' => array(
           'Data' => $this->data['subject'],
           'Charset' => 'UTF-8'
@@ -75,9 +76,9 @@ class AmazonSES extends Base
           ),
         )
       )
-    );
+    ));
 
-    if ($response->status != 200) {
+    if ($response->get('@metadata')['statusCode'] != 200) {
       $this->log(
         'AmazonSES',
         $this->data['recipients'][0],

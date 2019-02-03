@@ -2,6 +2,7 @@
 
 namespace LBWP\Module\General;
 
+use LBWP\Helper\Cronjob;
 use LBWP\Helper\MasterApi;
 use LBWP\Util\Date;
 
@@ -11,6 +12,10 @@ use LBWP\Util\Date;
  */
 class CronHandler extends \LBWP\Module\Base
 {
+  /**
+   * @var int maximum number of wp crons allowed
+   */
+  const MAX_WP_CRONS = 100;
 	/**
 	 * Call parent constructor only if a cron running constant is set
 	 */
@@ -36,11 +41,55 @@ class CronHandler extends \LBWP\Module\Base
         add_action('cron_daily_4',array($this,'cleanCommentSpam'));
       }
 
+      // Run actual wp crons, if requested
+      add_action('cron_job_run_wp_cron', array($this, 'runWpCron'));
       // Calculate daily/hourly total of requests per type/server
       add_action('cron_daily_5',array($this, 'cleanLbwpDataTables'));
+      add_action('cron_daily_10',array($this, 'checkWpCronCount'));
+      add_action('cron_daily_1',array($this, 'registerWpCronSchedules'));
       add_action('cron_hourly', array($this, 'aggregatePersistentRequestsHourly'));
       add_action('cron_daily', array($this, 'aggregatePersistentRequestsDaily'));
     }
+  }
+
+  /**
+   * Checks if there are potentially to many wp crons registered
+   */
+  public function checkWpCronCount()
+  {
+    $crons = get_option('cron');
+    if (is_array($crons) && count($crons) > self::MAX_WP_CRONS) {
+      mail(
+        'it+monitoring@comotive.ch',
+        'More than ' . self::MAX_WP_CRONS . ' wp_crons registered',
+        'Host: ' . LBWP_HOST . ', Count: ' . count($crons),
+        'From: ' . SERVER_EMAIL
+      );
+    }
+  }
+
+  /**
+   * Registers two wp crons scheduled over the whole day, run by our jobsystem
+   */
+  public function registerWpCronSchedules()
+  {
+    $start = current_time('timestamp') + mt_rand(0, 5000);
+
+    $jobs = array(
+      $start + mt_rand(0, 30000) => 'run_wp_cron',
+      $start + mt_rand(40000, 70000) => 'run_wp_cron'
+    );
+
+    Cronjob::register($jobs);
+  }
+
+  /**
+   * Runs the actual wp cron by including it
+   */
+  public function runWpCron()
+  {
+    $_GET['doing_wp_cron'] = '';
+    require_once ABSPATH . '/wp-cron.php';
   }
 
   /**

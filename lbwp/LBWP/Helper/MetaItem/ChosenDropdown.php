@@ -105,6 +105,9 @@ class ChosenDropdown
       }
     }
 
+    // Automatic order saving on moving an element within it
+    $attr .= ' data-auto-sort-save="' . (isset($args['auto_sort_save']) && $args['auto_sort_save'] ? 1 : 0) . '"';
+
     $options = self::convertDropdownItemsToOptions($items, $value, $singleValue);
 
     $select = '

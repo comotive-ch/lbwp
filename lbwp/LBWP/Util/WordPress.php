@@ -419,6 +419,14 @@ class WordPress
       add_action('manage_posts_custom_column', array('\LBWP\Util\WordPress', 'addPostTableColumnCell'), 10, 2);
     }
 
+    // Also, make that sortable if needed
+    if (isset($args['sortable'])) {
+      add_filter('manage_edit-' . $args['post_type'] . '_sortable_columns', function($columns) use ($args) {
+        $columns[$args['column_key']] = $args['sortable'];
+        return $columns;
+      });
+    }
+
     self::$postTableColumns[$args['column_key']] = $args;
   }
 
@@ -726,6 +734,24 @@ class WordPress
     while ($parent !== false && $parent->parent != '0') {
       $termId = $parent->parent;
       $parent = get_term_by('id', $termId, $taxonomy);
+    }
+
+    return $parent;
+  }
+
+  /**
+   * @param int $postId the term id
+   * @return \stdClass highest post object
+   */
+  public static function getHighestParentPost($postId)
+  {
+    // start from the current term
+    $parent = get_post($postId);
+
+    // climb up the hierarchy until we reach a term with parent = '0'
+    while ($parent !== false && $parent->post_parent != '0') {
+      $postId = $parent->post_parent;
+      $parent = get_post($postId);
     }
 
     return $parent;

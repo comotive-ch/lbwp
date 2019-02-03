@@ -61,10 +61,10 @@
 					$choices.each(function(index, element) {
 						jQuery(element).find('.search-choice-close').data('option-array-index', index);
 					});
-					// If possible save order immediately
-					//if (typeof(MetaboxHelper) != "undefined") {
-					//	MetaboxHelper.handleAutosaveChosenSortable(jQuery(this), $select);
-					//}
+					// If onepager save order immediately
+					if (typeof(MetaboxHelper) != "undefined" && $select.data('auto-sort-save') == 1) {
+						MetaboxHelper.handleAutosaveChosenSortable(jQuery(this), $select);
+					}
 				},
         'tolerance'   : 'pointer'
       });

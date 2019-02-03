@@ -43,6 +43,40 @@ class ArrayManipulation
   }
 
   /**
+   * Tells if any value of a matches any value of b
+   * @param array $a
+   * @param array $b
+   * @return true if the arrays have at least one common value
+   */
+  public static function anyValueMatch($a, $b)
+  {
+    foreach ($a as $ac) {
+      foreach ($b as $bc) {
+        if ($ac == $bc) {
+          return true;
+        }
+      }
+    }
+
+    return false;
+  }
+
+  /**
+   * @param array $values
+   * @return true if all values are non empty strings
+   */
+  public static function valuesNonEmptyStrings($values)
+  {
+    foreach ($values as $value) {
+      if (strlen($value) == 0) {
+        return false;
+      }
+    }
+
+    return true;
+  }
+
+  /**
    * A-Z array, can be used to stuff objects in to A-Z containers
    * @param bool $lowerCase tells if the assoc keys should be lower case chars
    * @return array an assoc array with A-Z as keys. contains an empty array for every letter

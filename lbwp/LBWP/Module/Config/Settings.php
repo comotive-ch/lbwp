@@ -179,6 +179,12 @@ class Settings extends \LBWP\Module\Base
       }
     }
 
+    $addition = '';
+    if (Multilang::isActive()) {
+      $language = Multilang::getLanguageName(Multilang::getCurrentLang());
+      $addition = __(' für Website in ') . $language . '.';
+    }
+
     // Create the form around it and the submit buttin
     $html = '
       <div class="wrap lbwp-config">
@@ -186,7 +192,7 @@ class Settings extends \LBWP\Module\Base
         ' . $message . '
         <form action="" method="post">
           ' . $html . '
-          <p><input type="submit" class="button-primary" name="saveLbwpConfig" value="Änderungen übernehmen"></p>
+          <p><input type="submit" class="button-primary" name="saveLbwpConfig" value="Änderungen übernehmen">' . $addition . '</p>
         </form>
       </div>
     ';

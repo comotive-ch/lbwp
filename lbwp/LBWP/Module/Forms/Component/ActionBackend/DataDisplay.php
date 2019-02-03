@@ -2,13 +2,13 @@
 
 namespace LBWP\Module\Forms\Component\ActionBackend;
 
+use LBWP\Core as LbwpCore;
 use LBWP\Module\Events\Component\EventType;
 use LBWP\Module\Forms\Core as FormCore;
 use LBWP\Theme\Feature\LocalMailService;
 use LBWP\Util\ArrayManipulation;
 use LBWP\Util\File;
 use LBWP\Util\Strings;
-use LBWP\Util\WordPress;
 use LBWP\Module\Forms\Component\ActionBackend\DataTable as DataTableBackend;
 use LBWP\Module\Forms\Action\DataTable as DataTableAction;
 
@@ -435,7 +435,7 @@ class DataDisplay
 
     // Javascript to edit and remove rows
     $html .= '
-      <script type="text/javascript" src="' . $path . '/js/data-table-backend.js?v1.2"></script>
+      <script type="text/javascript" src="' . $path . '/js/data-table-backend.js?v=' . LbwpCore::REVISION . '"></script>
       <script type="text/javascript" src="' . $path . '/js/chosen/chosen.jquery.min.js"></script>
       <script type="text/javascript" src="' . $path . '/js/chosen/chosen.sortable.jquery.js"></script>
       <script type="text/javascript" src="/wp-includes/js/jquery/ui/jquery.ui.widget.min.js"></script>
@@ -521,16 +521,18 @@ class DataDisplay
   {
     $rawData = array();
 
-    foreach ($data as $row) {
-      $rawRow = array();
-      foreach ($fields as $key => $value) {
-        if (isset($row[$key])) {
-          $rawRow[$key] = $row[$key];
-        } else {
-          $rawRow[$key] = '';
+    if (is_array($data)) {
+      foreach ($data as $row) {
+        $rawRow = array();
+        foreach ($fields as $key => $value) {
+          if (isset($row[$key])) {
+            $rawRow[$key] = $row[$key];
+          } else {
+            $rawRow[$key] = '';
+          }
         }
+        $rawData[] = $rawRow;
       }
-      $rawData[] = $rawRow;
     }
 
     return $rawData;

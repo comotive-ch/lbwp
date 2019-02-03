@@ -37,7 +37,12 @@ class Redirects extends \LBWP\Module\Base
   public function checkRedirects()
   {
     $redirects = ArrayManipulation::forceArray(get_option('lbwpUrlRedirects'));
+    // Remove eventual parameters
     $currentUri = trim($_SERVER['REQUEST_URI']);
+    if (Strings::contains($currentUri, '?')) {
+      $currentUri = substr($currentUri, 0, strpos($currentUri, '?'));
+    }
+    // Make sure to handle with and without slash
     if (Strings::endsWith($currentUri, '/')) {
       $currentUri = rtrim($currentUri, '/');
     }
@@ -200,12 +205,14 @@ class Redirects extends \LBWP\Module\Base
 
     // Make a big cool array
     for ($i = 0; $i < count($data['source']); $i++) {
-      $value[] = array(
-        'source' => $this->validateSource($data['source'][$i]),
-        'destination' => $this->validateDestination($data['destination'][$i]),
-        'validated' => $this->validateRedirection($data['source'][$i], $data['destination'][$i]),
-        'code' => $data['code'][$i]
-      );
+      if (strlen($data['source'][$i]) > 0 && strlen($data['destination'][$i]) > 0 && $data['code'][$i] > 200) {
+        $value[] = array(
+          'source' => $this->validateSource($data['source'][$i]),
+          'destination' => $this->validateDestination($data['destination'][$i]),
+          'validated' => $this->validateRedirection($data['source'][$i], $data['destination'][$i]),
+          'code' => $data['code'][$i]
+        );
+      }
     }
 
     // Save that new array

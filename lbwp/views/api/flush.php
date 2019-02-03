@@ -36,10 +36,8 @@ try {
   $redis->pconnect(REDIS_WRITE_NODE_IP, REDIS_CONNECTION_PORT, 1.5);
   $redis->auth(REDIS_AUTH_KEY);
   $redis->setOption(Redis::OPT_SERIALIZER, REDIS_WP_CACHE_SERIALIZER);
-  // Get all keys with a wildcard search
-  $keys = $redis->keys($deletePrefix . $keySearch . '*');
-  // Just delete all found keys by providing the array as list of arguments in a single call
-  call_user_func(array($redis, 'delete'), $keys);
+  // Get all keys with a wildcard search and delete them
+  $redis->delete($redis->keys($deletePrefix . $keySearch . '*'));
   // Make sure to delete the keys from RAM
   unset($keys);
 } catch (RedisException $e) {

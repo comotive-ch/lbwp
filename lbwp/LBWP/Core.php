@@ -18,7 +18,7 @@ class Core
   /**
    * @var int Revisionnumber of the plugins (not svn revision, only for updates)
    */
-  const REVISION = 263;
+  const REVISION = 270;
   /**
    * @var int CSS/JS file version for cloudfront
    */
@@ -197,8 +197,7 @@ class Core
   {
     $config = get_option('LbwpConfig');
     if ($config == false && !is_array($config)) {
-      // save the default to the db
-      update_option('LbwpConfig', $this->defaultConfig);
+      $this->config = $this->defaultConfig;
     } else {
       $this->config = $config;
     }
@@ -285,9 +284,9 @@ class Core
   {
     //self::installPlugin();
     //$this->mergeFeatures();
-    $this->mergeConfig();
+    //$this->mergeConfig();
     //Installer::resetWooCommerceCrons();
-    Installer::updateLbwpTables();
+    //Installer::updateLbwpTables();
   }
 
   /**

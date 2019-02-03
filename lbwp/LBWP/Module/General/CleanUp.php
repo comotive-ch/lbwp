@@ -77,7 +77,7 @@ class CleanUp extends \LBWP\Module\Base
 
     // Remove things for non superusers
     if (!Core::isSuperlogin()) {
-      add_action('customize_register', array($this, 'removeAdditionalCssEditor'), 15);
+      add_action('customize_register', array($this, 'removeCustomizerFeatures'), 20);
     }
 
     // Disable vc frontend editor completely
@@ -356,8 +356,9 @@ class CleanUp extends \LBWP\Module\Base
   /**
    * @param \WP_Customize_Manager $customizer
    */
-  public function removeAdditionalCssEditor($customizer)
+  public function removeCustomizerFeatures($customizer)
   {
+    $customizer->remove_control('site_icon');
     $customizer->remove_section('custom_css');
   }
 

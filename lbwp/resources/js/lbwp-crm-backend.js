@@ -15,6 +15,8 @@ var CrmUserAdmin = {
 			CrmUserAdmin.prepareUI();
 		} else {
 			CrmUserAdmin.makeUiVisible();
+			CrmUserAdmin.handleSubAccountUI();
+			CrmUserAdmin.handleUserListPage();
 		}
 	},
 
@@ -207,6 +209,7 @@ var CrmUserAdmin = {
 		// Add our own required field handler
 		CrmUserAdmin.handleRequiredFields();
 		CrmUserAdmin.handleHelpIcons();
+		CrmUserAdmin.handleSubAccounts();
 		CrmUserAdmin.handleHistoryIcons();
 		CrmUserAdmin.handleCustomFieldTables();
 	},
@@ -319,6 +322,107 @@ var CrmUserAdmin = {
 	},
 
 	/**
+	 * Handle events on sub accounts
+	 */
+	handleSubAccounts : function()
+	{
+		CrmUserAdmin.handleAddSubAccount();
+		CrmUserAdmin.handleDeleteSubAccount();
+		CrmUserAdmin.handleGenericToggles();
+	},
+
+	/**
+	 * Handles creation of sub accounts
+	 */
+	handleAddSubAccount : function()
+	{
+		jQuery('.crm-add-user-button').on('click', function() {
+			var link = jQuery(this);
+			var state = link.data('state');
+
+			// Handle the closed state, it just shows the input fields
+			if (state == 'closed') {
+				link.text(link.data('save'));
+				link.closest('.crm-new-user-forms').addClass('open');
+				link.data('state', 'open');
+			}
+
+			// Handle the open state, validate and save the new user
+			if (state == 'open') {
+				var errors = 0;
+				var email = jQuery('.crm-new-user-forms input[name="subaccount[email]"]');
+				var firstname = jQuery('.crm-new-user-forms input[name="subaccount[firstname]"]');
+				var lastname = jQuery('.crm-new-user-forms input[name="subaccount[lastname]"]');
+				var password = jQuery('.crm-new-user-forms input[name="subaccount[password]"]');
+
+				// Check if they are legitimate
+				if (email.val().length == 0) { email.addClass('field-error'); errors++; }
+				if (firstname.val().length == 0) { firstname.addClass('field-error'); errors++; }
+				if (lastname.val().length == 0) { lastname.addClass('field-error'); errors++; }
+				if (password.val().length == 0) { password.addClass('field-error'); errors++; }
+
+				// If all is good, send the form by saving the whole thing
+				if (errors == 0) {
+					jQuery('#submit').trigger('click');
+				}
+			}
+		});
+	},
+
+	/**
+	 * Handle sub account deletion
+	 */
+	handleDeleteSubAccount : function()
+	{
+		jQuery('.delete-subaccount').on('click', function() {
+			var link = jQuery(this);
+			var row = link.closest('tr');
+			var tick = row.find('.delete-subacc-tick');
+
+			if (!row.hasClass('mark-for-deletion')) {
+				if (confirm(crmAdminData.text.sureToDeleteSubAccount)) {
+					row.addClass('mark-for-deletion');
+					tick.val(1);
+				}
+			} else {
+				// Unmark for deletion and reset tick
+				row.removeClass('mark-for-deletion');
+				tick.val(0);
+			}
+		});
+	},
+
+	/**
+	 * Handles the sub account if if needed
+	 */
+	handleSubAccountUI : function()
+	{
+		// Only change the UI if matching subaccount role
+		if (jQuery.inArray(crmAdminData.editedUserRole, crmAdminData.config.subaccountRoles) >= 0) {
+			// First, do the full cleanup
+			CrmUserAdmin.cleanUpInterface();
+			// Now additionally reveal email, first and lastname again
+			jQuery('.user-first-name-wrap, .user-last-name-wrap, .user-email-wrap').show();
+		}
+	},
+
+	/**
+	 * Handles some generic toggles
+	 */
+	handleGenericToggles : function()
+	{
+		jQuery('.crm-show-prev').on('click', function() {
+			jQuery(this).prev().show();
+		});
+		jQuery('.crm-show-next').on('click', function() {
+			jQuery(this).next().show();
+		});
+		jQuery('.crm-toggle-remove').on('click', function() {
+			jQuery(this).remove();
+		});
+	},
+
+	/**
 	 * Make the whole profile visible after loading
 	 */
 	makeUiVisible : function()
@@ -403,6 +507,68 @@ var CrmUserAdmin = {
 				jQuery(this).closest('tr').remove();
 			}
 		});
+	},
+
+	/**
+	 * Handles the overview page logic
+	 */
+	handleUserListPage : function()
+	{
+		if (jQuery('.users-php').length == 1) {
+			// Handle removal of all if there is a default display group
+			if (typeof(crmAdminData.config.misc.defaultDisplayRole) == 'string') {
+				jQuery('.subsubsub .all').remove();
+			}
+
+			// Handle the active / inactive dropdown
+			var dropdown = jQuery("#status-filter");
+			jQuery(".tablenav-pages").prepend(dropdown);
+			dropdown = jQuery("#status-filter");
+			//dropdown = jQuery("#status-filter");
+			dropdown.css("display", "inline");
+			// Add functionality
+			dropdown.on("change", function() {
+				var params = CrmUserAdmin.getParams(document.location.search.substring(1));
+				// Add or replace the status filter param
+				params['status-filter'] = jQuery(this).val();
+				var url = '/wp-admin/users.php?';
+				jQuery.each(params, function(key, value) {
+					console.log(key, value);
+					url += key + '=' + value + '&';
+				});
+
+				// Reload with new params
+				document.location.href = url.substring(0, url.length - 1);
+			});
+		}
+	},
+
+	/**
+	 * Extracts a query string
+	 * @param query
+	 * @returns {{}}
+	 */
+	getParams : function(query)
+	{
+		var vars = query.split("&");
+		var query_string = {};
+		for (var i = 0; i < vars.length; i++) {
+			var pair = vars[i].split("=");
+			var key = decodeURIComponent(pair[0]);
+			var value = decodeURIComponent(pair[1]);
+			// If first entry with this name
+			if (typeof query_string[key] === "undefined") {
+				query_string[key] = decodeURIComponent(value);
+				// If second entry with this name
+			} else if (typeof query_string[key] === "string") {
+				var arr = [query_string[key], decodeURIComponent(value)];
+				query_string[key] = arr;
+				// If third or later entry with this name
+			} else {
+				query_string[key].push(decodeURIComponent(value));
+			}
+		}
+		return query_string;
 	}
 };
 

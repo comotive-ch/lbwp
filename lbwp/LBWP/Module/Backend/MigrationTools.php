@@ -133,14 +133,19 @@ class MigrationTools extends \LBWP\Module\Base
           });
           
           function attachmentFixRun(nr) {
-            jQuery.post(ajaxurl + "?action=migrationToolsAttachmentFixing", { page : nr }, function(response) {
+            jQuery.ajax(ajaxurl + "?action=migrationToolsAttachmentFixing&page=" + nr, { complete : function(response) {
               var container = jQuery(".attachment-fixing-results");
-              jQuery.each(response.files, function(key, info) {
-                container.append("<li>" + (++attachmentsFixed) + ": " + info + "</li>");
-              });
+              response = response.responseJSON;
+              // Print for the developer to see what happens
+              console.log(response);
+              if (typeof(response) == "object") {
+                jQuery.each(response.files, function(key, info) {
+                  container.append("<li>" + (++attachmentsFixed) + ": " + info + "</li>");
+                });
+              }
               // Call the next run now
               attachmentFixRun(++attachmentFixPage);
-            });
+            }});
           }
         </script>
       </form>
@@ -352,7 +357,7 @@ class MigrationTools extends \LBWP\Module\Base
     // Get attachments to be transformed
     $attachments = get_posts(array(
       'post_type' => 'attachment',
-      'posts_per_page' => 100,
+      'posts_per_page' => 50,
       'paged' => $page
     ));
 
@@ -368,8 +373,6 @@ class MigrationTools extends \LBWP\Module\Base
         $list = $this->getFileList($attachment->ID);
         // If the list has no entries, escape this loop
         if (count($list) == 0) continue;
-        // If the first list entry is identical, esacpe as well
-        if ($list[0]['before'] == $list[0]['after']) continue;
         // Rename on storage, if possible
         $this->attFixRenameOnStorage($list, $storage);
         // Rename local attachment data when given
@@ -378,17 +381,17 @@ class MigrationTools extends \LBWP\Module\Base
         // Make sure to search replace the full db for the path
         // Then, print all files into the output
         foreach ($list as $file) {
-          $this->migrateData($file['before'], $file['after']);
+          if ($file['before'] != $file['after']) {
+            $this->migrateData($file['before'], $file['after']);
+          }
           $result[] = $file['before'] . ' > ' . $file['after'];
         }
       }
     }
 
-    // Even if no result, let the server breathe
-    sleep(1);
-
     WordPress::sendJsonResponse(array(
-      'files' => $result
+      'files' => $result,
+      'checked' => count($attachments)
     ));
   }
 
@@ -402,7 +405,7 @@ class MigrationTools extends \LBWP\Module\Base
       $before = ASSET_KEY . '/files/' . $file['before'];
       $after = ASSET_KEY . '/files/' . $file['after'];
       // Test if the before key exists
-      if ($storage->fileExists($before)) {
+      if ($file['before'] != $file['after'] && $storage->fileExists($before)) {
         $storage->renameFile($before, $after, S3Upload::ACL_PUBLIC);
       }
     }
@@ -422,6 +425,7 @@ class MigrationTools extends \LBWP\Module\Base
         Strings::alphaNumLowFiles($data['sizes'][$key]['file']);
       }
       wp_update_attachment_metadata($id, $data);
+      update_post_meta($id, '_wp_attached_file', $data['file']);
     } else {
       // Normal file, just get the file name and key
       $file = get_post_meta($id, '_wp_attached_file', true);

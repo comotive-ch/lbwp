@@ -3,6 +3,7 @@
 namespace LBWP\Util;
 
 use Aws\S3\S3Client;
+use Aws\Ses\SesClient;
 
 /**
  * Factory class to use the amazon sdk services
@@ -57,8 +58,6 @@ class AwsFactoryV3 {
     return new S3Client($config);
   }
 
-
-
   /**
    * returns an instance of the amazon s3 service object
    * @return S3Client instance of the amazon s3 service object
@@ -82,6 +81,27 @@ class AwsFactoryV3 {
     $config['use_path_style_endpoint'] = true;
 
     return new S3Client($config);
+  }
+
+  /**
+   * returns an instance of the amazon SES service object
+   * @return SesClient instance of the amazon SES service object
+   */
+  public static function getSesService($access, $secret, $region)
+  {
+    require_once self::getSdkPath() . 'aws-autoloader.php';
+
+    $config = array(
+      'credentials' => array(
+        'key' => $access,
+        'secret' => $secret,
+      ),
+      'signature_version' => 'v4',
+      'version' => '2010-12-01',
+      'region' => $region
+    );
+
+    return new SesClient($config);
   }
 
   /**
