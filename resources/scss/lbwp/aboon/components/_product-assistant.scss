@@ -1,0 +1,106 @@
+.wp-block-aboon-assistant{
+  .answer-option{
+    cursor: pointer;
+    margin-bottom: 1rem;
+    width: 100%;
+
+    &__row{
+      border: 3px solid var(--s03-primary-light-color);
+      border-radius: var(--s03-default-border-radius);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 1rem;
+
+      @include media-breakpoint-down(sm){
+        row-gap: 1rem;
+        flex-direction: column;
+        align-items: flex-start;
+      }
+
+    }
+
+    &__image{
+      width: 30%;
+
+      @include media-breakpoint-down(sm){
+        width: 100%;
+      }
+    }
+
+    &__text{
+      width: calc(55% - 2rem);
+
+      @include media-breakpoint-down(sm){
+        width: 100%;
+      }
+
+      h3{
+        font-size: 18px;
+        margin-bottom: 5px;
+      }
+
+      p{
+        font-size: 14px;
+        line-height: 1.5;
+        font-weight: 400;
+      }
+    }
+
+    &__price{
+      width: 15%;
+      align-self: flex-start;
+      text-align: right;
+      font-size: 20px;
+      font-weight: bold;
+
+      @include media-breakpoint-down(sm){
+        width: 100%;
+        text-align: left;
+      }
+    }
+  }
+
+  .answer-radio{
+    display: none;
+
+    &:checked ~ .answer-option__row{
+      border-color: var(--s03-primary-color);
+    }
+  }
+
+  .assistant-button{
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+
+    input{
+      margin-left: auto;
+
+      &:disabled{
+        cursor: not-allowed;
+        opacity: 0.5;
+
+        &:hover{
+          background: var(--s03-primary-color);
+          color: var(--s03-on-primary-color);
+          border-color: var(--s03-primary-color);
+        }
+      }
+    }
+  }
+}
+
+/*
+--s03-primary-color: #7fcd91;
+--s03-primary-hover-color: #5f996c;
+--s03-on-primary-color: #FFFFFF;
+
+--s03-primary-light-color: #e6f2e9;
+--s03-primary-light-hover-color: #a8d2b3;
+--s03-on-primary-light-color: #262626;
+
+--s03-secondary-color: #7fcd91;
+--s03-secondary-hover-color: #4eba67;
+--s03-on-secondary-color: #fff;
+ */

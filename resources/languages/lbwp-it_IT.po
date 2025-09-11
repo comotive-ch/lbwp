@@ -1,0 +1,658 @@
+msgid ""
+msgstr ""
+"Project-Id-Version: LBWP\n"
+"POT-Creation-Date: 2015-08-03 11:05+0100\n"
+"PO-Revision-Date: 2023-10-24 09:02+0200\n"
+"Last-Translator: \n"
+"Language-Team: comotive <info@comotive.ch>\n"
+"Language: it_IT\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"X-Generator: Poedit 3.0.1\n"
+"X-Poedit-KeywordsList: __;_e;__ngettext:1,2;_n:1,2;__ngettext_noop:1,2;_n_noop:1,2;_c;_nc:4c,1,2;_x:1,2c;_nx:4c,1,2;"
+"_nx_noop:4c,1,2;_ex:1,2c;esc_attr__;esc_attr_e;esc_attr_x:1,2c;esc_html__;esc_html_e;esc_html_x:1,2c\n"
+"X-Poedit-Basepath: .\n"
+"X-Poedit-SourceCharset: UTF-8\n"
+"X-Poedit-SearchPath-0: /var/www/lbwp/wp-content/plugins/lbwp\n"
+
+msgid "Login failed. Please try again. <a href=\"%s\">forgot your password?</a>"
+msgstr "Accesso fallito. Per favore riprova. <a href=\"%s\">hai dimenticato la tua password?</a>'"
+
+#: /var/www/lbwp/wp-content/plugins/lbwp/LBWP/Theme/Feature/ListingTemplate.php:55
+msgid "Liste von Inhalten (Text und Bild)"
+msgstr ""
+
+#: /var/www/lbwp/wp-content/plugins/lbwp/LBWP/Theme/Feature/ListingTemplate.php:62
+msgid "Titel"
+msgstr ""
+
+msgid "VPE: %s Stück"
+msgstr "PU: %s pezzi"
+
+#: /var/www/lbwp/wp-content/plugins/lbwp/LBWP/Theme/Feature/ListingTemplate.php:63
+msgid "Inhalt"
+msgstr ""
+
+#: /var/www/lbwp/wp-content/plugins/lbwp/LBWP/Theme/Feature/ListingTemplate.php:64
+#: /var/www/lbwp/wp-content/plugins/lbwp/LBWP/Theme/Feature/ListingTemplate.php:107
+msgid "Bild"
+msgstr ""
+
+#: /var/www/lbwp/wp-content/plugins/lbwp/LBWP/Theme/Feature/ListingTemplate.php:65
+msgid "Bild-Position"
+msgstr ""
+
+#: /var/www/lbwp/wp-content/plugins/lbwp/LBWP/Theme/Feature/ListingTemplate.php:69
+msgid "Links"
+msgstr ""
+
+#: /var/www/lbwp/wp-content/plugins/lbwp/LBWP/Theme/Feature/ListingTemplate.php:70
+msgid "Rechts"
+msgstr ""
+
+#: /var/www/lbwp/wp-content/plugins/lbwp/LBWP/Theme/Feature/ListingTemplate.php:73
+#: /var/www/lbwp/wp-content/plugins/lbwp/LBWP/Theme/Feature/ListingTemplate.php:136
+msgid "Ziel-Link"
+msgstr ""
+
+#: /var/www/lbwp/wp-content/plugins/lbwp/LBWP/Theme/Feature/ListingTemplate.php:74
+#: /var/www/lbwp/wp-content/plugins/lbwp/LBWP/Theme/Feature/ListingTemplate.php:137
+msgid "Link-Text"
+msgstr ""
+
+#: /var/www/lbwp/wp-content/plugins/lbwp/LBWP/Theme/Feature/ListingTemplate.php:94
+msgid "Personen-Auflistung"
+msgstr ""
+
+#: /var/www/lbwp/wp-content/plugins/lbwp/LBWP/Theme/Feature/ListingTemplate.php:101
+msgid "Vorname"
+msgstr "Nome"
+
+#: /var/www/lbwp/wp-content/plugins/lbwp/LBWP/Theme/Feature/ListingTemplate.php:102
+msgid "Nachname"
+msgstr "Cognome"
+
+#: /var/www/lbwp/wp-content/plugins/lbwp/LBWP/Theme/Feature/ListingTemplate.php:103
+msgid "Anrede"
+msgstr "Saluto"
+
+#: /var/www/lbwp/wp-content/plugins/lbwp/LBWP/Theme/Feature/ListingTemplate.php:104
+msgid "Funktion/Rolle"
+msgstr ""
+
+#: /var/www/lbwp/wp-content/plugins/lbwp/LBWP/Theme/Feature/ListingTemplate.php:105
+#: /var/www/lbwp/wp-content/plugins/lbwp/LBWP/Theme/Feature/CommentForm.php:98
+msgid "E-Mail-Adresse"
+msgstr "Indirizzo e-mail"
+
+#: /var/www/lbwp/wp-content/plugins/lbwp/LBWP/Theme/Feature/ListingTemplate.php:106
+msgid "Beschreibung"
+msgstr ""
+
+#: /var/www/lbwp/wp-content/plugins/lbwp/LBWP/Theme/Feature/ListingTemplate.php:127
+msgid "Logo- oder Link-Auflistung"
+msgstr ""
+
+#: /var/www/lbwp/wp-content/plugins/lbwp/LBWP/Theme/Feature/ListingTemplate.php:134
+msgid "Logo Titel"
+msgstr ""
+
+#: /var/www/lbwp/wp-content/plugins/lbwp/LBWP/Theme/Feature/ListingTemplate.php:135
+msgid "Logo Bild"
+msgstr ""
+
+#: /var/www/lbwp/wp-content/plugins/lbwp/LBWP/Theme/Feature/ListingTemplate.php:138
+msgid "Link öffnen in"
+msgstr ""
+
+#: /var/www/lbwp/wp-content/plugins/lbwp/LBWP/Theme/Feature/ListingTemplate.php:142
+msgid "Im selben Tab/Fenster"
+msgstr ""
+
+#: /var/www/lbwp/wp-content/plugins/lbwp/LBWP/Theme/Feature/ListingTemplate.php:143
+msgid "In neuem Tab/Fenster"
+msgstr ""
+
+#: /var/www/lbwp/wp-content/plugins/lbwp/LBWP/Theme/Feature/Search.php:109
+msgid "Suche nach"
+msgstr ""
+
+#: /var/www/lbwp/wp-content/plugins/lbwp/LBWP/Theme/Feature/Search.php:109
+msgid "auf"
+msgstr ""
+
+#: /var/www/lbwp/wp-content/plugins/lbwp/LBWP/Theme/Feature/CommentForm.php:97
+msgid "Name"
+msgstr "Nome"
+
+#: /var/www/lbwp/wp-content/plugins/lbwp/LBWP/Theme/Feature/CommentForm.php:99
+msgid "Website"
+msgstr "Sito web"
+
+#: /var/www/lbwp/wp-content/plugins/lbwp/LBWP/Theme/Feature/CommentForm.php:100
+msgid "Kommentar"
+msgstr "Commento"
+
+#: /var/www/lbwp/wp-content/plugins/lbwp/LBWP/Theme/Feature/TransientStickyPost.php:74
+msgid "Beitrag oben halten"
+msgstr ""
+
+#: /var/www/lbwp/wp-content/plugins/lbwp/LBWP/Theme/Feature/TransientStickyPost.php:106
+msgid "Diesen Beitrag oben halten"
+msgstr ""
+
+#: /var/www/lbwp/wp-content/plugins/lbwp/LBWP/Theme/Feature/TransientStickyPost.php:113
+msgid "Nie"
+msgstr ""
+
+#: /var/www/lbwp/wp-content/plugins/lbwp/LBWP/Theme/Feature/TransientStickyPost.php:117
+msgid "Automatisch Zurücksetzen:"
+msgstr ""
+
+#: /var/www/lbwp/wp-content/plugins/lbwp/LBWP/Theme/Feature/ResponsiveWidgets.php:74
+msgid "Responsive Einstellungen:"
+msgstr ""
+
+#: /var/www/lbwp/wp-content/plugins/lbwp/LBWP/Theme/Widget/LatestArticles.php:22
+msgid "Zeigt die neusten Artikel in der Sidebar"
+msgstr ""
+
+#: /var/www/lbwp/wp-content/plugins/lbwp/LBWP/Theme/Widget/LatestArticles.php:79
+msgid "&raquo; weiterlesen"
+msgstr "&raquo; continua"
+
+msgid "Weiterlesen"
+msgstr "Continua"
+
+#: /var/www/lbwp/wp-content/plugins/lbwp/LBWP/Theme/Widget/LatestArticles.php:94
+msgid "mehr"
+msgstr "continua"
+
+msgid "Mehr erfahren"
+msgstr "Leggi di più"
+
+#: /var/www/lbwp/wp-content/plugins/lbwp/LBWP/Helper/Metabox.php:264
+msgid "Zusammengeführte Felder"
+msgstr ""
+
+#: /var/www/lbwp/wp-content/plugins/lbwp/LBWP/Helper/Metabox.php:266
+msgid "Es wurden gleichnamige Felder aus folgenden Dialogen zusammengeführt: "
+msgstr ""
+
+#: /var/www/lbwp/wp-content/plugins/lbwp/LBWP/Helper/Metabox.php:677
+msgid "Datei wählen"
+msgstr ""
+
+#: /var/www/lbwp/wp-content/plugins/lbwp/LBWP/Helper/Metabox.php:680
+msgid "Datei entfernen"
+msgstr ""
+
+#: /var/www/lbwp/wp-content/plugins/lbwp/LBWP/Newsletter/Component/Settings.php:109
+msgid "Einstellungen wurden gespeichert."
+msgstr ""
+
+#: /var/www/lbwp/wp-content/plugins/lbwp/LBWP/Newsletter/Service/Mailchimp/Implementation.php:208
+msgid "Konnte keine Listen laden. Bitte erstellen sie eine Liste in MailChimp."
+msgstr ""
+
+#: /var/www/lbwp/wp-content/plugins/lbwp/LBWP/Module/Forms/Widget.php:23
+msgid "Erlaubt es ein zuvor erstelltes Formular in der Sidebar darzustellen"
+msgstr ""
+
+#: /var/www/lbwp/wp-content/plugins/lbwp/LBWP/Module/Forms/Widget.php:26
+msgid "Formular Widget"
+msgstr ""
+
+#: /var/www/lbwp/wp-content/plugins/lbwp/LBWP/Module/Forms/Component/FormHandler.php:140
+msgid "Fehler beim Absenden des Formulars"
+msgstr "Errore nell' invio del formulario"
+
+#: /var/www/lbwp/wp-content/plugins/lbwp/LBWP/Module/Forms/Item/Base.php:101
+#, php-format
+msgid "Bitte überprüfe den Feld-Inhalt."
+msgstr "Il valore del campo non è corretto."
+
+#: /var/www/lbwp/wp-content/plugins/lbwp/LBWP/Module/Forms/Item/Base.php:102
+#, php-format
+msgid "Bitte fülle das Feld \"%s\" aus."
+msgstr "Il campo \"%s\" è obbligatorio."
+
+#: /var/www/lbwp/wp-content/plugins/lbwp/LBWP/Module/Forms/Item/Calculation.php:37
+msgid "Type in the result of the following calculation:"
+msgstr "Registra p.f. il risultato del calcolo seguente:"
+
+#: /var/www/lbwp/wp-content/plugins/lbwp/LBWP/Module/Forms/Item/Calculation.php:45
+msgid "Spamschutz: "
+msgstr ""
+
+#: /var/www/lbwp/wp-content/plugins/lbwp/LBWP/Module/Forms/Action/SendMail.php:79
+msgid "Nicht ausgefüllt"
+msgstr ""
+
+#: /var/www/lbwp/wp-content/plugins/lbwp/LBWP/Module/Forms/Action/SendMail.php:94
+msgid "Ein Formular auf Ihrer Webseite wurde ausgefüllt"
+msgstr ""
+
+#: /var/www/lbwp/wp-content/plugins/lbwp/LBWP/Module/Forms/Action/SendMail.php:97
+msgid "Diese E-Mail wurde generiert am"
+msgstr ""
+
+#: /var/www/lbwp/wp-content/plugins/lbwp/LBWP/Module/Forms/Action/SendMail.php:105
+msgid ""
+"Zum Beantworten dieser E-Mail nutzen sie bitte die Weiterleiten Funktion und kopieren die E-Mail Adresse aus den Formulardaten, "
+"sofern der Besucher eine E-Mail Adresse angegeben hat."
+msgstr ""
+
+#: /var/www/lbwp/wp-content/plugins/lbwp/LBWP/Module/Listings/Widget.php:22
+msgid "Widget welches Erlaubt eine Auflistung in der Sidebar darzustellen"
+msgstr ""
+
+#: /var/www/lbwp/wp-content/plugins/lbwp/LBWP/Module/Listings/Widget.php:25
+msgid "Auflistungs-Widget"
+msgstr ""
+
+#: /var/www/lbwp/wp-content/plugins/lbwp/LBWP/Module/Listings/Component/ListFilter.php:41
+msgid "Einträge aller Listen"
+msgstr ""
+
+#: /var/www/lbwp/wp-content/plugins/lbwp/LBWP/Module/Listings/Component/ListFilter.php:55
+#, php-format
+msgid "Liste &laquo;%s&raquo;"
+msgstr ""
+
+#: /var/www/lbwp/wp-content/plugins/lbwp/LBWP/Module/Listings/Component/Posttype.php:75
+msgid "Einstellungen"
+msgstr ""
+
+#: /var/www/lbwp/wp-content/plugins/lbwp/LBWP/Module/Listings/Component/Posttype.php:79
+msgid "Design der Liste"
+msgstr ""
+
+#: /var/www/lbwp/wp-content/plugins/lbwp/LBWP/Module/Listings/Component/Posttype.php:86
+msgid "Einträge"
+msgstr ""
+
+#: /var/www/lbwp/wp-content/plugins/lbwp/LBWP/Module/Listings/Component/Posttype.php:96
+msgid "Zugewiesene Liste(n)"
+msgstr ""
+
+#: /var/www/lbwp/wp-content/plugins/lbwp/LBWP/Module/Listings/Component/Posttype.php:100
+msgid "Listen"
+msgstr ""
+
+#: /var/www/lbwp/wp-content/plugins/lbwp/LBWP/Module/General/CleanUp.php:391
+#: /var/www/lbwp/wp-content/plugins/lbwp/LBWP/Module/General/CleanUp.php:392
+msgid "Soziale Netzwerke"
+msgstr ""
+
+#: /var/www/lbwp/wp-content/plugins/lbwp/LBWP/Module/General/CleanUp.php:453
+#, php-format
+msgid "Autor: %s"
+msgstr ""
+
+#: /var/www/lbwp/wp-content/plugins/lbwp/LBWP/Module/General/CleanUp.php:454
+#, php-format
+msgid "E-Mail: %s"
+msgstr ""
+
+#: /var/www/lbwp/wp-content/plugins/lbwp/LBWP/Module/General/CleanUp.php:456
+msgid "Hinweis: Der Kommentar könnte Spam enthalten, daher zeigen wir hier nur ein paar Worte davon an."
+msgstr ""
+
+#: /var/www/lbwp/wp-content/plugins/lbwp/LBWP/Module/General/CleanUp.php:469
+msgid "Alle noch nicht genehmigten Kommentare anzeigen:"
+msgstr ""
+
+#: /var/www/lbwp/wp-content/plugins/lbwp/LBWP/Module/General/AuthorHelper.php:78
+msgid "Angaben zum Autor"
+msgstr ""
+
+#: /var/www/lbwp/wp-content/plugins/lbwp/LBWP/Module/General/AuthorHelper.php:81
+msgid "Autorenbild"
+msgstr ""
+
+#: /var/www/lbwp/wp-content/plugins/lbwp/LBWP/Module/General/AuthorHelper.php:84
+msgid "Bild hochladen"
+msgstr ""
+
+#: /var/www/lbwp/wp-content/plugins/lbwp/LBWP/Module/General/AuthorHelper.php:85
+msgid "Bild entfernen"
+msgstr ""
+
+#: /var/www/lbwp/wp-content/plugins/lbwp/LBWP/Module/General/AuthorHelper.php:89
+msgid "Das Bild wird nur genutzt, wenn das Theme dies auch unterstützt."
+msgstr ""
+
+#: /var/www/lbwp/wp-content/plugins/lbwp/LBWP/Module/General/AuthorHelper.php:94
+msgid "Kurzbeschreibung"
+msgstr ""
+
+#: /var/www/lbwp/wp-content/plugins/lbwp/LBWP/Util/WordPress.php:110
+msgid "Erstellen"
+msgstr ""
+
+#: /var/www/lbwp/wp-content/plugins/lbwp/LBWP/Util/String.php:618
+msgid "Ihr Passwort muss mindestens "
+msgstr ""
+
+#: /var/www/lbwp/wp-content/plugins/lbwp/LBWP/Util/String.php:621
+msgid "Die Passwörter stimmen nicht überein"
+msgstr ""
+
+#: /var/www/lbwp/wp-content/plugins/lbwp/LBWP/Util/String.php:625
+msgid "Sie haben kein Passwort eingegeben"
+msgstr ""
+
+#: /var/www/lbwp/wp-content/plugins/lbwp/LBWP/Util/Date.php:339
+msgid "Uhr"
+msgstr ""
+
+#: general
+msgid "Zurück zu allen Artikeln"
+msgstr ""
+
+#: general
+msgid "Zurück zur Startseite"
+msgstr ""
+
+#: general
+msgid "Zum Inhalt wechseln"
+msgstr ""
+
+#: general
+msgid "Direkt zur Hauptnavigation"
+msgstr ""
+
+#: general
+msgid "Personenfoto von"
+msgstr ""
+
+#: general
+msgid "Alle Artikel von %s"
+msgstr ""
+
+#: general
+msgid "Alle Artikel aus der Kategorie %s"
+msgstr ""
+
+#: general, blog comments (no word wrap)
+msgid "0&nbsp;Kommentare"
+msgstr "0&nbsp;commenti"
+
+#: general, blog comments (no word wrap)
+msgid "1&nbsp;Kommentar"
+msgstr "1&nbsp;commento"
+
+#: general, blog comments (no word wrap)
+msgid "%&nbsp;Kommentare"
+msgstr "%&nbsp;commenti"
+
+#: general, blog comment form
+msgid "Bitte fülle alle mit * gekennzeichneten Felder aus."
+msgstr "Si prega di compilare tutti i campi contrassegnati da asterisco (*)"
+
+#: general, blog comment form
+msgid "Kommentare sind geschlossen."
+msgstr "I commenti sono chiusi."
+
+#: general, blog comment form
+msgid "Schreibe einen Kommentar"
+msgstr "Scrivete un commento"
+
+#: general, search
+msgid "Suchen"
+msgstr "Cerca"
+
+#: general, search
+msgid "Suche"
+msgstr "Ricerca"
+
+#: general
+msgid "Vorherige Seite"
+msgstr "Pagina precedente"
+
+#: general
+msgid "Vorherige"
+msgstr "Precedente"
+
+#: general
+msgid "Nächste Seite"
+msgstr "Pagina seguente"
+
+#: general
+msgid "Nächste"
+msgstr "Successiva"
+
+#: general, image gallery
+msgid "Bild {index} von {total}"
+msgstr ""
+
+#: general, display date and time
+msgid "%s um %s Uhr"
+msgstr ""
+
+#: general
+msgid "Kategorie"
+msgstr "Categoria"
+
+#: general
+msgid "Kategorien"
+msgstr "Categorie"
+
+#: general
+msgid "Autor"
+msgstr "Autore"
+
+#: general
+msgid "Übersicht"
+msgstr ""
+
+#: general
+msgid "Schlagworte"
+msgstr ""
+
+#: general, events
+msgid "Anmeldung"
+msgstr "Registrazione"
+
+#: events
+msgid "Anmeldung: %s / %s"
+msgstr "Registrazione: %s / %s"
+
+#: events
+msgid "Veranstaltung"
+msgstr "Eventi"
+
+#: general
+msgid "Ort"
+msgstr "Luogo"
+
+#: events
+msgid "Datum/Zeit"
+msgstr "Data/Ora"
+
+#: events
+msgid "Von %s bis %s"
+msgstr "Da %s a %s"
+
+#: general
+msgid "Datum"
+msgstr "Data"
+
+#: general
+msgid "Uhrzeit"
+msgstr "Ora"
+
+#: general
+msgid "Beginn"
+msgstr "Inizio"
+
+#: general
+msgid "Ende"
+msgstr "Fine"
+
+#: general
+msgid "Anmeldung bis"
+msgstr "Iscrizioni fino a"
+
+msgid "Anmeldeinformation"
+msgstr "Info sulle Iscrizioni"
+
+#: general
+msgid "Alle anzeigen"
+msgstr "Mostra tutti"
+
+#: general
+msgid "Es wurden keine Veranstaltungen gefunden"
+msgstr "Nessuna manifestazione trovata"
+
+#: general
+msgid "Vergangene Veranstaltungen anzeigen"
+msgstr "Mostra le ultime manifestazioni"
+
+#: general
+msgid "Bitte auswählen"
+msgstr "Vogliate selezionare"
+
+msgid "Ihre Suche ergab keine Ergebnisse."
+msgstr "La ricerca non ha prodotto risultati."
+
+msgid "Sie sind für einen geschützen Bereich angemeldet. <a href=\"%s\">Abmelden</a>"
+msgstr "Ti sei connessa in un'area riservata; per accedervi necessiti una password. <a href=\"%s\">Disconnettersi</a>"
+
+msgid "Home"
+msgstr "Home"
+
+msgid "Seite"
+msgstr "Pagina"
+
+msgid "Zurück zum Formular"
+msgstr "Vai alla scheda"
+
+msgid "Archiv"
+msgstr "Archivio"
+
+#: verify!
+msgid "Zurück"
+msgstr "Indietro"
+
+msgid "Zur Übersicht"
+msgstr "Alla panoramica"
+
+msgid "Bearbeiten"
+msgstr "Adattare"
+
+msgid "Senden"
+msgstr "Spedire"
+
+msgid "Seite %s von %s"
+msgstr ""
+
+msgid "Alle"
+msgstr "Tutti"
+
+msgid "Suchbegriff"
+msgstr "Termine di ricerca"
+
+msgid "Ihre Nachricht wurde erfolgreich gesendet."
+msgstr "Il tuo messaggio è stato inviato con successo."
+
+msgid "Weitere Suchergebnisse"
+msgstr "Più risultati"
+
+msgid "Suchergebnisse werden geladen..."
+msgstr "Caricamento dei risultati della ricerca..."
+
+msgid "Vielen Dank für Ihren Kommentar. Wir werden diesen in Kürze überprüfen und freischalten."
+msgstr "Grazie per il tuo commento. Rivedremo e pubblicheremo brevemente."
+
+msgid "Logout"
+msgstr "Ritirare"
+
+msgid "<strong>Fehler</strong>: Bitte geben Sie Ihren Benutzernamen ein."
+msgstr "<strong>Errore</strong>: Inserisci il tuo nome utente."
+
+msgid "<strong>Fehler</strong>: Bitte geben Sie Ihr Passwort ein."
+msgstr "<strong>Errore</strong>: Inserisci la tua password."
+
+msgid "<strong>Fehler</strong>: Der eingegebene Benutzername ist ungültig."
+msgstr "<strong>Errore</strong>: Il nome utente inserito non è valido."
+
+msgid "<strong>Fehler</strong>: Das eingegebene Passwort ist nicht korrekt."
+msgstr "<strong>Errore</strong>: La password inserita non è corretta."
+
+msgid "Registrieren"
+msgstr "Registrazione"
+
+msgid "Benutzername"
+msgstr "Nome utente"
+
+msgid "Passwort"
+msgstr "Password"
+
+msgid "Neues Passwort"
+msgstr "Nuova password"
+
+msgid "Passwort bestätigen"
+msgstr "Conferma password"
+
+msgid "Login"
+msgstr "Login"
+
+msgid "Ihr Account wurde erstellt. Sie sind nun eingeloggt."
+msgstr "Il tuo account è stato creato. Hai effettuato l'accesso."
+
+msgid "<strong>Fehler</strong>: %s"
+msgstr "<strong>Errore</strong>: %s"
+
+msgid "Ihre Profildaten wurden gespeichert."
+msgstr "I tuoi dati del profilo sono stati salvati."
+
+msgid "Profil"
+msgstr "Profilo"
+
+msgid "Sie haben sich erfolgreich eingeloggt."
+msgstr "Accesso effettuato correttamente."
+
+msgid "Sie wurden erfolgreich ausgeloggt."
+msgstr "Il logout è stato effettuato con successo."
+
+msgid "Herr"
+msgstr "Signore"
+
+msgid "Frau"
+msgstr "Signorina"
+
+msgid "Es sind {number} Fehler aufgetreten."
+msgstr "Sono stati commessi {number} errori."
+
+msgid "Es ist ein Fehler aufgetreten."
+msgstr "Si è verificato un errore."
+
+msgid "Die Aufzeichnung des Nutzungsverhaltens wurde deaktiviert."
+msgstr "La registrazione del comportamento d'uso è stata disattivata."
+
+msgid "Per E-Mail versenden"
+msgstr "E-Mail"
+
+msgid "Drucken"
+msgstr "Copia"
+
+msgid "Auf folgenden Seiten wurde dieser Beitrag verlinkt (Pingback)"
+msgstr ""
+
+msgid "Diese Datei ist zu gross. Erlaubt sind %s MB"
+msgstr "Il file è troppo grande. La dimensione massima del file è di %s MB"
+
+msgid "Seite nicht gefunden (404)"
+msgstr "Pagina non trovata (404)"
+
+msgid "Bitte versuchen Sie, den gewünschten Inhalt über die Navigation oder <a href=\"%s\">Startseite</a> zu erreichen."
+msgstr "Si prega di provare a raggiungere il contenuto desiderato attraverso la navigazione o la <a href=\"%s\">pagina iniziale</a>."
+
+msgid "Deine %s"
+msgstr ""
+
+msgid "Sie können Ihre Daten hier bearbeiten."
+msgstr "Può modificare i suoi dati qui."

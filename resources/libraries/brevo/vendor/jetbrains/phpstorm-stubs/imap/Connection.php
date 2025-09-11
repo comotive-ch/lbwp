@@ -1,0 +1,10 @@
+<?php
+
+namespace BrevoScoped\IMAP;
+
+/**
+ * @since 8.1
+ */
+final class Connection
+{
+}

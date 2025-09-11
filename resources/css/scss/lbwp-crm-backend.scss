@@ -1,0 +1,353 @@
+$errorColor : #F2D0C6;
+$readonlyColor : #DEE2EF;
+$disabledColor : #EFE1E1;
+$fullaccessColor : #EEFFC9;
+
+.crm-navigation {
+	a.crm-tab {
+		&.error {
+			background-color:$errorColor;
+		}
+	}
+}
+
+.crmcf-history {
+	display:none;
+}
+
+.history-type-file {
+	overflow-wrap: break-word;
+	a, p {
+		display:block;
+		padding: 0px 4px 4px 4px;
+	}
+}
+
+.crm-new-user-forms {
+	margin-top:20px;
+	input {
+		display:none;
+	}
+	&.open input {
+		display:inline;
+	}
+}
+
+
+#profile-page .form-table textarea.crmcf-input{
+	width: 25em;
+
+	@media only screen and (max-width: 768px){
+		width: 100%;
+		max-width: none;
+	}
+}
+
+#profile-page .form-table .history-container textarea.crmcf-input{
+	width: 100%;
+}
+
+body .history-container {
+	max-width:100%;
+
+	.crmcf-history-table {
+		border-spacing: 0;
+		border: 1px solid #ddd;
+
+		thead th, tbody td {
+			max-width: 200px;
+		}
+
+		th {
+			padding:3px 0px 3px 6px;
+		}
+
+		td {
+			padding:1px 0px 0px 0px;
+			input[type=text], textarea {
+				width:100%;
+				margin:0px;
+				border:0px none;
+				border-top:1px solid #ccc;
+				background-color:transparent;
+			}
+			input[type=radio], input[type=checkbox] {
+				margin: 0px 0px 5px 5px;
+			}
+		}
+
+		th:nth-child(odd), td:nth-child(odd) {
+			background-color:#fafafa;
+		}
+		th:nth-child(even), td:nth-child(even) {
+			background-color:#e8e8e8;
+		}
+	}
+}
+
+body .custom-field-table {
+	.crmcf-table {
+		max-width: 100%;
+		border-spacing: 0;
+		border-left: 1px solid #ddd;
+		border-top: 1px solid #ddd;
+
+		.crmcf-head {
+			padding: 3px 5px;
+		}
+		thead td {
+			font-weight: bold;
+		}
+		tbody td {
+			max-width: 200px;
+		}
+
+		td {
+			padding: 0;
+			border-right: 1px solid #ddd;
+			border-bottom: 1px solid #ddd;
+			input[type=text] {
+				width: 100%;
+				margin: 0px;
+				border: 0px none;
+			}
+		}
+	}
+	.crmcf-visualize-readonly {
+		background-color:$readonlyColor;
+	}
+	.crmcf-visualize-disabled {
+		background-color:$disabledColor;
+	}
+}
+
+.contact-table-container {
+
+	.crm-read-only {
+		border-left-width: 5px;
+		border-left-color: saturate($readonlyColor, 30%);
+	}
+	.crm-full-access {
+		border-left-width: 5px;
+		border-left-color: saturate($fullaccessColor, 30%);
+	}
+	.crm-admin-only {
+		border-left-width: 5px;
+		border-left-color: saturate($disabledColor, 30%);
+	}
+	.crm-change-only {
+		border-left-width: 5px;
+	}
+}
+
+.crmcf-description, .crmcf-history {
+	.dashicons {
+		margin-top: 3px;
+		color: #aaa;
+		cursor: pointer;
+	}
+	label {
+		vertical-align: top;
+		line-height: 24px;
+		display: none;
+	}
+}
+
+.contact-help {
+	.dashicons {
+		color: #aaa;
+		cursor: pointer;
+	}
+	label {
+		margin-top:5px;
+		display:none;
+		font-weight:normal;
+	}
+}
+
+.tab-container {
+	display: none;
+	padding-top: 10px;
+
+	.form-table {
+		margin-top: 0;
+
+		textarea {
+			margin-right: 4px;
+			float: left;
+		}
+
+		th {
+			padding: 10px 10px 10px 0;
+		}
+
+		td {
+			padding: 10px;
+		}
+
+	}
+
+	// contact editor stylings
+	.contact-editor-container {
+		margin-bottom: 30px;
+
+		h4 {
+			font-size: 1rem;
+		}
+
+		.contact-table-container {
+
+			.contact-table {
+				table-layout: fixed;
+
+				thead {
+					th {
+						&.th-salutation {
+							width: 10%;
+						}
+
+						&.th-buttons {
+							width: 5%;
+						}
+					}
+				}
+
+				tbody {
+					td {
+						input,
+						select {
+							width: 100%;
+						}
+
+						&:last-child {
+							text-align: center;
+						}
+					}
+				}
+			}
+
+			.add-contact, .copy-main-contact {
+				margin-top: 10px;
+			}
+		}
+	}
+
+	.field-error {
+		border:2px solid darken($errorColor, 10);
+	}
+
+	.chosen-container {
+		width: 25em !important;
+	}
+}
+
+#profile-page, .application-passwords {
+	display: none;
+}
+
+.profile-category-list {
+	list-style-type: square;
+	margin: 7px 0px 0px 20px;
+}
+
+
+
+// crm export interface
+.profile_page_crm-export {
+	.container-main-exports {
+		display:none;
+	}
+}
+.users_page_crm-export, .profile_page_crm-export {
+
+	.container-main-exports {
+		margin-top: 10px;
+	}
+
+	.field.disabled {
+		opacity: 0.4;
+		pointer-events: none;
+	}
+
+	form{
+		div{
+			margin: 0 0 15px 0;
+
+			.chosen-container {
+				margin-bottom: 0;
+			}
+
+			.field-description{
+				display: inline-block;
+				width: 120px;
+				margin-right: 20px;
+			}
+
+			select{
+				display: inline-block;
+				width: 200px;
+			}
+
+			label{
+				vertical-align: baseline;
+				margin-right: 5px;
+			}
+		}
+
+
+		hr{
+			margin: 20px 0;
+		}
+
+		input[type="submit"]{
+			margin-top: 10px;
+		}
+
+	}
+
+}
+
+.subaccount-table {
+	table-layout: fixed;
+
+	thead {
+		th {
+			&.th-salutation {
+				width: 10%;
+			}
+
+			&.th-buttons {
+				width: 5%;
+			}
+		}
+	}
+
+	tbody {
+		td {
+			padding:5px 7px;
+			input[type=text],
+			input[type=password],
+			select {
+				width: 100%;
+			}
+
+			&:last-child {
+				text-align: center;
+			}
+		}
+
+		tr.mark-for-deletion {
+			opacity:0.6;
+			* {
+				text-decoration: line-through;
+			}
+		}
+	}
+
+	.capabilities-selector {
+		margin:0px;
+		li {
+			margin-bottom:2px;
+		}
+	}
+}

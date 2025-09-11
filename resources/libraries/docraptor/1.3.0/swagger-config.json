@@ -1,0 +1,9 @@
+{
+  "modelPackage": "DocRaptor",
+  "apiPackage": "DocRaptor",
+  "invokerPackage": "DocRaptor",
+  "packagePath": ".",
+  "composerVendorName": "docraptor",
+  "composerProjectName": "docraptor",
+  "artifactVersion": "1.3.0"
+}

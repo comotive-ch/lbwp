@@ -1,0 +1,126 @@
+$lbwpFancyBoxOverlayBgColor: null !default;
+$lbwpFancyBoxSkinBgColor: null !default;
+$lbwpFancyBoxSkinShadow: null !default;
+$lbwpFancyBoxSkinBorderRadius: null !default;
+// Default: Always use theme font
+$lbwpFancyBoxTitleInheritFont: true !default;
+$lbwpFancyBoxTitleColor: null !default;
+
+$lbwpFancyBoxCloseIconResetDefaults: false !default;
+$lbwpFancyBoxCloseIconSize: null !default;
+$lbwpFancyBoxCloseIconPositionTop: null !default;
+$lbwpFancyBoxCloseIconPositionRight: null !default;
+
+$lbwpFancyBoxArrowResetBackground: false !default;
+$lbwpFancyBoxArrowWidth: null !default;
+$lbwpFancyBoxArrowHeight: null !default;
+
+// todo
+//$lbwpFancyBoxColorLegend : null !default;
+
+@mixin lbwpFancyBoxWrapper() {
+	div.fancybox-wrap {
+		@content;
+	}
+}
+
+@mixin lbwpFancyBoxImage() {
+	div.fancybox-inner img {
+		@content;
+	}
+}
+
+@mixin lbwpFancyBoxTitle() {
+	div.fancybox-title {
+		@content;
+	}
+}
+
+@include lbwpFancyBoxTitle {
+	color: $lbwpFancyBoxTitleColor;
+	@if ($lbwpFancyBoxTitleInheritFont) {
+		font: inherit;
+	}
+}
+
+@mixin lbwpFancyBoxCloseIcon() {
+	a.fancybox-close {
+		@content;
+	}
+}
+
+@include lbwpFancyBoxCloseIcon {
+	@if ($lbwpFancyBoxCloseIconResetDefaults) {
+		background: none;
+		background-size: auto;
+		top: auto;
+		right: auto;
+		width: auto;
+		height: auto;
+	}
+	width: $lbwpFancyBoxCloseIconSize;
+	height: $lbwpFancyBoxCloseIconSize;
+	top: $lbwpFancyBoxCloseIconPositionTop;
+	right: $lbwpFancyBoxCloseIconPositionRight;
+}
+
+@mixin lbwpFancyBoxOverlay() {
+	div.fancybox-overlay {
+		@content;
+	}
+}
+
+@include lbwpFancyBoxOverlay {
+	background: $lbwpFancyBoxOverlayBgColor;
+}
+
+@mixin lbwpFancyBoxSkin() {
+	div.fancybox-skin {
+		@content;
+	}
+}
+
+@include lbwpFancyBoxSkin {
+	background: $lbwpFancyBoxSkinBgColor;
+	border-radius: $lbwpFancyBoxSkinBorderRadius;
+}
+
+.fancybox-opened div.fancybox-skin {
+	box-shadow: $lbwpFancyBoxSkinShadow;
+}
+
+@mixin lbwpFancyBoxArrows() {
+	a.fancybox-nav span {
+		@content;
+	}
+}
+
+@include lbwpFancyBoxArrows() {
+	@if ($lbwpFancyBoxArrowResetBackground) {
+		background: none;
+	}
+	width: $lbwpFancyBoxArrowWidth;
+	height: $lbwpFancyBoxArrowHeight;
+	@if ($lbwpFancyBoxArrowHeight != null) {
+		margin-top: $lbwpFancyBoxArrowHeight / 2 * -1;
+	}
+}
+
+@mixin lbwpFancyBoxArrowLeft() {
+	a.fancybox-prev span {
+		@content;
+	}
+}
+
+@mixin lbwpFancyBoxArrowRight() {
+	a.fancybox-next span {
+		@content;
+	}
+}
+
+
+
+
+//.fancybox-wrap .pagination {
+//	color: $lbwpFancyBoxColorLegend;
+//}

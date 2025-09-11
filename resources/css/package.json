@@ -1,0 +1,12 @@
+{
+  "name": "lbwp-scss-compiler",
+  "version": "1.0.0",
+  "description": "compiles those fancy sheets",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "scss": "sass --load-path=../scss/ --style=compressed --source-map --watch scss:."
+  },
+  "author": "",
+  "license": "ISC"
+}

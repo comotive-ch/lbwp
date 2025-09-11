@@ -1,0 +1,76 @@
+$lbwpWcPartMargin: 45px;
+
+// Button reset
+.woocommerce #respond input#submit,
+.woocommerce a.button,
+.woocommerce button.button,
+.woocommerce input.button {
+  font-weight: normal;
+}
+
+.col2-set {
+  margin-bottom: $lbwpWcPartMargin;
+}
+
+// Forms
+.woocommerce form .form-row {
+  $formRowMargin: 16px;
+  margin-bottom: $formRowMargin;
+
+  label {
+    margin-bottom: 0;
+  }
+  &#billing_address_2_field {
+    @debug &;
+    margin-top: $formRowMargin * -0.8;
+  }
+}
+
+// WooCommerce Cart
+.woocommerce .cart-collaterals,
+.woocommerce-page .cart-collaterals{
+  display: flex;
+  flex-direction: column;
+
+  .cross-sells,
+  .cart_totals{
+    width: 100%;
+    float: none;
+  }
+
+  .cart_totals{
+    order: -1;
+  }
+}
+
+
+
+// WooCommerce Checkout
+.woocommerce .checkout.woocommerce-checkout{
+  .col2-set{
+    display: flex;
+    flex-direction: column;
+
+    .col-1,
+    .col-2{
+      width: 100%;
+      float: none;
+      flex: none;
+      max-width: none;
+      padding-left: 0;
+      padding-right: 0;
+    }
+
+    .col-1{
+      margin-bottom: $lbwpWcPartMargin;
+    }
+
+  }
+
+  table.shop_table,
+  table.cart{
+    td {
+      vertical-align: top;
+    }
+  }
+}

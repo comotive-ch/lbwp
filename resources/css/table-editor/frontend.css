@@ -1,0 +1,3 @@
+.body-maximised{overflow:hidden}@media print{.lbwp-table-wrapper .datatable-top-menu{display:none}}@media print{.lbwp-table-wrapper .table-scrollable{display:none}}@media screen{.lbwp-table-wrapper .table-fullview-static{display:none}}.lbwp-table-wrapper.maximised{overflow:scroll;position:fixed;top:0;left:0;width:100%;height:100%;z-index:9999;background-color:rgba(122,122,122,0.9);padding:30px}@media screen{.lbwp-table-wrapper.maximised .table-fullview-static{display:block}}.lbwp-table-wrapper.maximised .table-scrollable{display:none}
+
+/*# sourceMappingURL=frontend.css.map */

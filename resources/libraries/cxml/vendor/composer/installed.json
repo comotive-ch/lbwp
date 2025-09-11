@@ -1,0 +1,50 @@
+{
+    "packages": [
+        {
+            "name": "herbert/cxml",
+            "version": "dev-main",
+            "version_normalized": "dev-main",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/hscheffknecht/cxml.git",
+                "reference": "30acd63fec2140f9234e4d2772a2c246e9e68283"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/hscheffknecht/cxml/zipball/30acd63fec2140f9234e4d2772a2c246e9e68283",
+                "reference": "30acd63fec2140f9234e4d2772a2c246e9e68283",
+                "shasum": ""
+            },
+            "require-dev": {
+                "phpunit/phpunit": "^9.4"
+            },
+            "time": "2022-03-17T20:27:42+00:00",
+            "default-branch": true,
+            "type": "library",
+            "installation-source": "dist",
+            "autoload": {
+                "psr-4": {
+                    "CXml\\": "src/CXml/"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "Herbert Scheffknecht",
+                    "email": "herbert@xoo.cc"
+                }
+            ],
+            "description": "A PHP library to handle cXML punchout orders",
+            "support": {
+                "issues": "https://github.com/hscheffknecht/cxml/issues",
+                "source": "https://github.com/hscheffknecht/cxml/tree/main"
+            },
+            "install-path": "../herbert/cxml"
+        }
+    ],
+    "dev": true,
+    "dev-package-names": []
+}

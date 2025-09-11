@@ -1,0 +1,57 @@
+.aboon-cash-payment-confirm{
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  z-index: 9999999;
+  background: rgba(0, 0, 0, 0.75);
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+
+  &__inner{
+    background: #fff;
+    width: 500px;
+    max-width: 90vw;
+    border-radius: 8px;
+
+    display: flex;
+    flex-direction: column;
+
+
+    h1{
+      font-size: 32px;
+      margin-bottom: 4px;
+    }
+  }
+
+  &__header{
+    padding: .5rem 1.5rem;
+    a{
+      display: inline-flex;
+      font-size: 80%;
+      padding: .5rem 0;
+      text-decoration: underline;
+      text-underline-offset: 2px;
+    }
+  }
+
+  &__content{
+    padding: 1.5rem;
+  }
+
+  &__footer{
+    padding: 2rem 1.5rem;
+    display: flex;
+    flex-direction: column;
+  }
+
+  &__amount{
+    font-size: 64px;
+    line-height: 2;
+    text-align: center;
+  }
+}

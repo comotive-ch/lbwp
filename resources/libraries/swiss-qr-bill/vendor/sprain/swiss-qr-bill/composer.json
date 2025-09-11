@@ -1,0 +1,34 @@
+{
+    "name": "sprain/swiss-qr-bill",
+    "description": "A PHP library to create Swiss QR bills",
+    "type": "library",
+    "license": "MIT",
+    "require": {
+        "php": "^7.2",
+        "symfony/validator": "^3.4.31|^4.2|^5.0",
+        "symfony/intl": "^3.4|^4.2|^5.0",
+        "khanamiryan/qrcode-detector-decoder": "^1.0.3",
+        "kmukku/php-iso11649": "^1.5",
+        "endroid/qr-code": "^3.9.1"
+    },
+    "require-dev": {
+        "phpunit/phpunit": "^8.0|^9.0",
+        "dms/phpunit-arraysubset-asserts": "^0.1|^0.2",
+        "symfony/css-selector": "^4.2",
+        "phpstan/phpstan": "^0.12.23",
+        "friendsofphp/php-cs-fixer": "^2.16",
+        "symfony/var-dumper": "^5.1",
+        "tecnickcom/tcpdf": "^6.3.2",
+        "fpdf/fpdf": "^1.82"
+    },
+    "suggest": {
+        "tecnickcom/tcpdf": "Needed to create pdfs with TcPdfOutput",
+        "fpdf/fpdf": "Needed to create pdfs with FpdfOutput"
+    },
+    "autoload": {
+        "psr-4": {
+            "Sprain\\SwissQrBill\\": "src",
+            "Sprain\\Tests\\SwissQrBill\\": "tests"
+        }
+    }
+}

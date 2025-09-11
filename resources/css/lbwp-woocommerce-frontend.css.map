@@ -1,0 +1,7 @@
+{
+"version": 3,
+"mappings": "AACA,6GAG0B,CACxB,WAAW,CAAE,MAAM,CAGrB,SAAU,CACR,aAAa,CAAE,IAAI",
+"sources": ["../scss/lbwp/woocommerce/_base.scss"],
+"names": [],
+"file": "lbwp-woocommerce-frontend.css"
+}

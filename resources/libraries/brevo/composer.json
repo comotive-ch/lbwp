@@ -1,0 +1,9 @@
+{
+    "name": "temp\/brevo",
+    "require": {
+        "getbrevo\/brevo-php": "^2.0"
+    },
+    "require-dev": {
+        "humbug\/php-scoper": "^0.18.17"
+    }
+}

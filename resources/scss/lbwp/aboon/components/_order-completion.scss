@@ -1,0 +1,66 @@
+.order-completion{
+  &__signature{
+    position: relative;
+    margin: 20px 0;
+
+    &--canvas{
+      width: 100%;
+      height: 150px;
+      border: 1px solid var(--s03-body-font-color);
+      display: block;
+    }
+
+    &--clear{
+      position: absolute;
+      right: 0;
+      bottom: 0;
+      font-size: 14px;
+      padding: 1px 10px;
+      background: #c63030;
+      color: #fff;
+      cursor: pointer;
+      opacity: 0.7;
+
+      &:hover{
+        opacity: 1;
+      }
+    }
+  }
+
+  &__absence-image{
+    img{
+      display: block;
+      max-width: 150px;
+      margin-top: 10px;
+    }
+  }
+
+  .signature-form{
+    &__field{
+      margin: 20px 0;
+
+      .checkbox{
+        line-height: 25px;
+
+        input{
+          width: 25px;
+          height: 25px;
+          vertical-align: bottom;
+        }
+      }
+    }
+  }
+
+  &__message{
+    padding: 5px 10px;
+    background-color: var(--s03-primary-color);
+    color: var(--s03-on-primary-color);
+    font-size: 18px;
+    margin-top: 30px;
+
+    a{
+      background-image: none;
+      text-decoration: underline;
+    }
+  }
+}

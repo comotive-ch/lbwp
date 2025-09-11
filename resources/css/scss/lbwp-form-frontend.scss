@@ -1,0 +1,196 @@
+$lbwpFormValidationColorError: red;
+@import "lbwp/lbwp-forms";
+
+.lbwp-form {
+
+  // labels: default for mobile (full-width)
+  .default-label {
+    display: block;
+    margin: 20px 0 5px;
+  }
+
+  .send-button .default-container {
+    margin: 20px 0 0;
+  }
+
+  #payrexx-button {
+    border-radius: 4px;
+    padding: 0.5rem 1.5rem;
+    padding-top: .5rem;
+    padding-bottom: .5rem;
+    line-height: normal;
+    background-color: #265a97;
+    color: #fff;
+    width: auto;
+    cursor: pointer;
+    text-decoration: none;
+    font-weight: 600;
+
+    &:hover {
+      background: #1c426e;
+    }
+
+    & ~ span {
+      display: inline-block;
+      font-size: 20px;
+      font-family: 'FontAwesome';
+
+      &:before, &:after {
+        display: inline-block;
+      }
+
+      &:after {
+        color: #265a97;
+        margin-left: 5px;
+      }
+    }
+
+    &.waiting {
+      &:after{
+        content: '';
+        display: inline-block;
+        width: 10px;
+        height: 10px;
+        margin-left: 5px;
+        border: solid 1px #fff;
+        border-left: 0;
+        border-bottom: 0;
+        border-radius: 100px;
+        animation: loading 1s linear infinite;
+      }
+    }
+
+    &.completed {
+      display: none;
+
+      & ~ span {
+        &:before {
+          content: 'Zahlung abgeschlossen';
+        }
+      }
+    }
+
+    &.failed {
+      display: none;
+
+      & ~ span {
+        &:before {
+          content: 'Zahlung abgebrochen';
+        }
+      }
+    }
+  }
+
+  // checkboxes and radios
+  @include lbwpFormRadioAndCheckboxDefaults;
+
+  // zip and city input
+  input[type="text"].zip-field-part {
+    display: inline-block;
+    width: 22%;
+  }
+
+  input[type="text"].city-field-part {
+    display: inline-block;
+    width: 75%;
+    float: right;
+  }
+
+  // Upload field
+  @include lbwpFormUploadFieldState();
+
+  // Autofill detection
+  input,
+  select,
+  textarea {
+    &:not(.field_email_to):not([type="submit"]) {
+      transition: background-color 50000s, color 50000s, filter 50000s;
+
+      &:-webkit-autofill {
+        animation-duration: 50000s;
+        animation-name: onautofillstart;
+      }
+
+      &:not(:-webkit-autofill) {
+        animation-duration: 50000s;
+        animation-name: onautofillcancel;
+      }
+    }
+  }
+
+  @keyframes onautofillstart { from {} }
+  @keyframes onautofillcancel { from {} }
+}
+
+// spin animation for payment loading
+@keyframes loading {
+  from {
+    transform: rotateZ(0);
+  }
+  to {
+    transform: rotateZ(360deg);
+  }
+}
+
+// input fields
+@include lbwpFormInputFieldStyles() {
+  width: 100%;
+}
+
+// For medium and larger screens: Display forms in a table layout, except for those with the class "lbwp-form-no-table-layout"
+@media only screen and (min-width: 641px) {
+  @include lbwpFormTableLayout(false, '.lbwp-form:not(.lbwp-form-no-table-layout):not(.lbwp-form__multisite)');
+}
+
+// overwrite table-layout for forms in widgets
+@media only screen {
+  .lbwp-form-widget {
+    @include lbwpFormTableLayout($reset: true);
+  }
+}
+
+// validation
+.lbwp-form {
+  // error message "row"
+  .validate-message {
+    // default label is empty for validate-message-rows, reset margin (for mobile)
+    .default-label {
+      margin: 0;
+    }
+
+    .default-container {
+      padding-top: 0;
+    }
+  }
+
+  .lbwp-form-error {
+    .default-container {
+      padding-bottom: 5px;
+    }
+  }
+}
+
+// Ancor for messages with default top offset
+@include lbwpFormSetAnchorTopGap() {
+  display: block;
+  visibility: hidden;
+}
+
+@include lbwpFormInputFieldErrorStyles() {
+  border-color: $lbwpFormValidationColorError;
+}
+
+// TODO move to highwind theme?
+/* Fix for the highwind theme that uses EM for paddings */
+.outer-wrap .content-wrapper .lbwp-form-override input[type="text"],
+.outer-wrap .content-wrapper .lbwp-form-override input[type="password"],
+.outer-wrap .content-wrapper .lbwp-form-override input[type="email"],
+.outer-wrap .content-wrapper .lbwp-form-override input[type="search"],
+.outer-wrap .content-wrapper .lbwp-form-override textarea {
+  padding: 6px 10px 6px 10px !important;
+}
+
+@keyframes loading {
+  from{transform: rotateZ(0)}
+  to{transform: rotateZ(360deg)}
+}

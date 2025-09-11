@@ -1,0 +1,133 @@
+.editor-styles-wrapper * {
+    box-sizing:border-box;
+}
+.editor-styles-wrapper {
+    --wp-admin-theme-color: #007cba;
+    --wp-admin-theme-color--rgb: 0, 124, 186;
+    --wp-admin-theme-color-darker-10: #006ba1;
+    --wp-admin-theme-color-darker-10--rgb: 0, 107, 161;
+    --wp-admin-theme-color-darker-20: #005a87;
+    --wp-admin-theme-color-darker-20--rgb: 0, 90, 135;
+    --wp-admin-border-width-focus: 2px;
+}
+
+@media (-webkit-min-device-pixel-ratio: 2), (min-resolution: 192dpi) {
+    .editor-styles-wrapper {
+        --wp-admin-border-width-focus: 1.5px;
+    }
+}
+
+
+.editor-styles-wrapper {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen-Sans, Ubuntu, Cantarell, "Helvetica Neue", sans-serif;
+    font-size: 18px;
+    line-height: 1.5;
+    --wp--style--block-gap: 2em;
+}
+
+.editor-styles-wrapper p {
+    line-height: 1.8;
+}
+
+.editor-styles-wrapper .editor-post-title__block {
+    margin-top: 2em;
+    margin-bottom: 1em;
+    font-size: 2.5em;
+    font-weight: 800;
+}
+
+:root {
+    --wp-admin-theme-color: #007cba;
+    --wp-admin-theme-color--rgb: 0, 124, 186;
+    --wp-admin-theme-color-darker-10: #006ba1;
+    --wp-admin-theme-color-darker-10--rgb: 0, 107, 161;
+    --wp-admin-theme-color-darker-20: #005a87;
+    --wp-admin-theme-color-darker-20--rgb: 0, 90, 135;
+    --wp-admin-border-width-focus: 2px;
+}
+@media (-webkit-min-device-pixel-ratio: 2), (min-resolution: 192dpi) {
+    :root {
+        --wp-admin-border-width-focus: 1.5px;
+    }
+}
+
+.editor-styles-wrapper .wp-block {
+    margin-left: auto;
+    margin-right: auto;
+}
+
+html :where(.editor-styles-wrapper) {
+    padding: 8px;
+}
+html :where(.editor-styles-wrapper) .block-editor-block-list__layout.is-root-container > .wp-block[data-align=full] {
+    margin-left: -8px;
+    margin-right: -8px;
+}
+
+html :where(.wp-block) {
+    max-width: 840px;
+    margin-top: 28px;
+    margin-bottom: 28px;
+}
+html :where(.wp-block)[data-align=wide] {
+    max-width: 1100px;
+}
+html :where(.wp-block)[data-align=full] {
+    max-width: none;
+}
+html :where(.wp-block)[data-align=left], html :where(.wp-block)[data-align=right] {
+    width: 100%;
+    height: 0;
+}
+html :where(.wp-block)[data-align=left]::before, html :where(.wp-block)[data-align=right]::before {
+    content: none;
+}
+html :where(.wp-block)[data-align=left] > * {
+    /*!rtl:begin:ignore*/
+    float: left;
+    margin-right: 2em;
+    /*!rtl:end:ignore*/
+}
+html :where(.wp-block)[data-align=right] > * {
+    /*!rtl:begin:ignore*/
+    float: right;
+    margin-left: 2em;
+    /*!rtl:end:ignore*/
+}
+html :where(.wp-block)[data-align=full], html :where(.wp-block)[data-align=wide] {
+    clear: both;
+}
+
+.wp-block-group > [data-align=full] {
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.wp-block-group.has-background > [data-align=full] {
+    margin-left: -30px;
+    width: calc(100% + 60px);
+}
+
+/**
+* Group: Full Width Alignment
+*/
+[data-align=full] .wp-block-group > .wp-block {
+    padding-left: 14px;
+    padding-right: 14px;
+}
+@media (min-width: 600px) {
+    [data-align=full] .wp-block-group > .wp-block {
+        padding-left: 0;
+        padding-right: 0;
+    }
+}
+[data-align=full] .wp-block-group > [data-align=full] {
+    padding-right: 0;
+    padding-left: 0;
+    left: 0;
+    width: 100%;
+    max-width: none;
+}
+[data-align=full] .wp-block-group.has-background > [data-align=full] {
+    width: calc(100% + 60px);
+}

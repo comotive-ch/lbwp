@@ -1,0 +1,8 @@
+numpy<1.28.0
+numpy_stl==3.2.0
+trimesh==4.5.3
+SciPy==1.11.3
+shapely
+networkx
+rtree
+lxml

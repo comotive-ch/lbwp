@@ -1,0 +1,661 @@
+msgid ""
+msgstr ""
+"Project-Id-Version: LBWP\n"
+"POT-Creation-Date: 2015-08-03 11:05+0100\n"
+"PO-Revision-Date: 2025-09-10 10:42+0200\n"
+"Last-Translator: \n"
+"Language-Team: comotive <info@comotive.ch>\n"
+"Language: fr_FR\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"X-Generator: Poedit 3.0.1\n"
+"X-Poedit-KeywordsList: __;_e;__ngettext:1,2;_n:1,2;__ngettext_noop:1,2;_n_noop:1,2;_c;_nc:4c,1,2;_x:1,2c;_nx:4c,1,2;"
+"_nx_noop:4c,1,2;_ex:1,2c;esc_attr__;esc_attr_e;esc_attr_x:1,2c;esc_html__;esc_html_e;esc_html_x:1,2c\n"
+"X-Poedit-Basepath: .\n"
+"X-Poedit-SourceCharset: UTF-8\n"
+"X-Poedit-SearchPath-0: /var/www/lbwp/wp-content/plugins/lbwp\n"
+
+msgid "Login failed. Please try again. <a href=\"%s\">forgot your password?</a>"
+msgstr "La connexion a échoué. Veuillez réessayer. <a href=\"%s\">Vous avez oublié votre mot de passe?</a>'"
+
+#: /var/www/lbwp/wp-content/plugins/lbwp/LBWP/Theme/Feature/ListingTemplate.php:55
+msgid "Liste von Inhalten (Text und Bild)"
+msgstr ""
+
+#: /var/www/lbwp/wp-content/plugins/lbwp/LBWP/Theme/Feature/ListingTemplate.php:62
+msgid "Titel"
+msgstr ""
+
+msgid "VPE: %s Stück"
+msgstr "PU: %s pièces"
+
+#: /var/www/lbwp/wp-content/plugins/lbwp/LBWP/Theme/Feature/ListingTemplate.php:63
+msgid "Inhalt"
+msgstr ""
+
+#: /var/www/lbwp/wp-content/plugins/lbwp/LBWP/Theme/Feature/ListingTemplate.php:64
+#: /var/www/lbwp/wp-content/plugins/lbwp/LBWP/Theme/Feature/ListingTemplate.php:107
+msgid "Bild"
+msgstr ""
+
+#: /var/www/lbwp/wp-content/plugins/lbwp/LBWP/Theme/Feature/ListingTemplate.php:65
+msgid "Bild-Position"
+msgstr ""
+
+#: /var/www/lbwp/wp-content/plugins/lbwp/LBWP/Theme/Feature/ListingTemplate.php:69
+msgid "Links"
+msgstr ""
+
+#: /var/www/lbwp/wp-content/plugins/lbwp/LBWP/Theme/Feature/ListingTemplate.php:70
+msgid "Rechts"
+msgstr ""
+
+#: /var/www/lbwp/wp-content/plugins/lbwp/LBWP/Theme/Feature/ListingTemplate.php:73
+#: /var/www/lbwp/wp-content/plugins/lbwp/LBWP/Theme/Feature/ListingTemplate.php:136
+msgid "Ziel-Link"
+msgstr ""
+
+#: /var/www/lbwp/wp-content/plugins/lbwp/LBWP/Theme/Feature/ListingTemplate.php:74
+#: /var/www/lbwp/wp-content/plugins/lbwp/LBWP/Theme/Feature/ListingTemplate.php:137
+msgid "Link-Text"
+msgstr ""
+
+#: /var/www/lbwp/wp-content/plugins/lbwp/LBWP/Theme/Feature/ListingTemplate.php:94
+msgid "Personen-Auflistung"
+msgstr ""
+
+#: /var/www/lbwp/wp-content/plugins/lbwp/LBWP/Theme/Feature/ListingTemplate.php:101
+msgid "Vorname"
+msgstr "Prénom"
+
+#: /var/www/lbwp/wp-content/plugins/lbwp/LBWP/Theme/Feature/ListingTemplate.php:102
+msgid "Nachname"
+msgstr "Nom"
+
+#: /var/www/lbwp/wp-content/plugins/lbwp/LBWP/Theme/Feature/ListingTemplate.php:103
+msgid "Anrede"
+msgstr "Salutation"
+
+#: /var/www/lbwp/wp-content/plugins/lbwp/LBWP/Theme/Feature/ListingTemplate.php:104
+msgid "Funktion/Rolle"
+msgstr ""
+
+#: /var/www/lbwp/wp-content/plugins/lbwp/LBWP/Theme/Feature/ListingTemplate.php:105
+#: /var/www/lbwp/wp-content/plugins/lbwp/LBWP/Theme/Feature/CommentForm.php:98
+msgid "E-Mail-Adresse"
+msgstr "Adresse e-mail"
+
+#: /var/www/lbwp/wp-content/plugins/lbwp/LBWP/Theme/Feature/ListingTemplate.php:106
+msgid "Beschreibung"
+msgstr ""
+
+#: /var/www/lbwp/wp-content/plugins/lbwp/LBWP/Theme/Feature/ListingTemplate.php:127
+msgid "Logo- oder Link-Auflistung"
+msgstr ""
+
+#: /var/www/lbwp/wp-content/plugins/lbwp/LBWP/Theme/Feature/ListingTemplate.php:134
+msgid "Logo Titel"
+msgstr ""
+
+#: /var/www/lbwp/wp-content/plugins/lbwp/LBWP/Theme/Feature/ListingTemplate.php:135
+msgid "Logo Bild"
+msgstr ""
+
+#: /var/www/lbwp/wp-content/plugins/lbwp/LBWP/Theme/Feature/ListingTemplate.php:138
+msgid "Link öffnen in"
+msgstr ""
+
+#: /var/www/lbwp/wp-content/plugins/lbwp/LBWP/Theme/Feature/ListingTemplate.php:142
+msgid "Im selben Tab/Fenster"
+msgstr ""
+
+#: /var/www/lbwp/wp-content/plugins/lbwp/LBWP/Theme/Feature/ListingTemplate.php:143
+msgid "In neuem Tab/Fenster"
+msgstr ""
+
+#: /var/www/lbwp/wp-content/plugins/lbwp/LBWP/Theme/Feature/Search.php:109
+msgid "Suche nach"
+msgstr "Recherche de"
+
+#: /var/www/lbwp/wp-content/plugins/lbwp/LBWP/Theme/Feature/Search.php:109
+msgid "auf"
+msgstr "sur"
+
+#: /var/www/lbwp/wp-content/plugins/lbwp/LBWP/Theme/Feature/CommentForm.php:97
+msgid "Name"
+msgstr "Nom"
+
+#: /var/www/lbwp/wp-content/plugins/lbwp/LBWP/Theme/Feature/CommentForm.php:99
+msgid "Website"
+msgstr "Site web"
+
+#: /var/www/lbwp/wp-content/plugins/lbwp/LBWP/Theme/Feature/CommentForm.php:100
+msgid "Kommentar"
+msgstr "Commentaire"
+
+#: /var/www/lbwp/wp-content/plugins/lbwp/LBWP/Theme/Feature/TransientStickyPost.php:74
+msgid "Beitrag oben halten"
+msgstr ""
+
+#: /var/www/lbwp/wp-content/plugins/lbwp/LBWP/Theme/Feature/TransientStickyPost.php:106
+msgid "Diesen Beitrag oben halten"
+msgstr ""
+
+#: /var/www/lbwp/wp-content/plugins/lbwp/LBWP/Theme/Feature/TransientStickyPost.php:113
+msgid "Nie"
+msgstr ""
+
+#: /var/www/lbwp/wp-content/plugins/lbwp/LBWP/Theme/Feature/TransientStickyPost.php:117
+msgid "Automatisch Zurücksetzen:"
+msgstr ""
+
+#: /var/www/lbwp/wp-content/plugins/lbwp/LBWP/Theme/Feature/ResponsiveWidgets.php:74
+msgid "Responsive Einstellungen:"
+msgstr ""
+
+#: /var/www/lbwp/wp-content/plugins/lbwp/LBWP/Theme/Widget/LatestArticles.php:22
+msgid "Zeigt die neusten Artikel in der Sidebar"
+msgstr ""
+
+#: /var/www/lbwp/wp-content/plugins/lbwp/LBWP/Theme/Widget/LatestArticles.php:79
+msgid "&raquo; weiterlesen"
+msgstr "&raquo; continuer"
+
+msgid "Weiterlesen"
+msgstr "Continuer"
+
+#: /var/www/lbwp/wp-content/plugins/lbwp/LBWP/Theme/Widget/LatestArticles.php:94
+msgid "mehr"
+msgstr "continuer"
+
+msgid "Mehr"
+msgstr "Continuer"
+
+msgid "Mehr erfahren"
+msgstr "En savoir plus"
+
+#: /var/www/lbwp/wp-content/plugins/lbwp/LBWP/Helper/Metabox.php:264
+msgid "Zusammengeführte Felder"
+msgstr ""
+
+#: /var/www/lbwp/wp-content/plugins/lbwp/LBWP/Helper/Metabox.php:266
+msgid "Es wurden gleichnamige Felder aus folgenden Dialogen zusammengeführt: "
+msgstr ""
+
+#: /var/www/lbwp/wp-content/plugins/lbwp/LBWP/Helper/Metabox.php:677
+msgid "Datei wählen"
+msgstr ""
+
+#: /var/www/lbwp/wp-content/plugins/lbwp/LBWP/Helper/Metabox.php:680
+msgid "Datei entfernen"
+msgstr ""
+
+#: /var/www/lbwp/wp-content/plugins/lbwp/LBWP/Newsletter/Component/Settings.php:109
+msgid "Einstellungen wurden gespeichert."
+msgstr ""
+
+#: /var/www/lbwp/wp-content/plugins/lbwp/LBWP/Newsletter/Service/Mailchimp/Implementation.php:208
+msgid "Konnte keine Listen laden. Bitte erstellen sie eine Liste in MailChimp."
+msgstr ""
+
+#: /var/www/lbwp/wp-content/plugins/lbwp/LBWP/Module/Forms/Widget.php:23
+msgid "Erlaubt es ein zuvor erstelltes Formular in der Sidebar darzustellen"
+msgstr ""
+
+#: /var/www/lbwp/wp-content/plugins/lbwp/LBWP/Module/Forms/Widget.php:26
+msgid "Formular Widget"
+msgstr ""
+
+#: /var/www/lbwp/wp-content/plugins/lbwp/LBWP/Module/Forms/Component/FormHandler.php:140
+msgid "Fehler beim Absenden des Formulars"
+msgstr "Erreur (commise) lors de l'envoi du formulaire"
+
+#: /var/www/lbwp/wp-content/plugins/lbwp/LBWP/Module/Forms/Item/Base.php:101
+#, php-format
+msgid "Bitte überprüfe den Feld-Inhalt."
+msgstr "Veuillez remplir la case correctement s'il vous plaît."
+
+#: /var/www/lbwp/wp-content/plugins/lbwp/LBWP/Module/Forms/Item/Base.php:102
+#, php-format
+msgid "Bitte fülle das Feld \"%s\" aus."
+msgstr "Veuillez remplir la case \"%s\" s'il vous plaît."
+
+#: /var/www/lbwp/wp-content/plugins/lbwp/LBWP/Module/Forms/Item/Calculation.php:37
+msgid "Type in the result of the following calculation:"
+msgstr "Veuillez insérer dans la case le résultat de la calculation suivante svp:"
+
+#: /var/www/lbwp/wp-content/plugins/lbwp/LBWP/Module/Forms/Item/Calculation.php:45
+msgid "Spamschutz: "
+msgstr "Protection contre le spam:"
+
+#: /var/www/lbwp/wp-content/plugins/lbwp/LBWP/Module/Forms/Action/SendMail.php:79
+msgid "Nicht ausgefüllt"
+msgstr ""
+
+#: /var/www/lbwp/wp-content/plugins/lbwp/LBWP/Module/Forms/Action/SendMail.php:94
+msgid "Ein Formular auf Ihrer Webseite wurde ausgefüllt"
+msgstr ""
+
+#: /var/www/lbwp/wp-content/plugins/lbwp/LBWP/Module/Forms/Action/SendMail.php:97
+msgid "Diese E-Mail wurde generiert am"
+msgstr ""
+
+#: /var/www/lbwp/wp-content/plugins/lbwp/LBWP/Module/Forms/Action/SendMail.php:105
+msgid ""
+"Zum Beantworten dieser E-Mail nutzen sie bitte die Weiterleiten Funktion und kopieren die E-Mail Adresse aus den "
+"Formulardaten, sofern der Besucher eine E-Mail Adresse angegeben hat."
+msgstr ""
+
+#: /var/www/lbwp/wp-content/plugins/lbwp/LBWP/Module/Listings/Widget.php:22
+msgid "Widget welches Erlaubt eine Auflistung in der Sidebar darzustellen"
+msgstr ""
+
+#: /var/www/lbwp/wp-content/plugins/lbwp/LBWP/Module/Listings/Widget.php:25
+msgid "Auflistungs-Widget"
+msgstr ""
+
+#: /var/www/lbwp/wp-content/plugins/lbwp/LBWP/Module/Listings/Component/ListFilter.php:41
+msgid "Einträge aller Listen"
+msgstr ""
+
+#: /var/www/lbwp/wp-content/plugins/lbwp/LBWP/Module/Listings/Component/ListFilter.php:55
+#, php-format
+msgid "Liste &laquo;%s&raquo;"
+msgstr ""
+
+#: /var/www/lbwp/wp-content/plugins/lbwp/LBWP/Module/Listings/Component/Posttype.php:75
+msgid "Einstellungen"
+msgstr ""
+
+#: /var/www/lbwp/wp-content/plugins/lbwp/LBWP/Module/Listings/Component/Posttype.php:79
+msgid "Design der Liste"
+msgstr ""
+
+#: /var/www/lbwp/wp-content/plugins/lbwp/LBWP/Module/Listings/Component/Posttype.php:86
+msgid "Einträge"
+msgstr ""
+
+#: /var/www/lbwp/wp-content/plugins/lbwp/LBWP/Module/Listings/Component/Posttype.php:96
+msgid "Zugewiesene Liste(n)"
+msgstr ""
+
+#: /var/www/lbwp/wp-content/plugins/lbwp/LBWP/Module/Listings/Component/Posttype.php:100
+msgid "Listen"
+msgstr ""
+
+#: /var/www/lbwp/wp-content/plugins/lbwp/LBWP/Module/General/CleanUp.php:391
+#: /var/www/lbwp/wp-content/plugins/lbwp/LBWP/Module/General/CleanUp.php:392
+msgid "Soziale Netzwerke"
+msgstr ""
+
+#: /var/www/lbwp/wp-content/plugins/lbwp/LBWP/Module/General/CleanUp.php:453
+#, php-format
+msgid "Autor: %s"
+msgstr ""
+
+#: /var/www/lbwp/wp-content/plugins/lbwp/LBWP/Module/General/CleanUp.php:454
+#, php-format
+msgid "E-Mail: %s"
+msgstr ""
+
+#: /var/www/lbwp/wp-content/plugins/lbwp/LBWP/Module/General/CleanUp.php:456
+msgid "Hinweis: Der Kommentar könnte Spam enthalten, daher zeigen wir hier nur ein paar Worte davon an."
+msgstr ""
+
+#: /var/www/lbwp/wp-content/plugins/lbwp/LBWP/Module/General/CleanUp.php:469
+msgid "Alle noch nicht genehmigten Kommentare anzeigen:"
+msgstr ""
+
+#: /var/www/lbwp/wp-content/plugins/lbwp/LBWP/Module/General/AuthorHelper.php:78
+msgid "Angaben zum Autor"
+msgstr ""
+
+#: /var/www/lbwp/wp-content/plugins/lbwp/LBWP/Module/General/AuthorHelper.php:81
+msgid "Autorenbild"
+msgstr ""
+
+#: /var/www/lbwp/wp-content/plugins/lbwp/LBWP/Module/General/AuthorHelper.php:84
+msgid "Bild hochladen"
+msgstr ""
+
+#: /var/www/lbwp/wp-content/plugins/lbwp/LBWP/Module/General/AuthorHelper.php:85
+msgid "Bild entfernen"
+msgstr ""
+
+#: /var/www/lbwp/wp-content/plugins/lbwp/LBWP/Module/General/AuthorHelper.php:89
+msgid "Das Bild wird nur genutzt, wenn das Theme dies auch unterstützt."
+msgstr ""
+
+#: /var/www/lbwp/wp-content/plugins/lbwp/LBWP/Module/General/AuthorHelper.php:94
+msgid "Kurzbeschreibung"
+msgstr ""
+
+#: /var/www/lbwp/wp-content/plugins/lbwp/LBWP/Util/WordPress.php:110
+msgid "Erstellen"
+msgstr ""
+
+#: /var/www/lbwp/wp-content/plugins/lbwp/LBWP/Util/String.php:618
+msgid "Ihr Passwort muss mindestens "
+msgstr ""
+
+#: /var/www/lbwp/wp-content/plugins/lbwp/LBWP/Util/String.php:621
+msgid "Die Passwörter stimmen nicht überein"
+msgstr ""
+
+#: /var/www/lbwp/wp-content/plugins/lbwp/LBWP/Util/String.php:625
+msgid "Sie haben kein Passwort eingegeben"
+msgstr ""
+
+#: /var/www/lbwp/wp-content/plugins/lbwp/LBWP/Util/Date.php:339
+msgid "Uhr"
+msgstr ""
+
+#: general
+msgid "Zurück zu allen Artikeln"
+msgstr ""
+
+#: general
+msgid "Zurück zur Startseite"
+msgstr "Retourner à la page d'accueil"
+
+#: general
+msgid "Zum Inhalt wechseln"
+msgstr "Changer a contenu"
+
+#: general
+msgid "Direkt zur Hauptnavigation"
+msgstr "Directement vers la navigation principale"
+
+#: general
+msgid "Personenfoto von"
+msgstr "Photo de"
+
+#: general
+msgid "Alle Artikel von %s"
+msgstr "Tous les articles de %s"
+
+#: general
+msgid "Alle Artikel aus der Kategorie %s"
+msgstr "Tous les articles de la catégorie %s"
+
+#: general, blog comments (no word wrap)
+msgid "0&nbsp;Kommentare"
+msgstr "0&nbsp;commentaires"
+
+#: general, blog comments (no word wrap)
+msgid "1&nbsp;Kommentar"
+msgstr "1&nbsp;commentaire"
+
+#: general, blog comments (no word wrap)
+msgid "%&nbsp;Kommentare"
+msgstr "%&nbsp;commentaires"
+
+#: general, blog comment form
+msgid "Bitte fülle alle mit * gekennzeichneten Felder aus."
+msgstr "Veuillez remplir toutes les cases marqués par * s'il vous plaît."
+
+#: general, blog comment form
+msgid "Kommentare sind geschlossen."
+msgstr "Les commentaires sont fermés."
+
+#: general, blog comment form
+msgid "Schreibe einen Kommentar"
+msgstr "Écrivez un commentaire"
+
+#: general, search
+msgid "Suchen"
+msgstr "Chercher"
+
+#: general, search
+msgid "Suche"
+msgstr "Recherche"
+
+#: general
+msgid "Vorherige Seite"
+msgstr "Page précédente"
+
+#: general
+msgid "Vorherige"
+msgstr "Précédente"
+
+#: general
+msgid "Nächste Seite"
+msgstr "Page prochaine"
+
+#: general
+msgid "Nächste"
+msgstr "Prochaine"
+
+#: general, image gallery
+msgid "Bild {index} von {total}"
+msgstr "Image {index} de {total}"
+
+#: general, display date and time
+msgid "%s um %s Uhr"
+msgstr "%s à %s h"
+
+#: general
+msgid "Kategorie"
+msgstr "Catégorie"
+
+#: general
+msgid "Kategorien"
+msgstr "Catégories"
+
+#: general
+msgid "Autor"
+msgstr "Auteur"
+
+#: general
+msgid "Übersicht"
+msgstr "Aperçu"
+
+#: general
+msgid "Schlagworte"
+msgstr "Mots-clés"
+
+#: general, events
+msgid "Anmeldung"
+msgstr "Inscription"
+
+#: events
+msgid "Anmeldung: %s / %s"
+msgstr "Inscription: %s / %s"
+
+#: events
+msgid "Veranstaltung"
+msgstr "Manifestation"
+
+#: general
+msgid "Ort"
+msgstr "Lieu"
+
+#: events
+msgid "Datum/Zeit"
+msgstr "Date/Temps"
+
+#: events
+msgid "Von %s bis %s"
+msgstr "De %s à %s"
+
+#: general
+msgid "Datum"
+msgstr "Date"
+
+#: general
+msgid "Uhrzeit"
+msgstr "Temps"
+
+#: general
+msgid "Beginn"
+msgstr "Début"
+
+#: general
+msgid "Ende"
+msgstr "Fin"
+
+#: general
+msgid "Anmeldung bis"
+msgstr "Inscription jusqu'au"
+
+msgid "Anmeldeinformation"
+msgstr "Info d'inscription"
+
+#: general
+msgid "Alle anzeigen"
+msgstr "Affichage de la totalité"
+
+#: general
+msgid "Es wurden keine Veranstaltungen gefunden"
+msgstr "Aucune manifestation trouvée"
+
+#: general
+msgid "Vergangene Veranstaltungen anzeigen"
+msgstr "Montrer les dernières manifestations"
+
+#: general
+msgid "Bitte auswählen"
+msgstr "Veuillez sélectionner"
+
+msgid "Ihre Suche ergab keine Ergebnisse."
+msgstr "Votre recherche n'a rien donné."
+
+msgid "Sie sind für einen geschützen Bereich angemeldet. <a href=\"%s\">Abmelden</a>"
+msgstr "Vous êtes connecté à un domaine protégé par un mot de passe. <a href=\"%s\">Se déconnecter</a>"
+
+msgid "Home"
+msgstr "Page d'accueil"
+
+msgid "Seite"
+msgstr "Page"
+
+msgid "Zurück zum Formular"
+msgstr "Retour au formulaire"
+
+msgid "Archiv"
+msgstr "Archive"
+
+#: verify!
+msgid "Zurück"
+msgstr "En retour"
+
+msgid "Zur Übersicht"
+msgstr "Vers l'aperçu"
+
+msgid "Bearbeiten"
+msgstr "Modifier"
+
+msgid "Senden"
+msgstr "Envoyer"
+
+msgid "Seite %s von %s"
+msgstr "Page %s de %s"
+
+msgid "Alle"
+msgstr "Tous"
+
+msgid "Suchbegriff"
+msgstr "Terme de recherche"
+
+msgid "Ihre Nachricht wurde erfolgreich gesendet."
+msgstr "Votre message a bien été envoyé."
+
+msgid "Weitere Suchergebnisse"
+msgstr "Plus de résultats"
+
+msgid "Suchergebnisse werden geladen..."
+msgstr "Chargement des résultats de recherche..."
+
+msgid "Vielen Dank für Ihren Kommentar. Wir werden diesen in Kürze überprüfen und freischalten."
+msgstr "Merci pour votre commentaire. Nous allons l'examiner et la publier prochainement."
+
+msgid "Logout"
+msgstr "Déconnecter"
+
+msgid "<strong>Fehler</strong>: Bitte geben Sie Ihren Benutzernamen ein."
+msgstr "<strong>Erreur</strong>: veuillez saisir un identifiant."
+
+msgid "<strong>Fehler</strong>: Bitte geben Sie Ihr Passwort ein."
+msgstr "<strong>Erreur</strong>: veuillez saisir votre mot de passe."
+
+msgid "<strong>Fehler</strong>: Der eingegebene Benutzername ist ungültig."
+msgstr "<strong>Erreur</strong>: l’identifiant saisi n’est pas valide."
+
+msgid "<strong>Fehler</strong>: Das eingegebene Passwort ist nicht korrekt."
+msgstr "<strong>Erreur</strong>: le mot de passe saisi est erroné."
+
+msgid "Registrieren"
+msgstr "S’enregistrer"
+
+msgid "Benutzername"
+msgstr "Identifiant"
+
+msgid "Passwort"
+msgstr "Mot de passe"
+
+msgid "Neues Passwort"
+msgstr "Nouveau mot de passe"
+
+msgid "Passwort bestätigen"
+msgstr "Confirmer le mot de passe"
+
+msgid "Login"
+msgstr "Connexion"
+
+msgid "Ihr Account wurde erstellt. Sie sind nun eingeloggt."
+msgstr "Votre compte a été créé. Vous êtes maintenant connecté."
+
+msgid "<strong>Fehler</strong>: %s"
+msgstr "<strong>Erreur</strong>: %s"
+
+msgid "Ihre Profildaten wurden gespeichert."
+msgstr "Les données du profil ont été enregistrées."
+
+msgid "Profil"
+msgstr "Profil"
+
+msgid "Sie haben sich erfolgreich eingeloggt."
+msgstr "Connexion réussie."
+
+msgid "Sie wurden erfolgreich ausgeloggt."
+msgstr "Vous êtes déconnecté."
+
+msgid "Herr"
+msgstr "Monsieur"
+
+msgid "Frau"
+msgstr "Madame"
+
+msgid "Es sind {number} Fehler aufgetreten."
+msgstr "{number} erreurs se sont produites."
+
+msgid "Es ist ein Fehler aufgetreten."
+msgstr "Une erreur s'est produite."
+
+msgid "Die Aufzeichnung des Nutzungsverhaltens wurde deaktiviert."
+msgstr "L'enregistrement du comportement d'utilisation a été désactivé."
+
+msgid "Per E-Mail versenden"
+msgstr "E-Mail"
+
+msgid "Drucken"
+msgstr "Imprimer"
+
+msgid "Auf folgenden Seiten wurde dieser Beitrag verlinkt (Pingback)"
+msgstr "Cet article a été mis en lien sur les pages suivantes"
+
+msgid "Diese Datei ist zu gross. Erlaubt sind %s MB"
+msgstr "Le fichier est trop volumineux. La taille maximale du fichier est de %s MB"
+
+msgid "Seite nicht gefunden (404)"
+msgstr "Page non trouvée (404)"
+
+msgid "Bitte versuchen Sie, den gewünschten Inhalt über die Navigation oder <a href=\"%s\">Startseite</a> zu erreichen."
+msgstr "Veuillez essayer d'atteindre le contenu souhaité via la navigation ou la <a href=\"%s\">page d'accueil</a>."
+
+msgid "Deine %s"
+msgstr ""
+
+msgid "Sie können Ihre Daten hier bearbeiten."
+msgstr "Vous pourvez modifier vos données ici."

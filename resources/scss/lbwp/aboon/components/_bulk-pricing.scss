@@ -1,0 +1,25 @@
+.bulk-pricing-container{
+  ul{
+    list-style-type: none;
+    padding: 0;
+    max-width: none;
+
+    li{
+      display: flex;
+      padding: .5rem 0;
+      border-bottom: 2px solid var(--aboon-bulk-pricing-border-color);
+      //border-bottom: 2px solid $themeColorLightGrey;
+      &:first-child{
+        border-top: 2px solid var(--aboon-bulk-pricing-border-color);
+        //border-top: 2px solid $themeColorLightGrey;
+      }
+    }
+
+  }
+
+  li > span{
+    display: inline-block;
+    width: 50%;
+  }
+
+}

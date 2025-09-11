@@ -1,0 +1,81 @@
+.tools_page_pomo-rewriter{
+  .pomo-logo{
+    max-width: 250px;
+
+    img{
+      width: 100%;
+    }
+  }
+
+  #pomo-search-container{
+    position: relative;
+    margin-bottom: 30px;
+
+    .search-results{
+      position: absolute;
+      top: 100%;
+      left: 0;
+      width: 100%;
+      background: #fff;
+      border: 1px solid #ccd0d4;
+      border-top: none;
+
+      & > p{
+        padding: 0 15px;
+      }
+    }
+
+    .search-result{
+      display: flex;
+      flex-direction: row;
+      justify-content: space-between;
+      align-items: center;
+      padding: 5px 15px;
+
+      &:nth-child(2n){
+        background: #f9f9f9;
+      }
+
+      p{
+        width: 80%;
+
+        span{
+          font-weight: bold;
+        }
+      }
+
+      .button{
+        max-width: 20%;
+      }
+    }
+  }
+
+  #pomo-search{
+    width: 100%;
+  }
+
+  #pomo-rewriter-form{
+    table{
+      margin-bottom: 30px;
+
+      td:last-child{
+        text-align: right;
+      }
+    }
+  }
+
+  .delete-button{
+    cursor: pointer;
+    display: inline-block;
+
+    &:before{
+      content: '\f182';
+      font-family: dashicons;
+      font-size: 20px;
+    }
+
+    &:hover{
+      color: #f00;
+    }
+  }
+}

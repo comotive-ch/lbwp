@@ -1,0 +1,318 @@
+@import "lbwp/functions";
+@import "lbwp/focuspoint";
+
+@import "hide-blocks";
+
+// Core styles for lbwp forms
+
+// Hide a form, if there's need
+.lbwp-form.lbwp-form-hide {
+	display:none !important;
+}
+
+.wp-block-lbwp-form{
+	&.is-multisite{
+		.lbwp-form-override{
+			position: relative;
+			overflow: hidden;
+		}
+	}
+}
+
+.lbwp-form {
+	// honey pot
+	.field_email_to {
+		background-color: transparent !important;
+		border:0px none;
+		box-shadow: none;
+		color: transparent !important;
+		position:fixed;
+		appearance: none !important;
+		background-image: none !important;
+	}
+
+	// handling upload
+	.upload-field{
+		.progress-text{
+			display: none;
+		}
+
+		&.file-uploaded {
+			input[type='file'] {
+				display: none;
+			}
+
+			.progress-text {
+				display: block;
+			}
+		}
+
+		.resetUpload, .deleteUpload {
+			text-decoration: underline;
+		}
+	}
+
+	&__multisite{
+		display: flex;
+		justify-content: space-evenly;
+
+		align-items: flex-start;
+
+		.lbwp-form-page{
+			flex: 1 1 100%;
+			display: block;
+			height: 0;
+
+			&.current{
+				height: auto;
+			}
+		}
+	}
+}
+
+.lbwp-form-steps{
+	display: flex;
+	justify-content: space-between;
+	overflow-x: auto;
+	padding-top: 1rem;
+	padding-bottom: 1rem;
+
+	.lbwp-form-step{
+		opacity: .6;
+		cursor: default;
+		pointer-events: none;
+
+		&[data-valid="true"], &.current, &.current + .lbwp-form-step{
+			opacity: 1;
+			cursor: pointer;
+			pointer-events: all;
+		}
+	}
+}
+
+.lbwp-form-progress{
+	& + .lbwp-form-steps{
+		display: none;
+	}
+
+	width: 100%;
+	height: 8px;
+	margin-bottom: 1rem;
+	background: #f1f1f1;
+
+	&__bar{
+		display: block;
+		width: 0;
+		height: 100%;
+		background: #dcdcdc;
+		transition: width .5s ease;
+	}
+}
+
+.lbwp-form-navigation{
+	display: flex;
+	justify-content: space-between;
+	margin-top: 1rem;
+
+	.next{
+		margin-left: auto;
+	}
+}
+
+
+
+
+// Responsive iframe content
+.lbwp-iframe-container {
+	position: relative;
+  overflow: hidden;
+  width: 100%;
+  height: auto;
+	&.ratio-16x9 {
+		padding-bottom: 56.25%;
+	}
+	&.ratio-4x3 {
+		padding-bottom: 75%;
+	}
+	iframe {
+		position: absolute;
+		top: 0;
+		left: 0;
+		width: 100%;
+		height: 100%;
+	}
+}
+
+// Share buttons
+.lbwp-share-buttons ul {
+	list-style: none;
+	padding: 0;
+	margin: 0;
+}
+.lbwp-share-buttons li {
+	float: left;
+	margin: 0 15px 0 0;
+	height: 25px;
+}
+.lbwp-share-buttons {
+	margin-bottom:15px;
+}
+.lbwp-share-buttons:after {
+	visibility: hidden;
+	display: block;
+	font-size: 0;
+	content: " ";
+	clear: both;
+	height: 0;
+}
+.lbwp-share-buttons .social-button-googleplus {
+	width:80px;
+}
+
+@media (max-width: 767px) {
+	.lbwp-share-buttons li {
+		width: 49%;
+		margin: 0 1% 3% 0;
+	}
+}
+
+@media (max-width: 420px) {
+	.lbwp-share-buttons li {
+		width: 100%;
+		margin: 0 1% 3% 0;
+	}
+}
+
+
+
+@media print {
+	.lbwp-share-buttons {
+		display: none;
+	}
+}
+
+// Core styles for the cookie banner
+.lbwp-info-banner {
+	position: fixed;
+	bottom: 0;
+	left: 0;
+	right: 0;
+	background: white;
+	padding: 15px;
+	z-index: 1;
+	box-shadow: 0 0 5px 0 rgba(0,0,0,.2);
+}
+
+/* TODO remove, once obsolete: plugin really simple share buttons */
+
+div.really_simple_share div {
+	padding-left: 0;
+}
+
+/* fix */
+div.really_simple_share .fb-like {
+	z-index: 1;
+}
+
+@media only screen and (max-width: 64em) {
+	div.really_simple_share div {
+		float: none;
+		margin-bottom: 10px;
+	}
+}
+
+
+// Styling for onepager element in draft mode
+$customColorDraft: #F39868;
+$customColorDraftGrey: #fbfbfb;
+$customColorDraftFontColor: #505050;
+
+.onepager-item{
+	position: relative;
+
+	.item-admin-wrapper{
+
+		&:before,
+		&:after{
+			content: '';
+			position: absolute;
+			top: 0;
+			left: 0;
+			right: 0;
+			border-top: 3px dashed $customColorDraft;
+		}
+
+		&:after{
+			top: auto;
+			bottom: 0;
+		}
+
+		.item-admin-inner-wrapper{
+			display: flex;
+			position: absolute;
+			top: 10px;
+			right: 10px;
+			padding: 10px;
+
+			.item-admin-edit{
+				margin: 0 10px 0 0;
+				padding: 5px 10px;
+				font-size: 12px;
+				color: $customColorDraftFontColor;
+				background: lighten($customColorDraftFontColor, 60%);
+
+				&:hover{
+					background: lighten($customColorDraftFontColor, 55%);
+				}
+
+				.dashicons{
+					width: auto;
+					height: auto;
+					font-size: 16px;
+					line-height: 1;
+				}
+			}
+
+			.draft-label{
+				position: relative;
+				background: $customColorDraft;
+				padding: 5px 10px;
+				text-align: center;
+				color: #fff;
+				font-weight: bold;
+				font-size: 12px;
+				letter-spacing: 2px;
+				cursor: pointer;
+
+				&:hover{
+					background: darken($customColorDraft, 10%);
+					.label-notice{
+						visibility: visible;
+					}
+				}
+
+				.label-notice{
+					text-align: left;
+					width: 300px;
+					padding: 10px;
+					position: absolute;
+					right: 0;
+					top: 35px;
+					color: $customColorDraftFontColor;
+					background: $customColorDraftGrey;
+					box-shadow: 0px 0px 10px 0px lighten($customColorDraftFontColor, 60%);
+					visibility: hidden;
+					hyphens: auto;
+					-moz-hyphens: auto;
+					-ms-hyphens: auto;
+					-webkit-hyphens: auto;
+					z-index: 1;
+
+					@media (max-width: 400px){
+						width: 200%;
+					}
+				}
+			}
+		}
+	}
+}

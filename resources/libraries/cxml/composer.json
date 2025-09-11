@@ -1,0 +1,5 @@
+{
+    "require": {
+        "herbert/cxml": "dev-main"
+    }
+}

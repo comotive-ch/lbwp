@@ -1,0 +1,116 @@
+# LBWP Util Classes
+
+## WordPress
+`LBWP\Util\WordPress` - WordPress utility functions
+- `registerTaxonomy($slug, $singular, $plural, $letter, $config, $types): void` - Register custom taxonomy
+- `checkSignature($signature, $testtime, $calls, $blocktime): void` - IP-based rate limiting
+- `resetSignature($signature): void` - Reset IP signature for rate limiting
+- `getOptionsByQuery($query): array` - Get options by query pattern
+- `isPluginActive($plugin): bool` - Check if plugin is active
+- `getPostNameListByType($type, $status): array` - Get post names by type
+- `onTypeChange($type, $callback): void` - Register callback for post type changes
+- `getTermFieldList($postId, $taxonomy, $field): array` - Get term field values
+- `registerType($type, $singular, $plural, $config, $letter): void` - Register custom post type
+- `createAttachmentImageFromUrl($url, $parentId): int|WP_Error` - Create attachment from image URL
+- `createAttachmentFromUrl($url, $parentId): int|WP_Error` - Create attachment from any file URL
+- `createAttachmentImageFromFile($file, $parentId): int` - Create attachment from local image
+- `uploadAttachment($fileId, $validateImage, $validateHeight, $validateWidth): int` - Handle file upload
+- `getAccessiblePostMeta($postId, $skipInternal): array` - Get post meta without WP array wrapping
+- `getAccessibleUserMeta($userId): array` - Get user meta without WP array wrapping
+- `isDisplayable($post): bool` - Check if post should be displayed
+- `getConfigurableExcerpt($id, $length, $more, $force_more, $addDots, $dots): string` - Create custom excerpts
+- `handleSslLinks($html): string` - Convert HTTP links to HTTPS
+- `getPostIdByName($name, $posttype): int` - Get post ID by name
+- `getPostIdByGuid($guid, $posttype): int` - Get post ID by GUID
+- `getValidatedPostObjects($list): array` - Validate and return post objects
+- `getPublishedPostObjects($list): array` - Get only published posts
+- `removePostTableColumns($args): void` - Remove admin post table columns
+- `addPostTableColumn($args): void` - Add custom admin post table columns
+- `addPostTableColumnHeader($columns): array` - Add column headers
+- `addPostTableColumnCell($key, $postId): void` - Display custom column content
+- `restrictPostTable($args): void` - Add taxonomy/meta filters to post tables
+- `restrictPostTableFilter(): void` - Display restriction filters
+- `restrictPostTableQuery($query): void` - Modify query for restrictions
+- `searchOptionKeys($key): array` - Search WP options by key pattern
+- `updatePostNative($post): void` - Update post directly in DB
+- `getJsonOption($key): array|false` - Get JSON-decoded option
+- `updateJsonOption($key, $value): void` - Save JSON-encoded option
+- `sendJsonResponse($result, $options): void` - Send JSON HTTP response
+- `flushAndSendJsonResponse($result): void` - Flush and send JSON response
+- `getPrevNextLinks($postId, $postType, $orderby, $order): array` - Get prev/next post links
+- `getBackendPageName($pageId): string` - Get admin page name
+- `getImageUrl($id, $size): string` - Get attachment image URL
+- `getImageAltText($id): string` - Get image alt text
+- `getAttachmentData($id, $size): array` - Get complete attachment data
+- `getAttachmentIdFromUrl($url): int` - Get attachment ID from URL
+- `guessAttachmentIdFromUrl($url): int` - Guess attachment ID from URL
+- `wpNavMenu($config, $cacheTime): string` - Cached navigation menu
+- `getHighestParent($termId, $taxonomy): object` - Get top-level term parent
+- `getHighestParentPost($postId): object` - Get top-level post parent
+- `returnTemplatePart($template, $part): string` - Capture template part output
+- `isEditPage($type): bool` - Check if current page is post edit screen
+- `getAllImageSizes(): array` - Get all registered image sizes
+- `getCustomizedLoginScreenHtml($config): string` - Generate custom login screen CSS/JS
+- `hasTermOrSub($postId, $termId, $taxonomy): bool` - Check if post has term or sub-term
+- `getTermAndSubIds($termId, $taxonomy): array` - Get term and sub-term IDs
+- `getDynamicBackLink($config): array` - Generate dynamic back link
+- `getFirstTerm($postId, $taxonomy): object|false` - Get first term assigned to post
+- `getFirstTermName($postId, $taxonomy): string` - Get first term name
+- `getFirstTermSlug($postId, $taxonomy): string` - Get first term slug
+- `removeCoreMenu($menuItemId, $menu): array` - Remove WP core menu items
+
+## ArrayManipulation
+`LBWP\Util\ArrayManipulation` - Array manipulation utilities
+- `sortByCount($a, $b): int` - Sort by 'count' field (desc)
+- `explodeFirst($delimiter, $string): array` - Explode only on first delimiter
+- `convertToKeys($array): array` - Convert values to keys
+- `sortByNumericField(&$arr, $field): void` - Sort by numeric field (asc)
+- `sortByNumericFieldAsc(&$arr, $field): void` - Sort by numeric field (desc)
+- `forceWcMetaArray($meta): array` - Convert WooCommerce meta to array
+- `sortByNumericFieldPreserveKeys(&$arr, $field): void` - Sort by numeric preserving keys
+- `sortByStringField(&$arr, $field): void` - Sort by string field
+- `sortByStringFieldPreserveKeys(&$arr, $field): void` - Sort by string preserving keys
+- `getIntArray($values): array` - Convert values to integers
+- `anyValueMatch($a, $b): bool` - Check if arrays have common values
+- `allValueMatch($a, $b): bool` - Check if all A values exist in B
+- `isIdentical($a, $b): bool` - Compare arrays for identity using JSON hashes
+- `valuesNonEmptyStrings($values): bool` - Check if all values are non-empty strings
+- `getAtoZArray($lowerCase): array` - Create A-Z array structure
+- `createAtoZArray($items, $sortField): array` - Organize items into A-Z structure
+- `forceArray($value): array` - Force value to array or return empty
+- `forceArrayAndInclude($value): array` - Force to array, wrapping non-arrays
+- `forceSingleValue($value): mixed` - Get first value from array
+- `mapRecursive($array, $params, callable $method): mixed` - Apply function recursively
+- `deepReplace($search, $replace, $array): array` - Replace strings in nested arrays
+- `deepMerge(): array` - Merge arrays recursively (variable args)
+- `mergeRecursiveDistinct(array $array1, $array2): array` - Distinct recursive merge
+- `xmlToArray(SimpleXMLElement $xml): array` - Convert XML to array
+- `sortByPostDateDesc($p1, $p2): int` - Sort posts by date (desc)
+- `sortByPostDateAsc($p1, $p2): int` - Sort posts by date (asc)
+- `getSimpleTermList($terms, $field): array` - Extract single field from terms
+- `reorderParentChildTerms($terms): array` - Reorder terms with children after parents
+- `stringToIndex($string, $array, $regex): mixed` - Get array value by string path
+- `getPostIds($posts): array` - Extract post IDs from objects
+- `getProductIds($products): array` - Extract product IDs from objects
+- `humanSentenceImplode($separator, $word, $list): string` - Create human-readable lists
+- `getSpecifiedKeyArray($list, $key): array` - Extract specified key from array items
+
+## File
+`LBWP\Util\File` - File system utilities
+- `getExtension($sFile): string` - Get file extension with dot
+- `debugExec($command): void` - Debug command execution with output
+- `getFiles($sFolder, $filesOnly): array` - Get files in directory
+- `getFileFolder($sPath): string` - Get directory part of path
+- `getFileOnly($sPath): string` - Get filename part of path
+- `deleteFolder($sPath): bool` - Recursively delete folder
+- `downloadLargeFile($path, $url): void` - Download large files via cURL
+- `getStamp($file): int` - Get file modification timestamp
+- `scanDirectory($directory, $recursive, $listDirs, $listFiles, $exclude): array` - Scan directory tree
+- `isImage($file): bool` - Check if file is image by extension
+- `isImageMime($mime): bool` - Check if MIME type is image
+- `getNewUploadFolder($entropy): string` - Create new upload folder
+- `getUploader(): S3Upload` - Get S3 upload module
+- `getResourceUri(): string` - Get plugin resources URL
+- `getViewsUri(): string` - Get plugin views URL
+- `getResourcePath(): string` - Get plugin resources path
+- `getViewsPath(): string` - Get plugin views path
