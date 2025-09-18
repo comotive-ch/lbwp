@@ -610,9 +610,8 @@ class Shop extends Component
 
     if (!empty($users)) {
       // Require user.php if function doesn't exist in context (cron)
-      if (!function_exists('wp_delete_user')) {
-        require_once ABSPATH . 'wp-includes/user.php';
-      }
+      require_once ABSPATH . 'wp-includes/user.php';
+
       foreach ($users as $user) {
         // Add hook to modify delete bool
         $delete = apply_filters('aboon_before_delete_fake_account', true, $user);

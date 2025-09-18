@@ -75,7 +75,7 @@ class Strings
   /**
    * Used for strip_tags mainly
    */
-  const TINYMCE_DEFAULT_TAGS = '<h1><h2><h3><h4><h5><strong><em><a><p><blockquote><img><ul><ol><li><del><ins>';
+  const TINYMCE_DEFAULT_TAGS = '<h1><h2><h3><h4><h5><strong><em><a><p><blockquote><img><ul><ol><li><del><ins><br>';
 
   /**
    * Most common words in some languages

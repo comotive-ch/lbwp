@@ -20,6 +20,210 @@ class LLMStxt extends ACFBase
   }
 
   /**
+   * Handle /llms.txt requests
+   */
+  public function handleLlmsTxt()
+  {
+    if ($_SERVER['REQUEST_URI'] === '/llms.txt') {
+      header('HTTP/1.1 200 OK');
+      header('Content-Type: text/plain; charset=utf-8');
+      echo $this->generateLlmsTxtContent();
+      exit;
+    }
+  }
+
+  /**
+   * Generate the content for llms.txt
+   */
+  private function generateLlmsTxtContent()
+  {
+    $isWoocommerceActive = class_exists('WooCommerce');
+    $content = '# ' . get_bloginfo('name') . "\n\n";
+    
+    $companyDescription = get_field('company_description', 'option');
+    if ($companyDescription) {
+      $content .= "## Unternehmensbeschreibung und Mission\n\n";
+      $content .= $companyDescription . "\n\n";
+    }
+    
+    $mainProducts = get_field('main_products', 'option');
+    if ($mainProducts) {
+      $content .= "## Hauptprodukte/Dienstleistungen\n\n";
+      $content .= $mainProducts . "\n\n";
+    }
+    
+    $targetAudience = get_field('target_audience', 'option');
+    if ($targetAudience) {
+      $content .= "## Zielgruppe und Positionierung\n\n";
+      $content .= $targetAudience . "\n\n";
+    }
+    
+    $specialExpertise = get_field('special_expertise', 'option');
+    if ($specialExpertise) {
+      $content .= "## Besondere Expertise oder Alleinstellungsmerkmale\n\n";
+      $content .= $specialExpertise . "\n\n";
+    }
+    
+    $contactInfo = get_field('contact_info', 'option');
+    if ($contactInfo) {
+      $content .= "## Kontaktinformationen und wichtige URLs\n\n";
+      $content .= $contactInfo . "\n\n";
+    }
+    
+    $content .= $this->generateFaqSection();
+    
+    if ($isWoocommerceActive && get_field('show_woo_categories', 'option')) {
+      $content .= $this->generateWooCommerceCategories();
+    }
+    
+    if ($isWoocommerceActive && get_field('enable_ai_shop_optimization', 'option')) {
+      $content .= $this->generateTopProducts();
+    }
+    
+    $content .= $this->generateBlogPosts();
+    
+    return $content;
+  }
+
+  /**
+   * Generate FAQ section
+   */
+  private function generateFaqSection()
+  {
+    $faqTitle = get_field('faq_title', 'option');
+    $faqRepeater = get_field('faq_repeater', 'option');
+    
+    if (!$faqTitle && !$faqRepeater) {
+      return '';
+    }
+    
+    $content = '';
+    if ($faqTitle) {
+      $content .= "## " . $faqTitle . "\n\n";
+    }
+    
+    if ($faqRepeater) {
+      foreach ($faqRepeater as $faq) {
+        if (!empty($faq['question']) && !empty($faq['answer'])) {
+          $content .= "**" . $faq['question'] . "**\n\n";
+          $content .= $faq['answer'] . "\n\n";
+        }
+      }
+    }
+    
+    return $content;
+  }
+
+  /**
+   * Generate WooCommerce categories section
+   */
+  private function generateWooCommerceCategories()
+  {
+    $content = "## Die wichtigsten Produkte-Kategorien\n\n";
+    
+    $categories = get_terms(array(
+      'taxonomy' => 'product_cat',
+      'hide_empty' => true,
+      'parent' => 0,
+    ));
+    
+    if ($categories && !is_wp_error($categories)) {
+      foreach ($categories as $category) {
+        $content .= "## " . $category->name . "\n\n";
+        
+        if ($category->description) {
+          $content .= $category->description . "\n\n";
+        }
+        
+        $category_link = get_term_link($category);
+        if (!is_wp_error($category_link)) {
+          $content .= "Link: " . $category_link . "\n\n";
+        }
+      }
+    }
+    
+    return $content;
+  }
+
+  /**
+   * Generate top products section
+   */
+  private function generateTopProducts()
+  {
+    $topProducts = get_field('top_products', 'option');
+    
+    if (!$topProducts) {
+      return '';
+    }
+
+    $currency = get_woocommerce_currency();
+    $content = "## Beliebteste Produkte\n\n";
+    
+    foreach ($topProducts as $productId) {
+      
+      $wc_product = wc_get_product($productId);
+      if (!$wc_product) {
+        continue;
+      }
+      
+      $content .= "### " . $wc_product->get_title() . "\n\n";
+      
+      $excerpt = wp_trim_words(strip_tags($wc_product->get_short_description()));
+      if (strlen($excerpt) === 0) {
+        $excerpt = wp_trim_words(strip_tags($wc_product->get_description()), 100, '...');
+      }
+      if ($excerpt) {
+        $content .= $excerpt . "\n";
+      }
+      
+      $price = $wc_product->get_price();
+      if ($price) {
+        $content .= "Preis: " . number_format($price, 2, '.', '') . ' ' . $currency. "\n";
+      }
+      
+      $content .= "Link für mehr Infos: " . $wc_product->get_permalink() . "\n\n";
+    }
+    
+    return $content;
+  }
+
+  /**
+   * Generate blog posts section
+   */
+  private function generateBlogPosts()
+  {
+    $content = "## Beiträge aus dem Blog\n\n";
+    
+    $postsDisplay = get_field('posts_display', 'option');
+    
+    if ($postsDisplay === 'manual') {
+      $selectedPosts = get_field('selected_posts', 'option');
+      $posts = $selectedPosts ? $selectedPosts : array();
+    } else {
+      $posts = get_posts(array(
+        'posts_per_page' => 3,
+        'post_status' => 'publish',
+      ));
+    }
+    
+    if ($posts) {
+      foreach ($posts as $post) {
+        $content .= "### " . $post->post_title . "\n\n";
+        
+        $excerpt = $post->post_excerpt;
+        if (empty($excerpt)) {
+          $excerpt = wp_trim_words(strip_tags(do_blocks($post->post_content)), 100, '...');
+        }
+        $content .= $excerpt . "\n\n";
+        
+        $content .= "Link: " . get_permalink($post) . "\n\n";
+      }
+    }
+    
+    return $content;
+  }
+
+  /**
    * Adds field settings
    */
   public function fields()
@@ -48,7 +252,7 @@ class LLMStxt extends ACFBase
         ),
         array(
           'key' => 'field_main_products',
-          'label' => 'Hauptprodukte/Dienstleistungen', 
+          'label' => 'Hauptprodukte/Dienstleistungen',
           'name' => 'main_products',
           'type' => 'textarea',
           'maxlength' => 1000,
@@ -57,7 +261,7 @@ class LLMStxt extends ACFBase
         array(
           'key' => 'field_target_audience',
           'label' => 'Zielgruppe und Positionierung',
-          'name' => 'target_audience', 
+          'name' => 'target_audience',
           'type' => 'textarea',
           'maxlength' => 1000,
           'rows' => 4,
@@ -66,7 +270,7 @@ class LLMStxt extends ACFBase
           'key' => 'field_special_expertise',
           'label' => 'Besondere Expertise oder Alleinstellungsmerkmale',
           'name' => 'special_expertise',
-          'type' => 'textarea', 
+          'type' => 'textarea',
           'maxlength' => 1000,
           'rows' => 4,
         ),
@@ -75,15 +279,85 @@ class LLMStxt extends ACFBase
           'label' => 'Kontaktinformationen und wichtige URLs',
           'name' => 'contact_info',
           'type' => 'textarea',
-          'maxlength' => 1000, 
+          'maxlength' => 1000,
           'rows' => 4,
+        ),
+        array(
+          'key' => 'field_faq_title',
+          'label' => 'FAQ Titel',
+          'name' => 'faq_title',
+          'type' => 'text',
+          'placeholder' => 'Häufig gestellte Fragen',
+        ),
+        array(
+          'key' => 'field_faq_repeater',
+          'label' => 'FAQ Einträge',
+          'name' => 'faq_repeater',
+          'type' => 'repeater',
+          'sub_fields' => array(
+            array(
+              'key' => 'field_faq_question',
+              'label' => 'Frage',
+              'name' => 'question',
+              'type' => 'textarea',
+              'rows' => 3,
+              'new_lines' => '',
+              'required' => 1,
+            ),
+            array(
+              'key' => 'field_faq_answer',
+              'label' => 'Antwort',
+              'name' => 'answer',
+              'type' => 'textarea',
+              'rows' => 3,
+              'new_lines' => '',
+              'required' => 1,
+            ),
+          ),
+          'min' => 0,
+          'layout' => 'table',
+          'button_label' => 'FAQ Eintrag hinzufügen',
+        ),
+        array(
+          'key' => 'field_enable_ai_shop_optimization',
+          'label' => 'KI Optimierungen für WooCommerce',
+          'message' => 'Aktivieren. Nur nutzbar, wenn Woocommerce aktiv ist',
+          'name' => 'enable_ai_shop_optimization',
+          'type' => 'true_false',
         ),
         array(
           'key' => 'field_show_woo_categories',
           'label' => 'Produkte-Kategorien anzeigen',
           'name' => 'show_woo_categories',
-          'message' => 'Zeige der KI die Hauptkategorien aus WooCommerce an, sofern vorhanden.',
+          'message' => 'Zeige die Hauptkategorien und deren Beschreibung aus WooCommerce an.',
           'type' => 'true_false',
+          'conditional_logic' => array(
+            array(
+              array(
+                'field' => 'field_enable_ai_shop_optimization',
+                'operator' => '==',
+                'value' => '1',
+              ),
+            ),
+          ),
+        ),
+        array(
+          'key' => 'field_top_products',
+          'label' => 'Beliebteste Produkte auswählen',
+          'name' => 'top_products',
+          'type' => 'relationship',
+          'post_type' => array('product'),
+          'min' => 0,
+          'return_format' => 'id',
+          'conditional_logic' => array(
+            array(
+              array(
+                'field' => 'field_enable_ai_shop_optimization',
+                'operator' => '==',
+                'value' => '1',
+              ),
+            ),
+          ),
         ),
         array(
           'key' => 'field_posts_display',
@@ -133,131 +407,5 @@ class LLMStxt extends ACFBase
   public function blocks()
   {
 
-  }
-
-  /**
-   * Handle /llms.txt requests
-   */
-  public function handleLlmsTxt()
-  {
-    if ($_SERVER['REQUEST_URI'] === '/llms.txt') {
-      header('HTTP/1.1 200 OK');
-      header('Content-Type: text/plain; charset=utf-8');
-      echo $this->generateLlmsTxtContent();
-      exit;
-    }
-  }
-
-  /**
-   * Generate the content for llms.txt
-   */
-  private function generateLlmsTxtContent()
-  {
-    $content = '# ' . get_bloginfo('name') . "\n\n";
-    
-    $companyDescription = get_field('company_description', 'option');
-    if ($companyDescription) {
-      $content .= "## Unternehmensbeschreibung und Mission\n\n";
-      $content .= $companyDescription . "\n\n";
-    }
-    
-    $mainProducts = get_field('main_products', 'option');
-    if ($mainProducts) {
-      $content .= "## Hauptprodukte/Dienstleistungen\n\n";
-      $content .= $mainProducts . "\n\n";
-    }
-    
-    $targetAudience = get_field('target_audience', 'option');
-    if ($targetAudience) {
-      $content .= "## Zielgruppe und Positionierung\n\n";
-      $content .= $targetAudience . "\n\n";
-    }
-    
-    $specialExpertise = get_field('special_expertise', 'option');
-    if ($specialExpertise) {
-      $content .= "## Besondere Expertise oder Alleinstellungsmerkmale\n\n";
-      $content .= $specialExpertise . "\n\n";
-    }
-    
-    $contactInfo = get_field('contact_info', 'option');
-    if ($contactInfo) {
-      $content .= "## Kontaktinformationen und wichtige URLs\n\n";
-      $content .= $contactInfo . "\n\n";
-    }
-    
-    if (class_exists('WooCommerce') && get_field('show_woo_categories', 'option')) {
-      $content .= $this->generateWooCommerceCategories();
-    }
-    
-    $content .= $this->generateBlogPosts();
-    
-    return $content;
-  }
-
-  /**
-   * Generate WooCommerce categories section
-   */
-  private function generateWooCommerceCategories()
-  {
-    $content = "## Die wichtigsten Produkte-Kategorien\n\n";
-    
-    $categories = get_terms(array(
-      'taxonomy' => 'product_cat',
-      'hide_empty' => true,
-      'parent' => 0,
-    ));
-    
-    if ($categories && !is_wp_error($categories)) {
-      foreach ($categories as $category) {
-        $content .= "## " . $category->name . "\n\n";
-        
-        if ($category->description) {
-          $content .= $category->description . "\n\n";
-        }
-        
-        $category_link = get_term_link($category);
-        if (!is_wp_error($category_link)) {
-          $content .= "Link: " . $category_link . "\n\n";
-        }
-      }
-    }
-    
-    return $content;
-  }
-
-  /**
-   * Generate blog posts section
-   */
-  private function generateBlogPosts()
-  {
-    $content = "## Beiträge aus dem Blog\n\n";
-    
-    $postsDisplay = get_field('posts_display', 'option');
-    
-    if ($postsDisplay === 'manual') {
-      $selectedPosts = get_field('selected_posts', 'option');
-      $posts = $selectedPosts ? $selectedPosts : array();
-    } else {
-      $posts = get_posts(array(
-        'posts_per_page' => 3,
-        'post_status' => 'publish',
-      ));
-    }
-    
-    if ($posts) {
-      foreach ($posts as $post) {
-        $content .= "### " . $post->post_title . "\n\n";
-        
-        $excerpt = $post->post_excerpt;
-        if (empty($excerpt)) {
-          $excerpt = wp_trim_words(strip_tags(do_blocks($post->post_content)), 100, '...');
-        }
-        $content .= $excerpt . "\n\n";
-        
-        $content .= "Link: " . get_permalink($post) . "\n\n";
-      }
-    }
-    
-    return $content;
   }
 } 

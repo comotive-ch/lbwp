@@ -1116,13 +1116,19 @@ class Search extends ACFBase
       $term = str_replace(array('+','*'), '', $term);
       $sql = '
         SELECT id, ( 
-            (title LIKE "{raw:term}%")*3 + 
+            (title LIKE "{raw:term}%")*4 + 
+            (content LIKE "%{raw:term}%")*2 + 
             (excerpt LIKE "%{raw:term}%")*2 + 
-            (title LIKE "%{raw:term}%")*1
+            (meta LIKE "%{raw:term}%")*1 + 
+            (plurals LIKE "%{raw:term}%")*1 + 
+            (title LIKE "%{raw:term}%")*3
           ) AS relevance
         FROM ' . $db->prefix . 'lbwp_text_index
         WHERE (title LIKE "{raw:term}%" 
            OR title LIKE "%{raw:term}%" 
+           OR meta LIKE "%{raw:term}%" 
+           OR content LIKE "%{raw:term}%" 
+           OR plurals LIKE "%{raw:term}%" 
            OR excerpt LIKE "%{raw:term}%")
            ' . $postsNotInSql . '
         ORDER BY relevance DESC
@@ -1194,17 +1200,25 @@ class Search extends ACFBase
       )));
     }
 
-    // For compat still build one group that can be filtered and re-sorted
-    $grouped = array(1 => array());
+    // For compat with custom sorts still build groups 1,2,3
+    $grouped = array(1 => array(), 2 => array(), 3 => array());
     foreach ($raw as $item) {
-      $grouped[1][] = $item->id;
+      if (!isset($item->relevance) || $item->relevance <= 2) {
+        $grouped[3][] = $item->id;
+      } else if ($item->relevance >= 6) {
+        $grouped[1][] = $item->id;
+      } else if ($item->relevance >= 3) {
+        $grouped[2][] = $item->id;
+      }
     }
 
     // Allow developers to interact with the results at this point
-    // TODO remove compat with groups here and in filters, once old search is not used anymore
     $grouped = apply_filters('aboon_search_autocomplete_product_ids', $grouped);
     // Make a simple ungrouped array again
-    $productIds = $grouped[1];
+    $productIds = array();
+    foreach ($grouped as  $group) {
+      $productIds = array_merge($productIds, $group);
+    }
 
     // Apply retractions from search with the blacklist if limitations are made
     self::applyWhitelistRetractions($productIds, $filter);
