@@ -610,7 +610,7 @@ class Shop extends Component
 
     if (!empty($users)) {
       // Require user.php if function doesn't exist in context (cron)
-      require_once ABSPATH . 'wp-includes/user.php';
+      require_once ABSPATH . 'wp-admin/includes/user.php';
 
       foreach ($users as $user) {
         // Add hook to modify delete bool

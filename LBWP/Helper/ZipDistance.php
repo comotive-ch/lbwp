@@ -130,6 +130,17 @@ class ZipDistance
   }
 
   /**
+   * @return array
+   */
+  public static function getFullList()
+  {
+    if (count(self::$data) == 0) {
+      self::loadZipData();
+    }
+    return self::$data;
+  }
+
+  /**
    * @return void
    */
   public static function getZipCantonMap()

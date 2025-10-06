@@ -646,7 +646,7 @@ class CleanUp extends \LBWP\Module\Base
    */
   public function prepareLocalDb()
   {
-    if (defined('LOCAL_DEVELOPMENT') && get_option('preparedLocalDb') != '1') {
+    if (defined('LOCAL_DEVELOPMENT') && !defined('LBWP_SKIP_LOCAL_PREPARE_DB') && get_option('preparedLocalDb') != '1') {
       // Set "lbwp" as password for all users
       $this->wpdb->query('
         UPDATE ' . $this->wpdb->users . '

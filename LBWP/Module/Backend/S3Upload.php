@@ -174,10 +174,14 @@ class S3Upload extends \LBWP\Module\Base
         'Trace' => debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS)
       ));
       */
-      $s3->deleteObject(array(
-        'Bucket' => CDN_BUCKET_NAME,
-        'Key' => $filename
-      ));
+      try {
+        $s3->deleteObject(array(
+          'Bucket' => CDN_BUCKET_NAME,
+          'Key' => $filename
+        ));
+      } catch (\Exception $e) {
+        SystemLog::add('S3Upload::deleteFile', 'error', 'Deletion of file failed: ' . $e->getMessage());
+      }
     }
   }
 	
@@ -190,10 +194,14 @@ class S3Upload extends \LBWP\Module\Base
     $s3 = AwsFactoryV3::getS3Service();
     // Delete it.
     if (!defined('LOCAL_DEVELOPMENT')) {
-      $s3->deleteObject(array(
-        'Bucket' => CDN_BUCKET_NAME,
-        'Key' => $filename
-      ));
+      try {
+        $s3->deleteObject(array(
+          'Bucket' => CDN_BUCKET_NAME,
+          'Key' => $filename
+        ));
+      } catch (\Exception $e) {
+        SystemLog::add('S3Upload::deleteFileByKey', 'error', 'Deletion of file failed: ' . $e->getMessage());
+      }
     }
   }
 
@@ -442,6 +450,7 @@ class S3Upload extends \LBWP\Module\Base
         $result = $s3->putObject($options);
       } catch (\Exception $e) {
         SystemLog::add('CdnUpload', 'error', 'Upload Error *again*: ' . $e->getMessage());
+        return false;
       }
     }
 

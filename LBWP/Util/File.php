@@ -2,8 +2,8 @@
 
 namespace LBWP\Util;
 
-use A\B\MyClass;
 use LBWP\Module\Backend\S3Upload;
+use LBWP\Module\General\Cms\SystemLog;
 
 /**
  * Statische Funktionen für Filezugriffe
@@ -115,15 +115,22 @@ class File
 		if (is_file($sPath)) return(unlink($sPath));
 		// Durch den Ordner loopen
 		$dir = dir($sPath);
-		while (false !== $entry = $dir->read()) {
-			// Pointer überspringen
-			if ($entry == '.' || $entry == '..') continue;
-			// Rekursiv wieder aufrufen für Subfolder
-			self::deleteFolder("$sPath/$entry");
-		}
-		// Resourcen schliessen
-		$dir->close();
-		return(rmdir($sPath));
+    if ($dir === false) {
+      return false;
+    }
+
+    try {
+      while (false !== $entry = $dir->read()) {
+        if ($entry == '.' || $entry == '..') continue;
+        self::deleteFolder("$sPath/$entry");
+      }
+      // Resourcen schliessen
+      $dir->close();
+    } catch (\Exception $e) {
+      SystemLog::add('File', 'error', 'exception in deleteFolder method: ' . $e->getMessage());
+    }
+
+    return(rmdir($sPath));
 	}
 
   /**
