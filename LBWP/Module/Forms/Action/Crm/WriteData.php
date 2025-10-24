@@ -37,6 +37,7 @@ class WriteData extends Base
   protected $allowedTypes = array(
     'textfield',
     'textarea',
+    'dropdown',
     'file'
   );
   /**

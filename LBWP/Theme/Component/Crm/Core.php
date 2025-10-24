@@ -59,6 +59,11 @@ class Core extends Component
    */
   protected $userAdminData = array();
   /**
+   * used to cache fullContactList_c gunzipped version within request
+   * @var array
+   */
+  protected $cache = array();
+  /**
    * @var array of inactive user ids, if given
    */
   protected $inactiveUserIds = null;
@@ -1246,6 +1251,9 @@ class Core extends Component
       case 'table':
         $html .= $this->getCustomFieldTableHtml($field, $key, $value, $readonly, $forceDisabled);
         break;
+      case 'html':
+        $html .= apply_filters('lbwp_crm_html_field_content', $field['html-content'], $key, $this->editedUser);
+        break;
       case 'file':
         // Display upload field only if not readonly
         if (!$readonly && strlen($value) == 0) {
@@ -2290,8 +2298,8 @@ class Core extends Component
    */
   public static function flushContactCache()
   {
-    wp_cache_delete('fullContactList', 'CrmCore');
-    wp_cache_delete('fullContactListIgnoredCaps', 'CrmCore');
+    wp_cache_delete('fullContactList_c', 'CrmCore');
+    wp_cache_delete('fullContactListIgnoredCaps_c', 'CrmCore');
   }
 
   /**
@@ -3048,10 +3056,16 @@ class Core extends Component
     // Allow using more RAM, as large segments can be loaded to be reduced
     ini_set('memory_limit', '2048M');
     $cacheKey = ($ignorecaps) ? 'fullContactList_c' : 'fullContactListIgnoredCaps_c';
+
     $contacts = wp_cache_get($cacheKey, 'CrmCore');
     if (is_string($contacts) && strlen($contacts) > 0) {
       // Uncompress the cached large variable
-      $contacts = json_decode(gzuncompress($contacts), true);
+      if (!isset($this->cache[$cacheKey])) {
+        $contacts = json_decode(gzuncompress($contacts), true);
+        $this->cache[$cacheKey] = $contacts;
+      } else {
+        $contacts = $this->cache[$cacheKey];
+      }
     }
 
     // Build a new list, if not in cache
@@ -4194,6 +4208,9 @@ class Core extends Component
       'description' => 'Die Datumsauswahl kann damit auf n-Tage in der Zukunft eingeschränkt werden.'
     ));
 
+    $helper->addMetabox('html-values', 'Einstellungen für HTML-/Text-Felder');
+    $helper->addEditor('field-html-content', 'html-values', 'Einschränkung in Tagen', array());
+
     // Woocommerce integration
     if ($this->hasWooCommerce) {
       $helper->addMetabox('woocommerce', 'Integration in den Onlineshop');
@@ -4283,10 +4300,12 @@ class Core extends Component
             var history = jQuery("#crm-custom-field__data-history");
             var multivalues = jQuery("#crm-custom-field__multi-values");
             var datevalues = jQuery("#crm-custom-field__date-values");
+            var htmlvalues = jQuery("#crm-custom-field__html-values");
             // Basically allow history, but dont show multi values
             history.show();
             multivalues.hide();
             datevalues.hide();
+            htmlvalues.hide();
             // If it is a table, show multival and disable history
             if (fieldType == "table") {
               history.hide();
@@ -4299,6 +4318,10 @@ class Core extends Component
             // If it is a datefiled, show its settings
             if (fieldType == "datefield") {
               datevalues.show();
+            }
+            // If it is a datefiled, show its settings
+            if (fieldType == "html") {
+              htmlvalues.show();
             }
           });
           
@@ -4322,6 +4345,7 @@ class Core extends Component
       'checkbox-multi' => 'Checkbox (Mehrfach-Auswahl)',
       'dropdown' => 'Dropdown',
       'table' => 'Tabelle',
+      'html' => 'HTML-Code oder Text',
       'file' => 'Datei-Upload'
     );
   }
@@ -4560,6 +4584,7 @@ class Core extends Component
           'segmenting-active' => get_post_meta($field->ID, 'segmenting-active', true) == 'on',
           'segmenting-slug' => get_post_meta($field->ID, 'segmenting-slug', true),
           'description' => get_post_meta($field->ID, 'description', true),
+          'html-content' => get_post_meta($field->ID, 'field-html-content', true),
           'track-changes' => get_post_meta($field->ID, 'track-changes', true) == 'on',
           'invisible' => get_post_meta($field->ID, 'cap-invisible', true) == 'on',
           'readonly' => get_post_meta($field->ID, 'cap-readonly', true) == 'on',

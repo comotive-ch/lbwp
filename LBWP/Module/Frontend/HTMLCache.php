@@ -104,7 +104,7 @@ class HTMLCache extends \LBWP\Module\Base
       $this->expireTimedCacheAvoids();
 
       // manually delete cache for one site
-      if ($_GET['htmlCache'] == 'invalidate') {
+      if (isset($_GET['htmlCache']) && $_GET['htmlCache'] == 'invalidate') {
         // clean invalidation param state from get -> remove
         $siteId = $this->removeGetVar('htmlCache');
         // delete cache
@@ -284,31 +284,19 @@ class HTMLCache extends \LBWP\Module\Base
    */
   public static function invalidatePage($uri)
   {
-    $siteId = md5($uri);
-    wp_cache_delete($siteId, FRONT_CACHE_GROUP);
-    wp_cache_delete($siteId, FRONT_CACHE_GROUP_HTTPS);
-  }
+    if (!defined('LBWP_DISABLE_ASSIST_HTML_CACHE')) {
+      try {
+        $cache = new \Redis();
+        $cache->pconnect(REDIS_HTML_CACHE_SERVER_HOST, REDIS_CONNECTION_PORT, 1);
+        $cache->auth(REDIS_AUTH_KEY);
+        $cache->setOption(\Redis::OPT_TCP_KEEPALIVE, 60);
+        $cache->del(lbwpGetHtmlCacheKey(md5($uri)));
+      } catch (\Exception $e) {
 
-  /**
-   * Delete multiple cached sites (desktop)
-   * @param array $siteIds
-   */
-  public static function invalidatePageArray(array $siteIds)
-  {
-    foreach ($siteIds as $uri) {
-      $siteId = md5($uri);
-      wp_cache_delete($siteId, FRONT_CACHE_GROUP);
-      wp_cache_delete($siteId, FRONT_CACHE_GROUP_HTTPS);
+      }
+    } else {
+      wp_cache_delete(md5($uri), FRONT_CACHE_GROUP_HTTPS);
     }
-  }
-
-  /**
-   * Delete multiple cached sites (desktop)
-   * @param array $siteIds
-   */
-  public function clearHtmlCacheArray(array $siteIds)
-  {
-    self::invalidatePageArray($siteIds);
   }
 
   /**

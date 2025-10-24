@@ -40,7 +40,7 @@ class CleanUp extends \LBWP\Module\Base
    * @var true[]
    */
   protected $publicPrivateTypes = array(
-    'lbwp-form' => true
+    'lbwp-form'
   );
 
   /**
@@ -93,12 +93,9 @@ class CleanUp extends \LBWP\Module\Base
         add_action('admin_footer', array($this, 'disableYoastLLmsTextFeature'));
       }
     } else {
-      // Exclude from REST API
-      add_filter('rest_endpoints', [$this, 'excludePrivateTypeFromRest']);
-      // Exclude from Yoast sitemap
+      // Exclude from Yoast sitemap ands et noindex in yoast
       add_filter('wpseo_sitemap_exclude_post_type', [$this, 'excludePrivateTypeFromSitemap'], 10, 2);
-      // Set noindex for Yoast SEO
-      add_filter('wpseo_meta_robots', [$this, 'setPrivateTypeToNoindex']);
+      add_filter('wpseo_robots_array', [$this, 'setPrivateTypeToNoindex']);
     }
 
     // Remove things for non superusers
@@ -134,26 +131,6 @@ class CleanUp extends \LBWP\Module\Base
   }
 
   /**
-   * Exclude custom post type from REST API
-   */
-  public function excludePrivateTypeFromRest(array $endpoints): array {
-    foreach ($this->publicPrivateTypes as $postType) {
-      $removableRoutes = [
-        '/wp/v2/' . $postType,
-        '/wp/v2/' . $postType . '/(?P<id>[\d]+)',
-      ];
-
-      foreach ($removableRoutes as $route) {
-        if (isset($endpoints[$route])) {
-          unset($endpoints[$route]);
-        }
-      }
-    }
-
-    return $endpoints;
-  }
-
-  /**
    * Exclude custom post type from Yoast SEO sitemap
    */
   public function excludePrivateTypeFromSitemap(bool $exclude, string $postType): bool {
@@ -167,12 +144,16 @@ class CleanUp extends \LBWP\Module\Base
   /**
    * Force noindex meta robots for custom post type
    */
-  public function setPrivateTypeToNoindex(string $robots): string {
+  public function setPrivateTypeToNoindex(array $robots): array {
     global $post;
 
     foreach ($this->publicPrivateTypes as $postType) {
       if (is_singular($postType) && $post && $post->post_type === $postType) {
-        $robots = 'noindex,nofollow';
+        $robots['index'] = 'noindex';
+        $robots['follow'] = 'nofollow';
+        unset($robots['max-snippet']);
+        unset($robots['max-image-preview']);
+        unset($robots['max-video-preview']);
         break;
       }
     }

@@ -256,6 +256,8 @@ class AudioGenerator extends ACFBase
       }
       // Make sure to read ol/li as actual numbered lists
       $content = $this->handleNumberedLists($content);
+      // Handle headings to add interpunction so reading makes a pause for sure
+      $content = $this->handleHeadings($content);
       // Remove <figcaption> and its contents from the html
       $content = preg_replace('/<figcaption[^>]*>.*?<\/figcaption>/s', '', $content);
       // Remove <code> block and its contents from the html
@@ -278,6 +280,29 @@ class AudioGenerator extends ACFBase
   }
 
   /**
+   * Adds interpunction to headings if there is none, causing a reading pause
+   * @param $content
+   * @return array|string|string[]|null
+   */
+  protected function handleHeadings($content)
+  {
+    // Add period to heading tags if they don't already end with one
+    $content = preg_replace_callback('/<(h[1-6][^>]*)>(.*?)<\/h[1-6]>/i', function($matches) {
+      $openTag = $matches[1];
+      $headingContent = trim($matches[2]);
+      
+      // Check if heading content doesn't end with a period
+      if (!empty($headingContent) && !preg_match('/\.$/', $headingContent)) {
+        $headingContent .= '.';
+      }
+      
+      return '<' . $openTag . '>' . $headingContent . '</' . substr($openTag, 0, 2) . '>';
+    }, $content);
+    
+    return $content;
+  }
+
+  /**
    * @param $post
    * @return array|int|string[]
    */
@@ -297,7 +322,7 @@ class AudioGenerator extends ACFBase
    * @param string|string[] $content
    * @return int
    */
-  protected function getWordCountFromContent($content)
+  public function getWordCountFromContent($content)
   {
     if (!is_array($content)) {
       $content = array($content);
@@ -599,6 +624,30 @@ class AudioGenerator extends ACFBase
     }
     // Rebuild the array index so it starts from 0 again
     return array_values($segments);
+  }
+
+  /**
+   * @return string
+   */
+  public function getApiKey()
+  {
+    return $this->apiKey;
+  }
+
+  /**
+   * @return array
+   */
+  public function getVoiceSettings()
+  {
+    return $this->voiceSettings;
+  }
+
+  /**
+   * @return string
+   */
+  public function getVoiceId()
+  {
+    return $this->voiceId;
   }
 
   /**

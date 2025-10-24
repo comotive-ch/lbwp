@@ -177,7 +177,6 @@ class MemcachedAdmin extends \LBWP\Module\Base
       $this->flushFrontendCache(false);
       // Make sure to always flush current (in case keys are lost)
       HTMLCache::cleanPostHtmlCache($savedPost->ID);
-      $this->flushMainPages();
     }
 
     // Page can be handled seperately (only flush the actual page to be sure)
@@ -192,26 +191,6 @@ class MemcachedAdmin extends \LBWP\Module\Base
   public function onChangeImmediateFlush()
   {
     $this->flushFrontendCache(false);
-    $this->flushMainPages();
-  }
-
-  /**
-   * Flush the blog main page explicitly
-   * Also flush all language main pages, if multilang
-   */
-  protected function flushMainPages()
-  {
-    $siteIds = array('/', '/feed/');
-
-    if (Multilang::isActive()) {
-      foreach (Multilang::getAllLanguages() as $language) {
-        $sideIds[] = '/' . $language . '/';
-        $sideIds[] = '/' . $language . '/feed/';
-      }
-    }
-
-    // Flush them all directly, no matter if existing in cache
-    HTMLCache::invalidatePageArray($siteIds);
   }
 
   /**

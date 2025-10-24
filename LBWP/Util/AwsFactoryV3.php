@@ -113,6 +113,6 @@ class AwsFactoryV3 {
    * @return string Base path to the amazon aws sdk
    */
   public static function getSdkPath() {
-    return ABSPATH.PLUGINDIR.'/lbwp/resources/libraries/awsphpsdk_3_209_15/';
+    return ABSPATH.PLUGINDIR.'/lbwp/resources/libraries/awsphpsdk_3_356_37/';
   }
 }

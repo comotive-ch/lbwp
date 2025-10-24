@@ -1675,7 +1675,10 @@ class Search extends ACFBase
     }
 
     // Search the category tree, set keys so that secondary is priorized higher
-    $autocompletions = $this->getCategoryAutocompletions($searchTerm, $raw);
+    $autocompletions = apply_filters(
+      'lbwp_search_autocomp_categories',
+      $this->getCategoryAutocompletions($searchTerm, $raw)
+    );
 
     // If something has been found
     if (count($autocompletions) > 0) {
@@ -1708,9 +1711,9 @@ class Search extends ACFBase
       $productIds = self::getProductIdsByTerm($correctedTerm, true, $filter, static::$AUTOCOMP_PRODUCT_RESULTS);
     }
 
+    $productIds = apply_filters('lbwp_search_autocomp_product_ids_before', $productIds);
     if (count($productIds) > 0) {
       ++$results;
-      $productIds = apply_filters('lbwp_search_autocomp_product_ids_before', $productIds);
       // Only take needed results from that
       $completions = array_slice($productIds, 0, static::$AUTOCOMP_PRODUCT_RESULTS);
       // Slice if needed

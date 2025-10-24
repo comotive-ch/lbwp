@@ -223,9 +223,10 @@ class Scraper
    * @param string $url
    * @param int $min minimum number of words
    * @param int $max maximum number of words
+   * @param string $fallback fallback text
    * @return string
    */
-  public function getAiSummary($url, $min, $max)
+  public function getAiSummary($url, $min, $max, $fallback)
   {
     require_once ABSPATH . 'wp-content/plugins/lbwp/resources/libraries/openai-php/vendor/autoload.php';
     $client = \OpenAI::client(LBWP_AI_SEARCH_TEXT_INDEX_CHATGPT_SECRET);
@@ -236,12 +237,16 @@ class Scraper
       ' . substr($this->html, 0, 180000)
     ;
 
-    $response = $client->chat()->create([
-      'model' => 'gpt-5-mini',
-      'messages' => [
-        ['role' => 'user', 'content' => $prompt],
-      ],
-    ]);
+    try {
+      $response = $client->chat()->create([
+        'model' => 'gpt-5-turbo',
+        'messages' => [
+          ['role' => 'user', 'content' => $prompt],
+        ],
+      ]);
+    } catch (\Exception $e) {
+      return $fallback;
+    }
 
     return trim(strip_tags($response->choices[0]->message->content));
   }

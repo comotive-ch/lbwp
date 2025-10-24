@@ -205,6 +205,19 @@ class CXMLPunchOut extends BaseComponent{
       $message->addItem($item);
     }
 
+    // Add shipping as item
+    if(apply_filters('lbwp_punchout_include_shipping_item', true, $cart) && $cart->get_shipping_total() > 0){
+      $shippingItem = (new ItemIn())
+        ->setQuantity(1)
+        ->setSupplierPartId('SHIPPING')
+        ->setUnitPrice($cart->get_shipping_total())
+        ->setDescription('Shipping cost')
+        ->setUnitOfMeasure('EA') // Must be one of UN/CEFACT codes, EA = each
+        ->setClassificationDomain('UNSPSC')
+        ->setClassification('78161500'); // UNSPSC code for "Delivery services"
+      $message->addItem($shippingItem);
+    }
+
     // Render
     $xml_string = $cXml->render();
 

@@ -466,7 +466,7 @@ abstract class Filter extends ACFBase
     // Cacheable are all non-whitelist requests with m or m+s but not t, f or p parameters, also only for defautl sorting
     $isCacheable = $mainId > 0 && count($tertiaryIds) == 0 && count($propIds) == 0 && !$showAll && count($whitelist) == 0 && !isset($_GET['q']);
     // Try getting from cache if cacheable request
-    if ($isCacheable) {
+    if (apply_filters('lbwp_filter_is_cacheable', $isCacheable)) {
       $cacheKey = apply_filters('lbwp_filter_cache_key', 'filter_request_' . $mainId . '_' . $secondaryId . '_' . $_GET['sort'] . $language);
       $response = wp_cache_get($cacheKey, 'Filter');
       if (is_array($response) && isset($response['results'])) {
@@ -667,7 +667,6 @@ abstract class Filter extends ACFBase
       'titleFallback' => $title,
       'cached' => false,
       'cachekey' => $cacheKey,
-      //'memory' => memory_get_usage(true) / 1024 / 1024,
       'results' => $results
     );
 

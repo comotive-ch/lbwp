@@ -245,6 +245,16 @@ class ElevenLabs
   }
 
   /**
+   * @return string url of the mp3 file
+   */
+  public function moveAudioToBlockStorageFixed($fixedFilePath)
+  {
+    /** @var S3Upload $s3 */
+    $s3 = Core::getModule('S3Upload');
+    return $s3->uploadDiskFileFixedPath($this->audioFile, $fixedFilePath, 'audio/mp3', true);
+  }
+
+  /**
    * @return string json for the timestamps f generated
    */
   public function getTimestamps()
