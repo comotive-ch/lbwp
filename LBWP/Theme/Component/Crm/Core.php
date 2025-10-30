@@ -114,6 +114,11 @@ class Core extends Component
    * @var Core the instance reference for static access from outside
    */
   public static $instance = null;
+  /**
+   * Cache for processed syntax strings to reduce memory usage
+   * @var array
+   */
+  private static $syntaxCache = array();
 
   /**
    * Few things need to be registered pretty early
@@ -2810,61 +2815,132 @@ class Core extends Component
    */
   public function applyEvaluatedSyntaxString(&$data, $syntax)
   {
-    // First, double some characters to use them correctly
+    if (empty($data) || !is_array($data)) {
+      return;
+    }
+
+    // Create cache key based on syntax and data structure
+    $firstKey = array_keys($data)[0];
+    $dataKeys = array_keys($data[$firstKey]);
+    sort($dataKeys);
+    $cacheKey = md5($syntax . serialize($dataKeys));
+
+    // Check if we have cached processing logic for this syntax
+    if (!isset(self::$syntaxCache[$cacheKey])) {
+      self::$syntaxCache[$cacheKey] = $this->prepareSyntaxForEvaluation($syntax, $dataKeys);
+      
+      // Limit cache size to prevent memory buildup
+      if (count(self::$syntaxCache) > 50) {
+        self::$syntaxCache = array_slice(self::$syntaxCache, -25, null, true);
+      }
+    }
+
+    $syntaxData = self::$syntaxCache[$cacheKey];
+    
+    if ($syntaxData === false) {
+      return;
+    }
+
+    // Apply the cached evaluation logic
+    $this->evaluateDataWithCachedSyntax($data, $syntaxData);
+  }
+
+  /**
+   * Prepare syntax for evaluation and cache the result
+   * @param string $syntax
+   * @param array $dataKeys
+   * @return array|false
+   */
+  private function prepareSyntaxForEvaluation($syntax, $dataKeys)
+  {
     $now = current_time('timestamp');
-    // Remove every line of the syntax starting with a php comment
+    
+    // Remove comments
     $split = explode(PHP_EOL, $syntax);
-    $syntax = '';
+    $cleanSyntax = '';
     foreach ($split as $line) {
       if (!Strings::startsWith(trim($line), '//') && strlen(trim($line)) > 0) {
-        $syntax .= $line . PHP_EOL;
+        $cleanSyntax .= $line . PHP_EOL;
       }
     }
 
-    $syntax = trim(str_replace(
+    $cleanSyntax = trim(str_replace(
       array(PHP_EOL, '|', '=', '&', 'NOW()'),
       array(' ', '||', '==', '&&', $now),
-      $syntax
+      $cleanSyntax
     ));
 
-    if (is_array($data) && count($data) > 0) {
-      $firstKey = array_keys($data)[0];
-      $usedKeys = array();
-      foreach (array_keys($data[$firstKey]) as $candidate) {
-        if (str_contains($syntax, $candidate)) $usedKeys[] = $candidate;
+    // Find used keys to optimize processing
+    $usedKeys = array();
+    foreach ($dataKeys as $candidate) {
+      if (str_contains($cleanSyntax, $candidate)) {
+        $usedKeys[] = $candidate;
       }
-      $keys = array_map('strlen', array_keys($data[$firstKey]));
     }
 
-    $code = '';
-    foreach ($data as $key => $row) {
-      $if = $syntax;
-      // Sort by length of key, replace longest first
-      $sortCopy = $keys;
-      array_multisort($sortCopy, SORT_DESC, $row);
-      foreach ($row as $id => $value) {
-        if (!in_array($id, $usedKeys)) {
-          continue;
-        }
-        if (
-          stristr($if, $id.'==') !== false ||
-          stristr($if, $id.'>') !== false ||
-          stristr($if, $id.'<') !== false
-        ) {
-          $value = str_replace("'", "\'", $value);
-          $if = str_replace($id, "'$value'", $if);
-        } else {
-          $if = str_replace($id, "'$value'", $if);
-        }
-      }
-      $code .= 'if (!(' . $if . ')) unset($data['.$key.']);' . PHP_EOL;
+    if (empty($usedKeys)) {
+      return false;
     }
 
-    // Run the code that removes lines with the syntax
-    try {
-      @eval($code);
-    } catch (\Throwable $e) {
-      $_SESSION['crmEvalLastError'] = $e->getMessage() . ' on line ' . $e->getLine();
+    return array(
+      'syntax' => $cleanSyntax,
+      'usedKeys' => $usedKeys,
+      'keyLengths' => array_map('strlen', $dataKeys)
+    );
+  }
+
+  /**
+   * Evaluate data using cached syntax preparation
+   * @param array $data
+   * @param array $syntaxData
+   */
+  private function evaluateDataWithCachedSyntax(&$data, $syntaxData)
+  {
+    $syntax = $syntaxData['syntax'];
+    $usedKeys = $syntaxData['usedKeys'];
+    $keyLengths = $syntaxData['keyLengths'];
+
+    // Process in smaller batches to reduce memory usage
+    $batchSize = 100;
+    $dataKeys = array_keys($data);
+    $batches = array_chunk($dataKeys, $batchSize, true);
+
+    foreach ($batches as $batch) {
+      $code = '';
+      foreach ($batch as $key) {
+        $row = $data[$key];
+        $if = $syntax;
+        
+        // Sort by key length, replace longest first
+        $sortCopy = $keyLengths;
+        array_multisort($sortCopy, SORT_DESC, $row);
+        
+        foreach ($row as $id => $value) {
+          if (!in_array($id, $usedKeys)) {
+            continue;
+          }
+          
+          if (
+            stristr($if, $id.'==') !== false ||
+            stristr($if, $id.'>') !== false ||
+            stristr($if, $id.'<') !== false
+          ) {
+            $value = str_replace("'", "\'", $value);
+            $if = str_replace($id, "'$value'", $if);
+          } else {
+            $if = str_replace($id, "'$value'", $if);
+          }
+        }
+        $code .= 'if (!(' . $if . ')) unset($data['.$key.']);' . PHP_EOL;
+      }
+
+      // Execute batch and free memory
+      try {
+        @eval($code);
+      } catch (\Throwable $e) {
+        $_SESSION['crmEvalLastError'] = $e->getMessage() . ' on line ' . $e->getLine();
+      }
+      unset($code);
     }
   }
 

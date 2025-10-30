@@ -969,10 +969,22 @@ class LocalMailService
       $rowCount = count($listData);
     }
 
-    if (!$isSearch) {
-      $html .= 'Es sind aktuell ' . $rowCount . ' Datensätze vorhanden (Download als <a href="' . $actionUrl . '&downloadCsv' . '">CSV</a> oder <a href="' . $actionUrl . '&downloadExcel' . '">Excel</a>).';
-    } else {
-      $html .= 'Ihre Suche ergab ' . $rowCount . ' Datensätze (<a href="' . $actionUrl . '">Alles anzeigen</a>).';
+    if(!$isSearch) {
+      $html .= '<div class="mbh-list-overview">
+        <div class="mbh-list-overview__total">
+          <strong><span>Datensätze</span>' . $rowCount . '</strong><br>
+          <a href="' . $actionUrl . '&downloadCsv' . '" class="dashicons-before dashicons-download">CSV</a>
+          <a href="' . $actionUrl . '&downloadExcel' . '" class="dashicons-before dashicons-download">Excel</a>
+        </div>
+        <div class="mbh-list-overview__subtotals">
+          <div class="mbh-list-overview__subtotal">
+            <strong><span>Abmeldungen</span>' . count($unsubscribes) . '</strong><br>
+            <a href="#mbh-unsubscribe-list" class="dashicons-before dashicons-arrow-down-alt">Zur Liste</a>
+          </div>
+        </div>
+      </div>';
+    }else{
+      $html .= '<p class="mbh-list-overview__search-result">Ihre Suche ergab ' . $rowCount . ' Datensätze (<a href="' . $actionUrl . '">Alles anzeigen</a>).</p>';
     }
 
     // Add Search form
@@ -1102,7 +1114,7 @@ class LocalMailService
       $html .= '
         <br><hr>
         <p>Es sind aktuell ' . count($unsubscribes) . ' Abmeldungen eingegangen.</p>
-        <table class="mbh-generic-table">
+        <table id="mbh-unsubscribe-list" class="mbh-generic-table">
       ';
 
       // Create table headings from fields

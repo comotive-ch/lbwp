@@ -43,6 +43,37 @@ class Ftp
   }
 
   /**
+   * Copy file from ftp server to another location
+   * @param $sourceFile
+   * @param $destinationFile
+   * @return void
+   */
+  public function copyFile($sourceFile, $destinationFile)
+  {
+    // Create dir if not exists
+    $dir = dirname($destinationFile);
+    if (!file_exists($dir)) {
+      mkdir($dir, 0755, true);
+    }
+
+    ftp_get($this->connection, $destinationFile, $sourceFile, FTP_BINARY);
+  }
+
+  /**
+   * List files and folders in the given path. Default current directory
+   * @param string $path
+   * @return array list of files and folders in the given path
+   */
+  public function listDirectory($path = '.'){
+    $filelist = ftp_nlist($this->connection, $path);
+
+    // Remove . and .. from list
+    return is_array($filelist) ? array_filter($filelist, function($item){
+      return basename($item) != '.' && basename($item) != '..';
+    }) : [];
+  }
+
+  /**
    * @param string $local
    * @param string $remote
    */

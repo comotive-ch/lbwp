@@ -815,7 +815,7 @@ var LbwpForm = {
       });
 
       let allInputs = form.find('.lbwp-form-page .forms-item');
-      console.log(allInputs);
+
       jQuery.each(allInputs, function(){
         let container = jQuery(this);
 
@@ -955,6 +955,7 @@ var LbwpForm = {
 
     curPage.removeClass('current');
     nextPage.addClass('current');
+    form.trigger('lbwp:pagechange', nextPage);
 
     jQuery('.lbwp-form-step.current').removeClass('current');
     let curStep = jQuery('.lbwp-form-step[data-page="' + (backwards ? pageIndex - 1 : pageIndex + 1) + '"]');

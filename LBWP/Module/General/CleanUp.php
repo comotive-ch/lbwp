@@ -134,7 +134,8 @@ class CleanUp extends \LBWP\Module\Base
    * Exclude custom post type from Yoast SEO sitemap
    */
   public function excludePrivateTypeFromSitemap(bool $exclude, string $postType): bool {
-    if (!in_array($postType, $this->publicPrivateTypes)) {
+    // Exclude from sitemap if type is on of the public types that must be private
+    if (in_array($postType, $this->publicPrivateTypes)) {
       return true; // Exclude from sitemap
     }
 
@@ -501,7 +502,7 @@ class CleanUp extends \LBWP\Module\Base
    */
   public function preventMassMail($phpMailer)
   {
-    WordPress::checkSignature('massmail', 60, 40, 3600);
+    WordPress::checkSignature('massmail', 60, 30, 3755);
   }
 
   /**
@@ -510,7 +511,7 @@ class CleanUp extends \LBWP\Module\Base
   public function preventMass404()
   {
     if (is_404() && !is_user_logged_in()) {
-      WordPress::checkSignature('mass404', 30, 20, 3600);
+      WordPress::checkSignature('mass404', 5, 3, 3855);
     }
   }
 

@@ -541,4 +541,68 @@ body.modal-backend.post-type-onepager-item #wpwrap {
 		height: 100%;
 		z-index: 99990;
 	}
+
+	.mbh-list-overview{
+		display: flex;
+		border: 2px solid #f3f3f3;
+		margin-bottom: 20px;
+
+		&__total{
+			text-align: center;
+			padding: 16px;
+			background: #f3f3f3;
+
+			strong{
+				display: inline-block;
+				font-size: 30px;
+				margin-bottom: 10px;
+
+				span{
+					opacity: 0.5;
+					display: block;
+					font-size: 50%;
+				}
+			}
+
+			a{
+				display: inline-block;
+				margin-right: 5px;
+				text-decoration: none;
+			}
+		}
+
+		&__subtotals{
+			display: flex;
+			align-items: center;
+		}
+
+		&__subtotal{
+			text-align: center;
+			padding: 16px;
+
+			strong{
+				display: inline-block;
+				font-size: 25px;
+				margin-bottom: 10px;
+
+				span{
+					opacity: 0.5;
+					display: block;
+					font-size: 50%;
+				}
+			}
+
+			a{
+				display: inline-block;
+				margin-right: 5px;
+				text-decoration: none;
+			}
+		}
+
+		&__search-result{
+			padding: 10px;
+			background: #f3f3f3;
+			margin-bottom: 10px;
+		}
+	}
 }

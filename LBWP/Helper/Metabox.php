@@ -65,7 +65,7 @@ class Metabox
   /**
    * @var int the version of this class
    */
-  const VERSION = 19;
+  const VERSION = 20;
   /**
    * @var string merged fields metabox id
    */

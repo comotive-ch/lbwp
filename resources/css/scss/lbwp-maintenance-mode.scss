@@ -1,5 +1,5 @@
-$querySmallOnly: screen and (max-width: 560px);
-$queryMediumDown: screen and (max-width: 972px);
+$querySmallOnly: "screen and (max-width: 560px)";
+$queryMediumDown: "screen and (max-width: 972px)";
 
 //// FontAwesome Pro
 //@import "../scss/fontawesome/6.4.2/fontawesome.scss";
@@ -368,6 +368,7 @@ form{
   padding-top: 3rem;
 
   @media #{$queryMediumDown}{
+
     padding-top: 1rem;
     padding-bottom: .5rem;
   }
