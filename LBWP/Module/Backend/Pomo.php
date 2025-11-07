@@ -243,10 +243,15 @@ class Pomo extends \LBWP\Module\Base
         break;
       }
 
-      if (stripos($strData->key, $searched) !== false || stripos($strKey, $searched) !== false) {
+      $keyFound = stripos($strData->key, $searched) !== false;
+      $origFound = stripos($strData->original, $searched) !== false;
+
+      if ($keyFound || stripos($strKey, $searched) !== false || $origFound) {
+        $display = !$keyFound && $origFound ? $strData->original : $strData->key;
+        $display = (strlen($display) == 0) ? $strKey : $display;
         $matches[] = '<div class="search-result">' .
-          '<p>' . Strings::wrap($strKey, $searched, '<span>', '</span>') . ' (' . $strData->plugin . ')' . '</p>' .
-          '<div class="add-override button" data-override="' . htmlentities(json_encode(array($strKey, $strData->plugin, $strData->lang, $strData->key))) . '">Hinzufügen</div>' .
+          '<p>' . Strings::wrap($display, $searched, '<span>', '</span>') . ' (' . $strData->plugin . ')' . '</p>' .
+          '<div class="add-override button" data-override="' . htmlentities(json_encode(array($display, $strData->plugin, $strData->lang, $strData->key))) . '">Hinzufügen</div>' .
           '</div>';
       }
     }

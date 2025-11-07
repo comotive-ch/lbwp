@@ -244,30 +244,7 @@ class AudioGenerator extends ACFBase
     }
 
     foreach ($contents as $index => $content) {
-      // Skip blocks that shouldnt be read aloud (basically all acf at the moment)
-      foreach ($this->skipBlocksRegex as $skipRegex) {
-        $content = preg_replace($skipRegex, '', $content);
-      }
-      // Use the real time content, which is full of html
-      $content = apply_filters('the_content', $content);
-      // Add title in front (do it after the_content, as that filter can change the title)
-      if (!$isArrayType) {
-        $content = apply_filters('the_title', $post->post_title) . '.' . PHP_EOL . $content;
-      }
-      // Make sure to read ol/li as actual numbered lists
-      $content = $this->handleNumberedLists($content);
-      // Handle headings to add interpunction so reading makes a pause for sure
-      $content = $this->handleHeadings($content);
-      // Remove <figcaption> and its contents from the html
-      $content = preg_replace('/<figcaption[^>]*>.*?<\/figcaption>/s', '', $content);
-      // Remove <code> block and its contents from the html
-      $content = preg_replace('/<code[^>]*>.*?<\/code>/s', '', $content);
-      // Remove all other html tags
-      $content = strip_tags($content);
-      // Also make sure to replace some abbreviations
-      $content = str_replace(array('z.&#8239;B.', 'z.b.', 'z.B.', 'zB.','z. B.','z. b.'), 'zum Beispiel', $content);
-      $content = str_replace(array('d.&#8239;h.', 'd.h.', 'd. h.'), 'das heisst', $content);
-      $content = str_replace(array('= ', '== '), 'gleich ', $content);
+      $content = $this->reworkReadableContent($content, true, !$isArrayType, $post->post_title);
       // Bring it back into the array
       $contents[$index] = apply_filters('lbwp_ai_audio_content_end_type_' . $post->post_type, $content, $post);;
     }
@@ -277,6 +254,45 @@ class AudioGenerator extends ACFBase
     } else {
       return $contents[0];
     }
+  }
+
+  /**
+   * @param $content
+   * @param $addTitle
+   * @param $title
+   * @return array|string|string[]
+   */
+  public function reworkReadableContent($content, $contentFilter = true, $addTitle = false, $title = '')
+  {
+    // Skip blocks that shouldn't be read aloud (basically all acf at the moment)
+    foreach ($this->skipBlocksRegex as $skipRegex) {
+      $content = preg_replace($skipRegex, '', $content);
+    }
+    // Use the real time content, which is full of html
+    if ($contentFilter) {
+      $content = apply_filters('the_content', $content);
+    }
+    // Add title in front (do it after the_content, as that filter can change the title)
+    if ($addTitle && strlen($title) > 0) {
+      $content = apply_filters('the_title', $title) . '.' . PHP_EOL . $content;
+    }
+    // Make sure to read ol/li as actual numbered lists
+    $content = $this->handleNumberedLists($content);
+    // Handle headings to add interpunction so reading makes a pause for sure
+    $content = $this->handleHeadings($content);
+    // Remove <figcaption> and its contents from the html
+    $content = preg_replace('/<figcaption[^>]*>.*?<\/figcaption>/s', '', $content);
+    // Remove <code> block and its contents from the html
+    $content = preg_replace('/<code[^>]*>.*?<\/code>/s', '', $content);
+    // Remove all other html tags
+    $content = strip_tags($content, '<break>');
+    // Also make sure to replace some abbreviations
+    $content = str_replace(array('z.&#8239;B.', 'z.b.', 'z.B.', 'zB.','z. B.','z. b.'), 'zum Beispiel', $content);
+    $content = str_replace(array('d.&#8239;h.', 'd.h.', 'd. h.'), 'das heisst', $content);
+    $content = str_replace(array('usw.', 'u.s.w.', ), 'und so weiter', $content);
+    $content = str_replace(array('= ', '== '), 'gleich ', $content);
+
+    return $content;
   }
 
   /**

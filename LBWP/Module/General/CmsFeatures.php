@@ -208,7 +208,15 @@ class CmsFeatures extends \LBWP\Module\Base
             $convertedName = $file['tmp_name'] . '.webp';
             // Convert to webp
             copy($file['tmp_name'], $sourceName);
-            exec('convert ' . $sourceName . ' ' . $convertedName);
+            $command = sprintf(
+              'convert %s -black-point-compensation -intent relative -profile %s -quality 85 -define webp:method=6 %s 2>&1',
+              escapeshellarg($sourceName),
+              '/usr/share/color/icc/sRGB.icc',
+              escapeshellarg($convertedName)
+            );
+
+            exec($command, $output, $returnCode);
+            //exec('convert ' . $sourceName . ' ' . $convertedName);
             rename($convertedName, $file['tmp_name']);
             $file['size'] = filesize($file['tmp_name']);
             unlink($sourceName);

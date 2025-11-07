@@ -285,6 +285,14 @@ $lbwpFormInputFields: "select, input[type=date], input[type=text], input[type=em
 			}
 		}
 
+        .validate-message {
+          .default-label, .default-container {
+            @if $tableLayout {
+              padding-top: 0;
+            }
+          }
+        }
+
 		// reset row for button
 		.send-button .default-container {
 			@if $tableLayout {
