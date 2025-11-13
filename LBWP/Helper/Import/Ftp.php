@@ -131,4 +131,13 @@ class Ftp
   {
     ftp_close($this->connection);
   }
+
+  /**
+   * Get Modified time of given file
+   * @param $filePath
+   * @return int
+   */
+  public function getLastModifiedTime($filePath){
+    return ftp_mdtm($this->connection, $filePath);
+  }
 }

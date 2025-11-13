@@ -1270,11 +1270,15 @@ class Core extends Component
           if ($this->isCrmFieldUploadPublic()) {
             $url = 'https://' . LBWP_HOST . '/assets/' . CDN_BUCKET_NAME . '/' . ASSET_KEY . '/files/' . $value;
           }
+          $deleteIcon = '<a href="javascript:void(0);" class="dashicons dashicons-trash delete-crm-upload-file"></a>';
+          if ($readonly) {
+            $deleteIcon = '';
+          }
           $html .= '
             <p>
               <span>' . sprintf(__('Datei &laquo;%s&raquo; herunterladen.', 'lbwp'), '<a href="' . $url . '" target="_blank">' . File::getFileOnly($value) . '</a>') . '</span>
               <input type="hidden" name="crmcf-' . $field['id'] . '-remove" value="0" ' . $attr . ' />
-              <a href="javascript:void(0);" class="dashicons dashicons-trash delete-crm-upload-file"></a>
+              ' . $deleteIcon . '
             </p>
           ';
         }
@@ -3130,7 +3134,7 @@ class Core extends Component
   public function getContactsByCategory($categoryId, $ignorecaps = false)
   {
     // Allow using more RAM, as large segments can be loaded to be reduced
-    ini_set('memory_limit', '2048M');
+    ini_set('memory_limit', defined('LBWP_CRM_LARGE_DATABASE') ? '4096M' : '2048M');
     $cacheKey = ($ignorecaps) ? 'fullContactList_c' : 'fullContactListIgnoredCaps_c';
 
     $contacts = wp_cache_get($cacheKey, 'CrmCore');

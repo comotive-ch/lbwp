@@ -47,7 +47,7 @@ while ($keys = $redis->scan($it, $deletePrefix . '*', 10000)) {
 }
 
 // Same with the html cache node, if applicable
-if (!defined('LBWP_DISABLE_ASSIST_HTML_CACHE')) {
+if (!defined('LBWP_DISABLE_ASSIST_HTML_CACHE') && FRONTEND_CACHE_REDIS_ENABLED) {
   $redisHtml = new Redis();
   $redisHtml->pconnect(REDIS_HTML_CACHE_SERVER_HOST, REDIS_CONNECTION_PORT, 1.5);
   $redisHtml->auth(REDIS_AUTH_KEY);

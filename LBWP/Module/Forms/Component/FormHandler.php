@@ -832,6 +832,90 @@ class FormHandler extends Base
   }
 
   /**
+   * @param $text
+   * @return array|string[]
+   */
+  protected function analyzeTextQuality($text)
+  {
+    $text = strtolower(preg_replace('/[^a-zA-Z\s]/', '', $text));
+    if (strlen($text) < 3) return ['quality' => 'too_short'];
+
+    $vowels = preg_match_all('/[aeiou]/', $text);
+    $consonants = preg_match_all('/[bcdfghjklmnpqrstvwxyz]/', $text);
+    $total = $vowels + $consonants;
+
+    if ($total == 0) return ['quality' => 'no_letters'];
+
+    $vowel_ratio = $vowels / $total;
+    // Normal German/English text has ~35-45% vowels
+    $is_natural = ($vowel_ratio >= 0.25 && $vowel_ratio <= 0.55);
+
+    return [
+      'quality' => $is_natural ? 'natural' : 'suspicious',
+      'vowel_ratio' => $vowel_ratio,
+      'total_letters' => $total
+    ];
+  }
+
+  /**
+   * @param string $text
+   * @return float|int
+   */
+  protected function analyzeRandomPatters($text)
+  {
+    $suspicious_patterns = [
+      'repeated_chars' => preg_match('/(.)\1{3,}/', $text), // aaaa, bbbb
+      'keyboard_mashing' => preg_match('/[qwertyuiopasdfghjklzxcvbnm]{8,}/', strtolower($text)),
+      'alternating_case' =>  preg_match('/([A-Z][a-z]){3,}|([a-z][A-Z]){3,}/', $text),
+      'excessive_numbers' => (preg_match_all('/\d/', $text) / strlen($text)) > 0.5,
+      'no_spaces_long' => strlen(preg_replace('/\s/', '', $text)) > 20 && !preg_match('/\s/', $text)
+    ];
+
+    return array_sum($suspicious_patterns);
+  }
+
+  /**
+   * @return false|void
+   */
+  protected function maybeIsSpamContent()
+  {
+    $text = '';
+    foreach ($_POST as $key => $value ) {
+      if (str_starts_with($key, 'text')) {
+        $text .= $value . ' ';
+      }
+    }
+
+    // It's most likely spam if very short
+    // TODO maybe remove this check once this method is more reliable or used more ofter
+    if (strlen($text) <= 20) {
+      return false;
+    }
+
+    $spamScore = 0;
+    // Analyze the combined text for gibberish
+    $quality = $this->analyzeTextQuality($text);
+    $patternScore = $this->analyzeRandomPatters($text);
+
+    // Scoring: Higher = more suspicious
+    if ($quality['quality'] === 'suspicious') {
+      $spamScore += 2;
+    }
+    // Additional scoring for extremely low/high vowel ratios
+    $vowelRatio = $quality['vowel_ratio'] ?? 0;
+    if ($vowelRatio < 0.15 || $vowelRatio > 0.65) {
+      $spamScore += 1;
+    }
+    // Random patters also raise the spam score significantly
+    if ($patternScore >= 2) {
+      $spamScore += 3;
+    }
+    
+    // If spam score is high enough mark as spam
+    return $spamScore >= 4;
+  }
+
+  /**
    * Tells if the form is secure, which means if every security check has been passed
    */
   protected function formIsSecure()
@@ -933,8 +1017,14 @@ class FormHandler extends Base
           $result = 'd = most certainly a bot';
           $secure = false;
           if ($counts[3] > 3) {
-            $result .= ', but let trough, because of many f = autofills';
-            $secure = true;
+            $result .= ', but many f = autofills';
+            // Actually check the content before we tag this as secure
+            if (!$this->maybeIsSpamContent()) {
+              $secure = true;
+              $result .= ', but let trough, maybeIsSpamContent says is not spam';
+            } else {
+              $result .= ', content seems spammy as of maybeIsSpamContent';
+            }
           }
         }
 

@@ -5,5 +5,5 @@ if (!isset($_GET['079wer87w3utwhhurwruhrwew398pwtweuoerwiogehogephoh9greuohrgejs
   exit;
 }
 
-echo shell_exec('sh /var/www/util/certificates.sh');
+echo exec('sudo /var/www/util/certificates.sh');
 echo 'Updated certificates on ' . gethostname() . PHP_EOL;

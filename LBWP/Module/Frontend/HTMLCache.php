@@ -285,14 +285,16 @@ class HTMLCache extends \LBWP\Module\Base
   public static function invalidatePage($uri)
   {
     if (!defined('LBWP_DISABLE_ASSIST_HTML_CACHE')) {
-      try {
-        $cache = new \Redis();
-        $cache->pconnect(REDIS_HTML_CACHE_SERVER_HOST, REDIS_CONNECTION_PORT, 1);
-        $cache->auth(REDIS_AUTH_KEY);
-        $cache->setOption(\Redis::OPT_TCP_KEEPALIVE, 60);
-        $cache->del(lbwpGetHtmlCacheKey(md5($uri)));
-      } catch (\Exception $e) {
+      if (FRONTEND_CACHE_REDIS_ENABLED) {
+        try {
+          $cache = new \Redis();
+          $cache->pconnect(REDIS_HTML_CACHE_SERVER_HOST, REDIS_CONNECTION_PORT, 1);
+          $cache->auth(REDIS_AUTH_KEY);
+          $cache->setOption(\Redis::OPT_TCP_KEEPALIVE, 60);
+          $cache->del(lbwpGetHtmlCacheKey(md5($uri)));
+        } catch (\Exception $e) {
 
+        }
       }
     } else {
       wp_cache_delete(md5($uri), FRONT_CACHE_GROUP_HTTPS);
@@ -366,6 +368,7 @@ class HTMLCache extends \LBWP\Module\Base
       // Save cacheVal to cache only if there is content or headers
       if (strlen($output) > self::MIN_CACHEABLE_SIZE || $hasLocationHeader) {
         if (!defined('LBWP_DISABLE_ASSIST_HTML_CACHE')) {
+          if (FRONTEND_CACHE_REDIS_ENABLED)
           try {
             $cache = new \Redis();
             $cache->pconnect(REDIS_HTML_CACHE_SERVER_HOST, REDIS_CONNECTION_PORT, 1);

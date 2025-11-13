@@ -172,6 +172,16 @@ class DataTable extends Base
       'type' => 'textfield',
       'help' => 'Entwickler Option. Key hier eingeben um den Filter mit den dafür vorgesehenen Code auszulösen.'
     );
+
+    $this->paramConfig['ip_log'] = array(
+      'name' => 'Aufzeichnung IP-Adresse',
+      'type' => 'radio',
+      'values' => array(
+        'anonymize' => 'IP anonymisieren',
+        'none' => ' IP nicht Aufzeichnen',
+        'fulltext' => 'IP aufzeichnen'
+      )
+    );
   }
 
   /**
@@ -185,6 +195,7 @@ class DataTable extends Base
     $this->params['name'] = 'Name der Tabelle';
     $this->params['max'] = 0;
     $this->params['max_error'] = '';
+    $this->params['ip_log'] = 'anonymize';
   }
 
   /**
@@ -299,9 +310,20 @@ class DataTable extends Base
     $data[] = $source;
 
     // Add user IP
+    if($this->params['ip_log'] !== 'none'){
+      $ip = $_SERVER['REMOTE_ADDR'];
+
+      if($this->params['ip_log'] === 'anonymize'){
+        $ipParts = explode('.', $_SERVER['REMOTE_ADDR']);
+        $ip = $ipParts[0] . '.' . $ipParts[1] . '.XXX.XXX';
+      }
+    }else{
+     $ip = __('nicht aufgezeichnet', 'lbwp');
+    }
+
     $data[] = array(
       'name' => 'user-ip-adresse',
-      'value' => $_SERVER['REMOTE_ADDR']
+      'value' => $ip
     );
 
     // Add time the form has been sent

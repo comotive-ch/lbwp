@@ -271,6 +271,11 @@ class CXMLPunchOut extends BaseComponent{
 
     foreach ($items as $item) {
       $sku = (int) $item->xpath('ItemID/SupplierPartID')[0];
+
+      if(intval($sku) <= 0){
+        $sku = (int) $item->xpath('itemid/supplierpartid')[0];
+      }
+
       $product_id = wc_get_product_id_by_sku($sku); // Find product by SKU
       $quantity = (int) $item->attributes()['quantity'];
 
@@ -291,9 +296,14 @@ class CXMLPunchOut extends BaseComponent{
       $order->add_item($shippingItem);
     }
 
-    // TODO Setting address is not needed specifically, as depending on user (but should be set for SAP)
-    //$order->set_address($order_data['billing'], 'billing');
-    //$order->set_address($order_data['shipping'], 'shipping');
+    $address = array(
+      'first_name' => get_user_meta($customerId, 'billing_first_name', true),
+      'last_name'  => get_user_meta($customerId, 'billing_last_name', true),
+      'company'  => get_user_meta($customerId, 'billing_company', true),
+      'city'  => get_user_meta($customerId, 'billing_city', true),
+      'post_code'  => get_user_meta($customerId, 'billing_post_code', true),
+    );
+    $order->set_address($address, 'billing');
 
     $order->calculate_totals();
     $order->save();

@@ -103,6 +103,10 @@ class Search extends ACFBase
   /**
    * @var bool
    */
+  public static $CHROMADB_ENABLED = false;
+  /**
+   * @var bool
+   */
   public static $HAS_SITESEARCH = false;
   /**
    * @var bool
@@ -169,6 +173,10 @@ class Search extends ACFBase
    * @var string
    */
   const CHATGPT_SECRET = LBWP_AI_SEARCH_TEXT_INDEX_CHATGPT_SECRET;
+  /**
+   * @var int current version is normal index without chromaDB Support
+   */
+  const TEXT_INDEX_ROW_VERSION = 1;
 
   /**
    * Registers endpoints and filters
@@ -182,6 +190,7 @@ class Search extends ACFBase
     parent::init();
     add_action('rest_api_init', array($this, 'registerApiEndpoint'));
     add_action('cron_daily_1', array($this, 'updateIndexTables'));
+    add_action('cron_daily_6', array($this, 'updateTextIndexRows'));
     add_action('cron_daily_7', array($this, 'buildTextIndex'));
 
     $productive = defined('LBWP_ABOON_ERP_PRODUCTIVE') && LBWP_ABOON_ERP_PRODUCTIVE || defined('LOCAL_DEVELOPMENT');
@@ -267,6 +276,31 @@ class Search extends ACFBase
 
       static::$POST_TYPE = $backup;
       static::$USE_INDEX_BOOLEAN_MODE = $isBoolMode;
+    }
+  }
+
+  /**
+   * Updates the text index rows if versions are mismatching
+   */
+  public function updateTextIndexRows()
+  {
+    $db = WordPress::getDb();
+    // Upgrade from 1 to 2 is adding chromaDB record, if chromaDB is enabled
+    if (!static::$CHROMADB_ENABLED) {
+      return;
+    }
+
+    // Get rows with version 1
+    $candidates = $db->get_results('
+      SELECT id, alt_id, post_type, title, meta, excerpt, excerpt_ai, content
+      FROM ' . $db->prefix . 'lbwp_text_index
+      WHERE version = 1 LIMIT 0,' . static::$TEXT_INDEX_MAX_RENEWED_DATASETS . '
+    ');
+
+    // Send to chroma DB collection and update version
+    foreach ($candidates as $candidate) {
+      // TODO
+
     }
   }
 
@@ -1014,6 +1048,7 @@ class Search extends ACFBase
       excerpt VARCHAR(1000) NOT NULL,
       excerpt_ai VARCHAR(1000) NOT NULL,
       content TEXT NOT NULL,
+      version SMALLINT UNSIGNED NOT NULL DEFAULT " . self::TEXT_INDEX_ROW_VERSION . ",
       PRIMARY KEY  (id),      
       KEY alt_id_idx (alt_id),
       KEY post_type_idx (post_type),
@@ -1023,10 +1058,6 @@ class Search extends ACFBase
     ) $charset;
     ";
     dbDelta($sql);
-
-    // TODO Remove code once run, these were previous indexes
-    $wpdb->query('ALTER TABLE ' . $table_name . ' DROP INDEX `fulltext_primary`');
-    $wpdb->query('ALTER TABLE ' . $table_name . ' DROP INDEX `fulltext_secondary`');
   }
 
   /**
@@ -1052,7 +1083,7 @@ class Search extends ACFBase
   }
 
   /**
-   * @param string äterm
+   * @param string term
    * @return string validates a given term for search
    */
   public static function validateTerm($term)

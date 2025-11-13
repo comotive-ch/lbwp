@@ -42,6 +42,36 @@ class Cronjob
   }
 
   /**
+   * @param string $identifier cron identifier
+   * @param string $data cron data (can be empty string)
+   * @param int $count number of crons to register within timeframe
+   * @param int $timeframe in minutes
+   * @return void
+   */
+  public static function multiRegister($identifier, $data, $count, $timeframe)
+  {
+    // Add data to the identifier if given
+    if (strlen($data) > 0) {
+      $identifier .= '::' . $data;
+    }
+
+    // Set now+1min as earilest start point
+    $start = current_time('timestamp') + 60;
+    // Calculate interval between jobs to distribute them evenly
+    $interval = (($timeframe * 60) / $count) - 10;
+    
+    // Create array of jobs with evenly distributed timestamps
+    $jobs = array();
+    for ($i = 0; $i < $count; $i++) {
+      $timestamp = $start + ($i * $interval);
+      $jobs[$timestamp] = $identifier;
+    }
+    
+    // Register the distributed jobs
+    self::register($jobs);
+  }
+
+  /**
    * Lists existing jobs on the job system
    * @return array list of jobs data
    */
