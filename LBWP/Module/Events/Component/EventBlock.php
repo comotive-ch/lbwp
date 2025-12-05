@@ -383,6 +383,7 @@ class EventBlock extends ACFBase
               'choices' => array(
                 'order-by-month' => 'Events nach Monaten unterteilen',
                 'actual-year' => 'Nur aktuelles Jahr anzeigen',
+                'show-past-events' => 'Events aus der Vergangenheit anzeigen',
               ),
               'default_value' => array(
               ),

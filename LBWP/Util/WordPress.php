@@ -203,6 +203,7 @@ class WordPress
       'label' => $plural,
       'labels' => array(
         'name' => $plural,
+        'menu_name' => $plural,
         'singular_name' => $singular,
         'add_new' =>  __('Erstellen', 'lbwp'),
         'add_new_item' =>  'Neue' . $letter . ' ' . $singular . ' erfassen',
@@ -222,6 +223,7 @@ class WordPress
       'has_archive' => true
     );
 
+
     // Deep merge the defaults
     $mergedConfig = array();
     foreach ($defaults as $key => $value) {
@@ -234,7 +236,9 @@ class WordPress
 
     // Add configs that are not in defaults
     foreach ($config as $key => $value) {
-      $mergedConfig[$key] = $value;
+      if (!isset($mergedConfig[$key])) {
+        $mergedConfig[$key] = $value;
+      }
     }
 
     register_post_type($type, $mergedConfig);

@@ -153,7 +153,7 @@ class SwissQrIban
    */
   public function addQrPaymentSlip($type, $order)
   {
-    if($type != 'invoice'){
+    if($type != 'invoice' || isset($_GET['pdf-is-offer-mode'])){
       return;
     }
 

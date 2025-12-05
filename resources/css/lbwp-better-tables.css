@@ -1,1 +1,231 @@
-﻿.bt__table{border-spacing:0;background:#fff;border:1px solid #c3c4c7}.bt__table--container{width:100%;overflow-x:scroll}.bt__table thead th:nth-child(-n+2) input{width:30px;visibility:hidden}.bt__table tbody{position:relative}.bt__table.loading tbody:before{content:"";position:absolute;top:0;left:0;width:100%;height:100%;background:rgba(255,255,255,.8);z-index:10}.bt__table th{border-bottom:1px solid #c3c4c7;background:#fff}.bt__table th input{background:none;border:none;border-radius:0;padding:4px 8px}.bt__table th input:focus,.bt__table th input:active{outline:none;box-shadow:none;border-bottom:1px solid #2271b1;color:#2271b1}.bt__table th input ::placeholder{color:#000}.bt__table tr:nth-child(odd){background:rgba(0,0,0,.05)}.bt__table tr td{padding:8px}.bt__table tr td a{text-decoration:none}.bt__table tr td a.dashicons-trash{color:#b32d2e}.bt__pagination{margin-top:1rem;text-align:right;display:flex;justify-content:flex-end;align-items:center}.bt__pagination input{width:60px;line-height:24px;text-align:right}.bt__pagination .prev-page{margin-right:.5rem}.bt__pagination .next-page{margin-left:.5rem}.bt__settings-container{position:relative;min-width:255px;border:1px solid #c3c4c7;box-shadow:0 1px 1px rgba(0,0,0,.04);background:#fff;margin-bottom:30px}.bt__settings-container h2{font-size:14px;padding:8px 12px;margin:0;line-height:1.4;border-bottom:1px solid #c3c4c7;display:flex;justify-content:space-between}.bt__settings-container h2:after{content:"";display:inline-block;font:normal 20px/1 dashicons;color:#787c82;top:.05rem;text-indent:-1px}.bt__settings-container.collapsed h2:after{content:""}.bt__settings-container.collapsed .bt__settings{height:0;overflow:hidden;padding:0}.bt__settings{padding:12px}.bt__settings--item{margin-bottom:15px}.bt__settings--item label{font-weight:bold;margin-right:10px}.bt__settings--columns-list{display:flex;flex-wrap:wrap}.bt__settings--columns-list label{width:calc(25% - 10px);padding-right:10px;margin-bottom:10px}/*# sourceMappingURL=lbwp-better-tables.css.map */
+﻿.bt__table {
+  border-spacing: 0;
+  background: #fff;
+  border: 1px solid #e5e5e5;
+  width: 100%;
+  border-collapse: collapse;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen-Sans, Ubuntu, Cantarell, "Helvetica Neue", sans-serif;
+}
+
+.bt__table--container {
+  width: 100%;
+  overflow-x: auto;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+/* Header Styling */
+.bt__table thead th {
+  background-color: #f8f9fa;
+  border-bottom: 2px solid #dee2e6;
+  padding: 12px;
+  text-align: left;
+  vertical-align: top;
+  font-weight: 600;
+  color: #495057;
+  position: relative;
+}
+
+.bt__th-content {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.bt__th-title {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 13px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  user-select: none;
+}
+
+.bt__th-title:hover {
+  color: #2271b1;
+}
+
+.bt__sort-arrow {
+  margin-left: 5px;
+  font-size: 12px;
+}
+
+/* Search Inputs */
+.bt__table--input {
+  width: 100%;
+  padding: 6px 8px;
+  border: 1px solid #ced4da;
+  border-radius: 4px;
+  font-size: 13px;
+  box-sizing: border-box;
+  transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+}
+
+.bt__table--input:focus {
+  border-color: #2271b1;
+  outline: 0;
+  box-shadow: 0 0 0 2px rgba(34, 113, 177, 0.25);
+}
+
+/* Hide inputs for action columns (Edit/Delete) */
+.bt__table thead th:nth-child(-n+2) .bt__table--input {
+  display: none;
+}
+
+/* Body Styling */
+.bt__table tbody tr {
+  border-bottom: 1px solid #e5e5e5;
+  transition: background-color 0.15s;
+}
+
+.bt__table tbody tr:last-child {
+  border-bottom: none;
+}
+
+.bt__table tbody tr:hover {
+  background-color: #f8f9fa;
+}
+
+.bt__table td {
+  padding: 12px;
+  vertical-align: middle;
+  color: #212529;
+  font-size: 14px;
+}
+
+/* Links and Actions */
+.bt__table td a {
+  text-decoration: none;
+  color: #2271b1;
+}
+
+.bt__table td a:hover {
+  text-decoration: underline;
+}
+
+.bt__table td a.dashicons-trash {
+  color: #dc3545;
+}
+
+.bt__table td a.dashicons-trash:hover {
+  color: #bd2130;
+}
+
+/* Loading State */
+.bt__table.loading tbody {
+  opacity: 0.5;
+  pointer-events: none;
+}
+
+/* Pagination */
+.bt__pagination {
+  margin-top: 1rem;
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 0;
+}
+
+.bt__pagination input {
+  width: 50px;
+  text-align: center;
+  padding: 4px;
+  border: 1px solid #ced4da;
+  border-radius: 4px;
+}
+
+.bt__pagination button {
+  background: #fff;
+  border: 1px solid #ced4da;
+  padding: 6px 12px;
+  border-radius: 4px;
+  cursor: pointer;
+  color: #495057;
+}
+
+.bt__pagination button:hover {
+  background-color: #e2e6ea;
+}
+
+/* Settings Container */
+.bt__settings-container {
+  background: #fff;
+  border: 1px solid #e5e5e5;
+  border-radius: 4px;
+  margin-bottom: 20px;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+}
+
+.bt__settings-container h2 {
+  font-size: 14px;
+  padding: 12px 16px;
+  margin: 0;
+  border-bottom: 1px solid #e5e5e5;
+  cursor: pointer;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: #f8f9fa;
+}
+
+.bt__settings-container h2:after {
+  content: "\f140";
+  /* dashicons-arrow-down */
+  font-family: dashicons;
+  font-size: 20px;
+  color: #6c757d;
+}
+
+.bt__settings-container.collapsed h2:after {
+  content: "\f142";
+  /* dashicons-arrow-up or similar, maybe right */
+  transform: rotate(-90deg);
+}
+
+.bt__settings-container.collapsed .bt__settings {
+  display: none;
+}
+
+.bt__settings {
+  padding: 20px;
+}
+
+.bt__settings--item {
+  margin-bottom: 15px;
+}
+
+.bt__settings--item label {
+  display: block;
+  margin-bottom: 5px;
+  font-weight: 600;
+}
+
+.bt__settings--columns-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 10px;
+}
+
+.bt__settings--columns-list label {
+  font-weight: normal;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* Drag and Drop Styling */
+.bt__table thead th[draggable="true"] {
+  cursor: move;
+}
+
+.bt__th--dragging {
+  opacity: 0.5;
+  border: 2px dashed #ccc;
+  background-color: #f0f0f0;
+}
+
+.bt__th--drag-over {
+  border-left: 2px solid #2271b1;
+  background-color: rgba(34, 113, 177, 0.1);
+}

@@ -28,6 +28,10 @@ class BetterUserTables extends BetterTables{
       return;
     }
 
+    if(isset($_GET['clear_usermeta'])){
+      delete_user_meta(get_current_user_id(), 'bettertables-users-settings');
+    }
+
     require_once ABSPATH . '/wp-admin/admin.php';
     require_once ABSPATH . 'wp-admin/admin-header.php';
 
@@ -36,7 +40,7 @@ class BetterUserTables extends BetterTables{
         ' . __('Users') . '
       </h1>
       <div>
-        <div id="react-root"></div>
+        <div id="js-root"></div>
       </div>
     </div>';
 
@@ -71,78 +75,140 @@ class BetterUserTables extends BetterTables{
     }
   }
 
-  private function searchFlatTable(){}
+  private function searchFlatTable(){
+    // Currently no flat table implementation available - delegate to cached array search
+    return $this->searchCachedArray();
+  }
 
   private function searchCachedArray(){
-    // Request validation
-    $perPage = intval($_GET['per_page']);
-    $pageNr = intval($_GET['page']);
+    // Normalize and validate request parameters with sensible defaults
+    $params = array_replace(
+      array(
+        'per_page' => 10,
+        'page' => 1,
+        'search' => '',
+        'search_column' => '',
+        'user_id' => 0
+      ),
+      $_GET
+    );
 
-    // TODO: add other order and orderby filters
+    $perPage = max(1, intval($params['per_page']));
+    $pageNr = max(1, intval($params['page']));
+    $userId = intval($params['user_id']);
+    $searchParam = trim((string)$params['search']);
+    $searchColumnParam = trim((string)$params['search_column']);
 
-    /** @var CrmCore $crm cached data from CRM */
-    $crm = $this->settings['crmComponent'];
-    $raw = $crm->getContactsByCategory(-1, true);
-    // Create basic columns (no name yet, TODO)
-    $columns = $this->getColumns($_GET['user_id'], $raw[0]);
-    $userSettings = get_user_meta($_GET['user_id'], 'bettertables-users-settings')[0];
-
-    // Actually search
-    if(!empty($_GET['search']) && !empty($_GET['search_column'])){
-      $search = array();
-      $searchFor = explode(',', $_GET['search']);
-      $inColumn = explode(',', $_GET['search_column']);
-
-      foreach($raw as $index => $data){
-        $found = [];
-
-        // Search multiple values ind multiple columns
-        for($i = 0; $i < count($searchFor); $i++){
-          $found[] = isset($data[$inColumn[$i]]) && Strings::contains($data[$inColumn[$i]], $searchFor[$i]);
-        }
-
-        if(!in_array(false, $found)){
-          $search[$index] = $data;
-        }
-      }
-
-      // Override raw with search results
-      $raw = $search;
+    // Obtain CRM contacts; guard if the component is missing or returns no data
+    $crm = $this->settings['crmComponent'] ?? null;
+    if (!$crm || !method_exists($crm, 'getContactsByCategory')) {
+      return array('columns' => array(), 'rows' => array(), 'total' => 0);
     }
 
-    // Order by column
-    usort($raw, function($a, $b) use ($userSettings){
-      $order = $userSettings['order'] ?? 'asc';
-      $orderby = $userSettings['orderby'] ?? 'user_id';
+    $raw = $crm->getContactsByCategory(-1, true);
+    if (empty($raw) || !is_array($raw)) {
+      return array('columns' => array(), 'rows' => array(), 'total' => 0);
+    }
 
-      if($order == 'asc'){
-        return strnatcmp($a[$orderby], $b[$orderby]);
-      }else{
-        return strnatcmp($b[$orderby], $a[$orderby]);
+    // Create basic columns from the first row safely
+    $firstRow = reset($raw);
+    $columns = $this->getColumns($userId, $firstRow);
+
+    // Load user settings once and normalize
+    $userSettingsMeta = get_user_meta($userId, 'bettertables-users-settings');
+    $userSettings = is_array($userSettingsMeta) ? ($userSettingsMeta[0] ?? array()) : array();
+
+    // Apply search filters if provided. Support multiple searches separated by commas.
+    if ($searchParam !== '' && $searchColumnParam !== '') {
+      $searchFor = array_map('trim', explode(',', $searchParam));
+      $inColumn = array_map('trim', explode(',', $searchColumnParam));
+
+      // Only consider pairs up to the shortest array to avoid undefined indexes
+      $pairs = min(count($searchFor), count($inColumn));
+
+      if ($pairs > 0) {
+        $filtered = array();
+        foreach ($raw as $data) {
+          $match = true;
+
+          for ($i = 0; $i < $pairs; $i++) {
+            $col = $inColumn[$i];
+            $needle = $searchFor[$i];
+
+            // Normalize the haystack and do a case-insensitive substring check using native functions
+            $hay = isset($data[$col]) ? (string)$data[$col] : '';
+            if ($needle === '') {
+              // empty needle -> skip this pair (treat as match)
+              continue;
+            }
+
+            if (stripos($hay, $needle) === false) {
+              $match = false;
+              break;
+            }
+          }
+
+          if ($match) {
+            $filtered[] = $data;
+          }
+        }
+
+        // Replace raw with filtered results (reindexed array)
+        $raw = $filtered;
       }
+    }
+
+    // Order by column (safe access with fallback to empty string)
+    $order = $userSettings['order'] ?? 'asc';
+    $orderby = $userSettings['orderby'] ?? 'user_id';
+
+    usort($raw, function($a, $b) use ($order, $orderby) {
+      $va = isset($a[$orderby]) ? $a[$orderby] : '';
+      $vb = isset($b[$orderby]) ? $b[$orderby] : '';
+
+      if ($va === $vb) return 0;
+
+      return ($order === 'asc') ? strnatcmp($va, $vb) : strnatcmp($vb, $va);
     });
 
     $total = count($raw);
 
-    // Basic slice for paging as example
-    $rows = array_slice($raw, max($pageNr-1, 0) * $perPage, $perPage);
-    // Rework to zero based array for less data transfer after searchghing/paging
-    foreach ($rows as $key => $row){
-      if(is_array($userSettings) && isset($userSettings['columns'])){
-        $row = array_filter($row, function ($value, $key) use ($userSettings) {
-          return isset($userSettings['columns'][$key]) && $userSettings['columns'][$key][1];
-        }, ARRAY_FILTER_USE_BOTH);
+    // Efficient paging: compute offset and slice once
+    $offset = max(0, ($pageNr - 1) * $perPage);
+    $pageRows = array_slice($raw, $offset, $perPage);
+
+    $rows = array();
+
+    // Build rows for response. Keep transformations minimal and safe.
+    foreach ($pageRows as $data) {
+      // Apply per-user column visibility if present
+      if (is_array($userSettings) && isset($userSettings['columns']) && is_array($userSettings['columns'])) {
+        $visible = array();
+        foreach ($data as $k => $v) {
+          if (isset($userSettings['columns'][$k]) && !empty($userSettings['columns'][$k][1])) {
+            $visible[$k] = $v;
+          }
+        }
+        $row = $visible;
+      } else {
+        $row = $data;
       }
 
+      // Normalize user id field (support common variants)
+      $userid = $row['userid'] ?? ($row['user_id'] ?? '');
+
       $deleteUrl = wp_nonce_url(
-        admin_url('users.php?action=delete&user=' . $row['userid']),
-        'delete-user_' . $row['userid']
+        admin_url('users.php?action=delete&user=' . $userid),
+        'delete-user_' . $userid
       );
+
       $orderedRow = array(
-        '<a href="/wp-admin/user-edit.php?user_id=' . $row['userid'] . '" class="dashicons-before dashicons-edit"></a>',
+        '<a href="/wp-admin/user-edit.php?user_id=' . $userid . '" class="dashicons-before dashicons-edit"></a>',
         '<a href="' . $deleteUrl . '" class="dashicons-before dashicons-trash"></a>'
       );
-      $rows[$key] = array_merge($orderedRow, array_values($row));
+
+      // Use array_values to avoid sending associative keys to the client
+      $rows[] = array_merge($orderedRow, array_values($row));
     }
 
     return array(
@@ -162,9 +228,11 @@ class BetterUserTables extends BetterTables{
       $settingsFromMetas = $settingsFromMetas[0];
     }
 
+    $fieldsTitles = $this->getColumnLabels();
     $cols = $this->getColumns($postData['user_id'], $this->settings['crmComponent']->getContactsByCategory(-1, true)[0], true);
     foreach($cols as $colname => $value){
-      $cols[$colname] = [strtoupper($colname), true];
+      $label = $fieldsTitles[$colname] ?? strtoupper($colname);
+      $cols[$colname] = [$label, true];
     }
 
     return array(
@@ -193,6 +261,7 @@ class BetterUserTables extends BetterTables{
       'Edit' => 'Edit',
       'Delete' => 'Delete'
     );
+    $fieldsTitles = $this->getColumnLabels();
 
     $userSettings = get_user_meta($userId, 'bettertables-users-settings');
     $userSettings = is_array($userSettings) ? $userSettings[0] : [];
@@ -202,9 +271,15 @@ class BetterUserTables extends BetterTables{
         continue;
       }
 
-      $columns[$colname] = $colname;
+      // Find the custom field title in the CRM custom fields array
+      $columns[$colname] = $fieldsTitles[$colname] ?? ucfirst($colname);
     }
 
     return $columns;
+  }
+
+  public function getColumnLabels(){
+    $customFields = CrmCore::getInstance()->getCustomFields(false);
+    return array_combine(array_column($customFields, 'segmenting-slug'), array_column($customFields, 'title'));
   }
 }

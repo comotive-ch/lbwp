@@ -138,7 +138,7 @@ class AudioGenerator extends ACFBase
 
     $status = get_post_meta($post->ID, 'lbwp_ai_audio_generation_status', true);
     WordPress::sendJsonResponse(array(
-      'success' => true, 
+      'success' => true,
       'status' => $status
     ));
   }
@@ -287,9 +287,9 @@ class AudioGenerator extends ACFBase
     // Remove all other html tags
     $content = strip_tags($content, '<break>');
     // Also make sure to replace some abbreviations
-    $content = str_replace(array('z.&#8239;B.', 'z.b.', 'z.B.', 'zB.','z. B.','z. b.'), 'zum Beispiel', $content);
+    $content = str_replace(array('z.&#8239;B.', 'z.b.', 'z.B.', 'zB.', 'z. B.', 'z. b.'), 'zum Beispiel', $content);
     $content = str_replace(array('d.&#8239;h.', 'd.h.', 'd. h.'), 'das heisst', $content);
-    $content = str_replace(array('usw.', 'u.s.w.', ), 'und so weiter', $content);
+    $content = str_replace(array('usw.', 'u.s.w.',), 'und so weiter', $content);
     $content = str_replace(array('= ', '== '), 'gleich ', $content);
 
     return $content;
@@ -303,18 +303,18 @@ class AudioGenerator extends ACFBase
   protected function handleHeadings($content)
   {
     // Add period to heading tags if they don't already end with one
-    $content = preg_replace_callback('/<(h[1-6][^>]*)>(.*?)<\/h[1-6]>/i', function($matches) {
+    $content = preg_replace_callback('/<(h[1-6][^>]*)>(.*?)<\/h[1-6]>/i', function ($matches) {
       $openTag = $matches[1];
       $headingContent = trim($matches[2]);
-      
+
       // Check if heading content doesn't end with a period
       if (!empty($headingContent) && !preg_match('/\.$/', $headingContent)) {
         $headingContent .= '.';
       }
-      
+
       return '<' . $openTag . '>' . $headingContent . '</' . substr($openTag, 0, 2) . '>';
     }, $content);
-    
+
     return $content;
   }
 
@@ -437,7 +437,7 @@ class AudioGenerator extends ACFBase
           <p>Sofern sich der Inhalt wesentlich geändert hat, kannst du das Audio erneut erzeugen. Kostenschätzung <span class="tariff-calculation">0.00</span> CHF,
           auf Basis <span class="tariff-base">' . number_format($tariff['per_chunk'], 2) . '</span> CHF pro <span class="tariff-words">' . $tariff['words'] . '</span> Wörter.</p>
           <a href="javascript:void(0);" class="button button-secondary lbwp-create-ai-audio" data-costs="">Jetzt ' . ($isArrayType ? 'alle ' : '') . 'erneut erzeugen</a>
-          ' . $statusHtml .  '
+          ' . $statusHtml . '
         </div>
       ';
     } else {
@@ -446,7 +446,7 @@ class AudioGenerator extends ACFBase
           <p>Bisher kein Vorlese-Audio erzeugt. Kostenschätzung <span class="tariff-calculation">0.00</span> CHF,
           auf Basis <span class="tariff-base">' . number_format($tariff['per_chunk'], 2) . '</span> CHF pro <span class="tariff-words">' . $tariff['words'] . '</span> Wörter.</p>
           <a href="javascript:void(0);" class="button button-secondary lbwp-create-ai-audio" data-costs="">Jetzt erzeugen</a>
-          ' . $statusHtml .  '
+          ' . $statusHtml . '
         </div>
       ';
     }
@@ -592,7 +592,7 @@ class AudioGenerator extends ACFBase
     foreach ($dom->getElementsByTagName('body')->item(0)->childNodes as $child) {
       $bodyContent .= $dom->saveHTML($child);
     }
-    
+
     return $bodyContent;
   }
 
@@ -615,15 +615,15 @@ class AudioGenerator extends ACFBase
    */
   public static function calculateNearestSegments($segments, $string)
   {
-    $highestSimilarity = $highestSimilarityIndex =0;
+    $highestSimilarity = $highestSimilarityIndex = 0;
     $string = self::normalizeString($string);
     // Find the best matching start segment
     foreach ($segments as $index => $segment) {
       $similarityStart = 0;
       $candidate = self::normalizeString($segment['text']);
-      similar_text(substr($string,0,strlen($candidate)), $candidate, $similarityStart);
+      similar_text(substr($string, 0, strlen($candidate)), $candidate, $similarityStart);
       // Search no more if very good match
-      if ($index == 0 &&$similarityStart >= 97) {
+      if ($index == 0 && $similarityStart >= 97) {
         $highestSimilarityIndex = $index;
         break;
       }
@@ -669,10 +669,14 @@ class AudioGenerator extends ACFBase
   /**
    * Adds field settings
    */
-  public function fields()  {}
+  public function fields()
+  {
+  }
 
   /**
    * Registers no own blocks
    */
-  public function blocks() {}
+  public function blocks()
+  {
+  }
 } 

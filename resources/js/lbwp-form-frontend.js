@@ -988,10 +988,14 @@ var LbwpForm = {
 
       let stepsContainer = curStep.closest('.lbwp-form-steps');
       let headerHeight = jQuery('.s03-header').length > 0 ? jQuery('.s03-header').height() : 0;
-      window.scrollTo({
-        behavior: 'smooth',
-        top: stepsContainer.get(0).getBoundingClientRect().top - document.body.getBoundingClientRect().top - headerHeight,
-      })
+
+      // Only scroll if steps are visible
+      if(stepsContainer.is(':visible')) {
+        window.scrollTo({
+          behavior: 'smooth',
+          top: stepsContainer.get(0).getBoundingClientRect().top - document.body.getBoundingClientRect().top - headerHeight,
+        })
+      }
     }
   },
 
@@ -1036,9 +1040,19 @@ var LbwpForm = {
     let curPage = jQuery('.lbwp-form-page.current');
     let fields = curPage.find('input:not([type="submit"]):not([type="hidden"]):not(.field_email_to)[required], select:visible[required], textarea:visible[required]');
 
-    // Filter fields that are not visible
+    // Filter fields that are not visible OR whose container is not visible.
     fields = fields.filter(function(){
-      return jQuery(this).is(':visible');
+      let el = jQuery(this);
+      if (el.is(':visible')) {
+        return true;
+      }
+      // Consider input visible if its closest forms-item (or parent) is visible
+      let container = el.closest('.forms-item');
+      if (container.length && container.is(':visible')) {
+        return true;
+      }
+      // fallback: check immediate parent visibility
+      return el.parent().is(':visible');
     });
 
     curPage.closest('form').trigger('lbwp:runvalidation', [fields, true]);

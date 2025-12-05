@@ -13,6 +13,7 @@
 **Purpose:** Main theme controller with specialized e-commerce and integration features
 
 **Component Registration:**
+
 ```php
 $this->registerComponents(array(
     '\ErneuerbarGo\Component\ACF',
@@ -20,7 +21,7 @@ $this->registerComponents(array(
     '\ErneuerbarGo\Component\Shop',
     '\ErneuerbarGo\Component\ReverseDropship',
     '\ErneuerbarGo\Component\DocGenerator',
-    '\ErneuerbarGo\Component\Inventory',
+    '\ErneuerbarGo\Component\Base',
     '\ErneuerbarGo\Component\Search',
 ));
 ```

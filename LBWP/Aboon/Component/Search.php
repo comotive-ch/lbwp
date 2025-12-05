@@ -2,7 +2,6 @@
 
 namespace LBWP\Aboon\Component;
 
-use LBWP\Aboon\Component\Filter as BaseFilter;
 use LBWP\Aboon\Base\Shop;
 use LBWP\Helper\WooCommerce\Util;
 use LBWP\Module\General\Cms\SystemLog;
@@ -14,6 +13,8 @@ use LBWP\Util\Date;
 use LBWP\Util\File;
 use LBWP\Util\Strings;
 use LBWP\Util\WordPress;
+use LBWP\Helper\LLM\ChromaDB;
+use LBWP\Helper\LLM\E5MultilangSmall;
 use LBWP\Core as LbwpCore;
 
 /**
@@ -107,6 +108,18 @@ class Search extends ACFBase
   /**
    * @var bool
    */
+  public static $CHROMADB_OVERRIDE_WORDPRESS_SEARCH = false;
+  /**
+   * @var bool
+   */
+  public static $CHROMADB_WORDPRESS_SEARCH_ONLY = false;
+  /**
+   * @var string
+   */
+  public static $CHROMADB_COLLECTION_NAME = 'text_index';
+  /**
+   * @var bool
+   */
   public static $HAS_SITESEARCH = false;
   /**
    * @var bool
@@ -174,7 +187,8 @@ class Search extends ACFBase
    */
   const CHATGPT_SECRET = LBWP_AI_SEARCH_TEXT_INDEX_CHATGPT_SECRET;
   /**
-   * @var int current version is normal index without chromaDB Support
+   * (The logic for that hasn't been written as no version update was needed until now)
+   * @var int when version is upgraded, all indexing will be renewed over time
    */
   const TEXT_INDEX_ROW_VERSION = 1;
 
@@ -190,8 +204,8 @@ class Search extends ACFBase
     parent::init();
     add_action('rest_api_init', array($this, 'registerApiEndpoint'));
     add_action('cron_daily_1', array($this, 'updateIndexTables'));
-    add_action('cron_daily_6', array($this, 'updateTextIndexRows'));
     add_action('cron_daily_7', array($this, 'buildTextIndex'));
+    add_action('cron_job_bulk_import_index_to_chromadb', array($this, 'bulkImportIndexToChromadb'));
 
     $productive = defined('LBWP_ABOON_ERP_PRODUCTIVE') && LBWP_ABOON_ERP_PRODUCTIVE || defined('LOCAL_DEVELOPMENT');
     if (static::$BUILD_SEARCH_WORD_INDEX) {
@@ -228,80 +242,193 @@ class Search extends ACFBase
   public function overrideSearchQuery($query)
   {
     if ($query->is_search() && !is_admin() && $query->is_main_query()) {
-      // Get the search term
-      $backup = static::$POST_TYPE;
-      $isBoolMode = static::$USE_INDEX_BOOLEAN_MODE;
-      // Add post and page if not given yet
-      if (!in_array('post', static::$POST_TYPE)) {
-        static::$POST_TYPE[] = 'post';
-      }
-      if (!in_array('page', static::$POST_TYPE)) {
-        static::$POST_TYPE[] = 'page';
-      }
-
       $term = $query->get('s');
-      // Force a more open search, independent of otherwise settings
-      static::$USE_INDEX_BOOLEAN_MODE = false;
-      // Do our own query for post ids
-      $postIds = static::getProductIdsByTerm($term, true);
-      $results = count($postIds);
-      // When no results, try to correct eventual errors
-      if ($results == 0) {
-        $searchWordIndex = static::getSearchWordIndex();
-        if (count($searchWordIndex) > 0) {
-          $alternate = Strings::getMostSimilarString($term, $searchWordIndex, true);
-          $similiarity = 0;
-          similar_text($term, $alternate, $similiarity);
-
-          if ($alternate != $term && $similiarity >= 75) {
-            $postIds = static::getProductIdsByTerm($alternate, true);
-            $results = count($postIds);
-            $term = $alternate;
+      $results = 0;
+      if (static::$CHROMADB_OVERRIDE_WORDPRESS_SEARCH) {
+        if (static::$CHROMADB_WORDPRESS_SEARCH_ONLY) {
+          $this->overrideWordPressSeachChromaDb($term, $query, $results);
+        } else {
+          // If not chroma only, try normal and then chroma if not results
+          $this->overrideWordPressSeachNativeDb($term, $query, $results);
+          if ($results === 0) {
+            $this->overrideWordPressSeachChromaDb($term, $query, $results);
           }
         }
+      } else {
+        $this->overrideWordPressSeachNativeDb($term, $query, $results);
       }
-
-      // Ensure WordPress only returns these posts
-      if ($results > 0) {
-        // Order posts by id, descending so the yare most likely sorted by date
-        sort($postIds, SORT_NUMERIC);
-        $postIds = array_reverse($postIds);
-
-        $query->set('s', '');
-        $query->set('s_fallback', $term);
-        $query->set('found_posts_primary', $results);
-        $query->set('post__in', $postIds);
-        $query->set('orderby', 'post__in');
-      }
-
-      static::$POST_TYPE = $backup;
-      static::$USE_INDEX_BOOLEAN_MODE = $isBoolMode;
     }
+  }
+
+  /**
+   * @param $term
+   * @param $query
+   * @return void
+   */
+  protected function overrideWordPressSeachChromaDb($term, &$query, &$results)
+  {
+    // Get embedder and chroma db
+    $embedder = new E5MultilangSmall();
+    $chroma = ChromaDB::getInstance();
+    $chroma->setCollectionName(static::$CHROMADB_COLLECTION_NAME, true);
+
+    $embeddings = $embedder->embed($term, true);
+    $raw = $chroma->searchCollection($embeddings, 30, true);
+    // Convert the resulting post ids
+    if (!empty($raw['ids'][0])) {
+      $postIds = array_map('intval', $raw['ids'][0]);
+      $results = count($postIds);
+    }
+
+    // Add posts into the query, already sorted by distance (relevance) by chroma
+    if ($results > 0) {
+      $query->set('s', '');
+      $query->set('s_fallback', $term);
+      $query->set('found_posts_primary', $results);
+      $query->set('post__in', $postIds);
+      $query->set('orderby', 'post__in');
+    }
+  }
+
+  /**
+   * @param $term
+   * @param $query
+   * @return void
+   */
+  protected function overrideWordPressSeachNativeDb($term, &$query, &$results)
+  {
+    // Get the search term
+    $backup = static::$POST_TYPE;
+    $isBoolMode = static::$USE_INDEX_BOOLEAN_MODE;
+    // Add post and page if not given yet
+    if (!in_array('post', static::$POST_TYPE)) {
+      static::$POST_TYPE[] = 'post';
+    }
+    if (!in_array('page', static::$POST_TYPE)) {
+      static::$POST_TYPE[] = 'page';
+    }
+
+    // Force a more open search, independent of otherwise settings
+    static::$USE_INDEX_BOOLEAN_MODE = false;
+    // Do our own query for post ids
+    $postIds = static::getProductIdsByTerm($term, true);
+    $results = count($postIds);
+    // When no results, try to correct eventual errors
+    if ($results == 0) {
+      $searchWordIndex = static::getSearchWordIndex();
+      if (count($searchWordIndex) > 0) {
+        $alternate = Strings::getMostSimilarString($term, $searchWordIndex, true);
+        $similiarity = 0;
+        similar_text($term, $alternate, $similiarity);
+
+        if ($alternate != $term && $similiarity >= 75) {
+          $postIds = static::getProductIdsByTerm($alternate, true);
+          $results = count($postIds);
+          $term = $alternate;
+        }
+      }
+    }
+
+    // Ensure WordPress only returns these posts
+    if ($results > 0) {
+      // Order posts by id, descending so they're most likely sorted by date
+      sort($postIds, SORT_NUMERIC);
+      $postIds = array_reverse($postIds);
+
+      $query->set('s', '');
+      $query->set('s_fallback', $term);
+      $query->set('found_posts_primary', $results);
+      $query->set('post__in', $postIds);
+      $query->set('orderby', 'post__in');
+    }
+
+    static::$POST_TYPE = $backup;
+    static::$USE_INDEX_BOOLEAN_MODE = $isBoolMode;
   }
 
   /**
    * Updates the text index rows if versions are mismatching
    */
-  public function updateTextIndexRows()
+  public function bulkImportIndextoChromaDb()
   {
-    $db = WordPress::getDb();
     // Upgrade from 1 to 2 is adding chromaDB record, if chromaDB is enabled
-    if (!static::$CHROMADB_ENABLED) {
+    if (!static::$CHROMADB_ENABLED || !current_user_can('administrator')) {
       return;
     }
 
-    // Get rows with version 1
-    $candidates = $db->get_results('
-      SELECT id, alt_id, post_type, title, meta, excerpt, excerpt_ai, content
-      FROM ' . $db->prefix . 'lbwp_text_index
-      WHERE version = 1 LIMIT 0,' . static::$TEXT_INDEX_MAX_RENEWED_DATASETS . '
+    // Prepare
+    $limit = intval($_GET['limit']);
+    $offset = $limit * (intval($_GET['page']) - 1);
+
+    // Get ChromaDB and Embedding service and check if they're working
+    $chroma = ChromaDB::getInstance();
+    $embedder = new E5MultilangSmall();
+
+    // Validity checks before importing
+    if (!$chroma->isWorking() || !$embedder->isWorking()) {
+      echo 'services partially unavailable';
+      exit;
+    }
+    if (!isset($_GET['limit']) || !isset($_GET['page'])) {
+      echo 'please provide limit and page parameters';
+      exit;
+    }
+
+    // Set collection to be used
+    $chroma->setCollectionName(static::$CHROMADB_COLLECTION_NAME, true);
+
+    $db = WordPress::getDb();
+    $raw = $db->get_results('
+      SELECT id, alt_id, title, synonyms, plurals, excerpt_ai, excerpt, meta
+      FROM '.$db->prefix.'lbwp_text_index
+      LIMIT ' . $offset . ',' . $limit . '
     ');
 
-    // Send to chroma DB collection and update version
-    foreach ($candidates as $candidate) {
-      // TODO
-
+    // Exit if we don't have any results
+    if (count($raw) == 0) {
+      echo 'no results in db query, batch import finished';
+      exit;
     }
+
+    $start = microtime(true);
+    $batch = array();
+    foreach ($raw as $product) {
+      // Add title and one of the excerpts if given
+      $text = $product->title . PHP_EOL;
+      if (strlen($product->excerpt_ai) > 0) {
+        $text .= PHP_EOL . $product->excerpt_ai;
+      } else if (strlen($product->excerpt) > 0) {
+        $text .= PHP_EOL . $product->excerpt;
+      }
+
+      // Add the other fields with a prior title if given
+      if (strlen($product->meta) > 0)
+        $text .= PHP_EOL . $product->meta;
+      if (strlen($product->synonyms) > 0)
+        $text .= PHP_EOL . $product->synonyms;
+      if (strlen($product->plurals) > 0)
+        $text .= PHP_EOL . $product->plurals;
+
+      $embeddings = $embedder->embed($text);
+      $batch[] = array(
+        'id' => $product->id,
+        'embeddings' => $embeddings,
+        'meta' => array(
+          'title' => $product->title
+        )
+      );
+    }
+
+    // Sync that in batch with chromadb
+    $chroma->syncBatch($batch);
+    // Finish message and print timer
+    $end = microtime(true);
+    $time = $end - $start;
+    $page = intval($_GET['page']) + 1;
+    echo '
+      Finished in ' . number_format($time, 4) . ' seconds
+      <a href="/wp-content/plugins/lbwp/views/cron/job.php?identifier=bulk_import_index_to_chromadb&page=' . $page . '&limit=' . $limit . '">Run next page (' . $page . ')</a>  
+    ';
   }
 
   /**
@@ -680,6 +807,8 @@ class Search extends ACFBase
     // Eventually AI libraries are used
     require_once ABSPATH . 'wp-content/plugins/lbwp/resources/libraries/openai-php/vendor/autoload.php';
 
+    $chromaDbBatch = [];
+    $embedder = new E5MultilangSmall();
     // Build index entries for each post
     foreach ($updateablePosts as $post) {
       // Add prefix data to title if needed
@@ -716,12 +845,47 @@ class Search extends ACFBase
         }
       }
 
+      // Add vectors to chroma if enabled
+      if (static::$CHROMADB_ENABLED && $embedder->isWorking()) {
+        // Add title and one of the excerpts if given
+        $text = $index['title'] . PHP_EOL;
+        if (strlen($index['excerpt_ai']) > 0) {
+          $text .= PHP_EOL . $index['excerpt_ai'];
+        } else if (strlen($index['excerpt']) > 0) {
+          $text .= PHP_EOL . $index['excerpt'];
+        }
+
+        // Add the other fields with a prior title if given
+        if (strlen($index['meta']) > 0)
+          $text .= PHP_EOL . $index['meta'];
+        if (strlen($index['synonyms']) > 0)
+          $text .= PHP_EOL . $index['synonyms'];
+        if (strlen($index['plurals']) > 0)
+          $text .= PHP_EOL . $index['plurals'];
+
+        $embeddings = $embedder->embed($text);
+        $chromaDbBatch[] = array(
+          'id' => $index['id'],
+          'embeddings' => $embeddings,
+          'meta' => array(
+            'title' => $index['title']
+          )
+        );
+      }
+
       // Save to database
       $db->update(
         $db->prefix . 'lbwp_text_index',
         $index,
         array('id' => $post['ID'])
       );
+    }
+
+    // Also batch update chroma db if array has been filled
+    if (count($chromaDbBatch) > 0) {
+      $chroma = ChromaDB::getInstance();
+      $chroma->setCollectionName(static::$CHROMADB_COLLECTION_NAME, true);
+      $chroma->syncBatch($chromaDbBatch);
     }
   }
 

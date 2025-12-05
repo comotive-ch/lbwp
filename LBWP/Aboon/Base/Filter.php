@@ -8,6 +8,8 @@ use LBWP\Aboon\Component\Search;
 use LBWP\Aboon\Component\SimpleVariations;
 use LBWP\Aboon\Component\Watchlist;
 use LBWP\Core;
+use LBWP\Helper\LLM\ChromaDB;
+use LBWP\Helper\LLM\E5MultilangSmall;
 use LBWP\Module\Backend\MemcachedAdmin;
 use LBWP\Theme\Component\ACFBase;
 use LBWP\Theme\Feature\FocusPoint;
@@ -136,6 +138,14 @@ abstract class Filter extends ACFBase
    * @var bool|callable a custom function to call on creating single html output
    */
   public static $CUSTOM_SINGLE_HTML_FUNCTION = false;
+  /**
+   * @var bool if active, the filter search uses only chromadb as engine
+   */
+  public static $FILTER_SEARCH_FULL_CHROMADB = false;
+  /**
+   * @var int the maximum number of results to return with chromaDB
+   */
+  public static $FILTER_CHROMADB_MAX_RESULTS = 200;
   /**
    * @var string the icon for non puchasable items
    */
@@ -453,6 +463,7 @@ abstract class Filter extends ACFBase
   {
     Shop::setApiUserContext();
     $hasMoreFilters = false;
+    $showResultInfo = true;
     $isSearch = false;
     $title = '';
     $cacheKey = '';
@@ -477,54 +488,20 @@ abstract class Filter extends ACFBase
 
     // Use search or main/secondary category to get full possible set of results
     if (isset($_GET['f']) && strlen($_GET['f']) > 0) {
-      $isSearch = true;
-      $search = strip_tags($this->getSearchTerm());
-      $words = explode(' ', $search);
-      // If multiple words, try translating them into properties eventually
-      if (count($words) > 1) {
-        // Add the full search in front of words array, so that we eventually have an exact match
-        $words = array_merge(array($search), $words);
-        $matchedProperties = array();
-        foreach ($words as $index => $word) {
-          $propIds = $this->getPropIdsBySearchWord($word);
-          if (count($propIds) > 0) {
-            $matchedProperties = array_merge($matchedProperties, $propIds);
-            $search = trim(str_replace($word, '', $search));
-            // If first index (the full search), we can cancel the loop
-            if ($index == 0) {
-              break;
-            }
-          }
-        }
-        if (count($matchedProperties) > 0) {
-          // Build a redirect url with changed search and direct property selection
-          return array(
-            'success' => true,
-            'redirect' => get_permalink(static::$SEARCH_PAGE_ID) . '#f:' . $search . ';p:' . implode(',', $matchedProperties)
-          );
-        }
-      }
-      // Try an exact search first and try inexact if
-      $productIds = $this->getSearchTermResults($search, true, false);
-      // When nothing found, maybe try again if there is a correction to the search term with high certainty
-      if (count($productIds) == 0 && !is_numeric($search)) {
-        $index = Search::getSearchWordIndex();
-        $alternate = Strings::getMostSimilarString($search, $index, true);
-        if ($alternate != $search) {
-          $productIds = $this->getSearchTermResults($alternate, true, true);
-          $search = $alternate;
-        }
-      }
-
-      // When polylang, we need to reduce with only post of our language
-      if (static::$IS_POLYLANG) {
-        $productIds = array_intersect($productIds, $this->getAllIdsOfType());
-      }
       // Special case to show full list of products for whitelist shops
       if ($_GET['f'] == 'kundensortiment') {
-        $title = 'Kundensortiment';
-        $productIds = $this->prepareCustomerAssortment($whitelist);
-        $isSearch = false;
+        $productIds = $this->prepareCustomerAssortment($whitelist, $title, $isSearch);
+      } else {
+        if (static::$FILTER_SEARCH_FULL_CHROMADB) {
+          $result = $this->runFilterSearchChromaDb($isSearch, $title, $showResultInfo);
+        } else {
+          $result = $this->runFilterSearchQuery($isSearch, $title, $showResultInfo);
+        }
+        if (is_array($result) && isset($result['redirect'])) {
+          return $result;
+        } else {
+          $productIds = $result;
+        }
       }
     } else if (isset($_GET['d'])) {
       list($from,$to) = explode('/', $_GET['d']);
@@ -667,6 +644,7 @@ abstract class Filter extends ACFBase
       'titleFallback' => $title,
       'cached' => false,
       'cachekey' => $cacheKey,
+      'showresultinfo' => $showResultInfo,
       'results' => $results
     );
 
@@ -679,6 +657,166 @@ abstract class Filter extends ACFBase
     }
 
     return $response;
+  }
+
+  /**
+   * @param $isSearch
+   * @param $title
+   * @param $showResultInfo
+   * @return void
+   */
+  protected function runFilterSearchChromaDb(&$isSearch, &$title, &$showResultInfo)
+  {
+    $isSearch = true;
+    $showResultInfo = false;
+    $search = strip_tags($this->getSearchTerm());
+
+    // Get embedder and chroma db
+    $embedder = new E5MultilangSmall();
+    $chroma = ChromaDB::getInstance();
+    $chroma->setCollectionName(Search::$CHROMADB_COLLECTION_NAME, true);
+
+    $embeddings = $embedder->embed($search, true);
+    $raw = $chroma->searchCollection($embeddings, static::$FILTER_CHROMADB_MAX_RESULTS, true);
+
+    // Filter results intelligently by distance
+    if (!empty($raw['ids'][0])) {
+      return $this->filterBySmartDistance($raw, 8);
+    }
+
+    // Fallback, no results
+    return array();
+  }
+
+  /**
+   * Smart distance-based filtering for ChromaDB results
+   * Uses gap detection and dynamic range-based threshold instead of fixed values
+   *
+   * @param array $raw ChromaDB search results with 'ids' and 'distances'
+   * @param int $minResults Minimum number of results to return (default: 3)
+   * @return array Filtered post IDs
+   */
+  protected function filterBySmartDistance($raw, $minResults = 3) {
+    if (empty($raw['distances'][0]) || empty($raw['ids'][0])) {
+      return array();
+    }
+
+    $distances = $raw['distances'][0];
+    $ids = $raw['ids'][0];
+
+    // Prepare all results with distances
+    $allResults = array();
+    foreach ($distances as $i => $dist) {
+      $allResults[] = array('id' => intval($ids[$i]), 'dist' => $dist);
+    }
+
+    // 1. Primary: Gap-based filtering (find natural break in results)
+    $cutIndex = $this->findGapCutoff($allResults, $minResults);
+    $filtered = array_slice($allResults, 0, $cutIndex);
+
+    // 2. Secondary: If no significant gap found, use dynamic range-based threshold
+    if ($cutIndex == count($allResults) && count($allResults) > $minResults) {
+      $minDist = $distances[0];
+      $maxDist = $distances[count($distances) - 1];
+      $range = $maxDist - $minDist;
+
+      // Use 40% of range as threshold (configurable sweet spot)
+      $threshold = $minDist + ($range * 0.4);
+
+      $filtered = array();
+      foreach ($allResults as $result) {
+        if ($result['dist'] <= $threshold) {
+          $filtered[] = $result;
+        }
+      }
+
+      // Still guarantee minimum results
+      if (count($filtered) < $minResults) {
+        $filtered = array_slice($allResults, 0, $minResults);
+      }
+    }
+
+    return array_column($filtered, 'id');
+  }
+
+  /**
+   * Finds the optimal cutoff point based on gaps in distance values
+   *
+   * @param array $filtered Array of results with 'id' and 'dist' keys
+   * @param int $minResults Minimum results to keep regardless of gaps
+   * @return int Index where to cut the results
+   */
+  private function findGapCutoff($filtered, $minResults) {
+    $maxGap = 0;
+    $cutIndex = count($filtered);
+
+    // Don't cut below minimum results
+    for ($i = $minResults - 1; $i < count($filtered) - 1; $i++) {
+      $gap = $filtered[$i + 1]['dist'] - $filtered[$i]['dist'];
+
+      // Only consider significant gaps (> 0.05)
+      if ($gap > $maxGap && $gap > 0.05) {
+        $maxGap = $gap;
+        $cutIndex = $i + 1;
+      }
+    }
+
+    return $cutIndex;
+  }
+
+  /**
+   * @param $isSearch
+   * @param $title
+   * @param $showResultInfo
+   * @return array|mixed
+   */
+  protected function runFilterSearchQuery(&$isSearch, &$title, &$showResultInfo)
+  {
+    $isSearch = true;
+    $search = strip_tags($this->getSearchTerm());
+    $words = explode(' ', $search);
+
+    // If multiple words, try translating them into properties eventually
+    if (count($words) > 1) {
+      // Add the full search in front of words array, so that we eventually have an exact match
+      $words = array_merge(array($search), $words);
+      $matchedProperties = array();
+      foreach ($words as $index => $word) {
+        $propIds = $this->getPropIdsBySearchWord($word);
+        if (count($propIds) > 0) {
+          $matchedProperties = array_merge($matchedProperties, $propIds);
+          $search = trim(str_replace($word, '', $search));
+          // If first index (the full search), we can cancel the loop
+          if ($index == 0) {
+            break;
+          }
+        }
+      }
+      if (count($matchedProperties) > 0) {
+        // Build a redirect url with changed search and direct property selection
+        return array(
+          'success' => true,
+          'redirect' => get_permalink(static::$SEARCH_PAGE_ID) . '#f:' . $search . ';p:' . implode(',', $matchedProperties)
+        );
+      }
+    }
+    // Try an exact search first and try inexact if
+    $productIds = $this->getSearchTermResults($search, true, false);
+    // When nothing found, maybe try again if there is a correction to the search term with high certainty
+    if (count($productIds) == 0 && !is_numeric($search)) {
+      $index = Search::getSearchWordIndex();
+      $alternate = Strings::getMostSimilarString($search, $index, true);
+      if ($alternate != $search) {
+        $productIds = $this->getSearchTermResults($alternate, true, true);
+      }
+    }
+
+    // When polylang, we need to reduce with only post of our language
+    if (static::$IS_POLYLANG) {
+      $productIds = array_intersect($productIds, $this->getAllIdsOfType());
+    }
+
+    return $productIds;
   }
 
   /**
@@ -739,8 +877,10 @@ abstract class Filter extends ACFBase
    * @param $assortment
    * @return array
    */
-  protected function prepareCustomerAssortment($assortment)
+  protected function prepareCustomerAssortment($assortment, &$title, &$isSearch)
   {
+    $title = 'Kundensortiment';
+    $isSearch = false;
     return $assortment;
   }
 

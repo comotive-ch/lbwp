@@ -24,16 +24,23 @@ abstract class BetterTables{
     $this->replaceWPPage();
 
     add_action('admin_enqueue_scripts', array($this, 'enqueueScripts'));
+    add_filter( 'script_loader_tag', (function($tag, $handle, $src) {
+      if($handle !== 'lbwp-better-tables') {
+        return $tag;
+      }
+
+      return str_replace( 'src=', 'type="module" src=', $tag );
+    }), 10, 3 );
+
     add_action('rest_api_init', array($this, 'registerApiEndpoints'));
 
     $this->settings = array_merge($this->settings, $settings);
   }
 
   public function enqueueScripts(){
-    wp_enqueue_style('lbwp-better-tables', File::getResourceUri() . '/css/lbwp-better-tables.css', array(), Core::REVISION);
+    wp_enqueue_style('lbwp-better-tables', File::getResourceUri() . '/css/lbwp-better-tables.css', array(), time());
 
-    $jsFile = basename(glob(File::getResourcePath() . '/js/better-tables/build/static/js/main.*.js')[0]);
-    wp_enqueue_script('lbwp-better-tables', File::getResourceUri() . '/js/better-tables/build/static/js/' . $jsFile, array(), Core::REVISION, true);
+    wp_enqueue_script('lbwp-better-tables', File::getResourceUri() . '/js/PIM/Main.js', array(), time(), true);
 
     wp_localize_script('lbwp-better-tables', 'lbwpBetterTables', array(
       'user_id' => get_current_user_id(),

@@ -828,6 +828,12 @@ BhFilter = {
     template = template.replace('{y}', data.total);
     element.text(template);
     element.data('current-results', data.results);
+    // Maybe show or hide result info
+    if (typeof(data.showresultinfo) !== 'undefined') {
+      element.show();
+      if (!data.showresultinfo)
+        element.hide();
+    }
   },
 
   /**

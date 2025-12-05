@@ -67,7 +67,7 @@ class SecureAssets
       add_filter('edit_attachment', array($this, 'changeAssetSecurityState'));
     } else {
       // If not in admin, return rewrite assets to proxy urls
-      if (!defined('LOCAL_DEVELOPMENT')) {
+      if (!defined('LOCAL_DEVELOPMENT') && !defined('LBWP_SKIP_REWRITE_PROXY_ATTACHMENT_URLS')) {
         add_filter('the_content', array($this, 'rewriteProxyAttachmentUrl'));
       }
     }

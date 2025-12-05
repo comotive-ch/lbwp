@@ -73,6 +73,7 @@ class CmsFeatures extends \LBWP\Module\Base
     if (is_admin()) {
       $this->eventuallyConvertWebpUploads();
       // Backend features
+      add_filter('big_image_size_threshold', array($this, 'alignLargeSizeLimit'), 500);
       add_action('admin_footer', array($this, 'allowSpecialFileTypesClientside'));
       add_filter('upload_mimes', array($this, 'filterUploadableFileTypes'));
       add_filter('lbwp_settings_various_maintenancemode', array($this, 'flushFrontendCache'), 1);
@@ -180,6 +181,23 @@ class CmsFeatures extends \LBWP\Module\Base
     // General features
     $this->registerLibraries();
     $this->initGlobalFeatures();
+  }
+
+  /**
+   * If our own limit is higher that the big_image_threshold of wordpress, raise wordpress limit accordingly
+   * @param $limit
+   * @return mixed
+   */
+  public function alignLargeSizeLimit($limit)
+  {
+    $config = Core::getInstance()->getConfig();
+    $maxImageSize = intval($config['Various:MaxImageSize']);
+    // Override if our limit is higher
+    if ($maxImageSize > 0 && $maxImageSize > $limit) {
+      $limit = $maxImageSize;
+    }
+
+    return $limit;
   }
 
   /**

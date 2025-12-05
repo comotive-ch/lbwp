@@ -47,7 +47,7 @@ class Frontend extends Base
       'post_status' => isset($config['post_status']) ? $config['post_status'] : array('publish'),
       'posts_per_page' => $config['max_events'],
       'orderby' => 'meta_value_num',
-      'order' => 'ASC',
+      'order' => isset($config['display_past_events']) ? 'DESC' : 'ASC',
       'meta_key' => 'event-start'
     );
 
