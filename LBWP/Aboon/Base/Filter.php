@@ -87,6 +87,10 @@ abstract class Filter extends ACFBase
    */
   public static $DEFAULT_SORT_DB_FIELD = 'post_date';
   /**
+   * @var string optional suffix
+   */
+  public static $TREE_CACHE_KEY_SUFFIX = '';
+  /**
    * @var bool sort categories a-z
    */
   public static $SORT_CATEGORIES = true;
@@ -300,6 +304,7 @@ abstract class Filter extends ACFBase
       'result-show-single' => __('1 Produkt anzeigen', static::$TEXT_DOMAIN),
       'result-show-multi' => __('{x} Produkte anzeigen', static::$TEXT_DOMAIN),
       'filter-result-count' => __('{x} von {y} Produkten', static::$TEXT_DOMAIN),
+      'filter-result-count-minimal' => __('{x} Produkte gefunden', static::$TEXT_DOMAIN),
       'no-results-text' => __('Es wurden keine Produkte mit deiner Filterauswahl gefunden. Bitte passe deine Auswahl an.', static::$TEXT_DOMAIN)
     );
 
@@ -492,10 +497,14 @@ abstract class Filter extends ACFBase
       if ($_GET['f'] == 'kundensortiment') {
         $productIds = $this->prepareCustomerAssortment($whitelist, $title, $isSearch);
       } else {
+        $showResultInfo = false;
+        $search = strip_tags($this->getSearchTerm());
         if (static::$FILTER_SEARCH_FULL_CHROMADB) {
-          $result = $this->runFilterSearchChromaDb($isSearch, $title, $showResultInfo);
+          // Combined search with vectors and classic sql (smart strategy based on word count)
+          $result = $this->runFilterSearchCombined($search, $isSearch, $title);
         } else {
-          $result = $this->runFilterSearchQuery($isSearch, $title, $showResultInfo);
+          // Classic SQL only based search
+          $result = $this->runFilterSearchQuery($search, $isSearch, $title);
         }
         if (is_array($result) && isset($result['redirect'])) {
           return $result;
@@ -660,16 +669,83 @@ abstract class Filter extends ACFBase
   }
 
   /**
-   * @param $isSearch
-   * @param $title
-   * @param $showResultInfo
-   * @return void
+   * Combined search strategy using SQL and ChromaDB based on word count
+   * - Single word: SQL first, ChromaDB only if no SQL results
+   * - Multiple words: Both searches, ChromaDB results first, then SQL (deduplicated)
+   *
+   * @param string $search The search term
+   * @param bool $isSearch Reference to search flag
+   * @param string $title Reference to title
+   * @return array|mixed Product IDs or redirect array
    */
-  protected function runFilterSearchChromaDb(&$isSearch, &$title, &$showResultInfo)
+  protected function runFilterSearchCombined($search, &$isSearch, &$title)
+  {
+    $words = explode(' ', trim($search));
+    $wordCount = count(array_filter($words));
+
+    // If search is empty, return no result
+    if ($wordCount === 0) {
+      return array();
+    }
+
+    // Use SQL and fallback chroma with 1/2 words
+    if ($wordCount <= 2) {
+      $minResults = ($wordCount === 1) ? 10 : 5;
+      // Single word: Try SQL first, use ChromaDB only if no results
+      $sqlResult = $this->runFilterSearchQuery($search, $isSearch, $title);
+      // Check if SQL returned a redirect (property match)
+      if (is_array($sqlResult) && isset($sqlResult['redirect'])) {
+        return $sqlResult;
+      }
+
+      // If SQL has results, return them if minimum is reached
+      if (is_array($sqlResult) && count($sqlResult) > $minResults) {
+        return $sqlResult;
+      }
+
+      // No or not enough SQL results, fall back to ChromaDB
+      $chromaResult = $this->runFilterSearchChromaDb($search, $isSearch, $title);
+      if (is_array($sqlResult) && count($sqlResult) > 0) {
+        return array_unique(array_merge($sqlResult, $chromaResult));
+      }
+
+      return $chromaResult;
+    }
+
+    // Multiple words: Run both searches, prioritize ChromaDB, merge with SQL
+    $chromaResult = $this->runFilterSearchChromaDb($search, $isSearch, $title);
+    $sqlResult = $this->runFilterSearchQuery($search, $isSearch, $title);
+
+    // Check if SQL returned a redirect (property match)
+    if (is_array($sqlResult) && isset($sqlResult['redirect'])) {
+      return $sqlResult;
+    }
+
+    // Ensure both are arrays
+    $chromaResult = is_array($chromaResult) ? $chromaResult : array();
+    $sqlResult = is_array($sqlResult) ? $sqlResult : array();
+
+    // Merge: ChromaDB results first, then add SQL results that aren't already included
+    $merged = $chromaResult;
+    foreach ($sqlResult as $productId) {
+      if (!in_array($productId, $merged)) {
+        $merged[] = $productId;
+      }
+    }
+
+    return $merged;
+  }
+
+  /**
+   * @param string $search The search term
+   * @param bool $isSearch Reference to search flag
+   * @param string $title Reference to title
+   * @return array Product IDs
+   */
+  protected function runFilterSearchChromaDb($search, &$isSearch, &$title)
   {
     $isSearch = true;
     $showResultInfo = false;
-    $search = strip_tags($this->getSearchTerm());
 
     // Get embedder and chroma db
     $embedder = new E5MultilangSmall();
@@ -681,7 +757,7 @@ abstract class Filter extends ACFBase
 
     // Filter results intelligently by distance
     if (!empty($raw['ids'][0])) {
-      return $this->filterBySmartDistance($raw, 8);
+      return array_map('intval', $this->filterBySmartDistance($raw, 8));
     }
 
     // Fallback, no results
@@ -721,7 +797,7 @@ abstract class Filter extends ACFBase
       $range = $maxDist - $minDist;
 
       // Use 40% of range as threshold (configurable sweet spot)
-      $threshold = $minDist + ($range * 0.4);
+      $threshold = $minDist + ($range * 0.5);
 
       $filtered = array();
       foreach ($allResults as $result) {
@@ -733,6 +809,18 @@ abstract class Filter extends ACFBase
       // Still guarantee minimum results
       if (count($filtered) < $minResults) {
         $filtered = array_slice($allResults, 0, $minResults);
+      }
+
+      // See if the filtered results really have the same post type
+      if (count($filtered) > 0) {
+        $db = WordPress::getDB();
+        $compare = $db->get_results("SELECT ID,post_type FROM {$db->posts} WHERE ID IN (" . implode(',', array_column($filtered, 'id')) . ")");
+        $filtered = array();
+        foreach ($compare as $result) {
+          if (in_array($result->post_type, static::$POST_TYPE)) {
+            $filtered[]['id'] = $result->ID;
+          }
+        }
       }
     }
 
@@ -765,15 +853,14 @@ abstract class Filter extends ACFBase
   }
 
   /**
+   * @param $search
    * @param $isSearch
    * @param $title
-   * @param $showResultInfo
    * @return array|mixed
    */
-  protected function runFilterSearchQuery(&$isSearch, &$title, &$showResultInfo)
+  protected function runFilterSearchQuery($search, &$isSearch, &$title)
   {
     $isSearch = true;
-    $search = strip_tags($this->getSearchTerm());
     $words = explode(' ', $search);
 
     // If multiple words, try translating them into properties eventually
@@ -1955,7 +2042,7 @@ abstract class Filter extends ACFBase
         </section>
         ' . apply_filters('lbwp_filter_block_after_filters', '') . '
         <section class="product-sort product-sort__wrapper row">           
-          <div class="filter__results" data-template="' . static::$text['filter-result-count'] . '"></div>                  
+          <div class="filter__results" data-template="' . static::$text['filter-result-count'] . '" data-template-minimal="' . static::$text['filter-result-count-minimal'] . '"></div>                  
           ' . $this->getSortingDropdownHtml() . '
           <div class="filter__reset">
             <button class="filter-button filter-button__reset">' . static::icon('icon-filter-reset', '', false) . ' ' . static::$text['remove-all-filters'] . '</button>
@@ -2059,7 +2146,8 @@ abstract class Filter extends ACFBase
 			</div>
 		';
 
-    $price = $product->get_price_html();
+    // This always gets the regular price (because promos are handeled different here
+    $price = wc_price(wc_get_price_to_display($product)) . $product->get_price_suffix();
     // Handle variations, show one price if it doesn't differ or show the lowest
     if ($product->get_type() == 'variable') {
       /** @var \WC_Product_Variable $product */
@@ -2072,7 +2160,7 @@ abstract class Filter extends ACFBase
     }
 
     $percentBubble = '';
-    if (isset($promos[$id])) {
+    if (isset($promos[$id]) && $promos[$id]['promo'] != $promos[$id]['normal']) {
       $priceTemplate = '<bdi>%s&nbsp;<span class="woocommerce-Price-currencySymbol">' . get_woocommerce_currency() . '</span></bdi>';
       $price = '
         <strong class="product-price__amount--current sale" data-wg-notranslate>' . sprintf($priceTemplate, $promos[$id]['promo']) . '</strong>
@@ -2128,7 +2216,7 @@ abstract class Filter extends ACFBase
         <div class="shop-dropdown product-dropdown" data-wg-notranslate> 
           <div class="shop-dropdown__inner">
             <div class="shop-dropdown__header"> 
-              ' . $names[$id] . '
+             ' . $names[$id] . '
             </div>
             <ul class="shop-dropdown__content">
                ' . $values . '
@@ -2520,7 +2608,7 @@ abstract class Filter extends ACFBase
    */
   public static function getCategoryTree($forceRebuild = false)
   {
-    $tree = wp_cache_get('categoryTree', 'Filter');
+    $tree = wp_cache_get('categoryTree' . static::$TREE_CACHE_KEY_SUFFIX, 'Filter');
     if (is_array($tree) && count($tree) > 0 && !$forceRebuild) {
       return $tree;
     }
@@ -2588,7 +2676,7 @@ abstract class Filter extends ACFBase
       }
     }
 
-    wp_cache_set('categoryTree', $tree, 'Filter', 86400);
+    wp_cache_set('categoryTree' . static::$TREE_CACHE_KEY_SUFFIX, $tree, 'Filter', 86400);
     return $tree;
   }
 
@@ -2601,7 +2689,7 @@ abstract class Filter extends ACFBase
   public static function getPropertyTreeFull($forceRebuild = false)
   {
     // Get the latest tree from cache
-    $tree = wp_cache_get('propertyTreeFull', 'Filter');
+    $tree = wp_cache_get('propertyTreeFull' . static::$TREE_CACHE_KEY_SUFFIX, 'Filter');
     if (is_array($tree) && count($tree) > 0 && !$forceRebuild) {
       return $tree;
     }
@@ -2655,7 +2743,7 @@ abstract class Filter extends ACFBase
       }
     }
 
-    wp_cache_set('propertyTreeFull', $tree, 'Filter', 86400);
+    wp_cache_set('propertyTreeFull' . static::$TREE_CACHE_KEY_SUFFIX, $tree, 'Filter', 86400);
     wp_cache_commit_transaction();
 
     return $tree;
@@ -2668,14 +2756,14 @@ abstract class Filter extends ACFBase
   public static function getPropertyTree($forceRebuild = false)
   {
     // Get the latest tree from cache
-    $tree = wp_cache_get('propertyTree', 'Filter');
+    $tree = wp_cache_get('propertyTree' . static::$TREE_CACHE_KEY_SUFFIX, 'Filter');
     if (is_array($tree) && count($tree) > 0 && !$forceRebuild) {
       return $tree;
     }
 
     // Load tree from DB if not in cache yet
     $db = WordPress::getDb();
-    $raw = $db->get_results('SELECT t.term_id, t.name, tt.taxonomy, tt.parent, tt.description
+    $raw = $db->get_results('SELECT t.term_id, t.slug, t.name, tt.taxonomy, tt.parent, tt.description
 			 FROM ' . $db->terms . ' AS t INNER JOIN ' . $db->term_taxonomy . ' AS tt ON t.term_id = tt.term_id
 			 WHERE tt.taxonomy = "product_prop"'
     );
@@ -2790,7 +2878,7 @@ abstract class Filter extends ACFBase
       }
     }
 
-    wp_cache_set('propertyTree', $tree, 'Filter', 86400);
+    wp_cache_set('propertyTree' . static::$TREE_CACHE_KEY_SUFFIX, $tree, 'Filter', 86400);
     return $tree;
   }
 
@@ -2875,15 +2963,16 @@ abstract class Filter extends ACFBase
     $charset = $wpdb->get_charset_collate();
     $table = $wpdb->prefix . 'lbwp_prod_map';
 
-    $sql = "CREATE TABLE $table (
+    require_once(ABSPATH . 'wp-admin/includes/upgrade.php');
+    // Create table if not existing
+    dbDelta("CREATE TABLE $table (
       pid bigint(11) UNSIGNED NOT NULL,
       tid bigint(11) UNSIGNED NOT NULL,
       PRIMARY KEY  (pid,tid),
       KEY pid (pid),
       KEY tid (tid)
-    ) $charset;";
+    ) $charset;");
 
-    require_once(ABSPATH . 'wp-admin/includes/upgrade.php');
     // Get all live product ids
     $productIds = $db->get_col('
       SELECT ID FROM ' . $db->posts . '
@@ -2916,11 +3005,17 @@ abstract class Filter extends ACFBase
       }
     }
     for ($i = 1; $i < 25; $i++) {
+
       $limit = $i * 50000;
       $offset = $limit - 50000;
       $result = mysqli_query($sdb, '
         SELECT pid,tid FROM ' . $table . ' LIMIT ' . $offset . ',' . $limit . ';
       ', MYSQLI_USE_RESULT);
+      // Skip if no result yet
+      if (!$result) {
+        break;
+      }
+
       $results = false;
       while ($row = mysqli_fetch_assoc($result)) {
         extract($row);

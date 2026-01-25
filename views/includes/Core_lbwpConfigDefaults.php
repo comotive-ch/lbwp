@@ -3,8 +3,8 @@
  * This fills $this->config of LBWP core
  */
 $this->config = array(
-  'HTMLCache:CacheTime' => 86400,
-  'HTMLCache:CacheTimeSingle' => 172800,
+  'HTMLCache:CacheTime' => 604800,
+  'HTMLCache:CacheTimeSingle' => 604800,
   'HeaderFooterFilter:FbPageId' => '',
   'HeaderFooterFilter:GoogleSiteVerification' => '',
   'HeaderFooterFilter:GoogleTagmanagerId' => '',

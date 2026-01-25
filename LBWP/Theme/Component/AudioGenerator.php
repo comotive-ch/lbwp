@@ -580,7 +580,7 @@ class AudioGenerator extends ACFBase
       $currentClass = $element->getAttribute('class');
       $newClass = (empty($currentClass) ? '' : $currentClass . ' ') . 'markable-segment';
       $element->setAttribute('class', $newClass);
-      $element->setAttribute('data-mark-start', $start);
+      $element->setAttribute('data-mark-start', floatval($start));
       $element->setAttribute('data-mark-segment', $position++);
       // Remove the segment we just used as to not use it anymore if two segments start identically
       unset($segments[0]);

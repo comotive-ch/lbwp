@@ -212,7 +212,14 @@ class SendMail extends Base
     // Create the mail base data
     $mail = External::PhpMailer();
     self::$currentFormSubject = $mail->Subject;
-    $mail->Subject = $this->getFieldContent($data, $this->params['betreff']);
+    $subject = $this->getFieldContent($data, $this->params['betreff']);
+    // If it contains encoded html, unencode and remove it
+    if (str_contains($subject, '&lt;')) {
+      $subject = html_entity_decode($subject);
+      $subject = str_replace(array('<br>', '<br />'), ' ', $subject);
+      $subject = strip_tags($subject);
+    }
+    $mail->Subject = $subject;
     $this->addAddresses($mail, 'AddAddress', $this->getFieldContent($data, $this->params['email']));
 
     // If isset, use CC and BCC

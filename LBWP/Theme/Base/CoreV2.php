@@ -184,6 +184,11 @@ abstract class CoreV2
     add_action('init', array($this, 'init'));
     add_action('widgets_init', array($this, 'widgets'), 0);
 
+    // If we run the minimal wrapper, skip here do leave basic wordpress theming intact
+    if ($this->dependencyWrapper instanceof MinimalWrapper) {
+      return;
+    }
+
     // register the filter renderView a bit later: we want to override the template inclusion (say for plugin templates), but only if necessary
     add_filter('template_include', array($this, 'renderView'), 15, 3);
 

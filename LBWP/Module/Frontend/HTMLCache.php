@@ -22,6 +22,10 @@ class HTMLCache extends \LBWP\Module\Base
    */
   protected $cacheTimeSingle = 0;
   /**
+   * @var int time to cache pages that are bots
+   */
+  protected static $cacheTimeBots = 0;
+  /**
    * Different CacheGroup between desktop/mobile
    * @var string
    */
@@ -284,20 +288,14 @@ class HTMLCache extends \LBWP\Module\Base
    */
   public static function invalidatePage($uri)
   {
-    if (!defined('LBWP_DISABLE_ASSIST_HTML_CACHE')) {
-      if (FRONTEND_CACHE_REDIS_ENABLED) {
-        try {
-          $cache = new \Redis();
-          $cache->pconnect(REDIS_HTML_CACHE_SERVER_HOST, REDIS_CONNECTION_PORT, 1);
-          $cache->auth(REDIS_AUTH_KEY);
-          $cache->setOption(\Redis::OPT_TCP_KEEPALIVE, 60);
-          $cache->del(lbwpGetHtmlCacheKey(md5($uri)));
-        } catch (\Exception $e) {
-
-        }
-      }
-    } else {
-      wp_cache_delete(md5($uri), FRONT_CACHE_GROUP_HTTPS);
+    if (FRONTEND_CACHE_REDIS_ENABLED) {
+      try {
+        $cache = new \Redis();
+        $cache->pconnect(REDIS_HTML_CACHE_SERVER_HOST, REDIS_CONNECTION_PORT, 1);
+        $cache->auth(REDIS_AUTH_KEY);
+        $cache->setOption(\Redis::OPT_TCP_KEEPALIVE, 60);
+        $cache->del(lbwpGetHtmlCacheKey($uri));
+      } catch (\Exception $e) {}
     }
   }
 
@@ -343,8 +341,7 @@ class HTMLCache extends \LBWP\Module\Base
         'host' => $_SERVER['HTTP_HOST'],
         'uri' => self::$uri,
         'is404' => is_404(),
-        'expires' => $expireTime,
-        'content' => $output
+        'expires' => $expireTime + time()
       );
 
       // Add content type headers if set
@@ -367,31 +364,24 @@ class HTMLCache extends \LBWP\Module\Base
 
       // Save cacheVal to cache only if there is content or headers
       if (strlen($output) > self::MIN_CACHEABLE_SIZE || $hasLocationHeader) {
-        if (!defined('LBWP_DISABLE_ASSIST_HTML_CACHE')) {
-          if (FRONTEND_CACHE_REDIS_ENABLED)
+        if (FRONTEND_CACHE_REDIS_ENABLED) {
           try {
             $cache = new \Redis();
             $cache->pconnect(REDIS_HTML_CACHE_SERVER_HOST, REDIS_CONNECTION_PORT, 1);
             $cache->auth(REDIS_AUTH_KEY);
             $cache->setOption(\Redis::OPT_TCP_KEEPALIVE, 60);
-            $cache->setex(
-              lbwpGetHtmlCacheKey(md5($this->getCacheSiteId())),
-              // to make sure not to use full timestamp, just expiry time in seconds
-              // subtract time() again that we have added in getCacheTime
-              $expireTime - time(),
-              gzcompress(json_encode($cacheVal), 9)
-            );
+            $cache->setOption(\Redis::OPT_SERIALIZER, \Redis::SERIALIZER_PHP);
+            $cacheVal['content'] = gzencode($output, 6);
+            $key = lbwpGetHtmlCacheKey($this->getCacheSiteId());
+            $cache->setex($key, $expireTime, $cacheVal);
+            // Additional bot version if time given
+            if (self::$cacheTimeBots > 0 && $expireTime < self::$cacheTimeBots) {
+              $cacheVal['expires'] = $cacheVal['expires'] + self::$cacheTimeBots - $expireTime;
+              $cache->setex($key . '_bot', self::$cacheTimeBots, $cacheVal);
+            }
           } catch (\Exception $e) {
             // Just don't cache at this point, but also don't crash :-)
           }
-        } else {
-          $cacheVal['content'] = gzcompress($output);
-          wp_cache_set(
-            md5($this->getCacheSiteId()),
-            $cacheVal,
-            $this->currentCacheGroup,
-            $expireTime
-          );
         }
       }
     }
@@ -427,9 +417,17 @@ class HTMLCache extends \LBWP\Module\Base
     if (self::$avoidCache) {
       return false;
     }
-    // if the avoid cache for this call is set
-    if (isset($_COOKIE['avoidCache']) || isset($_COOKIE['avoidCacheTimed'])) {
+    // if the avoid cache for this call is set, also avoid caching in maintenance mode
+    if (isset($_COOKIE['avoidCache']) || isset($_COOKIE['avoidCacheTimed']) || isset($_COOKIE['MMValidLogin'])) {
       return false;
+    }
+    // Is there customer cookies that omit cache?
+    if (defined('LBWP_OMIT_FRONTEND_CACHE_COOKIES') && is_array(LBWP_OMIT_FRONTEND_CACHE_COOKIES)) {
+      foreach (LBWP_OMIT_FRONTEND_CACHE_COOKIES as $cookie) {
+        if (isset($_COOKIE[$cookie])) {
+          return false;
+        }
+      }
     }
     // Only non admin page requests are cached
     if (is_admin() || is_user_logged_in()) {
@@ -476,6 +474,14 @@ class HTMLCache extends \LBWP\Module\Base
   }
 
   /**
+   * Cache time in seconds for bots if set and above 0 there will be a separate longer lasting version of the page in cache
+   */
+  public static function addLongerBotCache($time)
+  {
+    self::$cacheTimeBots = $time;
+  }
+
+  /**
    * This method assumes the module is not loaded, but still wants to be used for certain pages to be cached
    * @param int $duration the duration to cache this page
    * @return void
@@ -505,9 +511,9 @@ class HTMLCache extends \LBWP\Module\Base
   protected function getCacheTime()
   {
     if (is_singular()) {
-      return time() + $this->cacheTimeSingle;
+      return $this->cacheTimeSingle;
     } else {
-      return time() + $this->cacheTime;
+      return $this->cacheTime;
     }
   }
 

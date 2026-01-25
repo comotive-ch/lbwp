@@ -122,7 +122,7 @@ class ApiHelper
       CURLOPT_AUTOREFERER => true,
       CURLOPT_HEADER => array(),
       CURLOPT_USERAGENT => 'Comotive-Webshop-1.0',
-      CURLOPT_CONNECTTIMEOUT => 5,
+      CURLOPT_CONNECTTIMEOUT => 2,
       CURLOPT_TIMEOUT => ($timeout > 0) ? $timeout : LBWP_SAPBYD_API_TIMEOUT_SECONDS,
       CURLOPT_MAXREDIRS => 5,
       CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,

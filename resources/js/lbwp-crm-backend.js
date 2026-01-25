@@ -234,7 +234,14 @@ var CrmUserAdmin = {
 			'.user-aim-wrap, .user-yim-wrap, .user-jabber-wrap, .user-instagram-wrap, ' +
 			'.user-youtube-wrap, .user-wikipedia-wrap'
 		).hide();
-		// Handle woocommerce fieldsets to be displayed if needed
+		// If avada is active hide a few of its fields we never use
+		if (typeof(crmAdminData.config.isAvadaInstallation) != 'undefined' && crmAdminData.config.isAvadaInstallation) {
+			jQuery(
+				'.user-author_email-wrap, .user-author_facebook-wrap, .user-author_twitter-wrap, .user-author_custom-wrap, ' +
+				'.user-author_linkedin-wrap, .user-author_dribble-wrap, .user-author_whatsapp-wrap'
+			).hide();
+		}
+			// Handle woocommerce fieldsets to be displayed if needed
 		CrmUserAdmin.handleWooCommerceFieldsets();
 		// Also, remove the biographical fields
 		jQuery('.user-description-wrap, .user-profile-picture, .user-sessions-wrap').hide();

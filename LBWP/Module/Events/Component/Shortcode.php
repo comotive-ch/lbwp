@@ -104,7 +104,8 @@ class Shortcode extends Base
         'to' => '',
         'year' => $this->currentYear,
         // 0 means, no specific month in the year
-        'month' => 0
+        'month' => 0,
+        'order' => 0
       ),
       $args,
       self::SHORTCODE_SLUG
@@ -386,6 +387,12 @@ class Shortcode extends Base
     // Add terms, if there are
     if (isset($linkConfig['terms']) && is_array($linkConfig['terms'])) {
       $linkData['terms'] = $linkConfig['terms'];
+    }
+
+    if(isset($linkConfig['year']) && isset($linkData['dpe'])){
+      if($linkConfig['year'] === date('Y')){
+        $linkData['dpe'] = 0;
+      }
     }
 
     // Get the permalink of current page and append data

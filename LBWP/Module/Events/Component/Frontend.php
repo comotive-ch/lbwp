@@ -4,6 +4,7 @@ namespace LBWP\Module\Events\Component;
 
 use LBWP\Module\Forms\Core as FormCore;
 use LBWP\Module\Forms\Component\FormHandler;
+use LBWP\Module\Frontend\HTMLCache;
 use LBWP\Util\Date;
 use LBWP\Util\Strings;
 
@@ -42,12 +43,18 @@ class Frontend extends Base
    */
   public function queryEvents($config)
   {
+    $order = isset($config['order']) && $config['order'] !== 0 ? $config['order'] : 'ASC';
+
+    if((!isset($config['order']) || $config['order'] === 0) && isset($config['display_past_events']) && $config['display_past_events'] == 1) {
+      $order = 'DESC';
+    }
+
     $query = array(
       'post_type' => EventType::EVENT_TYPE,
       'post_status' => isset($config['post_status']) ? $config['post_status'] : array('publish'),
       'posts_per_page' => $config['max_events'],
       'orderby' => 'meta_value_num',
-      'order' => isset($config['display_past_events']) ? 'DESC' : 'ASC',
+      'order' => $order,
       'meta_key' => 'event-start'
     );
 
@@ -194,6 +201,7 @@ class Frontend extends Base
 
       // Add subscribe data, if active
       if ($event->subscribeActive) {
+        $event->subscribeStart = intval(get_post_meta($event->ID, 'subscribe-start', true));
         $event->subscribeEnd = intval(get_post_meta($event->ID, 'subscribe-end', true));
         $event->subscribeEmail = get_post_meta($event->ID, 'subscribe-email', true);
         $event->subscribeFormId = intval(get_post_meta($event->ID, 'subscribe-form-id', true));
@@ -335,6 +343,13 @@ class Frontend extends Base
         <dl>
           <dt>' . __('Anmeldung bis', 'lbwp') . '</dt>
           <dd>' . $this->getDateTimeString($event->subscribeEnd, $config, $textdomain) . '</dd>
+        </dl>
+      ';
+    } else if ($event->subscribeActive && $event->subscribeStart > 0 && $event->subscribeStart > $currentTime && $display['showSubscriptionInfo']) {
+      $html .= '
+        <dl>
+          <dt>' . __('Anmeldung ab', 'lbwp') . '</dt>
+          <dd>' . $this->getDateTimeString($event->subscribeStart, $config, $textdomain) . '</dd>
         </dl>
       ';
     } else if ($event->subscribeActive && strlen($event->subscribeAltText) > 0 && $display['showSubscriptionInfo']) {
@@ -613,9 +628,25 @@ class Frontend extends Base
       $currentTime = current_time('timestamp');
     }
 
+    // See if subscribe is active and neither expired nor "not started" yet
+    $subscriptionOpen = $event->subscribeActive
+      && $event->subscribeEnd > 0
+      && $event->subscribeEnd > $currentTime
+      && ($event->subscribeStart == 0 || $event->subscribeStart <= $currentTime);
+
+    // Lower caching time if subscription has a start time that hasn't been reached yet
+    if ($event->subscribeActive && $event->subscribeStart > 0 && $event->subscribeStart > $currentTime) {
+      HTMLCache::cacheThisPage(1800);
+    }
+
+    // Lower cache time to an hour if subscribe end is within the next 2 days
+    if ($event->subscribeActive && $event->subscribeEnd > $currentTime && $event->subscribeEnd <= $currentTime + 172800) {
+      HTMLCache::cacheThisPage(3600);
+    }
+
     return apply_filters(
       'lbwpEvents_has_event_subscription',
-      $event->subscribeActive && $event->subscribeEnd > 0 && $event->subscribeEnd > $currentTime,
+      $subscriptionOpen,
       $event
     );
   }

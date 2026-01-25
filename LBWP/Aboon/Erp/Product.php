@@ -90,7 +90,7 @@ abstract class Product extends Component
   public function syncTermsOnly()
   {
     // No time limit here as this must run in one turn
-    set_time_limit(0);
+    set_time_limit(7200);
     // Make sure to not cache term objects as this causes overflows, also flush caches to force syncing
     wp_cache_delete('categoryTree', 'aboonErpProduct');
     wp_cache_delete('propertyTree', 'aboonErpProduct');

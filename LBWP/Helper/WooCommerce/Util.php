@@ -122,7 +122,7 @@ class Util
     }, 10, 2);
 
     // In some cases, switch locale and reload the plugin domain of "toilet"
-    if (get_locale() == 'de_DE' && $_SERVER['REQUEST_METHOD'] == 'POST') {
+    if (get_locale() == 'de_DE') {
       switch_to_locale('de_DE_formal');
       load_plugin_textdomain('woocommerce');
     }

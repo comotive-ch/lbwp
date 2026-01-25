@@ -45,6 +45,7 @@ abstract class BetterTables{
     wp_localize_script('lbwp-better-tables', 'lbwpBetterTables', array(
       'user_id' => get_current_user_id(),
       'ajax_url' => get_bloginfo('url') . '/wp-json/lbwp/bettertables/',
+      'nonce' => wp_create_nonce('wp_rest')
     ));
   }
 

@@ -3,6 +3,7 @@
 namespace LBWP\Helper;
 
 use LBWP\Module\General\Cms\SystemLog;
+use LBWP\Util\Strings;
 
 /**
  * API helper to to master API calls
@@ -75,6 +76,19 @@ class MasterApi
   public static function getAsynchronous($url)
   {
     exec('curl "' . $url . '" > /dev/null 2>&1 &', $output);
+  }
+
+  /**
+   * @param string $url no validation, must be a valid URI starting with /
+   */
+  public static function callOnAssist($uri)
+  {
+    $salts = explode('|', LBWP_VIRTUAL_HOST_SALT);
+    $check = md5($salts[0] . LBWP_HOST . $salts[1]);
+    $uri = Strings::attachParam('lbwp_virtual_host', LBWP_HOST, $uri);
+    $uri = Strings::attachParam('lbwp_virtual_host_hash', $check, $uri);
+    // Call that on assist
+    self::getAsynchronous('https://swi1-assist-lbwp.sdd1.ch' . $uri);
   }
 
   /**

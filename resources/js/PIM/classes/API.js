@@ -52,15 +52,25 @@ export class API {
    */
   fetch(endpoint, method = 'GET', data = {}) {
     data.user_id = lbwpBetterTables.user_id;
+
+    // Add nonce to headers
+    const headers = {
+      'Content-Type': 'application/json',
+      'X-WP-Nonce': lbwpBetterTables.nonce 
+    };
+
     if (method === 'GET') {
       let time = new Date();
-      return fetch(this.baseUrl + endpoint + '&cache=' + time.getTime());
+      return fetch(this.baseUrl + endpoint + '&cache=' + time.getTime(), {
+        method: 'GET',
+        headers: {
+          'X-WP-Nonce': lbwpBetterTables.nonce
+        }
+      });
     } else {
       return fetch(this.baseUrl + endpoint, {
         method: method,
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: headers,
         body: JSON.stringify(data),
       });
     }

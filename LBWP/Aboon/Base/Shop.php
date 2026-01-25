@@ -51,9 +51,9 @@ class Shop extends Component
       Util::setDefaultCountryOnly(true);
     }
 
-    // Allow to search for sku on product relations ACF fields and show the sku in resultset
-    add_filter('acf/fields/relationship/query', array($this, 'addAcfSearchBySku'), 10, 2);
-    add_filter('acf/fields/relationship/result', array($this, 'addAcfSkuToResult'), 10, 3);
+    // Allow to search for sku on product relations ACF fields
+    add_filter('acf/fields/relationship/query', array($this, 'extendAcfRelationshipSearch'), 10, 3);
+
     add_action('cron_daily_22', array($this, 'checkTimeoutCancelledOrders'));
     add_action('cron_daily_23', array($this, 'removeOldWooSessions'));
     add_action('cron_daily_23', array($this, 'removeOldActionSchudlerRecords'));
@@ -296,47 +296,6 @@ class Shop extends Component
   }
 
   /**
-   * @param $args
-   * @param $field
-   * @return mixed
-   */
-  public function addAcfSearchBySku($args, $field)
-  {
-    if ($field['type'] == 'relationship' && in_array('product', $args['post_type']) && isset($args['s'])) {
-      $args['meta_query'] = array(array(
-        'key' => '_sku',
-        'value' => $args['s'],
-        'compare' => 'LIKE'
-      ));
-      // Add this to make the meta query OR with the "s" parameter with searches title, content
-      add_filter('get_meta_sql', function ($sql) {
-        static $nr = 0;
-        if (0 != $nr++) return $sql;
-        $sql['where'] = mb_eregi_replace('^ AND', ' OR', $sql['where']);
-        return $sql;
-      });
-    }
-
-    return $args;
-  }
-
-  /**
-   * @param string $text
-   * @param \WP_Post $post
-   * @param array $field
-   * @return string
-   */
-  public function addAcfSkuToResult($text, $post, $field)
-  {
-    $postType = is_array($field['post_type']) ? $field['post_type'] : array($field['post_type']);
-    if ($field['type'] == 'relationship' && in_array('product', $postType)) {
-      $text .= ' (' . get_post_meta($post->ID, '_sku', true) . ')';
-    }
-
-    return $text;
-  }
-
-  /**
    * Sets the current logged in user state in API calls
    */
   public static function setApiUserContext()
@@ -510,6 +469,72 @@ class Shop extends Component
         margin-top: 0;
       }
     ';
+  }
+
+  /**
+   * Extend ACF relationship field search to include post meta (SKU) for products
+   * @param array $args WP_Query arguments
+   * @param array $field ACF field configuration
+   * @param int $postId Current post ID
+   * @return array Modified query arguments
+   */
+  public function extendAcfRelationshipSearch($args, $field, $postId)
+  {
+    // Only modify if there's a search term
+    if (empty($args['s'])) {
+      return $args;
+    }
+
+    // Check if this field queries products
+    $postTypes = (array) ($args['post_type'] ?? array());
+    if (!in_array('product', $postTypes)) {
+      return $args;
+    }
+
+    $searchTerm = $args['s'];
+    unset($args['s']);
+
+    // Meta keys to search for products
+    $metaKeys = apply_filters('aboon_acf_relationship_meta_search_fields', array('_sku'));
+
+    $db = WordPress::getDb();
+
+    // Find posts matching title
+    $titlePosts = $db->get_col($db->prepare(
+      "SELECT ID FROM {$db->posts}
+       WHERE post_type = 'product'
+       AND post_status IN ('publish', 'draft', 'private')
+       AND post_title LIKE %s",
+      '%' . $db->esc_like($searchTerm) . '%'
+    ));
+
+    // Find posts matching meta
+    $metaConditions = array();
+    foreach ($metaKeys as $metaKey) {
+      $metaConditions[] = $db->prepare(
+        "(pm.meta_key = %s AND pm.meta_value LIKE %s)",
+        $metaKey,
+        '%' . $db->esc_like($searchTerm) . '%'
+      );
+    }
+
+    $metaPosts = $db->get_col(
+      "SELECT DISTINCT pm.post_id FROM {$db->postmeta} pm
+       INNER JOIN {$db->posts} p ON pm.post_id = p.ID
+       WHERE p.post_type = 'product'
+       AND (" . implode(' OR ', $metaConditions) . ")"
+    );
+
+    // Merge results
+    $matchingIds = array_unique(array_merge($titlePosts, $metaPosts));
+
+    if (empty($matchingIds)) {
+      $args['post__in'] = array(0);
+    } else {
+      $args['post__in'] = $matchingIds;
+    }
+
+    return $args;
   }
 
   /**

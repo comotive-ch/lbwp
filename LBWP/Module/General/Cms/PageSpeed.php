@@ -39,7 +39,6 @@ class PageSpeed extends BaseSingleton
   public function run()
   {
     add_action('wp', array($this, 'addOutputFilters'), 20);
-    //add_filter('wp_generate_attachment_metadata', array($this, 'brunslifyImages'), 100);
   }
 
   /**
@@ -192,49 +191,16 @@ class PageSpeed extends BaseSingleton
         fnmatch('*' . LBWP_HOST . '*.css?ver=*', $match[0]) ||
         fnmatch('*' . LBWP_HOST . '*.js?ver=*', $match[0])
       ) {
-        $lastChar = mb_substr($match[0], -1);
-        $verpos = strrpos($match[0], '?ver=');
-        $version = str_replace('.', '', substr($match[0], $verpos + 5));
-        $link = substr($match[0], 0, $verpos);
-        $extension = substr($link,strripos($link,'.'));
-        return str_replace($extension, '__' . intval($version) . $this->settings['rewrite_asset_extension'] . $extension, $link) . $lastChar;
+        // Strip trailing non-URL characters (quotes, commas, parentheses, etc.)
+        $url = rtrim($match[0], "'\",);");
+        $trailingChars = substr($match[0], strlen($url));
+        $verpos = strrpos($url, '?ver=');
+        $version = str_replace('.', '', substr($url, $verpos + 5));
+        $link = substr($url, 0, $verpos);
+        $extension = substr($link, strripos($link, '.'));
+        return str_replace($extension, '__' . intval($version) . $this->settings['rewrite_asset_extension'] . $extension, $link) . $trailingChars;
       }
       return $match[0];
     }, $html);
-  }
-
-  /**
-   * @param $meta
-   * @param $attachmentId
-   * @return mixed
-   */
-  public function brunslifyImages($meta)
-  {
-    if ($this->settings['brunslify_images'] && !defined('LOCAL_DEVELOPMENT') && isset($meta['file']) && $meta['sizes']['thumbnail']['mime-type'] == 'image/jpeg') {
-      $images = array();
-      list($folder, $original) = explode('/', $meta['file']);
-      if ($this->settings['brunslify_original']) {
-        $images[] = $original;
-      }
-      foreach ($this->settings['brunsilfy_sizes'] as $size) {
-        if (isset($meta['sizes'][$size])) {
-          $images[] = $meta['sizes'][$size]['file'];
-        }
-      }
-
-      // Make brunsli callbacks
-      $base = LbwpCore::getCdnFileUri();
-      $domain = getLbwpHost();
-
-      foreach ($images as $image) {
-        Brunsli::convert(array(
-          'url' => $base . '/' . $folder . '/' . $image,
-          'domain' => $domain,
-          'reference' => $folder . '/' . $image
-        ));
-      }
-    }
-
-    return $meta;
   }
 }

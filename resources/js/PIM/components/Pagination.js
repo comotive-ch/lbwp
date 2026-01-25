@@ -34,9 +34,9 @@ export class Pagination {
     this.pagesDiv.appendChild(this.input);
 
     const pagesCount = Math.ceil(this.total / this.per_page) || 1;
-    const span = document.createElement('span');
-    span.textContent = ' von ' + pagesCount;
-    this.pagesDiv.appendChild(span);
+    this.pageCountSpan = document.createElement('span');
+    this.pageCountSpan.textContent = ' von ' + pagesCount;
+    this.pagesDiv.appendChild(this.pageCountSpan);
 
     this.el.appendChild(this.pagesDiv);
 
@@ -56,6 +56,7 @@ export class Pagination {
     this.prevBtn.disabled = this.current <= 1;
     this.nextBtn.disabled = this.current >= pages;
     if (this.input) this.input.value = this.current;
+    if (this.pageCountSpan) this.pageCountSpan.textContent = ' von ' + pages;
   }
 
   goToPage(page) {
@@ -108,6 +109,11 @@ export class Pagination {
 
   setCurrent(cur) {
     this.current = cur;
+    this.updateButtons();
+  }
+
+  setPerPage(perPage) {
+    this.per_page = parseInt(perPage) || 10;
     this.updateButtons();
   }
 }

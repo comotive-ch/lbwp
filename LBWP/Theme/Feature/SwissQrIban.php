@@ -186,7 +186,7 @@ class SwissQrIban
       $payer,
       $order->get_currency(),
       $order->get_total(),
-      __('Bestellung', 'lbwp') . ' ' . $order->get_id() . ' / ' . getLbwpHost(),
+      __('Bestellung', 'lbwp') . ' ' . $order->get_id() . ' / ' . LBWP_HOST,
       $order->get_id()
     );
 

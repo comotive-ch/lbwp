@@ -657,14 +657,13 @@ class Search extends ACFBase
     $db = WordPress::getDb();
     $table = $db->prefix . 'lbwp_word_index';
     $rebuildIndex = array();
-    $searchWordIndex = self::getSearchWordIndex();
-
+    // Flip the index so words are keys for O(1) lookup instead of O(n) with in_array
+    $existingWords = array_flip(self::getSearchWordIndex());
     // Build indexable words from our text index
     $this->getSearchWordsContent($rebuildIndex);
-
     // Everything new is put into the index (no updating or deleting yet)
     foreach ($rebuildIndex as $word => $occurences) {
-      if (!in_array($word, $searchWordIndex)) {
+      if (!isset($existingWords[$word])) {
         $db->insert($table, array(
           'word' => $word,
           'occurences' => $occurences,

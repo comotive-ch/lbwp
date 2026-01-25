@@ -26,9 +26,19 @@ class Ftp
    */
   public function __construct($server, $user, $password, $port = 21, $passive = true)
   {
-    $this->connection = ftp_connect($server, $port);
-    ftp_login($this->connection, $user, $password);
-    ftp_pasv($this->connection, true);
+    $this->connection = @ftp_connect($server, $port);
+    if ($this->connection === false) {
+      SystemLog::add('FTP: Verbindung fehlgeschlagen', 'error', 'Server', $server . ':' . $port);
+      return;
+    }
+
+    $loginResult = @ftp_login($this->connection, $user, $password);
+    if ($loginResult === false) {
+      SystemLog::add('FTP: Login fehlgeschlagen', 'error', 'Server', $server . ':' . $port . ' (User: ' . $user . ')');
+      return;
+    }
+
+    ftp_pasv($this->connection, $passive);
   }
 
   /**
@@ -37,6 +47,11 @@ class Ftp
    */
   public function getFile($fileName)
   {
+    if ($this->connection === null) {
+      SystemLog::add('FTP: copyFile fehlgeschlagen - keine Verbindung', 'error', 'Datei', $sourceFile);
+      return false;
+    }
+
     $path = File::getNewUploadFolder() . File::getFileOnly($fileName);
     ftp_get($this->connection, $path, $fileName, FTP_BINARY);
     return $path;
@@ -46,17 +61,28 @@ class Ftp
    * Copy file from ftp server to another location
    * @param $sourceFile
    * @param $destinationFile
-   * @return void
+   * @return bool true on success, false on failure
    */
   public function copyFile($sourceFile, $destinationFile)
   {
+    if ($this->connection === null) {
+      SystemLog::add('FTP: copyFile fehlgeschlagen - keine Verbindung', 'error', 'Datei', $sourceFile);
+      return false;
+    }
+
     // Create dir if not exists
     $dir = dirname($destinationFile);
     if (!file_exists($dir)) {
       mkdir($dir, 0755, true);
     }
 
-    ftp_get($this->connection, $destinationFile, $sourceFile, FTP_BINARY);
+    $result = @ftp_get($this->connection, $destinationFile, $sourceFile, FTP_BINARY);
+    if ($result === false) {
+      SystemLog::add('FTP: copyFile fehlgeschlagen', 'error', 'Datei', $sourceFile . ' -> ' . $destinationFile);
+      return false;
+    }
+
+    return true;
   }
 
   /**

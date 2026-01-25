@@ -446,4 +446,145 @@ class MaintenanceMode extends BaseSingleton
   {
     self::$header = $header;
   }
+
+  /**
+   * @param $html
+   * @param $header
+   * @param $settings
+   * @return string
+   */
+  public static function useComotiveVariableStyle($html, $header, $settings) {
+    $lbwpPath = get_bloginfo('url') . '/wp-content/plugins/lbwp/resources/css/';
+    $comotiveThemePath = get_bloginfo('url') . '/wp-content/themes/comotive-v3/';
+    $comotiveColors = array(
+      'rgba(32,171,217,1)',
+      'rgba(189,159,64,1)',
+      'rgba(225,56,49,1)'
+    );
+
+    shuffle($comotiveColors);
+
+    $html = '<!doctype html>
+      <html class="no-js" lang="de">
+      <head>
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <title>' . $settings['pageTitle'] . ' - ' . LBWP_HOST . '</title>
+        ' . $header . '
+        <style>
+          /* rubik-regular - latin */
+          @font-face {
+            font-family: "Inter";
+            font-style: normal;
+            font-weight: 400;
+            src: url("' . $comotiveThemePath . 'assets/fonts/inter-v18-latin-regular.woff2") format("woff2");
+          }
+          @font-face {
+            font-family: "Inter";
+            font-style: normal;
+            font-weight: 600;
+            src: url("' . $comotiveThemePath . 'assets/fonts/inter-v18-latin-600.woff2") format("woff2");
+          }  
+          .bubble:nth-child(1) path{
+            fill: ' . $comotiveColors[0] . ';
+          }
+          
+          .bubble:nth-child(2) path{
+            fill: ' . $comotiveColors[1] . ';
+          }
+          .bubble:nth-child(3) path{
+            fill: ' . $comotiveColors[2] . ';
+          }
+          .maintenance-bottom__bubble svg path{
+            fill: ' . $comotiveColors[2] . ';
+          }
+          ' . $settings['additionalCss'] . '
+          .maintenance-header__logo{
+            display: flex;
+            font-weight: bold;
+          }
+          .maintenance-header__logo span{
+            margin: 0 16px;
+          }
+          .maintenance-header__logo svg{
+            max-width: 200px;
+          }
+          .maintenance-input-btn-group {
+            max-width: 600px;
+            margin: 50px auto;
+          }
+        </style>
+        <link rel="stylesheet" href="' . $lbwpPath . 'lbwp-maintenance-mode.css">
+      </head>
+      <body>
+      
+      <div class="maintenance-site-wrapper"> 
+        <div class="maintenance-site-background"> 
+          <div class="maintenance-bg__gradients">
+            <div class="bubble--move maintenance-bg__gradient maintenance-bg__gradient--blue" data-movespeed="0.1"></div>
+            <div class="bubble--move maintenance-bg__gradient maintenance-bg__gradient--lime" data-movespeed="0.5"></div>
+            <div class="bubble--move maintenance-bg__gradient maintenance-bg__gradient--yellow" data-movespeed="1.2"></div>
+          </div>
+        </div>
+        <div class="maintenance-site-content"> 
+          <header class="maintenance-header">
+            <div class="maintenance-header__inner"> 
+              <div class="maintenance-header__logo"> 
+                <a href="https://comotive.ch/" target="_blank" tabindex="-1">
+                  ' . file_get_contents($comotiveThemePath . 'assets/img/svg/logo-comotive.svg') . '
+                </a>
+                <span>x</span>
+                <a href="https://variabel.ch/" target="_blank" tabindex="-1">
+                ' . file_get_contents($comotiveThemePath . 'assets/img/svg/logo-variabel-medienvielfalt.svg') . '
+                </a>
+              </div>
+            </div>
+          </header>
+          
+          <div class="maintenance-content"> 
+            <section class="maintenance-content__intro"> 
+               <div class="maintenance-container"> 
+                 <p>comotive & variabel are at work here.</p>
+                 <h1>' . sprintf($settings['pageInfoText'], LBWP_HOST . '<br>') . '</h1>
+               </div>
+            </section>      
+            {LOGIN_HTML}
+          </div>
+        </div>
+      </div>
+      
+      <script>
+        let bubbles = document.querySelectorAll(".bubble--move");
+        // Speichere die ursprüngliche Position jedes Elements
+        let bubblePositions = [];
+        bubbles.forEach(function(item, index) {
+            bubblePositions[index] = {
+                left: item.offsetLeft,
+                top: item.offsetTop
+            };
+        });
+    
+        document.body.addEventListener("mousemove", function(e) {
+            if (window.innerWidth > 580) {
+                bubbles.forEach(function(item, index) {
+                    let multiplicator = item.getAttribute("data-movespeed");
+                    let originalPosition = bubblePositions[index];
+                    // Bewegung wird relativ zur ursprünglichen Position berechnet
+                    let movementX = (e.clientX - window.innerWidth / 2) * multiplicator;
+                    let movementY = (e.clientY - window.innerHeight / 2) * multiplicator;
+                    item.style.left = originalPosition.left + movementX + "px";
+                    item.style.top = originalPosition.top + movementY + "px";
+                });
+            }
+        });
+    
+        let preferredColorScheme = (window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light");
+        document.body.classList.add(preferredColorScheme);
+      </script>
+    </body>
+    </html>
+    ';
+    return $html;
+  }
 }

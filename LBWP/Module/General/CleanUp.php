@@ -109,6 +109,7 @@ class CleanUp extends \LBWP\Module\Base
     }
 
     // do those actions on every page
+    add_filter('should_load_separate_core_block_assets', '__return_false', 99);
     add_action('wp_before_admin_bar_render', array($this, 'adminBar'), 1000);
     add_filter('login_headerurl', array($this, 'headerUrl'));
     add_filter('login_errors', array($this, 'obfuscateLoginError'));
@@ -121,6 +122,7 @@ class CleanUp extends \LBWP\Module\Base
     add_filter('the_privacy_policy_link', '__return_empty_string');
     add_filter('wpseo_json_ld_output', '__return_false');
     add_filter('wpo_wcpdf_use_path', '__return_false');
+    add_filter('woocommerce_skip_legacy_rest_api_plugin_auto_install', '__return_false');
     add_filter('plugins_auto_update_enabled', '__return_false');
     add_filter('themes_auto_update_enabled', '__return_false');
     add_filter('wp_sitemaps_enabled', '__return_false');
@@ -308,7 +310,6 @@ class CleanUp extends \LBWP\Module\Base
     if (defined('LBWP_SKIP_HIDING_YOAST_SUBMENUS')) {
       $disallowed = array(
         'wpseo_files',
-        'wpseo_redirects',
         'wpseo_page_academy',
         'wpseo_workouts',
         'wpseo_integrations',
@@ -511,7 +512,7 @@ class CleanUp extends \LBWP\Module\Base
   public function preventMass404()
   {
     if (is_404() && !is_user_logged_in()) {
-      WordPress::checkSignature('mass404', 5, 3, 3855);
+      WordPress::checkSignature('mass404', 25, 10, 3855);
     }
   }
 

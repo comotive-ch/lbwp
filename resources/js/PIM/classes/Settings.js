@@ -48,57 +48,11 @@ export class Settings {
     itemPerPage.appendChild(inputPer);
     container.appendChild(itemPerPage);
 
-    // orderby
-    const itemOrderby = document.createElement('div');
-    itemOrderby.className = 'bt__settings--item';
-    const labelOrderby = document.createElement('label');
-    labelOrderby.htmlFor = 'orderby';
-    labelOrderby.textContent = 'Sortiert nach';
-    const selectOrderby = document.createElement('select');
-    selectOrderby.name = 'orderby';
-    selectOrderby.value = this.settings.orderby;
-    selectOrderby.addEventListener('change', this.updateFields);
-
-    Object.entries(this.settings.columns).forEach((col) => {
-      const opt = document.createElement('option');
-      opt.value = col[0];
-      opt.name = col[0];
-      opt.textContent = col[1][0];
-      selectOrderby.appendChild(opt);
-    });
-
-    itemOrderby.appendChild(labelOrderby);
-    itemOrderby.appendChild(selectOrderby);
-    container.appendChild(itemOrderby);
-
-    // order
-    const itemOrder = document.createElement('div');
-    itemOrder.className = 'bt__settings--item';
-    const labelOrder = document.createElement('label');
-    labelOrder.htmlFor = 'order';
-    labelOrder.textContent = 'Sortierung';
-    const selectOrder = document.createElement('select');
-    selectOrder.name = 'order';
-    selectOrder.value = this.settings.order;
-    selectOrder.addEventListener('change', this.updateFields);
-    const optAsc = document.createElement('option');
-    optAsc.value = 'asc';
-    optAsc.textContent = 'ASC';
-    const optDesc = document.createElement('option');
-    optDesc.value = 'desc';
-    optDesc.textContent = 'DESC';
-    selectOrder.appendChild(optAsc);
-    selectOrder.appendChild(optDesc);
-
-    itemOrder.appendChild(labelOrder);
-    itemOrder.appendChild(selectOrder);
-    container.appendChild(itemOrder);
-
     // columns
     const columnsWrap = document.createElement('div');
     columnsWrap.className = 'bt__settings--columns';
     const h3 = document.createElement('h3');
-    h3.textContent = 'Spalten';
+    h3.textContent = 'Sichtbare Spalten';
     columnsWrap.appendChild(h3);
     const columnsList = document.createElement('div');
     columnsList.className = 'bt__settings--columns-list';
@@ -119,6 +73,15 @@ export class Settings {
     columnsWrap.appendChild(columnsList);
     container.appendChild(columnsWrap);
 
+    // Meta flush/reset
+    const clearMeta = document.createElement('p');
+    clearMeta.className = 'bt__settings--clear-meta';
+    const clearLink = document.createElement('a');
+    clearLink.href = '?clear_usermeta';
+    clearLink.textContent = 'Einstellungen zurücksetzen';
+    clearMeta.appendChild(clearLink);
+    container.appendChild(clearMeta);
+
     return container;
   }
 
@@ -135,12 +98,12 @@ export class Settings {
   }
 
   update() {
-    const fields = document.querySelectorAll('.bt__settings input, .bt__settings select');
+    const fields = document.querySelectorAll('.bt__settings input');
     const columns = document.querySelectorAll('.bt__settings--columns input');
     const newSettings = {
-      'per_page': fields[0].value,
-      'orderby': fields[1].value,
-      'order': fields[2].value,
+      'per_page': fields[0].value, // fields[0] is per_page now (number input)
+      'orderby': this.settings.orderby, // Keep existing values
+      'order': this.settings.order,     // Keep existing values
       'columns': {},
     };
 
@@ -166,13 +129,12 @@ export class Settings {
     this.settings.orderby = orderby;
     this.settings.order = order;
 
-    // Update UI if it exists
-    const orderbySelect = document.querySelector('.bt__settings select[name="orderby"]');
-    const orderSelect = document.querySelector('.bt__settings select[name="order"]');
-    if (orderbySelect) orderbySelect.value = orderby;
-    if (orderSelect) orderSelect.value = order;
-
     // Save and update
+    // We can call API directly or use update() but update() reads from DOM.
+    // DOM now lacks sort fields, so update() uses this.settings.orderby/order.
+    // However, update() relies on fields[0] being per_page. 
+    // If we call update(), it will read per_page from DOM and use current this.settings.orderby/order.
+    // This is correct.
     this.update();
   }
 
@@ -197,7 +159,7 @@ export class Settings {
     });
 
     this.settings.columns = newColumns;
-
+    
     // We need to update the UI checkboxes order too, otherwise next save might revert it
     // But since we are likely re-rendering the whole table/settings, maybe just saving is enough.
     // However, `update()` reads from DOM. So we should probably NOT call `update()` here, 
@@ -205,10 +167,11 @@ export class Settings {
     // Actually, `update()` reads from DOM to *set* settings.
     // Here we *have* settings and want to save them.
     // So we should call API directly.
+    
 
     this.api.post('save_users_settings', this.settings).then(() => {
-      // Optional: Re-render settings UI if it's open to reflect order?
-      // For now, just saving is enough.
+       // Reload data to ensure rows match the new column order
+       //this.updateTableData(this.settings);
     });
   }
 }

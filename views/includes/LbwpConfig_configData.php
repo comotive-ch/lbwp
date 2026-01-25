@@ -23,7 +23,7 @@ $this->configData['HTMLCache']['items']['CacheTime'] = array(
   'typeConfig' => array(
     'afterHtml' => 'Sekunden',
     'rangeFrom' => 300,
-    'rangeTo' => 172800
+    'rangeTo' => 604800
   ),
   'title' => 'HTML-Cache in Sekunden',
   'description' => 'Definiert, wie lange die Webseite gecached wird. Geänderte Menus und Widgets werden erst nach dieser Zeit für alle sichtbar.'
@@ -34,7 +34,7 @@ $this->configData['HTMLCache']['items']['CacheTimeSingle'] = array(
   'typeConfig' => array(
     'afterHtml' => 'Sekunden',
     'rangeFrom' => 300,
-    'rangeTo' => 172800
+    'rangeTo' => 604800
   ),
   'title' => 'Cache Artikel/Seiten',
   'description' => 'Sie können damit die Cache-Zeit für Artikel/Seiten höher oder tiefern Einstellen als die der restliche Webseite.'

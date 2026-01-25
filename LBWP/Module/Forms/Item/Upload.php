@@ -5,6 +5,7 @@ namespace LBWP\Module\Forms\Item;
 use LBWP\Helper\Document\Ghostscript;
 use LBWP\Module\Backend\S3Upload;
 use LBWP\Module\Forms\Component\FormHandler;
+use LBWP\Module\General\Cms\SystemLog;
 use LBWP\Theme\Feature\SecureAssets;
 use LBWP\Util\ArrayManipulation;
 use LBWP\Util\File;
@@ -232,7 +233,7 @@ class Upload extends Base
       $fileTypes = array_filter(array_map('trim', explode(',', $args['filetypes'])));
       // If left empty, default to a few known types
       if (count($fileTypes) == 0) {
-        $fileTypes = array('png', 'jpg', 'pdf', 'doc', 'docx', 'zip');
+        $fileTypes = array('png', 'jpg', 'pdf', 'doc', 'docx', 'zip', 'odt', 'ods', 'xls', 'xlsx', 'rtf');
       }
 
       // Loop trough files to move them to our new folder
@@ -266,6 +267,18 @@ class Upload extends Base
         /** @var S3Upload $uploader */
         $uploader = LbwpCore::getModule('S3Upload');
         $url = $uploader->uploadDiskFile($zipFile, 'application/zip', true);
+        SystemLog::mDebug('S3 debug: uploaded data', $url, $zipFile, [
+          'zip_file_size' => filesize($zipFile),
+          'zip_exists' => intval(file_exists($zipFile)),
+          'files_added' => array_map(function($path) {
+            return [
+              'path' => $path,
+              'filename' => File::getFileOnly($path),
+              'exists' => intval(file_exists($path)),
+              'size' => file_exists($path) ? filesize($path) : 0
+            ];
+          }, $localFiles)
+        ]);
 
         // Secure the file if needed
         if ($args['secure_upload'] == 'ja') {

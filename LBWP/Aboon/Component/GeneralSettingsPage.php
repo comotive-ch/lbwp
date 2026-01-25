@@ -3,6 +3,7 @@
 namespace LBWP\Aboon\Component;
 
 use LBWP\Theme\Component\ACFBase;
+use LBWP\Util\Multilang;
 
 /**
  * Provide and register fields and blocks with ACF
@@ -49,6 +50,15 @@ class GeneralSettingsPage extends ACFBase
   {
     if (is_shop()) {
       $pageId = intval(get_option('options_main-shop-redirect'));
+      // Multilang handling if given
+      if (Multilang::isActive() && $pageId > 0) {
+        $lang = Multilang::getCurrentLang();
+        $translations = Multilang::getPostTranslations($pageId);
+        if (isset($translations[$lang])) {
+          $pageId = $translations[$lang];
+        }
+      }
+
       if ($pageId > 0) {
         $redirectUrl = get_permalink($pageId);
       } else {

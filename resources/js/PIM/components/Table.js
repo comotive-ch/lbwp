@@ -15,6 +15,7 @@ export class Table {
     this.rows = data.rows || [];
     this.total = data.total || 0;
     this.columns = Object.keys(this.data.columns);
+    this.currentSearch = [];
 
     this.render();
   }
@@ -41,6 +42,25 @@ export class Table {
 
       const thContent = document.createElement('div');
       thContent.className = 'bt__th-content';
+
+      // Skip first two columns as they are reserved for edit and delete buttons
+      // But also add a reset button to the first column
+      if(index < 2){
+        if(index === 1){
+          const resetBtn = document.createElement('div');
+          resetBtn.className = 'bt__table--reset-filter dashicons-before dashicons-image-rotate';
+          resetBtn.title = 'Alle Filter zurücksetzen';
+          resetBtn.addEventListener('click', () => {
+            let allFilters = document.querySelectorAll('.bt__table--input');
+            allFilters.forEach(input => input.value = '');
+            this.filter();
+          });
+          th.appendChild(resetBtn);
+        }
+
+        trHead.appendChild(th);
+        return;
+      }
 
       // Title & Sort
       const titleDiv = document.createElement('div');
@@ -70,10 +90,18 @@ export class Table {
       input.className = 'bt__table--input';
       input.type = 'text';
       input.name = column;
-      input.placeholder = 'Search...';
+      input.value = this.currentSearch[column] || '';
+      input.placeholder = 'Suche...';
       input.addEventListener('input', this.filter.bind(this));
       // Prevent drag when interacting with input
       input.addEventListener('mousedown', (e) => e.stopPropagation());
+      // Select content when clicking on input
+      input.addEventListener('click', (e) => {
+        e.stopPropagation();
+        if(input.value !== ''){
+          input.select();
+        }
+      });
       thContent.appendChild(input);
 
       th.appendChild(thContent);
@@ -150,18 +178,24 @@ export class Table {
     this.container.appendChild(tableContainer);
 
     // Pagination holder
-    this.paginationHolder = document.createElement('div');
-    this.container.appendChild(this.paginationHolder);
+    if(!this.pagination) {
+      this.paginationHolder = document.createElement('div');
+      this.paginationHolder.className = 'bt__pagination-container';
+      this.container.parentNode.appendChild(this.paginationHolder);
+    }
 
     // render rows and pagination
     this.renderRows();
-    this.pagination = new Pagination(this.paginationHolder, {
-      current: this.curPage,
-      total: this.total,
-      per_page: this.settings.per_page,
-      onPageChange: (newPage) => this.setPage(newPage),
-      onRows: (rows) => this.setRows(rows)
-    });
+    
+    if(!this.pagination) {
+      this.pagination = new Pagination(this.paginationHolder, {
+        current: this.curPage,
+        total: this.total,
+        per_page: this.settings.per_page,
+        onPageChange: (newPage) => this.setPage(newPage),
+        onRows: (rows) => this.setRows(rows)
+      });
+    }
   }
 
   renderRows() {
@@ -170,7 +204,7 @@ export class Table {
       const tr = document.createElement('tr');
       const td = document.createElement('td');
       td.colSpan = this.columns.length;
-      td.textContent = 'No results found';
+      td.textContent = 'Kein Eintrag mit den aktuellen Filter(n) gefunden.';
       tr.appendChild(td);
       this.tbody.appendChild(tr);
       return;
@@ -191,6 +225,11 @@ export class Table {
     // Reset page to 1 when filtering
     this.curPage = 1;
 
+    // Reset pagination UI immediately
+    if (this.pagination) {
+      this.pagination.setCurrent(1);
+    }
+
     // Clear previous timeout
     if (this.debounceTimeout) clearTimeout(this.debounceTimeout);
 
@@ -207,6 +246,8 @@ export class Table {
           ajaxArgs.search.push(input.value);
           ajaxArgs.search_column.push(input.name);
         }
+
+        this.currentSearch[input.name] = input.value;
       });
 
       if (ajaxArgs.search.length <= 0) delete ajaxArgs.search;
@@ -226,6 +267,23 @@ export class Table {
     }, 500);
   }
 
+  getSearchParams() {
+    const params = {
+      search: [],
+      search_column: []
+    };
+    document.querySelectorAll('.bt__table--input').forEach((input) => {
+        if (input.value !== '') {
+          params.search.push(input.value);
+          params.search_column.push(input.name);
+        }
+    });
+    if (params.search.length === 0) {
+      return {};
+    }
+    return params;
+  }
+
   setRows(rows) {
     this.rows = rows;
     this.renderRows();
@@ -242,13 +300,14 @@ export class Table {
     this.settings = settings;
     this.rows = data.rows || [];
     this.total = data.total || 0;
+    this.columns = Object.keys(this.data.columns);
 
-    // Update sort indicators in headers
-    this.updateHeaders();
-
-    // Re-render rows and update pagination
-    this.renderRows();
-    if (this.pagination) this.pagination.setTotal(this.total);
+    // Re-render the whole table to ensure headers match the new data/columns
+    this.render();
+    if (this.pagination) {
+      this.pagination.setTotal(this.total);
+      this.pagination.setPerPage(this.settings.per_page);
+    }
   }
 
   updateHeaders() {

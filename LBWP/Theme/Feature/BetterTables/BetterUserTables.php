@@ -52,16 +52,25 @@ class BetterUserTables extends BetterTables{
     register_rest_route('lbwp/bettertables', 'users', array(
       'methods' => 'GET',
       'callback' => array($this, 'getUsers'),
+      'permission_callback' => function () {
+        return current_user_can('list_users');
+      }
     ));
 
     register_rest_route('lbwp/bettertables', 'get_users_settings', array(
       'methods' => 'POST',
       'callback' => array($this, 'getUsersSettings'),
+      'permission_callback' => function () {
+        return current_user_can('list_users');
+      }
     ));
 
     register_rest_route('lbwp/bettertables', 'save_users_settings', array(
       'methods' => 'POST',
       'callback' => array($this, 'saveUsersSettings'),
+      'permission_callback' => function () {
+        return current_user_can('list_users');
+      }
     ));
   }
 
@@ -180,41 +189,46 @@ class BetterUserTables extends BetterTables{
     $rows = array();
 
     // Build rows for response. Keep transformations minimal and safe.
+    // Use $columns to determine order of values
+    $columnKeys = array_keys($columns);
+    
+    // Remove action columns from keys for data mapping if they exist in $columns
+    $dataKeys = array_filter($columnKeys, function($k) {
+        return $k !== 'Edit' && $k !== 'Delete';
+    });
+
     foreach ($pageRows as $data) {
-      // Apply per-user column visibility if present
-      if (is_array($userSettings) && isset($userSettings['columns']) && is_array($userSettings['columns'])) {
-        $visible = array();
-        foreach ($data as $k => $v) {
-          if (isset($userSettings['columns'][$k]) && !empty($userSettings['columns'][$k][1])) {
-            $visible[$k] = $v;
-          }
-        }
-        $row = $visible;
-      } else {
-        $row = $data;
+      // Build row data in the order of $dataKeys
+      $row = array();
+      foreach ($dataKeys as $key) {
+        $row[] = isset($data[$key]) ? $data[$key] : '';
       }
 
       // Normalize user id field (support common variants)
-      $userid = $row['userid'] ?? ($row['user_id'] ?? '');
+      $userid = intval($data['userid'] ?? ($data['user_id'] ?? ($data['ID'] ?? 0)));
 
-      $deleteUrl = wp_nonce_url(
-        admin_url('users.php?action=delete&user=' . $userid),
-        'delete-user_' . $userid
-      );
+      if ($userid > 0) {
+        $nonce = wp_create_nonce('bulk-users');
+        $deleteUrl = '/wp-admin/users.php?action=delete&user=' . $userid . '&_wpnonce=' . $nonce;
+      } else {
+        $deleteUrl = '#';
+      }
 
       $orderedRow = array(
         '<a href="/wp-admin/user-edit.php?user_id=' . $userid . '" class="dashicons-before dashicons-edit"></a>',
         '<a href="' . $deleteUrl . '" class="dashicons-before dashicons-trash"></a>'
       );
 
-      // Use array_values to avoid sending associative keys to the client
-      $rows[] = array_merge($orderedRow, array_values($row));
+      // Merge actions with ordered data
+      $rows[] = array_merge($orderedRow, $row);
     }
 
     return array(
       'columns' => $columns,
       'rows' => $rows,
-      'total' => $total
+      'total' => $total,
+      'debug_cuid' => get_current_user_id(),
+      'debug_auth' => is_user_logged_in()
     );
   }
 
@@ -231,7 +245,7 @@ class BetterUserTables extends BetterTables{
     $fieldsTitles = $this->getColumnLabels();
     $cols = $this->getColumns($postData['user_id'], $this->settings['crmComponent']->getContactsByCategory(-1, true)[0], true);
     foreach($cols as $colname => $value){
-      $label = $fieldsTitles[$colname] ?? strtoupper($colname);
+      $label = $fieldsTitles[$colname] ?? ucfirst($colname);
       $cols[$colname] = [$label, true];
     }
 
@@ -266,13 +280,23 @@ class BetterUserTables extends BetterTables{
     $userSettings = get_user_meta($userId, 'bettertables-users-settings');
     $userSettings = is_array($userSettings) ? $userSettings[0] : [];
 
-    foreach ($rawData as $colname => $value){
-      if(!empty($userSettings) && is_array($userSettings['columns']) && $userSettings['columns'][$colname][1] !== true){
-        continue;
+    // Prioritize user settings order
+    if (!empty($userSettings) && is_array($userSettings['columns'])) {
+      foreach ($userSettings['columns'] as $colname => $config) {
+        if ($config[1] === true) { // If visible
+             // Skip action columns if they ended up in settings (shouldnt happen but safety)
+             if (!$omittActionColumns && ($colname === 'Edit' || $colname === 'Delete')) continue;
+             
+             $columns[$colname] = $fieldsTitles[$colname] ?? ucfirst($colname);
+        }
       }
-
-      // Find the custom field title in the CRM custom fields array
-      $columns[$colname] = $fieldsTitles[$colname] ?? ucfirst($colname);
+    } 
+    
+    // Add any remaining fields from rawData that weren't in settings
+    if (empty($userSettings['columns'])) {
+        foreach ($rawData as $colname => $value) {
+           $columns[$colname] = $fieldsTitles[$colname] ?? ucfirst($colname);
+        }
     }
 
     return $columns;

@@ -386,6 +386,18 @@ abstract class ACFBase extends Component
       }
     }
   }
+
+  /**
+   * Can be used in a block to check if the block is rendered within gutenberg
+   * @return bool
+   */
+  public static function isInEditor()
+  {
+    return
+      (isset($_GET['action']) && $_GET['action'] === 'edit') ||
+      isset($_REQUEST['action']) && $_REQUEST['action'] === 'acf/ajax/fetch-block' ||
+      wp_is_rest_endpoint();
+  }
 	
 	/**
 	 * Render the acf inner block

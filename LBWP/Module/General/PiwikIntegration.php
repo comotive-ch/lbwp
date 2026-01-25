@@ -288,7 +288,7 @@ class PiwikIntegration extends \LBWP\Module\Base
       // Get all sites, to see if we need to create one
       $siteId = 0;
       $allSites = self::queryAdminApi('SitesManager.getAllSites');
-      $siteName = str_replace('www', '', getLbwpHost());
+      $siteName = str_replace('www', '', LBWP_HOST);
       $userName = 'int_' . str_replace('.', '_', $siteName);
 
       // Search the site by name

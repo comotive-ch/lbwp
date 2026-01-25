@@ -22,9 +22,7 @@ use LBWP\Theme\Base\Component as BaseComponent;
  */
 class CXMLPunchOut extends BaseComponent{
   public function setup(){
-    // Avoid maintenance mode
-    setcookie('MMValidLogin', MaintenanceMode::COOKIE_HASH, time() + MaintenanceMode::COOKIE_EXPIRE, '/', LBWP_HOST);
-    $_COOKIE['MMValidLogin'] = MaintenanceMode::COOKIE_HASH;
+
   }
 
   public function init(){

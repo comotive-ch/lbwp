@@ -36,7 +36,7 @@ class CmsAdminMenu
     ));
 
     foreach (self::$menu as $domain) {
-      if ($domain == getLbwpHost()) {
+      if ($domain == LBWP_HOST) {
         continue;
       }
 

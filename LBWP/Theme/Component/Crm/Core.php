@@ -3245,7 +3245,7 @@ class Core extends Component
       }
 
       // Save to cache for next time fast use
-      $compressed = gzcompress(json_encode($contacts), 9);
+      $compressed = gzcompress(json_encode($contacts), 6);
       wp_cache_set($cacheKey, $compressed, 'CrmCore');
     }
 

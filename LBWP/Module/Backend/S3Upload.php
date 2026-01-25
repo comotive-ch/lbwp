@@ -525,6 +525,7 @@ class S3Upload extends \LBWP\Module\Base
       $key = substr($key, strpos($key, CDN_BUCKET_NAME) + strlen(CDN_BUCKET_NAME) + 1);
     }
 
+    SystemLog::mDebug('S3 debug: secured upload', CDN_BUCKET_NAME, $key, $acl);
     try {
       $s3 = AwsFactoryV3::getS3Service();
       $s3->putObjectAcl(array(

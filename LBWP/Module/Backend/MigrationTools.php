@@ -80,6 +80,12 @@ class MigrationTools extends \LBWP\Module\Base
         'fields' => array(
           'meta_value' => 'serialized'
         )
+      ),
+      $this->wpdb->prefix . 'yoast_indexable' => array(
+        'id' => 'id',
+        'fields' => array(
+          'permalink' => 'text'
+        )
       )
     );
   }
@@ -293,7 +299,7 @@ class MigrationTools extends \LBWP\Module\Base
           <input type="button" name="cmdUrlMigration" value="Interne URLs migrieren" class="button" />
           <input type="button" name="cmdCdnUrlMigration" value="CDN URLs migrieren" class="button" />
           <input type="button" name="cmdCdnExoMigration" value="Exoscale: Native > Cached" class="button" />
-          <input type="hidden" id="migratedHostName" value="' . getLbwpHost() . '" />
+          <input type="hidden" id="migratedHostName" value="' . LBWP_HOST . '" />
           <input type="hidden" id="cdnType" value="' . CDN_TYPE . '" />
           <input type="hidden" id="cdnHttpUrl" value="http://lbwp-cdn.sdd1.ch/' . ASSET_KEY . '/files/" />
           <input type="hidden" id="cdnHttpsUrl" value="https://s3-eu-west-1.amazonaws.com/lbwp-cdn.sdd1.ch/' . ASSET_KEY . '/files/" />

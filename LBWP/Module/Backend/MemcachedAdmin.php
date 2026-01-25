@@ -62,7 +62,6 @@ class MemcachedAdmin extends \LBWP\Module\Base
   {
     add_action('transition_post_status', array($this, 'onPostTransitionFlush'), 200, 2);
     add_action('post_updated', array($this, 'onPostSavedFlush'), 200, 2);
-    add_action('deleted_post', array($this, 'onChangeImmediateFlush'), 200);
     add_action('wp_update_nav_menu', array($this, 'onChangeImmediateFlush'), 200);
     add_action('widget_update_callback', array($this, 'onChangeSidebarFlush'), 200, 1);
     add_action('edited_term', 'flush_rewrite_rules', 200);
@@ -72,7 +71,6 @@ class MemcachedAdmin extends \LBWP\Module\Base
     add_action('wp_insert_comment', array($this, 'onNewApprovedCommentFlush'), 200, 2);
     add_action('edit_comment', array($this, 'onEditApprovedCommentFlush'), 200, 1);
     add_action('cron_job_flush_html_cache', array($this, 'checkPublishablePosts'), 180);
-    add_action('cron_job_flush_html_cache', array($this, 'onChangeImmediateFlush'), 200);
     add_action('customize_save_after', array($this, 'onChangeImmediateFlush'), 200);
     add_action('profile_update', array($this, 'onChangeImmediateFlush'), 200);
     add_action('acf/options_page/save', array($this, 'onChangeImmediateFlush'), 200);
@@ -158,6 +156,7 @@ class MemcachedAdmin extends \LBWP\Module\Base
     // Publish all the posts
     foreach ($posts as $postId) {
       wp_publish_post($postId);
+      HTMLCache::cleanPostHtmlCache($postId);
     }
   }
 
@@ -169,7 +168,7 @@ class MemcachedAdmin extends \LBWP\Module\Base
   {
     // Set a blacklist for posts that don't force a flush
     $status = $savedPost->post_status;
-    $blackListedTypes = array('attachment', 'nav_menu_item', 'revision');
+    $blackListedTypes = array('page', 'attachment', 'nav_menu_item', 'revision');
 
     // Changes in status are handled in transition changes
     // If a post is saved, only flush if public

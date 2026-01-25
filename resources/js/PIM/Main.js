@@ -75,6 +75,11 @@ export class Main {
    * @param newSettings
    */
   updateTableData(newSettings) {
+    if (this.table) {
+      const searchParams = this.table.getSearchParams();
+      newSettings = { ...newSettings, ...searchParams };
+    }
+    
     this.ajax.get('users', newSettings).then((response) => {
       response.json().then((data) => {
         if (this.table) {

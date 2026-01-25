@@ -137,7 +137,7 @@ class Location
   public static function getUserLocation($data = 'country')
   {
     // Allow admin override mode
-    if (current_user_can('administrator') || current_user_can('shop_manager')) {
+    if (current_user_can('administrator') || current_user_can('shop_manager') || isset($_GET['country_hash'])) {
       if (isset($_GET['country_code']) && strlen($_GET['country_code']) === 2) {
         $_SESSION['LocationHelper_country'] = strtoupper($_GET['country_code']);
       } else if (isset($_GET['country_code']) && strlen($_GET['country_code']) === 0) {

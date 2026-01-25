@@ -265,7 +265,7 @@ class CmsFeatures extends \LBWP\Module\Base
    */
   public function afixComplianzCookieBannerSettings($settings)
   {
-    $settings['css_file'] = 'https://assets01.sdd1.ch/assets/lbwp-cdn/' . ASSET_KEY . '/files/complianz/css/banner-{banner_id}-{type}.css?v=' . Core::REVISION;
+    $settings['css_file'] = 'https://sos-ch-dk-2.exo.io/lbwp-cdn/' . ASSET_KEY . '/files/complianz/css/banner-{banner_id}-{type}.css?v=' . Core::REVISION;
     return $settings;
   }
 
@@ -468,7 +468,7 @@ class CmsFeatures extends \LBWP\Module\Base
    */
   public function addGeneralRobotsContent($txt)
   {
-    $txt .= PHP_EOL . 'Crawl-Delay: 5' . PHP_EOL;
+    $txt .= PHP_EOL . 'Crawl-Delay: 10' . PHP_EOL;
 
     return $txt;
   }

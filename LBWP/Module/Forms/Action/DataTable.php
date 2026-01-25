@@ -349,7 +349,7 @@ class DataTable extends Base
   protected function sendNotification($data)
   {
     $tsid = DataTableBackend::$lastTsid;
-    $replyTo = 'info@' . str_replace('www.', '', getLbwpHost());
+    $replyTo = 'info@' . str_replace('www.', '', LBWP_HOST);
     $subject = $this->getFieldContent($data, $this->params['notify_mail_subject']);
     $recipient = $this->getFieldContent($data, $this->params['notify_mail_email']);
     $replyto = $this->getFieldContent($data, $this->params['notify_mail_replyto']);

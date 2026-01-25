@@ -271,6 +271,7 @@ class Redirects extends \LBWP\Module\Base
   public function saveRedirectSettings($item)
   {
     $data = ArrayManipulation::forceArray($_POST['lbwpUrlRedirects']);
+    $data['source'] = ArrayManipulation::forceArray($data['source']);
     $value = array();
 
     // Make a big cool array

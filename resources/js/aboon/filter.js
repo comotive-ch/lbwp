@@ -115,6 +115,9 @@ BhFilter = {
       BhFilter.filterSort = filterBaseSettings.sortDefault;
       BhFilter.autoUpdate = filterBaseSettings.autoUpdate;
       BhFilter.autoReduceFilters = filterBaseSettings.autoReduceFilters;
+      BhFilter.screen = jQuery('body,html');
+      BhFilter.lastKnowScreenWidth = BhFilter.screen.width();
+      BhFilter.isMobile = BhFilter.lastKnowScreenWidth < BhFilter.mobileSwitchAt;
       // If given set it to previous sort once
       var lastOrder = BhFilter.getLastFilterOrder(true);
       if (lastOrder.length > 0) {
@@ -123,12 +126,12 @@ BhFilter = {
       }
     }
 
-    BhFilter.setBaseProperties();
     BhFilter.handleMobileFilterDisplay();
     BhFilter.handleMegaMenu();
     BhFilter.handleResultSort();
 
     if (hasSettings) {
+      BhFilter.handleScreenResize();
       BhFilter.setDefaultHash();
       BhFilter.setSelectedMainCategory();
       BhFilter.handleAutoLoadMore();
@@ -159,14 +162,9 @@ BhFilter = {
   },
 
   /**
-   * Gathers a few information about the screen
+   * Handle changing of screensize to reload if changed significantly
    */
-  setBaseProperties: function () {
-    BhFilter.screen = jQuery('body,html');
-    BhFilter.lastKnowScreenWidth = BhFilter.screen.width();
-    BhFilter.isMobile = BhFilter.lastKnowScreenWidth < BhFilter.mobileSwitchAt;
-
-    // Handle changing of screensize to reload if changed significantly
+  handleScreenResize: function () {
     jQuery(window).on('resize', function () {
       if (BhFilter.screenResizeId > 0) {
         clearTimeout(BhFilter.screenResizeId);
@@ -822,17 +820,22 @@ BhFilter = {
    */
   updateResultCounter: function (data) {
     var element = jQuery('.filter__results');
-    var template = element.data('template');
-    // Replace values into it and set content of element
-    template = template.replace('{x}', data.results);
-    template = template.replace('{y}', data.total);
-    element.text(template);
-    element.data('current-results', data.results);
     // Maybe show or hide result info
     if (typeof(data.showresultinfo) !== 'undefined') {
-      element.show();
-      if (!data.showresultinfo)
-        element.hide();
+      if (data.showresultinfo) {
+        var template = element.data('template');
+        // Replace values into it and set content of element
+        template = template.replace('{x}', data.results);
+        template = template.replace('{y}', data.total);
+        element.text(template);
+        element.data('current-results', data.results);
+      } else {
+        var template = element.data('template-minimal');
+        // Replace values into it and set content of element
+        template = template.replace('{x}', data.results);
+        element.text(template);
+        element.data('current-results', data.results);
+      }
     }
   },
 
@@ -1002,13 +1005,20 @@ BhFilter = {
       jQuery('.lbwp-wc__filter-breadcrumbs').html(response.breadcrumbs);
       // Skip and redirect if only one product has been found
       if (response.redirect.length > 0) {
+        // Check if this is just a hash change (same base URL, different hash)
+        var currentUrl = document.location.href.split('#')[0];
+        var redirectUrl = response.redirect.split('#')[0];
+        var isHashChangeOnly = (currentUrl === redirectUrl) || response.redirect.startsWith('#');
         document.location.href = response.redirect;
-        // in case it was just a hash change, rerun the filter from the changed hash
-        // we need a 500ms delay, so this doesn't create and endless loop
-        setTimeout(function() {
-          BhFilter.reParseFilterHash();
-          BhFilter.runFilter();
-        }, 500);
+
+        // Only rerun the filter if it was just a hash change, a full page redirect will reload anyway
+        if (isHashChangeOnly) {
+          setTimeout(function() {
+            BhFilter.reParseFilterHash();
+            BhFilter.runFilter();
+          }, 200);
+        }
+
         return;
       }
 
@@ -1186,10 +1196,8 @@ BhFilter = {
    * Only on mobile, called after filter update, immediately show the mobile filter first step
    */
   showIntermediateMobileFilter: function () {
-    console.log(BhFilter.triggerIntermediateMobileFilter);
     if (BhFilter.isMobile && BhFilter.openedMobileFilter && BhFilter.triggerIntermediateMobileFilter) {
       jQuery('.filter-entrypoint').addClass('single-filter--open');
-      console.log('hee hee');
     }
   },
 
@@ -1326,6 +1334,10 @@ BhFilter = {
   runEventualFocuspoint: function () {
     if (typeof (filterBaseSettings.useFocuspoint) == 'boolean' && filterBaseSettings.useFocuspoint) {
       lbwpReRunFocusPoint();
+      // Run again, as maybe needed because browser rendering is too fast
+      setTimeout(function () {
+        lbwpReRunFocusPoint();
+      }, 100);
     }
   },
 

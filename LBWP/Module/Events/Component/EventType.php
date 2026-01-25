@@ -144,6 +144,10 @@ class EventType extends Base
     $helper->addCheckbox('subscribe-linkonly', 'event-subscribe', '', array(
       'description' => 'Anmeldung nur auf Einladung per E-Mail möglich'
     ));
+    $helper->addDateTime('subscribe-start', 'event-subscribe', 'Anmeldestart', Date::EU_DATE, array(
+      'default_date_from' => 'event-start',
+      'description' => 'Anmeldung erst ab einem bestimmten Zeitpunkt (Optional)'
+    ));
     $helper->addDateTime('subscribe-end', 'event-subscribe', 'Anmeldeschluss', Date::EU_DATE, array(
       'default_date_from' => 'event-start'
     ));
@@ -156,7 +160,7 @@ class EventType extends Base
     // Create a dropdown of all forms that can be used as template
     $helper->addDropdown('subscribe-form-id', 'event-subscribe', 'Anmeldeformular', array(
       'items' => $this->getFormDropdownItems(),
-      'description' => 'Anmeldeforumlare können unter "Forumlare" erstellt und konfiguriert werden.'
+      'description' => 'Anmeldeformulare können unter "Forumlare" erstellt und konfiguriert werden.'
     ));
     // Subscribe text, if subscription end is reached
     $helper->addTextarea('subscribe-end-alternate-text', 'event-subscribe', 'Text nach Anmeldeschluss', 65, array(

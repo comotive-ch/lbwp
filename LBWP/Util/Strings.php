@@ -1618,6 +1618,7 @@ class Strings
     return (
       stristr($agent, 'bot/') !== false ||
       stristr($agent, 'spider') !== false ||
+      stristr($agent, 'perplexity') !== false ||
       stristr($agent, 'mediapartners') !== false ||
       stristr($agent, 'adsbot') !== false ||
       stristr($agent, 'dotbot') !== false ||
@@ -1639,6 +1640,7 @@ class Strings
     return (
       stristr($agent, 'gpt') !== false ||
       stristr($agent, 'facebookexternalhit') !== false ||
+      stristr($agent, 'perplexity') !== false ||
       stristr($agent, 'linkedinbot') !== false ||
       stristr($agent, 'twitterbot') !== false ||
       stristr($agent, 'iframely') !== false ||
