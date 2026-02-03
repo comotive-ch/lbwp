@@ -169,11 +169,12 @@ class MemcachedAdmin extends \LBWP\Module\Base
     // Set a blacklist for posts that don't force a flush
     $status = $savedPost->post_status;
     $blackListedTypes = array('page', 'attachment', 'nav_menu_item', 'revision');
+    $flushFrontendCache = false;
 
     // Changes in status are handled in transition changes
     // If a post is saved, only flush if public
     if (!in_array($savedPost->post_type, $blackListedTypes) && ($status == 'publish' || $status == 'private')) {
-      $this->flushFrontendCache(false);
+      $flushFrontendCache = true;
       // Make sure to always flush current (in case keys are lost)
       HTMLCache::cleanPostHtmlCache($savedPost->ID);
     }
@@ -181,6 +182,15 @@ class MemcachedAdmin extends \LBWP\Module\Base
     // Page can be handled seperately (only flush the actual page to be sure)
     if ($savedPost->post_type == 'page') {
       HTMLCache::cleanPostHtmlCache($savedPost->ID);
+    }
+
+    // Let developers decide if we really to a flush, specific or no flush
+    $flushFrontendCache = apply_filters('lbwp_on_post_save_flush_frontend_cache', $flushFrontendCache, $savedPost);
+    if ($flushFrontendCache === true) {
+      $this->flushFrontendCache(false);
+    } else if (is_array($flushFrontendCache)) {
+      // TODO Flush upon specific wildcards
+
     }
   }
 

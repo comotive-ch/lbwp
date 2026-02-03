@@ -856,7 +856,7 @@ class LocalMailService
 
     // Maybe allow caching the whole list
     if ($allowCaching && strlen($cacheKey > 0)) {
-      wp_large_cache_set($cacheKey, $data, 'LMS', 86400*2);
+      wp_large_cache_set($cacheKey, $data, 'LMS', 86400);
     }
 
     return $data;

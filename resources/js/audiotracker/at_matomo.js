@@ -155,4 +155,6 @@ class MatomoAudioTracker {
 
 // Usage
 const audioPlayer = document.querySelector('audio');
-const tracker = new MatomoAudioTracker(audioPlayer);
+if(audioPlayer) {
+    const tracker = new MatomoAudioTracker(audioPlayer);
+}
