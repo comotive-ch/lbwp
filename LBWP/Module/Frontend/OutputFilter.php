@@ -107,8 +107,10 @@ class OutputFilter extends \LBWP\Module\Base
     // This has 0 priority so that late css/js is loaded before everything else
     add_action('wp_head', array($this, 'addHeaderFiltersEarly'), 0);
     // Register JSON LD output for posts
-    add_action('wp_head_single_post', array('\LBWP\Helper\Tracking\MicroData', 'printArticleData'));
-    add_action('wp_head_single_page', array('\LBWP\Helper\Tracking\MicroData', 'printPageData'));
+    if (!defined('LBWP_SKIP_USING_MICRODATA_CLASS')) {
+      add_action('wp_head_single_post', array('\LBWP\Helper\Tracking\MicroData', 'printArticleData'));
+      add_action('wp_head_single_page', array('\LBWP\Helper\Tracking\MicroData', 'printPageData'));
+    }
     // Remove CSS identifiers
     add_filter('output_buffer', array($this, 'removeCssIdentifiers'), 8200);
     // Replace some super global template variables

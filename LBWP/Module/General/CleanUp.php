@@ -120,7 +120,6 @@ class CleanUp extends \LBWP\Module\Base
     add_action('phpmailer_init', array($this, 'preventMassMail'));
     add_action('wp', array($this, 'preventMass404'), 50);
     add_filter('the_privacy_policy_link', '__return_empty_string');
-    add_filter('wpseo_json_ld_output', '__return_false');
     add_filter('wpo_wcpdf_use_path', '__return_false');
     add_filter('woocommerce_skip_legacy_rest_api_plugin_auto_install', '__return_false');
     add_filter('plugins_auto_update_enabled', '__return_false');
@@ -130,6 +129,9 @@ class CleanUp extends \LBWP\Module\Base
     add_filter('wpseo_disable_adjacent_rel_links', '__return_true');
     add_action('wp', array($this, 'generalRegisterCleanup'), 10);
     remove_action('wp_head', 'wp_generator');
+    if (!defined('LBWP_SKIP_USING_MICRODATA_CLASS')) {
+      add_filter('wpseo_json_ld_output', '__return_false');
+    }
   }
 
   /**

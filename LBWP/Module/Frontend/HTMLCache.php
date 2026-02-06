@@ -300,6 +300,36 @@ class HTMLCache extends \LBWP\Module\Base
   }
 
   /**
+   * @param array list of wildcards to search the cache and delete
+   */
+  public static function invalidateByWildcard($wildcards)
+  {
+    global $table_prefix;
+    $key = CUSTOMER_KEY . '_' . $table_prefix;
+    $cache = new \Redis();
+    $cache->pconnect(REDIS_HTML_CACHE_SERVER_HOST, REDIS_CONNECTION_PORT, 1);
+    $cache->auth(REDIS_AUTH_KEY);
+    $cache->setOption(\Redis::OPT_TCP_KEEPALIVE, 60);
+
+    // In case large amounts are deleted, we use the scan/pipeline approach to delete
+    foreach ($wildcards as $wildcard) {
+      $pattern = $key . $wildcard;
+      $cursor = null;
+      do {
+        $keys = $cache->scan($cursor, $pattern, 100);
+        if ($keys !== false && count($keys) > 0) {
+          $pipe = $cache->pipeline();
+          foreach ($keys as $k) {
+            $pipe->del($k);
+          }
+          $pipe->exec();
+        }
+      } while ($cursor > 0);
+    }
+    exit;
+  }
+
+  /**
    * Can remove one Variable from GET. Write direct in $_SERVER['REQUEST_URI']
    * @param string $var variable to remove
    * @return string querystring without removed variable

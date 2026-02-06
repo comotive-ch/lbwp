@@ -559,19 +559,34 @@ class Core extends Component
    */
   public function checkForHangingSendings()
   {
-    $threshold = Date::getTime(Date::SQL_DATETIME, current_time('timestamp') - 2400);
+    $from = Date::getTime(Date::SQL_DATETIME, current_time('timestamp') - 6000);
+    $to = Date::getTime(Date::SQL_DATETIME, current_time('timestamp') - 2400);
     $db = WordPress::getDb();
-    $count = intval($db->get_var('
-      SELECT COUNT(pid) FROM ' . $db->prefix . 'lbwp_data
+    $rows = $db->get_col('
+      SELECT row_key FROM ' . $db->prefix . 'lbwp_data
       WHERE row_key LIKE "localmail_stats_%"
-      AND row_data LIKE \'%"sent":0,"opens"%\'
-      AND row_modified < "' . $threshold . '"
-    '));
+      AND row_data LIKE \'%"sent":0,%\'
+      AND row_modified BETWEEN "' . $from . '" AND "' . $to . '"
+    ');
+
+    // Count entries and a list unique ids
+    $count = count($rows);
+    $mailingIds = array();
+    foreach ($rows as $row) {
+      $id = intval(str_replace('localmail_stats_', '', $row));
+      if (!in_array($id, $mailingIds)) {
+        $mailingIds[] = $id;
+      }
+    }
 
     if ($count > 0) {
       $mail = External::PhpMailer();
       $mail->Subject = '[' . LBWP_HOST . '] ' . $count . ' unsent mails are still queued';
-      $mail->Body = '<a href="https://' . LBWP_HOST . '/wp-admin/>' . $count . 'Mails im Backend überprüfen</a>';
+      $mail->Body = 'Folgende Mailings scheinen betroffen zu sein:<br />';
+      $mail->addAddress('it+monitoring@comotive.ch');
+      foreach ($mailingIds as $id) {
+        $mail->Body .= '- <a href="' . LBWP_HOST .'/wp-admin/admin.php?page=comotive-newsletter%2Fadmin%2Fdispatcher.php&view=LocalMailStats&id=' . $id . '">ID #' . $id . '</a><br />' . $id;
+      }
       $mail->send();
     }
   }

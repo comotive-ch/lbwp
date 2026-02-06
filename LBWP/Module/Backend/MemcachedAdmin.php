@@ -189,8 +189,8 @@ class MemcachedAdmin extends \LBWP\Module\Base
     if ($flushFrontendCache === true) {
       $this->flushFrontendCache(false);
     } else if (is_array($flushFrontendCache)) {
-      // TODO Flush upon specific wildcards
-
+      // Flush upon specific wildcards
+      HTMLCache::invalidateByWildcard($flushFrontendCache);
     }
   }
 
