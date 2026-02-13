@@ -326,7 +326,6 @@ class HTMLCache extends \LBWP\Module\Base
         }
       } while ($cursor > 0);
     }
-    exit;
   }
 
   /**
