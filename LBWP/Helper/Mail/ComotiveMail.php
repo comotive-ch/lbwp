@@ -61,6 +61,7 @@ class ComotiveMail extends Base
       $response = $this->instance->sendEmail(array(
         'From' =>  $this->data['from']['email'],
         'FromName' =>  $this->data['from']['name'],
+        'ReplyTo' =>  $this->data['replyTo'],
         'Delivery' => $this->time,
         'Destination' => array(
           'To' => $this->data['recipients'],

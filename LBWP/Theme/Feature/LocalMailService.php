@@ -1599,7 +1599,7 @@ class LocalMailService
       $service->setBody($mail['html']);
       $service->setAltBody($this->generateAltBody($mail['html']));
       $service->setFrom($mail['senderEmail'], $mail['senderName']);
-      $service->addReplyTo($mail['senderEmail']);
+      $service->addReplyTo($mail['senderReplyTo'] ?? $mail['senderEmail']);
       $service->addAddress($mail['recipient']);
       $service->setTag($mailingId);
       $lastRecipient = $mail['recipient'];

@@ -533,6 +533,7 @@ class Helper
    * @param string $title internal mailing title
    * @param string $fromemail from email header
    * @param string $fromname from name header
+   * @param string $replytp from name header
    * @param string $subject the subject
    * @param int $category the emailcategory to set
    * @param int $segment the segment to send to (if given, list must be 0)
@@ -541,7 +542,7 @@ class Helper
    * @param string $text text version
    * @return int email id to further schedule or 0 if an error occured
    */
-  public function createMailing($lang, $title, $fromemail, $fromname, $subject, $category, $segment, $list, $html, $text)
+  public function createMailing($lang, $title, $fromemail, $replyto, $fromname, $subject, $category, $segment, $list, $html, $text)
   {
     $data = array(
       'name' => $title . '_' . uniqid('lbwp'),

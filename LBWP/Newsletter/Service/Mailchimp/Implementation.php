@@ -291,17 +291,21 @@ class Implementation extends Base implements Definition
    * @param string $text the text version of the newsletter
    * @param string $subject the subject
    * @param string $senderEmail the sender email address
+   * @param string $replyTo the sender email address
    * @param string $senderName the sender name alias
    * @param string $originalTarget not used
    * @param string $language not used
    * @param \ComotiveNL\Newsletter\Newsletter\Newsletter $newsletter the actual object
    * @return string|int the mailing id from the service
    */
-  public function createMailing($targets, $html, $text, $subject, $senderEmail, $senderName, $originalTarget, $language, $newsletter)
+  public function createMailing($targets, $html, $text, $subject, $senderEmail, $replyTo, $senderName, $originalTarget, $language, $newsletter)
   {
     // Remove tracking links of local mail
     $html = str_replace('{trackableUrl}', '', $html);
     $text = str_replace('{trackableUrl}', '', $text);
+    if (Strlen($replyTo) > 0 && Strings::isEmail($replyTo)) {
+      $senderEmail = $replyTo;
+    }
 
     foreach ($targets as $listId) {
       // This would be returned if anything bad happens

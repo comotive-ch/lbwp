@@ -100,13 +100,14 @@ interface Definition
    * @param string $text the text version of the newsletter
    * @param string $subject the subject
    * @param string $senderEmail the sender email address
+   * @param string $senderReplyTo the sender email address
    * @param string $senderName the sender name alias
    * @param string $originalTarget full target name (which may contain additional send info)
    * @param string $language language of the newsletter
    * @param \ComotiveNL\Newsletter\Newsletter\Newsletter $newsletter the actual object
    * @return string|int the mailing id from the service
    */
-  public function createMailing($targets, $html, $text, $subject, $senderEmail, $senderName, $originalTarget, $language, $newsletter);
+  public function createMailing($targets, $html, $text, $subject, $senderEmail, $senderReplyTo, $senderName, $originalTarget, $language, $newsletter);
 
   /**
    * Should contain:

@@ -229,19 +229,24 @@ class Implementation extends Base implements Definition
    * @param string $text the text version of the newsletter
    * @param string $subject the subject
    * @param string $senderEmail the sender email address
+   * @param string $replyTo the sender email address
    * @param string $senderName the sender name alias
    * @param string $originalTarget used to determine if list or segment is being sent
    * @param string $language internal language code to be mapped to emarsys
    * @param \ComotiveNL\Newsletter\Newsletter\Newsletter $newsletter the actual object
    * @return string|int the mailing id from the service
    */
-  public function createMailing($targets, $html, $text, $subject, $senderEmail, $senderName, $originalTarget, $language, $newsletter)
+  public function createMailing($targets, $html, $text, $subject, $senderEmail, $replyTo, $senderName, $originalTarget, $language, $newsletter)
   {
     // Create the mailing ID as a resilt of list and content
     $mailingId = md5($html . $subject . $targets[0]) . '-' . $targets[0];
 
     // Create an unfinished mailing in our option array
     $this->api->setMailing($mailingId, 'creating');
+    // Set replyto to senderemail if not given
+    if (empty($replyTo) || !Strings::isEmail($replyTo)) {
+      $replyTo = $senderEmail;
+    }
 
     $reduceSegments = false;
     $reduceSegment = array();
@@ -343,6 +348,7 @@ class Implementation extends Base implements Definition
             'subject' => $personalizedSubject,
             'recipient' => $recipient['email'],
             'senderEmail' => $senderEmail,
+            'senderReplyTo' => $replyTo,
             'senderName' => $senderName
           ));
 
@@ -397,6 +403,7 @@ class Implementation extends Base implements Definition
           'subject' => $personalizedSubject,
           'recipient' => $recipient['email'],
           'senderEmail' => $senderEmail,
+          'senderReplyto' => $replyTo,
           'senderName' => $senderName
         ));
 

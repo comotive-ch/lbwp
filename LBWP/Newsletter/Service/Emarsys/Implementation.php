@@ -474,13 +474,14 @@ class Implementation extends Base implements Definition
    * @param string $text the text version of the newsletter
    * @param string $subject the subject
    * @param string $senderEmail the sender email address
+   * @param string $replyTo the sender email address
    * @param string $senderName the sender name alias
    * @param string $originalTarget used to determine if list or segment is being sent
    * @param string $language internal language code to be mapped to emarsys
    * @param \ComotiveNL\Newsletter\Newsletter\Newsletter $newsletter the actual object
    * @return string|int the mailing id from the service
    */
-  public function createMailing($targets, $html, $text, $subject, $senderEmail, $senderName, $originalTarget, $language, $newsletter)
+  public function createMailing($targets, $html, $text, $subject, $senderEmail, $replyTo, $senderName, $originalTarget, $language, $newsletter)
   {
     foreach ($targets as $index => $listId) {
       // Define if it is a segment or list, initalize both as 0
@@ -501,6 +502,7 @@ class Implementation extends Base implements Definition
         $this->getSetting('languageSetting_' . $language),
         $subject,
         $senderEmail,
+        $replyTo,
         $senderName,
         $subject,
         $this->getSetting('emailCategory'),
