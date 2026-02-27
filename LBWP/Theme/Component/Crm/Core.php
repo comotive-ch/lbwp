@@ -10,6 +10,7 @@ use LBWP\Module\Backend\S3Upload;
 use LBWP\Module\Forms\Action\Crm\WriteData;
 use LBWP\Module\Forms\Action\Crm\WriteContact;
 use LBWP\Theme\Base\Component;
+use LBWP\Theme\Feature\BetterTables\BetterPostTables;
 use LBWP\Theme\Feature\BetterTables\BetterUserTables;
 use LBWP\Theme\Feature\LocalMailService;
 use LBWP\Theme\Feature\SortableTypes;
@@ -188,6 +189,7 @@ class Core extends Component
 
     if (isset($this->configuration['betterTables']) && $this->configuration['betterTables']['active']) {
       new BetterUserTables($this->configuration['betterTables']['config']);
+      new BetterPostTables($this->configuration['betterTables']['config']);
     }
 
     // Support for flat tables?

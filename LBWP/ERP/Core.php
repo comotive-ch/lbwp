@@ -22,6 +22,7 @@ class Core
   protected $config = [
     'components' => [
       'pim_base' => true,
+      'custom_fields' => true,
       'inventory_base' => false,
       'addons' => []
     ],
@@ -82,6 +83,9 @@ class Core
     }
     if ($this->config['components']['inventory_base']) {
       $components['LBWP\ERP\Inventory\Base'] = true;
+    }
+    if ($this->config['components']['custom_fields']) {
+      $components['LBWP\ERP\PIM\CustomFields'] = true;
     }
     foreach ($this->config['components']['addons'] as $addon) {
       $components[$addon] = true;

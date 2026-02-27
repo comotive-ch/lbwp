@@ -11,13 +11,19 @@ use LBWP\Util\File;
 abstract class BetterTables{
   const BETTER_TABLES_PAGES = array(
     'users.php',
-    // TODO: Add more pages
+    'edit.php',
   );
 
   protected $settings = array(
     'useFlatTable' => false, //true,
     'crmComponent' => null
   );
+
+  /**
+   * Entity type for this table (users, posts, etc.)
+   * @var string
+   */
+  protected $entityType = 'users';
 
 
   public function __construct($settings = array()){
@@ -38,6 +44,11 @@ abstract class BetterTables{
   }
 
   public function enqueueScripts(){
+    // Only load on appropriate pages
+    if (!$this->isCorrectPage()) {
+      return;
+    }
+
     wp_enqueue_style('lbwp-better-tables', File::getResourceUri() . '/css/lbwp-better-tables.css', array(), time());
 
     wp_enqueue_script('lbwp-better-tables', File::getResourceUri() . '/js/PIM/Main.js', array(), time(), true);
@@ -45,8 +56,25 @@ abstract class BetterTables{
     wp_localize_script('lbwp-better-tables', 'lbwpBetterTables', array(
       'user_id' => get_current_user_id(),
       'ajax_url' => get_bloginfo('url') . '/wp-json/lbwp/bettertables/',
-      'nonce' => wp_create_nonce('wp_rest')
+      'nonce' => wp_create_nonce('wp_rest'),
+      'entity_type' => $this->entityType,
+      'data_endpoint' => $this->entityType,
+      'settings_get_endpoint' => 'get_' . $this->entityType . '_settings',
+      'settings_save_endpoint' => 'save_' . $this->entityType . '_settings',
+      'clear_settings_param' => 'clear_' . ($this->entityType === 'users' ? 'usermeta' : 'postmeta')
     ));
+  }
+
+  /**
+   * Check if we're on the correct admin page for this table type
+   * @return bool
+   */
+  protected function isCorrectPage(){
+    global $pagenow;
+    if ($this->entityType === 'users') {
+      return $pagenow === 'users.php';
+    }
+    return false;
   }
 
   abstract function replaceWPPage();

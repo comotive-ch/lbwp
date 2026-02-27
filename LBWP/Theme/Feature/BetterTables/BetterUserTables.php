@@ -1,14 +1,8 @@
 <?php
 namespace LBWP\Theme\Feature\BetterTables;
 
-use LBWP\Core;
 use LBWP\Module\Frontend\HTMLCache;
-use LBWP\Module\General\Cms\SystemLog;
-use LBWP\Util\ArrayManipulation;
-use LBWP\Util\File;
 use LBWP\Theme\Component\Crm\Core as CrmCore;
-use LBWP\Util\Strings;
-use LBWP\Util\WordPress;
 
 /**
  * Make WordPress Tables better

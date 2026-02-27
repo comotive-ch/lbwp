@@ -16,11 +16,16 @@ export class Settings {
    * @returns {Promise<* | {} | {}>}
    */
   setup() {
-    return this.api.post('get_users_settings', {}).then((response) => response.json())
-      .then((data) => {
-        this.settings = data;
-        return this.settings;
-      });
+    const endpoint = lbwpBetterTables.settings_get_endpoint || 'get_users_settings';
+    return this.api.post(endpoint, {}).then((response) => {
+      if (!response.ok) {
+        throw new Error('Settings API returned ' + response.status);
+      }
+      return response.json();
+    }).then((data) => {
+      this.settings = data;
+      return this.settings;
+    });
   }
 
   /**
@@ -77,7 +82,8 @@ export class Settings {
     const clearMeta = document.createElement('p');
     clearMeta.className = 'bt__settings--clear-meta';
     const clearLink = document.createElement('a');
-    clearLink.href = '?clear_usermeta';
+    const clearParam = lbwpBetterTables.clear_settings_param || 'clear_usermeta';
+    clearLink.href = '?' + clearParam;
     clearLink.textContent = 'Einstellungen zurücksetzen';
     clearMeta.appendChild(clearLink);
     container.appendChild(clearMeta);
@@ -111,7 +117,8 @@ export class Settings {
       newSettings.columns[col.name] = [col.value, col.checked];
     });
 
-    this.api.post('save_users_settings', newSettings).then(() => {
+    const saveEndpoint = lbwpBetterTables.settings_save_endpoint || 'save_users_settings';
+    this.api.post(saveEndpoint, newSettings).then(() => {
       const pageInput = document.querySelector('.bt__pagination input');
       newSettings.page = pageInput ? pageInput.value : 1;
 
@@ -159,17 +166,17 @@ export class Settings {
     });
 
     this.settings.columns = newColumns;
-    
+
     // We need to update the UI checkboxes order too, otherwise next save might revert it
     // But since we are likely re-rendering the whole table/settings, maybe just saving is enough.
-    // However, `update()` reads from DOM. So we should probably NOT call `update()` here, 
+    // However, `update()` reads from DOM. So we should probably NOT call `update()` here,
     // but call the API directly or update the DOM first.
     // Actually, `update()` reads from DOM to *set* settings.
     // Here we *have* settings and want to save them.
     // So we should call API directly.
-    
 
-    this.api.post('save_users_settings', this.settings).then(() => {
+    const saveEndpoint = lbwpBetterTables.settings_save_endpoint || 'save_users_settings';
+    this.api.post(saveEndpoint, this.settings).then(() => {
        // Reload data to ensure rows match the new column order
        //this.updateTableData(this.settings);
     });

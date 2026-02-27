@@ -10,6 +10,7 @@ use LBWP\Util\Strings;
 /**
  * Service Worker for WordPress
  * @author Mirko Baffa <mirko@comotive.ch>
+ * @See \LBWP\Theme\Feature\WebPush Class for VAPID keys generation
  */
 class ServiceWorker
 {

@@ -15,6 +15,7 @@ export class Table {
     this.rows = data.rows || [];
     this.total = data.total || 0;
     this.columns = Object.keys(this.data.columns);
+    this.filters = data.filters || {};
     this.currentSearch = [];
 
     this.render();
@@ -85,24 +86,9 @@ export class Table {
 
       thContent.appendChild(titleDiv);
 
-      // Search Input
-      const input = document.createElement('input');
-      input.className = 'bt__table--input';
-      input.type = 'text';
-      input.name = column;
-      input.value = this.currentSearch[column] || '';
-      input.placeholder = 'Suche...';
-      input.addEventListener('input', this.filter.bind(this));
-      // Prevent drag when interacting with input
-      input.addEventListener('mousedown', (e) => e.stopPropagation());
-      // Select content when clicking on input
-      input.addEventListener('click', (e) => {
-        e.stopPropagation();
-        if(input.value !== ''){
-          input.select();
-        }
-      });
-      thContent.appendChild(input);
+      // Search Input - create appropriate input type based on column
+      const inputEl = this.createFilterInput(column);
+      thContent.appendChild(inputEl);
 
       th.appendChild(thContent);
 
@@ -256,7 +242,8 @@ export class Table {
       const tableEl = document.querySelector(ROOT_ID + ' table');
       if (tableEl) tableEl.classList.add('loading');
 
-      this.ajax.get('users', ajaxArgs).then((response) => response.json()).then((data) => {
+      const endpoint = lbwpBetterTables.data_endpoint || 'users';
+      this.ajax.get(endpoint, ajaxArgs).then((response) => response.json()).then((data) => {
         this.rows = data.rows;
         this.total = data.total;
         this.renderRows();
@@ -308,6 +295,73 @@ export class Table {
       this.pagination.setTotal(this.total);
       this.pagination.setPerPage(this.settings.per_page);
     }
+  }
+
+  /**
+   * Create the appropriate filter input element based on column type
+   * @param {string} column - The column name
+   * @returns {HTMLElement} - The input element (input, select, etc.)
+   */
+  createFilterInput(column) {
+    let inputEl;
+
+    // Columns that should use a date picker
+    if (column === 'post_date' || column === 'post_modified') {
+      inputEl = document.createElement('input');
+      inputEl.type = 'date';
+      inputEl.className = 'bt__table--input bt__table--input-date';
+      inputEl.name = column;
+      inputEl.value = this.currentSearch[column] || '';
+      inputEl.addEventListener('change', this.filter.bind(this));
+    }
+    // Columns that should use a select dropdown
+    else if (this.filters[column] && Array.isArray(this.filters[column])) {
+      inputEl = document.createElement('select');
+      inputEl.className = 'bt__table--input bt__table--input-select';
+      inputEl.name = column;
+
+      // Add empty option
+      const emptyOption = document.createElement('option');
+      emptyOption.value = '';
+      emptyOption.textContent = 'Alle';
+      inputEl.appendChild(emptyOption);
+
+      // Add options from filters
+      this.filters[column].forEach((opt) => {
+        const option = document.createElement('option');
+        option.value = opt.value;
+        option.textContent = opt.label;
+        if (this.currentSearch[column] === opt.value) {
+          option.selected = true;
+        }
+        inputEl.appendChild(option);
+      });
+
+      inputEl.addEventListener('change', this.filter.bind(this));
+    }
+    // Default: text input
+    else {
+      inputEl = document.createElement('input');
+      inputEl.type = 'text';
+      inputEl.className = 'bt__table--input';
+      inputEl.name = column;
+      inputEl.value = this.currentSearch[column] || '';
+      inputEl.placeholder = 'Suche...';
+      inputEl.addEventListener('input', this.filter.bind(this));
+
+      // Select content when clicking on input
+      inputEl.addEventListener('click', (e) => {
+        e.stopPropagation();
+        if (inputEl.value !== '') {
+          inputEl.select();
+        }
+      });
+    }
+
+    // Prevent drag when interacting with input
+    inputEl.addEventListener('mousedown', (e) => e.stopPropagation());
+
+    return inputEl;
   }
 
   updateHeaders() {

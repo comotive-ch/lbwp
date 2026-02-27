@@ -90,7 +90,8 @@ export class Pagination {
     // fetch rows and emit
     const tableEl = document.querySelector(ROOT_ID + ' table');
     if (tableEl) tableEl.classList.add('loading');
-    this.ajax.get('users', ajaxArgs).then((response) => response.json()).then((data) => {
+    const endpoint = lbwpBetterTables.data_endpoint || 'users';
+    this.ajax.get(endpoint, ajaxArgs).then((response) => response.json()).then((data) => {
       this.total = data.total;
       this.onRows(data.rows);
       this.onPageChange(this.current);

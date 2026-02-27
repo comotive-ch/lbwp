@@ -62,6 +62,7 @@ class Shop extends Component
     // Add infobox content
     add_action('woocommerce_cart_collaterals', array($this, 'addCartCollateralText'), 1);
     add_filter('send_email_change_email', '__return_false', 5);
+    add_filter('wpseo_xml_sitemap_include_images', '__return_false');
 
     $config = Core::getInstance()->getConfig();
 

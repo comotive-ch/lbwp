@@ -53,8 +53,17 @@ export class Main {
       this.settingsFieldsHolder.innerHTML = '';
       this.settingsFieldsHolder.appendChild(fieldsEl);
     }).then(() => {
-      // fetch initial data
-      return this.ajax.get('users', this.settings.settings).then((response) => response.json());
+      // fetch initial data using configured endpoint
+      const endpoint = lbwpBetterTables.data_endpoint || 'users';
+      return this.ajax.get(endpoint, this.settings.settings).then((response) => {
+        if (!response.ok) {
+          return response.text().then(text => {
+            console.error('API Error Response:', text);
+            throw new Error('API returned ' + response.status);
+          });
+        }
+        return response.json();
+      });
     }).then((initialData) => {
       this.renderTable(initialData);
     }).catch((err) => {
@@ -79,8 +88,9 @@ export class Main {
       const searchParams = this.table.getSearchParams();
       newSettings = { ...newSettings, ...searchParams };
     }
-    
-    this.ajax.get('users', newSettings).then((response) => {
+
+    const endpoint = lbwpBetterTables.data_endpoint || 'users';
+    this.ajax.get(endpoint, newSettings).then((response) => {
       response.json().then((data) => {
         if (this.table) {
           this.table.updateData(data, newSettings);

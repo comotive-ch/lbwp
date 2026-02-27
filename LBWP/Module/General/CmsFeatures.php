@@ -519,6 +519,7 @@ class CmsFeatures extends \LBWP\Module\Base
     add_filter('wpseo_should_index_links', '__return_false', 50);
     add_filter('woo_ce_get_orders_args', array($this, 'preventCachingOnSDExport'));
     add_filter('woo_ce_enable_order_tax_rates', '__return_false');
+    add_filter('wpseo_enable_xml_sitemap_transient_caching', '__return_true');
     add_action('rest_api_init', array($this, 'registerApiEndpoints'));
     add_action('wp_login', array($this, 'logLastLogin'), 10, 2);
     add_action('wp_footer', array($this, 'preventPreviewContentCaching'));
