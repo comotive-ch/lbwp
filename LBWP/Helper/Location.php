@@ -71,16 +71,24 @@ class Location
 
     // Download and cache database if not given
     if ($ip !== false) {
+      $response = array(
+        'ip' => $ip,
+        'country' => 'CH',
+      );
+      // First try with HTTP_X_COUNTRY_CODE which might be given from core maxmind load
+      if (isset($_SERVER['HTTP_X_COUNTRY_CODE'])) {
+        $response['country'] = $_SERVER['HTTP_X_COUNTRY_CODE'];
+        wp_cache_set('lbwp_user_location_' . $ip, $response, 'Location', 86400);
+        return $response;
+      }
+
+      // Fallback to IP database if we didn't maxmind or cloudflare load it
       $database = wp_cache_get_shared('lbwp_ipinfo_database_v2', 'db_json');
       if ($database === false) {
         $database = self::loadIpInfoDatabase();
       } else {
         $database = json_decode($database);
       }
-      $response = array(
-        'ip' => $ip,
-        'country' => 'CH',
-      );
 
       $long = ip2long($ip);
       foreach ($database as $line) {

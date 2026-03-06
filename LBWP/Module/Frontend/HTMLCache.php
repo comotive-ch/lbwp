@@ -405,8 +405,10 @@ class HTMLCache extends \LBWP\Module\Base
             $cache->setex($key, $expireTime, $cacheVal);
             // Additional bot version if time given
             if (self::$cacheTimeBots > 0 && $expireTime < self::$cacheTimeBots) {
-              $cacheVal['expires'] = $cacheVal['expires'] + self::$cacheTimeBots - $expireTime;
-              $cache->setex($key . '_bot', self::$cacheTimeBots, $cacheVal);
+              // Save on NFS bot cache disk
+              if (file_exists(LBWP_BOT_CACHE_PATH_NODE)) {
+                file_put_contents(LBWP_BOT_CACHE_PATH_NODE . $key, $cacheVal['content']);
+              }
             }
           } catch (\Exception $e) {
             // Just don't cache at this point, but also don't crash :-)
