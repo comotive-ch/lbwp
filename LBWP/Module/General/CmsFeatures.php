@@ -40,6 +40,10 @@ class CmsFeatures extends \LBWP\Module\Base
    */
   protected static $creatingAttachmentTranslations = false;
   /**
+   * @var array|null IPTC/EXIF metadata captured before WebP conversion strips it
+   */
+  protected static $capturedUploadImageMeta = null;
+  /**
    * @var array overrides for the yoast wpseo_titles option
    */
   protected $yoastTitlesOverrides = array(
@@ -215,6 +219,11 @@ class CmsFeatures extends \LBWP\Module\Base
       if (isset($_FILES) && is_array($_FILES)) {
         foreach ($_FILES as $key => $file) {
           if (is_array($file) && isset($file['type']) && in_array($file['type'], array('image/jpeg', 'image/png'))) {
+            // Capture IPTC/EXIF metadata before conversion strips it
+            if (file_exists($file['tmp_name'])) {
+              require_once ABSPATH . 'wp-admin/includes/image.php';
+              self::$capturedUploadImageMeta = wp_read_image_metadata($file['tmp_name']);
+            }
             $originalType = $file['type'];
             $file['type'] = 'image/webp';
             // Change its original name to the new extension
@@ -243,6 +252,17 @@ class CmsFeatures extends \LBWP\Module\Base
         }
       }
     }
+  }
+
+  /**
+   * Returns IPTC/EXIF metadata captured before WebP conversion, then clears it
+   * @return array|null The image metadata array or null if none was captured
+   */
+  public static function getAndClearCapturedImageMeta()
+  {
+    $meta = self::$capturedUploadImageMeta;
+    self::$capturedUploadImageMeta = null;
+    return $meta;
   }
 
   /**
