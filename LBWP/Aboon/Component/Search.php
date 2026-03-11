@@ -118,6 +118,10 @@ class Search extends ACFBase
    */
   public static $CHROMADB_WORDPRESS_SEARCH_RESULTS = 30;
   /**
+   * An array of id > distance difference for search results
+   */
+  public static $CHROMADB_SEARCH_RESULT_DIFF = array();
+  /**
    * @var string
    */
   public static $CHROMADB_COLLECTION_NAME = 'text_index';
@@ -277,7 +281,14 @@ class Search extends ACFBase
     $chroma->setCollectionName(static::$CHROMADB_COLLECTION_NAME, true);
 
     $embeddings = $embedder->embed($term, true);
-    $raw = $chroma->searchCollection($embeddings, static::$CHROMADB_WORDPRESS_SEARCH_RESULTS, true);
+    $raw = $chroma->searchCollection(
+      $embeddings,
+      static::$CHROMADB_WORDPRESS_SEARCH_RESULTS,
+      true,
+      null,
+      static::$CHROMADB_SEARCH_RESULT_DIFF
+    );
+
     // Convert the resulting post ids
     if (!empty($raw['ids'][0])) {
       $postIds = array_map('intval', $raw['ids'][0]);

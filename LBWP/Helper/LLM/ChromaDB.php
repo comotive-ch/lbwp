@@ -221,9 +221,10 @@ class ChromaDB
    * @param int $nResults Number of results to return (default: 10)
    * @param bool $returnFullResponse Return full response including metadata (default: false)
    * @param float $maxDistance Maximum distance threshold - results with higher distance will be filtered out (default: null = no filtering)
+   * @param array $diff array of ID and distance that should be applied to the results and reorder them
    * @return array Either array of IDs or full response with documents/metadata
    */
-  public function searchCollection(array $embeddings, int $nResults = 10, bool $returnFullResponse = false, ?float $maxDistance = null): array
+  public function searchCollection(array $embeddings, int $nResults = 10, bool $returnFullResponse = false, ?float $maxDistance = null, array $diff = []): array
   {
     $this->ensureCollectionId();
     
@@ -231,6 +232,24 @@ class ChromaDB
       'query_embeddings' => [$embeddings],
       'n_results' => $nResults
     ]);
+
+    // Add distance with the $diff array and reorder by distance
+    if (count($diff) > 0 && isset($response['distances'][0])) {
+      // Apply distance adjustments from $diff (keyed by ID)
+      foreach ($response['ids'][0] as $index => $id) {
+        if (isset($diff[$id])) {
+          $response['distances'][0][$index] += $diff[$id];
+        }
+      }
+
+      // Reorder all parallel arrays by the updated distances
+      array_multisort(
+        $response['distances'][0], SORT_ASC, SORT_NUMERIC,
+        $response['ids'][0],
+        $response['documents'][0],
+        $response['metadatas'][0]
+      );
+    }
 
     // Filter by distance if threshold is provided
     if ($maxDistance !== null && isset($response['distances'][0])) {
