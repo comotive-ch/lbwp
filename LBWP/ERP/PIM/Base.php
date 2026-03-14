@@ -65,7 +65,7 @@ class Base extends ACFBase
     WordPress::registerType(self::TYPE_SLUG, 'Produkt', 'Produkte', array(
       'menu_icon' => 'dashicons-media-spreadsheet',
       'labels' => array(
-        'menu_name' => 'PIM',
+        'menu_name' => 'PIMdata',
         'add_new_item' => 'Neues Produkt'
       ),
       'supports' => array('title'),

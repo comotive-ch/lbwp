@@ -80,6 +80,8 @@ class Core
     $components = array();
     if ($this->config['components']['pim_base']) {
       $components['LBWP\ERP\PIM\Base'] = true;
+      $components['LBWP\ERP\PIM\Data\Import'] = true;
+      $components['LBWP\ERP\PIM\Data\Export'] = true;
     }
     if ($this->config['components']['inventory_base']) {
       $components['LBWP\ERP\Inventory\Base'] = true;
