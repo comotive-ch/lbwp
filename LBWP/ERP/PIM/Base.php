@@ -68,14 +68,12 @@ class Base extends ACFBase
         'menu_name' => 'PIMdata',
         'add_new_item' => 'Neues Produkt'
       ),
-      'supports' => array('title'),
+      'supports' => array('title', 'thumbnail', 'revisions'),
       'menu_position' => 57,
       'exclude_from_search' => true,
       'publicly_queryable' => false,
       'has_archive' => false
     ));
-
-
   }
 
   /**

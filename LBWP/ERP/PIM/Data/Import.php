@@ -109,6 +109,10 @@ class Import extends ACFBase
       echo '<tr><th>Datensätze</th><td>' . intval($current['records_imported']) . ' / ' . intval($current['records_total']) . '</td></tr>';
       echo '<tr><th>Zuletzt aktualisiert</th><td>' . esc_html($current['last_updated']) . '</td></tr>';
       echo '</table>';
+      if (in_array($current['status'], array('pending', 'running'))) {
+        echo '<p><em>Seite aktualisiert sich automatisch alle 15 Sekunden</em></p>';
+        echo '<script>setTimeout(function(){ location.reload(); }, 15000);</script>';
+      }
       echo '<form method="post" style="margin-top: 10px;">';
       echo '<input type="submit" name="pimport_reset" class="button-secondary" value="Import zurücksetzen und Datei löschen" onclick="return confirm(\'Sind Sie sicher? Die Import-Datei wird gelöscht.\');" />';
       echo '</form>';

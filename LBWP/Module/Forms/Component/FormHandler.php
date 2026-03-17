@@ -424,9 +424,9 @@ class FormHandler extends Base
     if (isset($_POST['lbwpFormSend']) && $this->currentForm->ID == $_POST['sentForm']) {
       if ($this->formIsSecure()) {
         // Don't execute twice
-        if (!isset($this->executedFormIds[$formDisplayId])) {
+        if (!isset($this->executedFormIds[$this->currentForm->ID])) {
           $message = $this->executeForm($args, $formDisplayId);
-          $this->executedFormIds[$formDisplayId]++;
+          $this->executedFormIds[$this->currentForm->ID]++;
         }
         $this->idProvider = 0;
 
