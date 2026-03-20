@@ -316,3 +316,56 @@ $customColorDraftFontColor: #505050;
 		}
 	}
 }
+
+// Base styles for the multicart (to be overridden by the theme)
+.multicart-switcher {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 24px;
+
+  &--loading {
+    opacity: 0.5;
+    pointer-events: none;
+  }
+}
+
+.multicart-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border: 1px solid currentColor;
+  background: transparent;
+  cursor: pointer;
+  opacity: 0.6;
+
+  &--active {
+    opacity: 1;
+    font-weight: bold;
+  }
+
+  &__rename,
+  &__delete {
+    font-style: normal;
+    line-height: 1;
+    cursor: pointer;
+    opacity: 0.5;
+
+    &:hover {
+      opacity: 1;
+    }
+  }
+}
+
+.multicart-new {
+  padding: 6px 12px;
+  border: 1px dashed currentColor;
+  background: transparent;
+  cursor: pointer;
+  opacity: 0.6;
+
+  &:hover {
+    opacity: 1;
+  }
+}

@@ -19,7 +19,6 @@ class ImageImport extends ACFBase
   const OPTION_KEY = 'current_pimport_images';
   const CRON_IDENTIFIER = 'pimport_images_run';
   const ALLOWED_EXTENSIONS = array('jpg', 'jpeg', 'png', 'gif', 'webp');
-  const BATCH_SIZE = 5;
 
   /**
    * Initialize the backend component
@@ -281,13 +280,12 @@ class ImageImport extends ACFBase
   }
 
   /**
-   * Background cron handler — downloads zip from S3 on first run,
-   * processes a batch of SKUs, then re-registers if more remain
+   * Background cron handler — downloads zip from S3, processes all SKUs in one run
    */
   public function runImport()
   {
     ini_set('memory_limit', '2G');
-    set_time_limit(1200);
+    set_time_limit(0);
 
     $current = get_option(self::OPTION_KEY, array());
     if (empty($current) || empty($current['queue']) || empty($current['url'])) {
@@ -297,8 +295,11 @@ class ImageImport extends ACFBase
     $current['status'] = 'running';
     update_option(self::OPTION_KEY, $current, false);
 
-    // Download zip from S3 and extract to local temp directory
-    $tempDir = File::getNewUploadFolder();
+    // Download zip from S3 and extract to /tmp to avoid upload dir issues
+    $tempDir = '/tmp/pimport_images_' . md5($current['url']) . '/';
+    if (!is_dir($tempDir)) {
+      mkdir($tempDir, 0755, true);
+    }
     $zipPath = $tempDir . 'pimport_images.zip';
     file_put_contents($zipPath, file_get_contents($current['url']));
     $this->extractZip($zipPath, $tempDir);
@@ -306,7 +307,7 @@ class ImageImport extends ACFBase
 
     $processed = 0;
 
-    while (!empty($current['queue']) && $processed < self::BATCH_SIZE) {
+    while (!empty($current['queue'])) {
       // Take the first SKU from the queue
       $sku = key($current['queue']);
       $data = array_shift($current['queue']);
@@ -328,26 +329,22 @@ class ImageImport extends ACFBase
       $current['last_updated'] = date('Y-m-d H:i:s');
       $processed++;
 
-      // Persist progress after each SKU
-      update_option(self::OPTION_KEY, $current, false);
+      // Persist progress every 10 items
+      if ($processed % 10 === 0) {
+        update_option(self::OPTION_KEY, $current, false);
+      }
     }
 
     // Clean up local temp directory
     $this->cleanupTempDir($tempDir);
 
-    if (!empty($current['queue'])) {
-      // More SKUs remain — register next cron run
-      Cronjob::register(array(
-        time() => self::CRON_IDENTIFIER
-      ));
-    } else {
-      // All done — delete zip from S3
-      $this->deleteS3File($current['url']);
-      $current['status'] = 'completed';
-      $current['url'] = '';
-      $current['last_updated'] = date('Y-m-d H:i:s');
-      update_option(self::OPTION_KEY, $current, false);
-    }
+    // All done — delete zip from S3 and persist final state
+    $this->deleteS3File($current['url']);
+    $current['status'] = 'completed';
+    $current['url'] = '';
+    $current['queue'] = array();
+    $current['last_updated'] = date('Y-m-d H:i:s');
+    update_option(self::OPTION_KEY, $current, false);
   }
 
   /**

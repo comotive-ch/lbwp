@@ -572,5 +572,13 @@ class Import extends ACFBase
       $post['pinged'] = '';
     if (!isset($post['post_status']))
       $post['post_status'] = 'publish';
+    if (!isset($post['post_date']))
+      $post['post_date'] = date('Y-m-d H:i:s');
+    if (!isset($post['post_modified']))
+      $post['post_modified'] = $post['post_date'];
+    if (!isset($post['post_date_gmt']))
+      $post['post_date_gmt'] = $post['post_date'];
+    if (!isset($post['post_modified_gmt']))
+      $post['post_modified_gmt'] = $post['post_modified'];
   }
 }
