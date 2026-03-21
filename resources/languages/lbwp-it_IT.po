@@ -656,3 +656,55 @@ msgstr ""
 
 msgid "Sie können Ihre Daten hier bearbeiten."
 msgstr "Può modificare i suoi dati qui."
+
+#: LBWP/Theme/Feature/MultiCart.php
+msgid "Warenkorb 1"
+msgstr "Carrello 1"
+
+#: LBWP/Theme/Feature/MultiCart.php
+msgid "Warenkorb %d"
+msgstr "Carrello %d"
+
+#: LBWP/Theme/Feature/MultiCart.php
+msgid "+ Neuer Warenkorb erstellen"
+msgstr "+ Crea nuovo carrello"
+
+#: LBWP/Theme/Feature/MultiCart.php
+msgid "Warenkorb wurde gewechselt."
+msgstr "Carrello cambiato."
+
+#: LBWP/Theme/Feature/MultiCart.php
+msgid "Neuer Warenkorb &ldquo;%s&rdquo; wurde erstellt."
+msgstr "Nuovo carrello &ldquo;%s&rdquo; creato."
+
+#: LBWP/Theme/Feature/MultiCart.php
+msgid "Nicht eingeloggt."
+msgstr "Non connesso."
+
+#: LBWP/Theme/Feature/MultiCart.php
+msgid "Warenkorb nicht gefunden."
+msgstr "Carrello non trovato."
+
+#: LBWP/Theme/Feature/MultiCart.php
+msgid "Der letzte Warenkorb kann nicht gelöscht werden."
+msgstr "Impossibile eliminare l'ultimo carrello."
+
+#: LBWP/Theme/Feature/MultiCart.php
+msgid "Neuer Name:"
+msgstr "Nuovo nome:"
+
+#: LBWP/Theme/Feature/MultiCart.php
+msgid "Warenkorb löschen?"
+msgstr "Eliminare il carrello?"
+
+#: LBWP/Theme/Feature/MultiCart.php
+msgid "Fehler beim Löschen."
+msgstr "Errore durante l'eliminazione."
+
+#: LBWP/Theme/Feature/MultiCart.php
+msgid "Name des neuen Warenkorbs:"
+msgstr "Nome del nuovo carrello:"
+
+#: LBWP/Theme/Feature/MultiCart.php
+msgid "Warenkorb"
+msgstr "Carrello"

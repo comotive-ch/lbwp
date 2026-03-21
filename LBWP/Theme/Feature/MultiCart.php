@@ -4,18 +4,29 @@ namespace LBWP\Theme\Feature;
 
 use LBWP\Util\File;
 
+/**
+ * Allows logged-in WooCommerce users to manage multiple named carts,
+ * switching between them via AJAX-powered UI on the cart page.
+ */
 class MultiCart {
 
+  /**
+   * Register the init hook.
+   */
   public function __construct() {
     add_action('init', [$this, 'init']);
   }
 
+  /**
+   * Register WooCommerce hooks and AJAX handlers if the user is logged in.
+   */
   public function init() {
     if (!is_user_logged_in() || !function_exists('WC')) {
       return;
     }
 
     add_action('woocommerce_before_cart', [$this, 'renderCartSwitcher']);
+    add_action('woocommerce_cart_is_empty', [$this, 'renderCartSwitcher']);
     add_action('wp_ajax_multicart_create', [$this, 'ajaxCreateCart']);
     add_action('wp_ajax_multicart_switch', [$this, 'ajaxSwitchCart']);
     add_action('wp_ajax_multicart_rename', [$this, 'ajaxRenameCart']);
@@ -23,19 +34,24 @@ class MultiCart {
     add_action('wp_enqueue_scripts', [$this, 'enqueueAssets']);
   }
 
-  // -------------------------------------------------------------------------
-  // Core helpers
-  // -------------------------------------------------------------------------
-
+  /**
+   * Retrieve all saved carts for a user from user meta.
+   */
   protected function getSavedCarts(int $userId): array {
     $carts = get_user_meta($userId, 'lbwp_multi_carts', true);
     return is_array($carts) ? $carts : [];
   }
 
+  /**
+   * Persist the carts array to user meta.
+   */
   protected function saveCarts(int $userId, array $carts): void {
     update_user_meta($userId, 'lbwp_multi_carts', $carts);
   }
 
+  /**
+   * Snapshot the current WooCommerce session cart into a serializable array.
+   */
   protected function captureCurrentCart(): array {
     $items = [];
     foreach (WC()->cart->get_cart() as $cartItem) {
@@ -50,6 +66,9 @@ class MultiCart {
     return $items;
   }
 
+  /**
+   * Replace the WooCommerce session cart with the given items.
+   */
   protected function loadCartIntoSession(array $items): void {
     WC()->cart->empty_cart();
     foreach ($items as $item) {
@@ -63,14 +82,23 @@ class MultiCart {
     }
   }
 
+  /**
+   * Get the ID of the user's currently active cart.
+   */
   protected function getActiveCartId(int $userId): string {
     return (string) get_user_meta($userId, 'lbwp_active_cart_id', true);
   }
 
+  /**
+   * Store the ID of the user's currently active cart.
+   */
   protected function setActiveCartId(int $userId, string $cartId): void {
     update_user_meta($userId, 'lbwp_active_cart_id', $cartId);
   }
 
+  /**
+   * Generate a unique cart identifier based on the current timestamp.
+   */
   protected function generateCartId(): string {
     return 'cart_' . time();
   }
@@ -98,10 +126,9 @@ class MultiCart {
     return $carts;
   }
 
-  // -------------------------------------------------------------------------
-  // UI
-  // -------------------------------------------------------------------------
-
+  /**
+   * Output the cart switcher UI with buttons for each saved cart.
+   */
   public function renderCartSwitcher(): void {
     $userId   = get_current_user_id();
     $carts    = $this->ensureDefaultCart($userId);
@@ -122,14 +149,13 @@ class MultiCart {
       echo '</button>';
     }
 
-    echo '<button class="multicart-new">+ Neuer Warenkorb erstellen</button>';
+    echo '<button class="multicart-new">' . esc_html__('+ Neuer Warenkorb erstellen', 'lbwp') . '</button>';
     echo '</div>';
   }
 
-  // -------------------------------------------------------------------------
-  // Assets
-  // -------------------------------------------------------------------------
-
+  /**
+   * Enqueue the multicart JavaScript and localize AJAX data on the cart page.
+   */
   public function enqueueAssets(): void {
     if (!is_cart()) {
       return;
@@ -140,18 +166,24 @@ class MultiCart {
     wp_localize_script('multicart', 'multicartData', [
       'nonce'   => wp_create_nonce('multicart_nonce'),
       'ajaxUrl' => admin_url('admin-ajax.php'),
+      'i18n'    => [
+        'promptRename'  => __('Neuer Name:', 'lbwp'),
+        'confirmDelete' => __('Warenkorb löschen?', 'lbwp'),
+        'errorDelete'   => __('Fehler beim Löschen.', 'lbwp'),
+        'promptNew'     => __('Name des neuen Warenkorbs:', 'lbwp'),
+        'defaultName'   => __('Warenkorb', 'lbwp'),
+      ],
     ]);
   }
 
-  // -------------------------------------------------------------------------
-  // AJAX handlers
-  // -------------------------------------------------------------------------
-
+  /**
+   * AJAX handler: create a new empty cart and switch to it.
+   */
   public function ajaxCreateCart(): void {
     check_ajax_referer('multicart_nonce', 'nonce');
 
     if (!is_user_logged_in()) {
-      wp_send_json_error('Nicht eingeloggt.');
+      wp_send_json_error(__('Nicht eingeloggt.', 'lbwp'));
     }
 
     $userId = get_current_user_id();
@@ -169,7 +201,7 @@ class MultiCart {
     unset($cart);
 
     if (!$name) {
-      $name = 'Warenkorb ' . (count($carts) + 1);
+      $name = sprintf(__('Warenkorb %d', 'lbwp'), count($carts) + 1);
     }
 
     $newId   = $this->generateCartId();
@@ -183,14 +215,19 @@ class MultiCart {
     $this->setActiveCartId($userId, $newId);
     WC()->cart->empty_cart();
 
+    wc_add_notice(sprintf(__('Neuer Warenkorb &ldquo;%s&rdquo; wurde erstellt.', 'lbwp'), esc_html($name)), 'success');
+
     wp_send_json_success(['id' => $newId, 'name' => $name]);
   }
 
+  /**
+   * AJAX handler: persist the current cart and switch to a different one.
+   */
   public function ajaxSwitchCart(): void {
     check_ajax_referer('multicart_nonce', 'nonce');
 
     if (!is_user_logged_in()) {
-      wp_send_json_error('Nicht eingeloggt.');
+      wp_send_json_error(__('Nicht eingeloggt.', 'lbwp'));
     }
 
     $userId    = get_current_user_id();
@@ -211,21 +248,26 @@ class MultiCart {
     unset($cart);
 
     if ($targetCart === null) {
-      wp_send_json_error('Warenkorb nicht gefunden.');
+      wp_send_json_error(__('Warenkorb nicht gefunden.', 'lbwp'));
     }
 
     $this->saveCarts($userId, $carts);
     $this->setActiveCartId($userId, $targetId);
     $this->loadCartIntoSession($targetCart['items']);
 
+    wc_add_notice(__('Warenkorb wurde gewechselt.', 'lbwp'), 'success');
+
     wp_send_json_success();
   }
 
+  /**
+   * AJAX handler: rename an existing cart.
+   */
   public function ajaxRenameCart(): void {
     check_ajax_referer('multicart_nonce', 'nonce');
 
     if (!is_user_logged_in()) {
-      wp_send_json_error('Nicht eingeloggt.');
+      wp_send_json_error(__('Nicht eingeloggt.', 'lbwp'));
     }
 
     $userId   = get_current_user_id();
@@ -244,18 +286,21 @@ class MultiCart {
     unset($cart);
 
     if (!$found) {
-      wp_send_json_error('Warenkorb nicht gefunden.');
+      wp_send_json_error(__('Warenkorb nicht gefunden.', 'lbwp'));
     }
 
     $this->saveCarts($userId, $carts);
     wp_send_json_success();
   }
 
+  /**
+   * AJAX handler: delete a cart and switch to the first remaining one if needed.
+   */
   public function ajaxDeleteCart(): void {
     check_ajax_referer('multicart_nonce', 'nonce');
 
     if (!is_user_logged_in()) {
-      wp_send_json_error('Nicht eingeloggt.');
+      wp_send_json_error(__('Nicht eingeloggt.', 'lbwp'));
     }
 
     $userId   = get_current_user_id();
@@ -263,7 +308,7 @@ class MultiCart {
     $carts    = $this->getSavedCarts($userId);
 
     if (count($carts) <= 1) {
-      wp_send_json_error('Der letzte Warenkorb kann nicht gelöscht werden.');
+      wp_send_json_error(__('Der letzte Warenkorb kann nicht gelöscht werden.', 'lbwp'));
     }
 
     $activeId      = $this->getActiveCartId($userId);

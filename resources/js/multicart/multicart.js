@@ -1,8 +1,9 @@
 class MultiCart {
-  constructor({ nonce, ajaxUrl }) {
-    this.nonce     = nonce;
-    this.ajaxUrl   = ajaxUrl;
-    this.switcher  = document.querySelector('.multicart-switcher');
+  constructor({ nonce, ajaxUrl, i18n }) {
+    this.nonce    = nonce;
+    this.ajaxUrl  = ajaxUrl;
+    this.i18n     = i18n;
+    this.switcher = document.querySelector('.multicart-switcher');
     this.bindEvents();
   }
 
@@ -53,7 +54,7 @@ class MultiCart {
   renameCart(btn) {
     const label   = btn.querySelector('.multicart-btn__label');
     const oldName = label.textContent.trim();
-    const name    = prompt('Neuer Name:', oldName);
+    const name    = prompt(this.i18n.promptRename, oldName);
     if (!name?.trim()) { return; }
 
     label.textContent = name.trim();
@@ -66,9 +67,9 @@ class MultiCart {
 
   // Optimistic: hide button immediately, restore on failure
   deleteCart(btn) {
-    if (!confirm('Warenkorb löschen?')) { return; }
+    if (!confirm(this.i18n.confirmDelete)) { return; }
 
-    const next = btn.nextSibling;
+    const next   = btn.nextSibling;
     const parent = btn.parentNode;
     btn.remove();
 
@@ -78,7 +79,7 @@ class MultiCart {
           if (res.data?.reloaded) { location.reload(); }
         } else {
           parent.insertBefore(btn, next);
-          alert(res?.data || 'Fehler beim Löschen.');
+          alert(res?.data || this.i18n.errorDelete);
         }
       });
   }
@@ -101,13 +102,14 @@ class MultiCart {
 
   // Requires reload — show loading state immediately
   createCart() {
-    const count = document.querySelectorAll('.multicart-btn').length;
-    const name  = prompt('Name des neuen Warenkorbs:', `Warenkorb ${count + 1}`);
+    const count       = document.querySelectorAll('.multicart-btn').length;
+    const defaultName = `${this.i18n.defaultName} ${count + 1}`;
+    const name        = prompt(this.i18n.promptNew, defaultName);
     if (name === null) { return; }
 
     this.setLoading(true);
 
-    this.post('multicart_create', { name: name.trim() || `Warenkorb ${count + 1}` })
+    this.post('multicart_create', { name: name.trim() || defaultName })
       .then((res) => {
         if (res?.success) {
           location.reload();

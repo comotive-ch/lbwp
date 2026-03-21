@@ -659,3 +659,55 @@ msgstr ""
 
 msgid "Sie können Ihre Daten hier bearbeiten."
 msgstr "Vous pourvez modifier vos données ici."
+
+#: LBWP/Theme/Feature/MultiCart.php
+msgid "Warenkorb 1"
+msgstr "Panier 1"
+
+#: LBWP/Theme/Feature/MultiCart.php
+msgid "Warenkorb %d"
+msgstr "Panier %d"
+
+#: LBWP/Theme/Feature/MultiCart.php
+msgid "+ Neuer Warenkorb erstellen"
+msgstr "+ Créer un nouveau panier"
+
+#: LBWP/Theme/Feature/MultiCart.php
+msgid "Warenkorb wurde gewechselt."
+msgstr "Panier changé."
+
+#: LBWP/Theme/Feature/MultiCart.php
+msgid "Neuer Warenkorb &ldquo;%s&rdquo; wurde erstellt."
+msgstr "Nouveau panier &ldquo;%s&rdquo; créé."
+
+#: LBWP/Theme/Feature/MultiCart.php
+msgid "Nicht eingeloggt."
+msgstr "Non connecté."
+
+#: LBWP/Theme/Feature/MultiCart.php
+msgid "Warenkorb nicht gefunden."
+msgstr "Panier introuvable."
+
+#: LBWP/Theme/Feature/MultiCart.php
+msgid "Der letzte Warenkorb kann nicht gelöscht werden."
+msgstr "Impossible de supprimer le dernier panier."
+
+#: LBWP/Theme/Feature/MultiCart.php
+msgid "Neuer Name:"
+msgstr "Nouveau nom :"
+
+#: LBWP/Theme/Feature/MultiCart.php
+msgid "Warenkorb löschen?"
+msgstr "Supprimer le panier ?"
+
+#: LBWP/Theme/Feature/MultiCart.php
+msgid "Fehler beim Löschen."
+msgstr "Erreur lors de la suppression."
+
+#: LBWP/Theme/Feature/MultiCart.php
+msgid "Name des neuen Warenkorbs:"
+msgstr "Nom du nouveau panier :"
+
+#: LBWP/Theme/Feature/MultiCart.php
+msgid "Warenkorb"
+msgstr "Panier"

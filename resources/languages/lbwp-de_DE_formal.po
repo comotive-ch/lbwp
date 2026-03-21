@@ -649,3 +649,55 @@ msgstr "Ihre %s"
 
 msgid "Sie können Ihre Daten hier bearbeiten."
 msgstr ""
+
+#: LBWP/Theme/Feature/MultiCart.php
+msgid "Warenkorb 1"
+msgstr ""
+
+#: LBWP/Theme/Feature/MultiCart.php
+msgid "Warenkorb %d"
+msgstr ""
+
+#: LBWP/Theme/Feature/MultiCart.php
+msgid "+ Neuer Warenkorb erstellen"
+msgstr ""
+
+#: LBWP/Theme/Feature/MultiCart.php
+msgid "Warenkorb wurde gewechselt."
+msgstr ""
+
+#: LBWP/Theme/Feature/MultiCart.php
+msgid "Neuer Warenkorb &ldquo;%s&rdquo; wurde erstellt."
+msgstr ""
+
+#: LBWP/Theme/Feature/MultiCart.php
+msgid "Nicht eingeloggt."
+msgstr ""
+
+#: LBWP/Theme/Feature/MultiCart.php
+msgid "Warenkorb nicht gefunden."
+msgstr ""
+
+#: LBWP/Theme/Feature/MultiCart.php
+msgid "Der letzte Warenkorb kann nicht gelöscht werden."
+msgstr ""
+
+#: LBWP/Theme/Feature/MultiCart.php
+msgid "Neuer Name:"
+msgstr ""
+
+#: LBWP/Theme/Feature/MultiCart.php
+msgid "Warenkorb löschen?"
+msgstr ""
+
+#: LBWP/Theme/Feature/MultiCart.php
+msgid "Fehler beim Löschen."
+msgstr ""
+
+#: LBWP/Theme/Feature/MultiCart.php
+msgid "Name des neuen Warenkorbs:"
+msgstr ""
+
+#: LBWP/Theme/Feature/MultiCart.php
+msgid "Warenkorb"
+msgstr ""
