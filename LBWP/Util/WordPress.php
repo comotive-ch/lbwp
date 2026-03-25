@@ -100,8 +100,10 @@ class WordPress
   {
     if (class_exists('\Comotive\Firewall\Defender')) {
       $firewall = new \Comotive\Firewall\Defender();
-      $firewall->checkIpSignature($signature, $testtime, $calls, $blocktime);
+      return $firewall->checkIpSignature($signature, $testtime, $calls, $blocktime);
     }
+
+    return false;
   }
 
   /**
