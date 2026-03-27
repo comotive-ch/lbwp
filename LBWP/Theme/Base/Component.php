@@ -80,9 +80,9 @@ abstract class Component
    * @param string $plural plural name
    * @param array $config can override the defaults of this function (array_merge)
    */
-  protected function registerPostType($type, $singular, $plural, $config = array())
+  protected function registerPostType($type, $singular, $plural, $config = array(), $letter = 's')
   {
-    WordPress::registerType($type, $singular, $plural, $config);
+    WordPress::registerType($type, $singular, $plural, $config, $letter);
   }
 
   /**

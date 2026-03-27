@@ -52,6 +52,9 @@ class Buttons
       ),
       SocialApis::PINTEREST => array(
         'class' => '\LBWP\Theme\Feature\SocialShare\Button\Pinterest'
+      ),
+      SocialApis::BLUESKY => array(
+        'class' => '\LBWP\Theme\Feature\SocialShare\Button\Bluesky'
       )
     ),
     // Button order (likely to be overridden)
@@ -69,13 +72,14 @@ class Buttons
    */
   protected $niceNames = array(
     SocialApis::FACEBOOK => 'Facebook',
-    SocialApis::TWITTER => 'Twitter',
+    SocialApis::TWITTER => 'X (ehemals Twitter)',
     SocialApis::LINKED_IN => 'LinkedIn',
     SocialApis::XING => 'XING',
     SocialApis::PRINTBUTTON => 'Drucken',
     SocialApis::EMAIL => 'E-Mail',
     SocialApis::WHATSAPP => 'WhatsApp',
-    SocialApis::PINTEREST => 'Pinterest'
+    SocialApis::PINTEREST => 'Pinterest',
+    SocialApis::BLUESKY => 'Bluesky'
   );
   /**
    * @var string option name for settings

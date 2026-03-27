@@ -33,6 +33,7 @@ class SocialApis
   const EMAIL = 'email';
   const WHATSAPP = 'whatsapp';
   const PINTEREST = 'pinterest';
+  const BLUESKY = 'bluesky';
   /**
    * @var string additional constants
    */
