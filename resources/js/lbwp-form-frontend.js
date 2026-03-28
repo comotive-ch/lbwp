@@ -218,9 +218,18 @@ var LbwpForm = {
   updateAutoCalcField: function (field, replacers) {
     var result = 0;
     var syntax = field.data('auto-calc-syntax');
+    // If syntax is a number, convert it to string so it evaluatable
+    if (typeof syntax === 'number') {
+      syntax = syntax.toString();
+    }
+    // As we can't use <> in html syntax, change GT and LT to according syntax
+    syntax = syntax
+      .replaceAll('GT', '>')
+      .replaceAll('LT', '<');
+
     // Replace all fields with the according replacer variables
     jQuery.each(replacers, function (field, number) {
-      syntax = syntax.replace(field, number);
+      syntax = syntax.replaceAll(field, number);
     });
 
     // Generate the result and put it into the field
