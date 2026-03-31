@@ -711,3 +711,19 @@ msgstr "Nom du nouveau panier :"
 #: LBWP/Theme/Feature/MultiCart.php
 msgid "Warenkorb"
 msgstr "Panier"
+
+#: /LBWP/Module/Events/Component/Frontend.php
+msgid "Karte"
+msgstr "Carte"
+
+#: /LBWP/Module/Events/Component/Frontend.php
+msgid "Ort auf der Karte anzeigen"
+msgstr "Afficher le lieu sur la carte"
+
+#: /LBWP/Module/Events/Component/Frontend.php
+msgid "Download"
+msgstr "Télécharger"
+
+#: /LBWP/Module/Events/Component/Frontend.php
+msgid "Termin im Kalender speichern"
+msgstr "Ajouter la date au calendrier"

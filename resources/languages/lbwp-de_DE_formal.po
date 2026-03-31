@@ -701,3 +701,19 @@ msgstr ""
 #: LBWP/Theme/Feature/MultiCart.php
 msgid "Warenkorb"
 msgstr ""
+
+#: /LBWP/Module/Events/Component/Frontend.php
+msgid "Karte"
+msgstr ""
+
+#: /LBWP/Module/Events/Component/Frontend.php
+msgid "Ort auf der Karte anzeigen"
+msgstr ""
+
+#: /LBWP/Module/Events/Component/Frontend.php
+msgid "Download"
+msgstr ""
+
+#: /LBWP/Module/Events/Component/Frontend.php
+msgid "Termin im Kalender speichern"
+msgstr ""
