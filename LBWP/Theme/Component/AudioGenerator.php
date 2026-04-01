@@ -36,6 +36,13 @@ class AudioGenerator extends ACFBase
   /**
    * @var string[] by default, skip all acf blocks for now
    */
+  /**
+   * @var string currency label used in the admin UI
+   */
+  protected static $currency = 'CHF';
+  /**
+   * @var string[] by default, skip all acf blocks for now
+   */
   protected $skipBlocksRegex = array(
     '/<!-- wp:acf\/.*?\/-->/'
   );
@@ -274,7 +281,7 @@ class AudioGenerator extends ACFBase
     }
     // Add title in front (do it after the_content, as that filter can change the title)
     if ($addTitle && strlen($title) > 0) {
-      $content = apply_filters('the_title', $title) . '.' . PHP_EOL . $content;
+      $content = apply_filters('the_title', $title, 0) . '.' . PHP_EOL . $content;
     }
     // Make sure to read ol/li as actual numbered lists
     $content = $this->handleNumberedLists($content);
@@ -434,8 +441,8 @@ class AudioGenerator extends ACFBase
       echo '
         <div id="lbwp-audio-content">
           ' . $audioHtml . '
-          <p>Sofern sich der Inhalt wesentlich geändert hat, kannst du das Audio erneut erzeugen. Kostenschätzung <span class="tariff-calculation">0.00</span> CHF,
-          auf Basis <span class="tariff-base">' . number_format($tariff['per_chunk'], 2) . '</span> CHF pro <span class="tariff-words">' . $tariff['words'] . '</span> Wörter.</p>
+          <p>Sofern sich der Inhalt wesentlich geändert hat, kannst du das Audio erneut erzeugen. Kostenschätzung <span class="tariff-calculation">0.00</span> ' . static::$currency . ',
+          auf Basis <span class="tariff-base">' . number_format($tariff['per_chunk'], 2) . '</span> ' . static::$currency . ' pro <span class="tariff-words">' . $tariff['words'] . '</span> Wörter.</p>
           <a href="javascript:void(0);" class="button button-secondary lbwp-create-ai-audio" data-costs="">Jetzt ' . ($isArrayType ? 'alle ' : '') . 'erneut erzeugen</a>
           ' . $statusHtml . '
         </div>
@@ -443,8 +450,8 @@ class AudioGenerator extends ACFBase
     } else {
       echo '
         <div id="lbwp-audio-content">
-          <p>Bisher kein Vorlese-Audio erzeugt. Kostenschätzung <span class="tariff-calculation">0.00</span> CHF,
-          auf Basis <span class="tariff-base">' . number_format($tariff['per_chunk'], 2) . '</span> CHF pro <span class="tariff-words">' . $tariff['words'] . '</span> Wörter.</p>
+          <p>Bisher kein Vorlese-Audio erzeugt. Kostenschätzung <span class="tariff-calculation">0.00</span> ' . static::$currency . ',
+          auf Basis <span class="tariff-base">' . number_format($tariff['per_chunk'], 2) . '</span> ' . static::$currency . ' pro <span class="tariff-words">' . $tariff['words'] . '</span> Wörter.</p>
           <a href="javascript:void(0);" class="button button-secondary lbwp-create-ai-audio" data-costs="">Jetzt erzeugen</a>
           ' . $statusHtml . '
         </div>

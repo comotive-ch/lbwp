@@ -187,7 +187,10 @@ var LbwpForm = {
     jQuery('[data-auto-calc-on=1]').attr('readonly', 'readonly');
 
     // Re-calc all calculations on blur of any element
-    jQuery('.lbwp-form input, .lbwp-form select').on('keyup', function () {
+    jQuery('.lbwp-form input').on('keyup', function () {
+      LbwpForm.updateAllAutoCalcFields();
+    });
+    jQuery('.lbwp-form select').on('change', function () {
       LbwpForm.updateAllAutoCalcFields();
     });
   },
