@@ -30,7 +30,7 @@ class AttachmentNativeSync extends Component
    */
   public function init()
   {
-    add_action('cron_hourly', [$this, 'runSync']);
+    //add_action('cron_hourly', [$this, 'runSync']);
   }
 
   /**
@@ -254,17 +254,41 @@ class AttachmentNativeSync extends Component
       return;
     }
 
-    // Remove existing meta for this attachment in destination
-    $dest->query("DELETE FROM `{$destMetaTable}` WHERE post_id = {$destAttId}");
-
-    // Insert all meta rows
+    // Build source meta map (include the asset key override)
+    $srcMeta = [];
     while ($row = $result->fetch_assoc()) {
-      $stmt = $dest->prepare("INSERT INTO `{$destMetaTable}` (post_id, meta_key, meta_value) VALUES (?, ?, ?)");
-      $stmt->bind_param('iss', $destAttId, $row['meta_key'], $row['meta_value']);
-      $stmt->execute();
-      $stmt->close();
+      $srcMeta[$row['meta_key']] = $row['meta_value'];
     }
     $result->free();
+    $srcMeta['_asset_key_override'] = ASSET_KEY;
+
+    // Fetch existing destination meta
+    $destResult = $dest->query("SELECT meta_id, meta_key, meta_value FROM `{$destMetaTable}` WHERE post_id = {$destAttId}");
+    $destMeta = [];
+    if ($destResult) {
+      while ($row = $destResult->fetch_assoc()) {
+        $destMeta[$row['meta_key']] = $row;
+      }
+      $destResult->free();
+    }
+
+    // Update existing, insert new, delete orphaned
+    foreach ($srcMeta as $key => $value) {
+      if (isset($destMeta[$key])) {
+        if ($destMeta[$key]['meta_value'] !== $value) {
+          $stmt = $dest->prepare("UPDATE `{$destMetaTable}` SET meta_value = ? WHERE meta_id = ?");
+          $stmt->bind_param('si', $value, $destMeta[$key]['meta_id']);
+          $stmt->execute();
+          $stmt->close();
+        }
+        unset($destMeta[$key]);
+      } else {
+        $stmt = $dest->prepare("INSERT INTO `{$destMetaTable}` (post_id, meta_key, meta_value) VALUES (?, ?, ?)");
+        $stmt->bind_param('iss', $destAttId, $key, $value);
+        $stmt->execute();
+        $stmt->close();
+      }
+    }
   }
 
   /**
