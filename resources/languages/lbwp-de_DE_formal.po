@@ -717,3 +717,24 @@ msgstr ""
 #: /LBWP/Module/Events/Component/Frontend.php
 msgid "Termin im Kalender speichern"
 msgstr ""
+
+# --------------- Custom texts for passionparts --------------------
+#: wp-content/themes/flatsome-child/woocommerce/emails/pp_customer-on-hold-order.php
+msgid "Vielen Dank für Ihre Bestellung. Wir werden sie so bald wie möglich verarbeiten."
+msgstr "Vielen Dank für Ihre Bestellung. Wir werden sie so bald wie möglich verarbeiten."
+
+#: wp-content/themes/flatsome-child/woocommerce/emails/pp_customer-on-hold-order.php
+msgid "Gerne hier eine Erinnerung daran, was Sie bestellt haben:"
+msgstr "Gerne hier eine Erinnerung daran, was Sie bestellt haben:"
+
+#: wp-content/themes/flatsome-child/woocommerce/emails/pp_customer-processing-order.php
+msgid "Vielen Dank für Ihren Auftrag! Wir haben Ihre Bestellung #%s erhalten und werden sie umgehend bearbeiten."
+msgstr "Vielen Dank für Ihren Auftrag! Wir haben Ihre Bestellung #%s erhalten und werden sie umgehend bearbeiten."
+
+#: wp-content/themes/flatsome-child/woocommerce/emails/pp_customer-completed-order.php
+msgid "wir haben Ihre Bestellung fertiggestellt. Sie steht nun zur Abholung bereit oder wurde der Post/GO! übergeben - wie Sie es ausgewählt haben."
+msgstr "wir haben Ihre Bestellung fertiggestellt. Sie steht nun zur Abholung bereit oder wurde der Post/GO! übergeben - wie Sie es ausgewählt haben."
+
+#: wp-content/themes/flatsome-child/woocommerce/emails/pp_customer-completed-order.php
+msgid "Vielen Dank nochmals für Ihre Bestellung."
+msgstr "Vielen Dank nochmals für Ihre Bestellung."
