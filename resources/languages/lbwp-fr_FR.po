@@ -160,10 +160,10 @@ msgstr ""
 
 #: /var/www/lbwp/wp-content/plugins/lbwp/LBWP/Theme/Widget/LatestArticles.php:79
 msgid "&raquo; weiterlesen"
-msgstr "&raquo; continuer"
+msgstr "&raquo; lire la suite"
 
 msgid "Weiterlesen"
-msgstr "Continuer"
+msgstr "Lire la suite"
 
 #: /var/www/lbwp/wp-content/plugins/lbwp/LBWP/Theme/Widget/LatestArticles.php:94
 msgid "mehr"

@@ -424,7 +424,9 @@ class ImageImport extends ACFBase
     $map = array();
     if ($results) {
       foreach ($results as $row) {
-        $map[$row->sku] = (int)$row->post_id;
+        // Cast to string so numeric SKUs like "108129" are stored as string keys,
+        // not auto-converted to integers by PHP — which breaks strict comparison later.
+        $map[(string)$row->sku] = (int)$row->post_id;
       }
     }
 
@@ -432,31 +434,93 @@ class ImageImport extends ACFBase
   }
 
   /**
-   * Parse a filename to extract SKU and optional index.
-   * Supports: sku.ext, sku-N.ext, sku_N.ext
+   * Parse a filename to extract SKU and optional index using the known SKU map.
+   *
+   * Strategy: use the skuMap as the oracle rather than guessing where the SKU
+   * ends. SKUs may contain dashes (e.g. "FAWR125-0158-1"), so pure regex
+   * parsing is ambiguous. Instead:
+   *   1. Try an exact match of the bare filename against the skuMap.
+   *   2. Sort all known SKUs longest-first and check whether the bare filename
+   *      starts with "sku-" or "sku_". The first (longest) hit wins.
+   *   3. Extract an optional numeric index from whatever suffix remains after
+   *      the SKU prefix — the number may appear at the very start of the
+   *      suffix ("1-beschreibung") or at the very end ("beschreibung-1").
+   *
    * @param string $filename basename of the file
-   * @param array $skuMap known SKUs
-   * @return array|false array with 'sku' and 'index' keys, or false
+   * @param array  $skuMap   known SKUs (sku => post_id)
+   * @return array|false array with 'sku' and 'index' keys, or false if no SKU matched
    */
   protected function parseFileName($filename, $skuMap)
   {
     $name = pathinfo($filename, PATHINFO_FILENAME);
 
-    // Try exact SKU match first (no index suffix)
+    // 1. Exact match — the whole filename IS a known SKU, no index suffix
     if (isset($skuMap[$name])) {
       return array('sku' => $name, 'index' => 0);
     }
 
-    // Try sku-N or sku_N pattern
-    if (preg_match('/^(.+)[_-](\d+)$/', $name, $matches)) {
-      $sku = $matches[1];
-      $index = (int)$matches[2];
-      if (isset($skuMap[$sku])) {
-        return array('sku' => $sku, 'index' => $index);
+    // 2. Prefix match — sort longest SKU first so "FAWR125-0158-1" beats "FAWR125-0158".
+    // array_map strval: PHP auto-converts numeric string keys (e.g. "108129") to
+    // integers in arrays, so array_keys() returns ints — casting back to string
+    // ensures the strict !== comparison in the loop below works correctly.
+    $skus = array_map('strval', array_keys($skuMap));
+    usort($skus, function ($a, $b) {
+      return strlen($b) - strlen($a);
+    });
+
+    foreach ($skus as $sku) {
+      $skuLen = strlen($sku);
+      if (strlen($name) <= $skuLen) {
+        continue;
       }
+      $sep = $name[$skuLen];
+      if ($sep !== '-' && $sep !== '_') {
+        continue;
+      }
+      if (substr($name, 0, $skuLen) !== $sku) {
+        continue;
+      }
+
+      $suffix = substr($name, $skuLen + 1);
+      return array('sku' => $sku, 'index' => $this->extractIndexFromSuffix($suffix));
     }
 
     return false;
+  }
+
+  /**
+   * Extract a numeric sort index from the suffix that follows the SKU + separator.
+   *
+   * Handles three patterns (separator = "-" or "_"):
+   *   - bare number:        "1"              → 1
+   *   - leading number:     "1-beschreibung" → 1
+   *   - trailing number:    "beschreibung-1" → 1
+   *
+   * Returns 0 when no numeric index is found (e.g. pure text description).
+   *
+   * @param string $suffix portion of the filename after "sku[-_]"
+   * @return int
+   */
+  protected function extractIndexFromSuffix($suffix)
+  {
+    if ($suffix === '') {
+      return 0;
+    }
+    // Bare number
+    if (ctype_digit($suffix)) {
+      return (int)$suffix;
+    }
+    // Leading number followed by a non-digit: "1-text" or "1_text"
+    // Do NOT match "098_2673-0" or "140_0065_10-0" (article refs where the next
+    // character after the separator is still a digit — those are not image indexes).
+    if (preg_match('/^(\d+)[_-][^\d]/', $suffix, $m)) {
+      return (int)$m[1];
+    }
+    // Trailing number: "text-1" or "text_1"
+    if (preg_match('/[_-](\d+)$/', $suffix, $m)) {
+      return (int)$m[1];
+    }
+    return 0;
   }
 
   /**
