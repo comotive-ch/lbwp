@@ -253,8 +253,9 @@ class File
     $folder = time();
     if ($entropy) $folder .= '-' . uniqid();
     $path = WP_CONTENT_DIR . '/uploads/' . ASSET_KEY . '/' . $folder . '/';
+    clearstatcache(true, $path);
     if (!file_exists($path)) {
-      mkdir($path, 0755);
+      mkdir($path, 0755, true);
     }
     return $path;
   }

@@ -30,7 +30,7 @@ class AttachmentNativeSync extends Component
    */
   public function init()
   {
-    //add_action('cron_hourly', [$this, 'runSync']);
+    add_action('cron_hourly', [$this, 'runSync']);
   }
 
   /**

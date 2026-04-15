@@ -255,6 +255,7 @@ class S3Upload extends \LBWP\Module\Base
     $folder = substr($metadata['file'], 0, strpos($metadata['file'], '/'));
     $path = WP_CONTENT_DIR . '/uploads/' . ASSET_KEY . '/' . $folder;
     File::deleteFolder($path);
+    clearstatcache(true, $path);
     return $metadata;
   }
 

@@ -4,6 +4,7 @@ namespace LBWP\ERP\PIM\Data;
 
 use LBWP\Core as LbwpCore;
 use LBWP\Helper\Cronjob;
+use LBWP\Module\General\Cms\SystemLog;
 use LBWP\Theme\Component\ACFBase;
 use LBWP\Util\File;
 use LBWP\Util\WordPress;
@@ -118,7 +119,7 @@ class ImageImport extends ACFBase
     echo '<tr><th>Zuletzt aktualisiert</th><td>' . esc_html($current['last_updated']) . '</td></tr>';
 
     if (!empty($current['log'])) {
-      echo '<tr><th>Log</th><td><ul><li>' . implode('</li><li>', array_map('esc_html', array_slice($current['log'], -20))) . '</li></ul></td></tr>';
+      echo '<tr><th>Log</th><td><ul><li>' . implode('</li><li>', array_map('esc_html', array_slice($current['log'], -50))) . '</li></ul></td></tr>';
     }
 
     echo '</table>';
@@ -285,7 +286,7 @@ class ImageImport extends ACFBase
   public function runImport()
   {
     ini_set('memory_limit', '2G');
-    set_time_limit(0);
+    set_time_limit(3600);
 
     $current = get_option(self::OPTION_KEY, array());
     if (empty($current) || empty($current['queue']) || empty($current['url'])) {
@@ -630,11 +631,23 @@ class ImageImport extends ACFBase
     foreach ($files as $index => $filePath) {
       // createAttachmentImageFromFile deletes the containing folder,
       // so each file must be moved to its own isolated folder first
-      $isolatedDir = File::getNewUploadFolder();
+      SystemLog::mDebug('PIM attachImages: index=' . $index . ' postId=' . $postId . ' filePath=' . $filePath . ' exists=' . (file_exists($filePath) ? 'yes' : 'NO'));
+
+      $isolatedDir = File::getNewUploadFolder(true);
       $isolatedPath = $isolatedDir . basename($filePath);
-      copy($filePath, $isolatedPath);
+
+      SystemLog::mDebug('PIM attachImages: isolatedDir=' . $isolatedDir . ' dir_exists=' . (is_dir($isolatedDir) ? 'yes' : 'NO'));
+
+      $copyResult = copy($filePath, $isolatedPath);
+      SystemLog::mDebug('PIM attachImages: copy result=' . ($copyResult ? 'ok' : 'FAILED') . ' isolatedPath_exists=' . (file_exists($isolatedPath) ? 'yes' : 'NO'));
+
+      if (!$copyResult) {
+        SystemLog::mDebug('PIM attachImages: SKIPPING file due to copy failure: ' . $filePath);
+        continue;
+      }
 
       $attachmentId = WordPress::createAttachmentImageFromFile($isolatedPath, $postId);
+      SystemLog::mDebug('PIM attachImages: attachmentId=' . $attachmentId . ' after createAttachment, isolatedPath_exists=' . (file_exists($isolatedPath) ? 'yes' : 'NO'));
 
       if (!$attachmentId) {
         continue;

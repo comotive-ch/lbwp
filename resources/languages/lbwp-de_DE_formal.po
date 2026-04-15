@@ -718,6 +718,58 @@ msgstr ""
 msgid "Termin im Kalender speichern"
 msgstr ""
 
+#: LBWP/Aboon/Component/Watchlist.php
+msgid "Speichern"
+msgstr ""
+
+#: LBWP/Aboon/Component/Watchlist.php
+msgid "Liste endgültig löschen"
+msgstr ""
+
+#: LBWP/Aboon/Component/Watchlist.php
+msgid "Merkliste"
+msgstr ""
+
+#: LBWP/Aboon/Component/Watchlist.php
+msgid "Merklisten"
+msgstr ""
+
+#: LBWP/Aboon/Component/Watchlist.php
+msgid "Aktive %s"
+msgstr ""
+
+#: LBWP/Aboon/Component/Watchlist.php
+msgid "Diese Liste ist zurzeit noch leer."
+msgstr ""
+
+#: LBWP/Aboon/Component/Watchlist.php
+msgid "Listen verwalten"
+msgstr ""
+
+#: LBWP/Aboon/Component/Watchlist.php
+msgid "Zur %s hinzufügen"
+msgstr ""
+
+#: LBWP/Aboon/Component/Watchlist.php
+msgid "Von %s entfernen"
+msgstr ""
+
+#: LBWP/Aboon/Component/Watchlist.php
+msgid "Meine %s"
+msgstr "Ihre %s"
+
+#: LBWP/Aboon/Component/Watchlist.php
+msgid "Liste umbenennen"
+msgstr ""
+
+#: LBWP/Aboon/Component/Watchlist.php
+msgid "%s hinzufügen"
+msgstr ""
+
+#: LBWP/Aboon/Component/Watchlist.php
+msgid "Hinzufügen"
+msgstr ""
+
 # --------------- Custom texts for passionparts --------------------
 #: wp-content/themes/flatsome-child/woocommerce/emails/pp_customer-on-hold-order.php
 msgid "Vielen Dank für Ihre Bestellung. Wir werden sie so bald wie möglich verarbeiten."

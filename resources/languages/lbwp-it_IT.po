@@ -725,6 +725,58 @@ msgstr ""
 msgid "Termin im Kalender speichern"
 msgstr ""
 
+#: LBWP/Aboon/Component/Watchlist.php
+msgid "Speichern"
+msgstr "Salva"
+
+#: LBWP/Aboon/Component/Watchlist.php
+msgid "Liste endgültig löschen"
+msgstr "Elimina definitivamente la lista"
+
+#: LBWP/Aboon/Component/Watchlist.php
+msgid "Merkliste"
+msgstr "Lista dei desideri"
+
+#: LBWP/Aboon/Component/Watchlist.php
+msgid "Merklisten"
+msgstr "Liste dei desideri"
+
+#: LBWP/Aboon/Component/Watchlist.php
+msgid "Aktive %s"
+msgstr "%s attivo"
+
+#: LBWP/Aboon/Component/Watchlist.php
+msgid "Diese Liste ist zurzeit noch leer."
+msgstr "Questa lista è attualmente vuota."
+
+#: LBWP/Aboon/Component/Watchlist.php
+msgid "Listen verwalten"
+msgstr "Gestisci liste"
+
+#: LBWP/Aboon/Component/Watchlist.php
+msgid "Zur %s hinzufügen"
+msgstr "Aggiungi a %s"
+
+#: LBWP/Aboon/Component/Watchlist.php
+msgid "Von %s entfernen"
+msgstr "Rimuovi da %s"
+
+#: LBWP/Aboon/Component/Watchlist.php
+msgid "Meine %s"
+msgstr "Le mie %s"
+
+#: LBWP/Aboon/Component/Watchlist.php
+msgid "Liste umbenennen"
+msgstr "Rinomina lista"
+
+#: LBWP/Aboon/Component/Watchlist.php
+msgid "%s hinzufügen"
+msgstr "Aggiungi %s"
+
+#: LBWP/Aboon/Component/Watchlist.php
+msgid "Hinzufügen"
+msgstr "Aggiungi"
+
 # --------------- Custom texts for passionparts --------------------
 #: wp-content/themes/flatsome-child/woocommerce/emails/pp_customer-on-hold-order.php
 msgid "Vielen Dank für Ihre Bestellung. Wir werden sie so bald wie möglich verarbeiten."

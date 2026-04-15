@@ -472,7 +472,7 @@ class Watchlist extends ACFBase
 								<input type="text" name="new-list-name" required/>
 							</label>
 							<input type="hidden" name="list-id" value="' . $listKey . '"/>
-							<input type="submit" name="change-name" value="Speichern" class="btn btn-primary"/>
+							<input type="submit" name="change-name" value="' . esc_attr(__('Speichern', 'lbwp')) . '" class="btn btn-primary"/>
 						</form>
 					</div>
 					' . ($listKey !== 'list_0' ?
@@ -480,7 +480,7 @@ class Watchlist extends ACFBase
 							<div class="list-action-button">' . $this->icons['trash'] . '</div>
 							<form method="post">
 								<input type="hidden" name="list-id" value="' . $listKey . '"/>
-								<input type="submit" name="delete-list" value="Liste endgültig löschen"/>
+								<input type="submit" name="delete-list" value="' . esc_attr(__('Liste endgültig löschen', 'lbwp')) . '"/>
 							</form>
 						</div>' :
 						''
