@@ -2,6 +2,7 @@
 
 namespace LBWP\Theme\Component;
 
+use BrevoScoped\Swoole\Coroutine\System;
 use CMNL;
 use ComotiveNL\Newsletter\Actions\ItemActions;
 use ComotiveNL\Newsletter\Actions\NewsletterActions;
@@ -229,6 +230,12 @@ class AutoNewsletter extends ACFBase
     $sent = ArrayManipulation::forceArray(get_option('autonl_rss_sent_' . md5($config['rss-feed'])));
     $threshold = current_time('timestamp') - ($config['max-age'] * 86400);
     $raw = new Rss2($config['rss-feed']);
+    // Check if the feed is readable and have a mail sent to admin if not
+    if (!$raw->is_readable()) {
+      SystemLog::add('AutoNewsletter', 'critical', 'RSS Feed unreadable: ' . $config['rss-feed']);
+      return array();
+    }
+
     $raw->set_category_concat_char(' ');
     $raw->read();
     $articles = $raw->data;

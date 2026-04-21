@@ -39,7 +39,11 @@ abstract class Feedreader
    */
   public function __construct($url)
   {
-    $data = file_get_contents($url);
+    // Suggest a user agent, so we don't get eventually blocked with reading the feed
+    $context = stream_context_create(['http' => [
+      'header' => 'User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
+    ]]);
+    $data = file_get_contents($url, false, $context);
     $this->xml = @simplexml_load_string($data, NULL, LIBXML_NOCDATA);
     // Set the readable flag
     $this->readable = ($this->xml !== false);

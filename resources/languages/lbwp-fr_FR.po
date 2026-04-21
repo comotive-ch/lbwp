@@ -473,7 +473,7 @@ msgstr "Lieu"
 
 #: events
 msgid "Datum/Zeit"
-msgstr "Date/Temps"
+msgstr "Date/Heure"
 
 #: events
 msgid "Von %s bis %s"
@@ -485,7 +485,7 @@ msgstr "Date"
 
 #: general
 msgid "Uhrzeit"
-msgstr "Temps"
+msgstr "Heure"
 
 #: general
 msgid "Beginn"
