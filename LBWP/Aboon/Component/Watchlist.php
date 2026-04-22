@@ -179,7 +179,7 @@ class Watchlist extends ACFBase
 		}
 
 		$listSelection = '';
-		if(count($theWatchlist) > 1){
+		if(is_array($theWatchlist) && count($theWatchlist) > 1){
 			$listSelection = '<div class="lbwp-watchlist__select">
 				<span>' . sprintf(__('Aktive %s', 'lbwp'), $this->naming['s']) . '</span>
 				<select>';
@@ -204,7 +204,7 @@ class Watchlist extends ACFBase
 					' . $listSelection . '
 					<div class="lbwp-watchlist__close">' . $this->icons['close'] . '</div>
 		';
-		$list = $theWatchlist[$curList];
+		$list = is_array($theWatchlist) ? $theWatchlist[$curList] : null;
 		$listProducts = '';
 
 		if(!is_array($list)){
