@@ -23,6 +23,7 @@ class CustomFields extends ACFBase
     'date' => 'date_picker',
     'media' => 'image',
     'bool' => 'true_false',
+    'wysiwyg' => 'wysiwyg',
   );
 
   /**
@@ -113,10 +114,11 @@ class CustomFields extends ACFBase
                   'required' => 1,
                   'choices' => array(
                     'text' => 'Text',
-                    'number' => 'Nummer',
+                    'number' => 'Zahl',
                     'date' => 'Datum',
                     'media' => 'Media',
                     'bool' => 'Ja/Nein',
+                    'wysiwyg' => 'WYSIWYG',
                   ),
                   'default_value' => 'text',
                 ),
@@ -278,6 +280,11 @@ class CustomFields extends ACFBase
           $fieldConfig['preview_size'] = 'thumbnail';
         } elseif ($acfType === 'true_false') {
           $fieldConfig['ui'] = 1;
+        } elseif ($acfType === 'wysiwyg') {
+          $fieldConfig['tabs'] = 'all';
+          $fieldConfig['toolbar'] = 'full';
+          $fieldConfig['media_upload'] = 1;
+          $fieldConfig['delay'] = 0;
         }
 
         $fields[] = $fieldConfig;
