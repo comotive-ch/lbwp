@@ -46,6 +46,7 @@ abstract class Product extends ProductBase
     add_action('cron_daily_20', array($this, 'updateAssortmentGroupMap'));
     add_action('cron_weekday_6', array($this, 'updateAllAssortments'));
     add_Action('cron_weekday_6', array($this, 'updateWebshopFlag'));
+    add_Action('cron_weekday_7', array($this, 'updateRemainingFlag'));
     add_Action('cron_job_manual_update_remaining_flag', array($this, 'updateRemainingFlag'));
     add_Action('cron_job_manual_update_webshop_flag', array($this, 'updateWebshopFlag'));
     add_action('cron_job_manual_update_assortment_by_sku', array($this, 'updateAssortmentGroupsBySku'));
@@ -57,14 +58,17 @@ abstract class Product extends ProductBase
    */
   public function updateRemainingFlag()
   {
+    // Set higher output limits
+    set_time_limit(600);
+    ini_set('memory_limit', '1024M');
     // Products that don't have the webshop flag set
     $products = $this->getApi()->get('/sap/byd/odata/cust/v1/vmumaterial/MaterialCollection', array(
       '$format' => 'json',
       'sap-language' => 'DE',
-      '$filter' => "Z_NichtmehrimSortiment_KUT eq true",
+      '$filter' => "Z_NichtmehrimSortiment_KUT eq true and ZWebshopArtikel_KUT eq true and (Aktion_KUT eq '101' or Aktion_KUT eq '103')",
       '$select' => 'InternalID',
       '$top' => 100000
-    ), 10);
+    ), 30);
 
     $productIds = array();
     foreach ($products['d']['results'] as $result) {
@@ -76,9 +80,17 @@ abstract class Product extends ProductBase
       if (isset($skuMap[$sku])) {
         $product = wc_get_product($skuMap[$sku]);
         $product->update_meta_data('is-remaining', 1);
-        if ($product->get_stock_quantity() == 0) {
+        $stock = $product->get_stock_quantity();
+        $vpe = intval($product->get_meta('_vpe'));
+        $threshold = $vpe > 0 ? $vpe : 0;
+        $status = $product->get_status();
+
+        if ($status === 'publish' && ($stock === 0 || $stock < $threshold)) {
           $product->set_status('draft');
+        } elseif ($status === 'draft' && $stock >= $threshold) {
+          $product->set_status('publish');
         }
+
         $product->save();
       }
     }
