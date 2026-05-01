@@ -171,7 +171,10 @@ class Watchlist extends ACFBase
 		$curList = $this->getCurrentList();
 
 		if($_POST['useLocalList'] == 'true'){
-			$theWatchlist = json_decode($_POST['localWatchlist'], true);
+			$decoded = json_decode($_POST['localWatchlist'], true);
+			if(is_array($decoded)){
+				$theWatchlist = $decoded;
+			}
 		}
 
 		if($showQty !== true && $showQty !== false){
@@ -264,7 +267,7 @@ class Watchlist extends ACFBase
 
 		$listProducts .= '</ul>';
 
-		if(count($theWatchlist) > 1 && is_user_logged_in()){
+		if(is_array($theWatchlist) && count($theWatchlist) > 1 && is_user_logged_in()){
 			$listProducts .= '<a class="watchlist-overview-link" href="' . get_permalink(get_option('woocommerce_myaccount_page_id')) . self::LISTS_PERMALINK . '">' . __('Listen verwalten', 'lbwp') . '</a>';
 		}
 
