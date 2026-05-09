@@ -2,7 +2,7 @@
 // Master config file, for db connection
 define('LAST_CALL_FILE', '/var/www/util/last_cron_run.txt');
 $configPath = str_replace('wp-content/plugins/lbwp/views/cron', '', __DIR__);
-require_once $configPath . 'wp-config/core/lbwp.config.php';
+require_once $configPath . 'wp-config/core/lbwp-main.config.php';
 
 // if no cmd args, exit. can only be executed on cmd
 if ($argc == null && $argv == null) {
