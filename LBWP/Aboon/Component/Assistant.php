@@ -922,7 +922,7 @@ class Assistant extends ACFBase
     if (isset($_POST['aboon-asst_submit'])) {
       foreach ($_POST as $id => $answer) {
         if (Strings::startsWith($id, 'question')) {
-          $_SESSION[$id] = $answer;
+          $_SESSION[$id] = sanitize_text_field($answer);
         }
       }
 
@@ -1061,7 +1061,7 @@ class Assistant extends ACFBase
 
       foreach($_GET as $key => $data){
         if(Strings::startsWith($key, 'q_')){
-          $_SESSION['question-' . str_replace('q_', '', $key)] = $data;
+          $_SESSION['question-' . str_replace('q_', '', $key)] = sanitize_text_field($data);
         }else if($key === 'add_product'){
           $products = is_array($data) ? $data : array($data);
 

@@ -41,7 +41,7 @@ if ($debug) {
 // Create a connection to the write redis to flush, if not a sole html flush request
 if ($_REQUEST['search'] != $htmlCacheFlushKey) {
   $redis = new Redis();
-  $redis->pconnect(REDIS_WRITE_NODE_IP, REDIS_CONNECTION_PORT, 2);
+  $redis->pconnect(REDIS_HOST, REDIS_CONNECTION_PORT, 2);
   $redis->auth(REDIS_AUTH_KEY);
   $redis->setOption(Redis::OPT_SCAN, Redis::SCAN_RETRY);
   // Scan redis and gradually unlink keys to be flushed

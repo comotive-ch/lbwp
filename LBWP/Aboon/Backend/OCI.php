@@ -35,7 +35,9 @@ class OCI extends Component
   {
     register_rest_route('aboon/oci', 'punchout', array(
       'methods' => \WP_REST_Server::READABLE,
-      'callback' => array($this, 'receivePunchout')
+      'callback' => array($this, 'receivePunchout'),
+      // TODO: Review whether this endpoint is still in use and add proper permission_callback.
+      'permission_callback' => '__return_true',
     ));
   }
 
@@ -179,25 +181,27 @@ class OCI extends Component
     $hook = $_GET['HOOK_URL'];
 
     // Check if the user's key is valid
-    $checkId = intval($db->get_var('
-      SELECT user_id FROM ' . $db->usermeta . '
-      WHERE meta_key = "lbwp_oci_key" AND meta_value = "' . $key . '"
-    '));
+    $checkId = intval($db->get_var($db->prepare(
+      'SELECT user_id FROM ' . $db->usermeta . ' WHERE meta_key = "lbwp_oci_key" AND meta_value = %s',
+      $key
+    )));
 
     if ($checkId !== $userId) {
       $errors[] = 'user id and key did not match';
     }
 
     // Also check if the user is active
-    $checkId = intval($db->get_var('
-      SELECT user_id FROM ' . $db->usermeta . '
-      WHERE user_id = "' . $userId . '" AND meta_key = "lbwp_oci_active" AND meta_value = "1"
-    '));
+    $checkId = intval($db->get_var($db->prepare(
+      'SELECT user_id FROM ' . $db->usermeta . ' WHERE user_id = %d AND meta_key = "lbwp_oci_active" AND meta_value = "1"',
+      $userId
+    )));
 
     if ($checkId !== $userId) {
       $errors[] = 'user id is not allowed to use OCI checkout';
     }
 
+    // TODO: The hook URL is stored in session and used verbatim as a form action.
+    // Review whether this endpoint is still in use and add same-origin or allowlist validation if so.
     if (!apply_filters('aboon_validate_oci_hook_url', true, $hook)) {
       $errors[] = 'hook url syntax is not know or not allowed';
     }

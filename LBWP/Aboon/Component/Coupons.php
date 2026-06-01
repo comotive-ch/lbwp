@@ -179,9 +179,10 @@ class Coupons extends Component
       return;
     }
 
-    $name = 'export-coupons' . (isset($_GET['coupon_category']) ? '__' . $_GET['coupon_category'] : '');
+    $category = isset($_GET['coupon_category']) ? sanitize_key($_GET['coupon_category']) : '';
+    $name = 'export-coupons' . (strlen($category) > 0 ? '__' . $category : '');
 
-    echo '<input type="submit" name="' . $name . '" class="button" value="' . __('Exportieren', 'lbwp') . '">';
+    echo '<input type="submit" name="' . esc_attr($name) . '" class="button" value="' . __('Exportieren', 'lbwp') . '">';
   }
 
   /**
@@ -395,8 +396,11 @@ class Coupons extends Component
    */
   public function handleAjaxRequest()
   {
+    if (!current_user_can('manage_woocommerce')) {
+      wp_die('Unauthorized', 403);
+    }
     SystemLog::mDebug('data', $_POST);
-    $this->duplicateCoupons($_POST['postId'], $_POST['number']);
+    $this->duplicateCoupons(intval($_POST['postId']), intval($_POST['number']));
   }
 
   /**
@@ -470,6 +474,8 @@ class Coupons extends Component
    */
   private function sendDuplicateRequest($postId, $number)
   {
+    $postId = intval($postId);
+    $number = intval($number);
     echo '<script>
       window.onload = function(){
         console.log("start duplicating");

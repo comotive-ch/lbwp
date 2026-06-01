@@ -234,10 +234,11 @@ class User
    */
   protected function searchLocalIdConnection($remoteId): int
   {
-    return intval($this->db->get_var('
-      SELECT user_id FROM ' . $this->db->usermeta . ' 
-      WHERE meta_key = "erp-remote-id" AND meta_value = "' . $remoteId . '"
-    '));
+    return intval($this->db->get_var($this->db->prepare(
+      'SELECT user_id FROM ' . $this->db->usermeta .
+      ' WHERE meta_key = "erp-remote-id" AND meta_value = %s',
+      $remoteId
+    )));
   }
 
   /**

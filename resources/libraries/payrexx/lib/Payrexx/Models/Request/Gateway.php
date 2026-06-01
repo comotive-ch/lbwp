@@ -1,212 +1,270 @@
 <?php
 
+/**
+ * The Gateway request model
+ *
+ * @author    Payrexx Development <info@payrexx.com>
+ * @copyright Payrexx AG
+ * @since     v1.3.0
+ */
+
 namespace Payrexx\Models\Request;
+
+use Payrexx\Models\Base;
+use Payrexx\Models\Response\Gateway as ResponseGateway;
 
 /**
  * Gateway request class
  *
- * @copyright   Payrexx AG
- * @author      Payrexx Development Team <info@payrexx.com>
- * @package     \Payrexx\Models\Request
+ * @package Payrexx\Models\Request
  */
-class Gateway extends \Payrexx\Models\Base
+class Gateway extends Base
 {
 
     /**
      * mandatory
      *
-     * @access  protected
-     * @var     integer
+     * @var int
      */
     protected $amount;
 
     /**
      * optional
      *
-     * @access  protected
-     * @var     float|null
+     * @var float|null
      */
     protected $vatRate;
 
     /**
      * optional
      *
-     * @access  protected
-     * @var     string
+     * @var string|null
      */
     protected $sku;
 
     /**
      * mandatory
      *
-     * @access  protected
-     * @var     string
+     * @var string
      */
     protected $currency;
 
     /**
      * optional
      *
-     * @access  protected
-     * @var     array
+     * @var string|array
      */
     protected $purpose;
 
     /**
      * optional
      *
-     * @access  protected
-     * @var     array
+     * @var array
      */
     protected $psp;
 
     /**
      * optional
      *
-     * @access  protected
-     * @var     array
+     * @var array
      */
     protected $pm;
 
     /**
      * optional
      *
-     * @access  protected
-     * @var     bool
+     * @var bool
      */
     protected $preAuthorization = false;
 
     /**
      * optional
      *
-     * @access  protected
-     * @var     bool
+     * @var bool
      */
     protected $reservation = false;
 
     /**
      * optional
      *
-     * @access  protected
-     * @var     string
+     * @var string
      */
     protected $referenceId;
 
     /**
      * optional
      *
-     * @access  protected
-     * @var     array
+     * @var array
      */
     protected $fields;
 
     /**
      * optional
      *
-     * @access  protected
-     * @var     string
+     * @var string
      */
     protected $concardisOrderId;
 
     /**
      * mandatory
      *
-     * @access  protected
-     * @var     string
+     * @var string
      */
     protected $successRedirectUrl;
 
     /**
      * mandatory
      *
-     * @access  protected
-     * @var     string
+     * @var string
      */
     protected $failedRedirectUrl;
 
     /**
      * mandatory
      *
-     * @access  protected
-     * @var     string
+     * @var string
      */
     protected $cancelRedirectUrl;
 
     /**
      * optional
      *
-     * @access  protected
-     * @var     boolean
+     * @var bool
      */
     protected $skipResultPage;
 
     /**
      * optional
      *
-     * @access  protected
-     * @var     boolean
+     * @var bool
      */
     protected $chargeOnAuthorization;
+
+
+    /**
+     * optional
+     *
+     * @var bool
+     */
+    protected $reserveOnAuthorization;
 
     /**
      * optional: Only for Clearhaus transactions.
      *
-     * @access  protected
-     * @var     string
+     * @var string
      */
     protected $customerStatementDescriptor;
 
     /**
      * optional: Gateway validity in minutes.
      *
-     * @access  protected
-     * @var     int
+     * @var int
      */
     protected $validity;
 
     /**
      * optional
      *
-     * @access  protected
-     * @var     bool
+     * @var bool
      */
     protected $subscriptionState = false;
 
     /**
      * optional
      *
-     * @access  protected
-     * @var     string
+     * @var string
      */
     protected $subscriptionInterval = '';
 
     /**
      * optional
      *
-     * @access  protected
-     * @var     string
+     * @var string
      */
     protected $subscriptionPeriod = '';
 
     /**
      * optional
      *
-     * @access  protected
-     * @var     string
+     * @var string
      */
     protected $subscriptionPeriodMinAmount = '';
 
     /**
      * optional
      *
-     * @access  protected
-     * @var     string
+     * @var string
      */
     protected $subscriptionCancellationInterval = '';
 
     /**
-     * @access  public
-     * @return  int
+     * optional
+     *
+     * @var array $buttonText
+     */
+    protected $buttonText;
+
+    /**
+     * optional
+     *
+     * @var string|null $lookAndFeelProfile
+     */
+    protected $lookAndFeelProfile;
+
+    /**
+     * optional
+     *
+     * @var array $successMessage
+     */
+    protected $successMessage;
+
+    /**
+     * optional
+     *
+     * @var array $basket
+     */
+    protected $basket;
+
+    /**
+     * optional
+     *
+     * @var string $qrCodeSessionId
+     */
+    protected $qrCodeSessionId;
+
+    /**
+     * optional
+     *
+     * @var string $returnApp
+     */
+    protected $returnApp;
+
+    /**
+     * optional
+     *
+     * @var bool $spotlightStatus
+     */
+    protected $spotlightStatus;
+
+    /**
+     * optional
+     *
+     * @var string $spotlightOrderDetailsUrl
+     */
+    protected $spotlightOrderDetailsUrl;
+
+    /**
+     * @var string $language
+     */
+    protected $language = '';
+
+    /**
+     * @var bool $isPriceExclusiveVat
+     */
+    protected $isPriceExclusiveVat = false;
+
+    /**
+     * @return int
      */
     public function getAmount()
     {
@@ -217,8 +275,7 @@ class Gateway extends \Payrexx\Models\Base
      * Set the payment amount.
      * Make sure the amount is multiplied by 100!
      *
-     * @access  public
-     * @param   integer $amount
+     * @param int $amount
      */
     public function setAmount($amount)
     {
@@ -242,7 +299,7 @@ class Gateway extends \Payrexx\Models\Base
     }
 
     /**
-     * @return string
+     * @return string|null
      */
     public function getSku()
     {
@@ -250,7 +307,7 @@ class Gateway extends \Payrexx\Models\Base
     }
 
     /**
-     * @param string $sku
+     * @param string|null $sku
      */
     public function setSku($sku)
     {
@@ -258,8 +315,7 @@ class Gateway extends \Payrexx\Models\Base
     }
 
     /**
-     * @access  public
-     * @return  string
+     * @return string
      */
     public function getCurrency()
     {
@@ -269,8 +325,7 @@ class Gateway extends \Payrexx\Models\Base
     /**
      * Set the corresponding payment currency for the amount (use ISO codes).
      *
-     * @access  public
-     * @param   string  $currency
+     * @param string $currency
      */
     public function setCurrency($currency)
     {
@@ -278,8 +333,7 @@ class Gateway extends \Payrexx\Models\Base
     }
 
     /**
-     * @access  public
-     * @return  array
+     * @return string|array
      */
     public function getPurpose()
     {
@@ -290,8 +344,7 @@ class Gateway extends \Payrexx\Models\Base
      * Set the purpose of this gateway. Will be displayed as transaction purpose in merchant backend.
      * Use language ID as array key. Use key 0 as default purpose. Will be used for each activated frontend language.
      *
-     * @access  public
-     * @param   array   $purpose
+     * @param string|array $purpose
      */
     public function setPurpose($purpose)
     {
@@ -299,8 +352,7 @@ class Gateway extends \Payrexx\Models\Base
     }
 
     /**
-     * @access  public
-     * @return  array
+     * @return array
      */
     public function getPsp()
     {
@@ -310,11 +362,10 @@ class Gateway extends \Payrexx\Models\Base
     /**
      * Set payment service providers to use.
      * A list of available payment service providers
-     * can be found here: http://developers.payrexx.com/docs/miscellaneous
+     * can be found here: https://docs.payrexx.com/developer/general-info/payment-provider
      * All available psp will be used on payment page if none have been defined.
      *
-     * @access  public
-     * @param   array   $psp
+     * @param array $psp
      */
     public function setPsp($psp)
     {
@@ -322,8 +373,7 @@ class Gateway extends \Payrexx\Models\Base
     }
 
     /**
-     * @access  public
-     * @return  array
+     * @return array
      */
     public function getPm()
     {
@@ -333,8 +383,7 @@ class Gateway extends \Payrexx\Models\Base
     /**
      * Set payment mean to use.
      *
-     * @access  public
-     * @param   array   $pm
+     * @param array $pm
      */
     public function setPm($pm)
     {
@@ -342,8 +391,7 @@ class Gateway extends \Payrexx\Models\Base
     }
 
     /**
-     * @access  public
-     * @return  bool
+     * @return bool
      */
     public function getPreAuthorization()
     {
@@ -353,8 +401,7 @@ class Gateway extends \Payrexx\Models\Base
     /**
      *  Whether charge payment manually at a later date (type authorization).
      *
-     * @access  public
-     * @param   bool    $preAuthorization
+     * @param bool $preAuthorization
      */
     public function setPreAuthorization($preAuthorization)
     {
@@ -362,8 +409,7 @@ class Gateway extends \Payrexx\Models\Base
     }
 
     /**
-     * @access  public
-     * @return  bool
+     * @return bool
      */
     public function getReservation()
     {
@@ -373,8 +419,7 @@ class Gateway extends \Payrexx\Models\Base
     /**
      *  Whether charge payment manually at a later date (type reservation).
      *
-     * @access  public
-     * @param   bool    $reservation
+     * @param bool $reservation
      */
     public function setReservation($reservation)
     {
@@ -382,8 +427,7 @@ class Gateway extends \Payrexx\Models\Base
     }
 
     /**
-     * @access  public
-     * @return  string
+     * @return string
      */
     public function getReferenceId()
     {
@@ -394,8 +438,7 @@ class Gateway extends \Payrexx\Models\Base
      * Set the reference id which you will get in Webhook.
      * This reference id won't be shown to customers.
      *
-     * @access  public
-     * @param   string  $referenceId
+     * @param string $referenceId
      */
     public function setReferenceId($referenceId)
     {
@@ -403,8 +446,7 @@ class Gateway extends \Payrexx\Models\Base
     }
 
     /**
-     * @access  public
-     * @return  array
+     * @return array
      */
     public function getFields()
     {
@@ -414,26 +456,24 @@ class Gateway extends \Payrexx\Models\Base
     /**
      * Add a new field of the payment page
      *
-     * @access  public
-     * @param   string  $type           Type of field
-     *                                  Available types: title, forename, surname, company, street,
-     *                                  postcode, place, country, phone, email, date_of_birth,
-     *                                  custom_field_1, custom_field_2, custom_field_3, custom_field_4, custom_field_5
-     * @param   string  $value          Value of field
-     *                                  For field of type "title" use value "mister" or "miss"
-     *                                  For field of type "country" pass the 2 letter ISO code
-     * @param   array   $name           Name of the field (only available for fields of type "custom_field_1-5"
+     * @param string $type Type of field
+     *                     Available types: title, forename, surname, company, street,
+     *                     postcode, place, country, phone, email, date_of_birth,
+     *                     custom_field_1, custom_field_2, custom_field_3, custom_field_4, custom_field_5
+     * @param string|null $value Value of field
+     *                            For field of type "title" use value "mister" or "miss"
+     *                            For field of type "country" pass the 2 letter ISO code
+     * @param array|string $name Name of the field (only available for fields of type "custom_field_1-5"
      */
-    public function addField($type, $value, $name = array())
+    public function addField($type, $value, $name = [])
     {
-        $this->fields[$type] = array(
+        $this->fields[$type] = [
             'value' => $value,
             'name' => $name,
-        );
+        ];
     }
 
     /**
-     * @access  public
      * @return  string
      */
     public function getConcardisOrderId()
@@ -444,8 +484,7 @@ class Gateway extends \Payrexx\Models\Base
     /**
      * Set a custom order ID for the Concardis PSPs
      *
-     * @access  public
-     * @param   string  $concardisOrderId
+     * @param string $concardisOrderId
      */
     public function setConcardisOrderId($concardisOrderId)
     {
@@ -453,8 +492,7 @@ class Gateway extends \Payrexx\Models\Base
     }
 
     /**
-     * @access  public
-     * @return  string
+     * @return string
      */
     public function getSuccessRedirectUrl()
     {
@@ -464,8 +502,7 @@ class Gateway extends \Payrexx\Models\Base
     /**
      * Set the URL to redirect to after a successful payment.
      *
-     * @access  public
-     * @param   string  $successRedirectUrl
+     * @param string $successRedirectUrl
      */
     public function setSuccessRedirectUrl($successRedirectUrl)
     {
@@ -473,7 +510,6 @@ class Gateway extends \Payrexx\Models\Base
     }
 
     /**
-     * @access  public
      * @return  string
      */
     public function getFailedRedirectUrl()
@@ -484,7 +520,7 @@ class Gateway extends \Payrexx\Models\Base
     /**
      * Set the url to redirect to after a failed payment.
      *
-     * @param   string  $failedRedirectUrl
+     * @param string $failedRedirectUrl
      */
     public function setFailedRedirectUrl($failedRedirectUrl)
     {
@@ -492,8 +528,7 @@ class Gateway extends \Payrexx\Models\Base
     }
 
     /**
-     * @access  public
-     * @return  string
+     * @return string
      */
     public function getCancelRedirectUrl()
     {
@@ -503,7 +538,7 @@ class Gateway extends \Payrexx\Models\Base
     /**
      * Set the url to redirect to after cancelled payment.
      *
-     * @param   string  $cancelRedirectUrl
+     * @param string $cancelRedirectUrl
      */
     public function setCancelRedirectUrl($cancelRedirectUrl)
     {
@@ -543,6 +578,23 @@ class Gateway extends \Payrexx\Models\Base
     }
 
     /**
+     * @return bool
+     */
+    public function isReserveOnAuthorization()
+    {
+        return $this->reserveOnAuthorization;
+    }
+
+    /**
+     * @param bool $reserveOnAuthorization
+     */
+    public function setReserveOnAuthorization(bool $reserveOnAuthorization): void
+    {
+        $this->reserveOnAuthorization = $reserveOnAuthorization;
+    }
+
+
+    /**
      * @return string
      */
     public function getCustomerStatementDescriptor()
@@ -559,7 +611,6 @@ class Gateway extends \Payrexx\Models\Base
     }
 
     /**
-     * Validity in minutes.
      * @return int
      */
     public function getValidity()
@@ -568,7 +619,6 @@ class Gateway extends \Payrexx\Models\Base
     }
 
     /**
-     * Validity in minutes.
      * @param int $validity
      */
     public function setValidity($validity)
@@ -576,16 +626,9 @@ class Gateway extends \Payrexx\Models\Base
         $this->validity = $validity;
     }
 
-    /**
-     * {@inheritdoc}
-     */
-    public function getResponseModel()
-    {
-        return new \Payrexx\Models\Response\Gateway();
-    }
 
     /**
-     * @return boolean
+     * @return bool
      */
     public function isSubscriptionState()
     {
@@ -598,7 +641,7 @@ class Gateway extends \Payrexx\Models\Base
      * subscription interval, period and cancellation interval
      * Note: Subscription and pre-authorization can not be combined.
      *
-     * @param boolean $subscriptionState
+     * @param bool $subscriptionState
      */
     public function setSubscriptionState($subscriptionState)
     {
@@ -689,4 +732,179 @@ class Gateway extends \Payrexx\Models\Base
         $this->subscriptionCancellationInterval = $subscriptionCancellationInterval;
     }
 
+    /**
+     * @return array
+     */
+    public function getButtonText()
+    {
+        return $this->buttonText;
+    }
+
+    /**
+     * Use language ID as array key. Use key 0 as default purpose. Will be used for each activated frontend language.
+     *
+     * @param array $buttonText
+     */
+    public function setButtonText($buttonText)
+    {
+        $this->buttonText = $buttonText;
+    }
+
+    /**
+     * @return string
+     */
+    public function getLookAndFeelProfile()
+    {
+        return $this->lookAndFeelProfile;
+    }
+
+    /**
+     * @param string $lookAndFeelProfile
+     */
+    public function setLookAndFeelProfile($lookAndFeelProfile)
+    {
+        $this->lookAndFeelProfile = $lookAndFeelProfile;
+    }
+
+    /**
+     * @return array
+     */
+    public function getSuccessMessage()
+    {
+        return $this->successMessage;
+    }
+
+    /**
+     * Use language ID as array key. Use key 0 as default purpose. Will be used for each activated frontend language.
+     *
+     * @param array $successMessage
+     */
+    public function setSuccessMessage($successMessage)
+    {
+        $this->successMessage = $successMessage;
+    }
+
+    /**
+     * @return array
+     */
+    public function getBasket()
+    {
+        return $this->basket;
+    }
+
+    /**
+     * It is a multidimensional array to parse each product as an array
+     *
+     * @param array $basket Available product values:
+     *                      name => Can be an array with the key as language ID
+     *                      description => Can be an array with the key as language ID
+     *                      quantity => quantity of the product
+     *                      amount => Product amount
+     */
+    public function setBasket($basket)
+    {
+        $this->basket = $basket;
+    }
+
+
+    public function getQrCodeSessionId()
+    {
+        return $this->qrCodeSessionId;
+    }
+
+    /**
+     * @param string $qrCodeSessionId
+     */
+    public function setQrCodeSessionId(string $qrCodeSessionId)
+    {
+        $this->qrCodeSessionId = $qrCodeSessionId;
+    }
+
+    /**
+     * @return string|null
+     */
+    public function getReturnApp()
+    {
+        return $this->returnApp;
+    }
+
+    /**
+     * @param string $returnApp
+     */
+    public function setReturnApp($returnApp)
+    {
+        $this->returnApp = $returnApp;
+    }
+
+    /**
+     * @return bool|null
+     */
+    public function getSpotlightStatus()
+    {
+        return $this->spotlightStatus;
+    }
+
+    /**
+     * @param bool $spotlightStatus
+     */
+    public function setSpotlightStatus($spotlightStatus)
+    {
+        $this->spotlightStatus = $spotlightStatus;
+    }
+
+    /**
+     * @return string|null
+     */
+    public function getSpotlightOrderDetailsUrl()
+    {
+        return $this->spotlightOrderDetailsUrl;
+    }
+
+    /**
+     * @param string $spotlightOrderDetailsUrl
+     */
+    public function setSpotlightOrderDetailsUrl($spotlightOrderDetailsUrl)
+    {
+        $this->spotlightOrderDetailsUrl = $spotlightOrderDetailsUrl;
+    }
+
+    /**
+     * @param string $language
+     */
+    public function setLanguage($language)
+    {
+        $this->language = $language;
+    }
+
+    /**
+     * @retrun string
+     */
+    public function getLanguage()
+    {
+        return $this->language;
+    }
+
+    /**
+     * @var bool $isPriceExclusiveVat
+     */
+    public function setIsPriceExclusiveVat($isPriceExclusiveVat)
+    {
+        $this->isPriceExclusiveVat = $isPriceExclusiveVat;
+    }
+
+    /**
+     * @return bool
+     */
+    public function getIsPriceExclusiveVat()
+    {
+        return $this->isPriceExclusiveVat;
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function getResponseModel(): ResponseGateway
+    {
+        return new ResponseGateway();
+    }
 }

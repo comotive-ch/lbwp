@@ -90,7 +90,7 @@ var LbwpForm = {
         // Move the email field out of the way
         var field = jQuery('.field_email_to');
         field.css('top', '-500px');
-        field.css('right', '-5000px');
+        field.css('left', '-5000px');
         // If it doesn't already start with xFc, add it
         if (field.length > 0 && field.val().indexOf('xFc') == -1) {
           field.val('xFc' + field.val());

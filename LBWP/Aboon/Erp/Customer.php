@@ -132,9 +132,11 @@ abstract class Customer extends Component
    */
   public function registerApiEndpoints()
   {
+    // TODO: This endpoint receives ERP webhook triggers. Review whether authentication should be added.
     register_rest_route('aboon/erp/customer', 'trigger', array(
       'methods' => \WP_REST_Server::ALLMETHODS,
-      'callback' => array($this, 'queueExternalTrigger')
+      'callback' => array($this, 'queueExternalTrigger'),
+      'permission_callback' => '__return_true',
     ));
   }
 
@@ -173,7 +175,7 @@ abstract class Customer extends Component
       ';
 
       foreach ($addresses[$type] as $key => $address) {
-        $html .= '<option value="' . $key . '"' . selected($addressId, $key, false) . '>' . $this->getAddressString($address) . '</option>';
+        $html .= '<option value="' . esc_attr($key) . '"' . selected($addressId, $key, false) . '>' . esc_html($this->getAddressString($address)) . '</option>';
       }
       
       $html .= '</select></div>';
@@ -185,6 +187,7 @@ abstract class Customer extends Component
       <form id="address-selection-list" method="POST" action="">
         <input type="hidden" name="change-address-action" value="1" />
         <input type="hidden" name="change-address-type" value="" />
+        <input type="hidden" name="_erp_nonce" value="' . wp_create_nonce('erp_address_change') . '" />
         <div class="col2-set col-compact">' . $html . '</div>
       </form>
       <script type="text/javascript">
@@ -227,7 +230,10 @@ abstract class Customer extends Component
    */
   protected function addressChangeController()
   {
-    if (!isset($_POST['address-change-action']) && $_POST['address-change-action'] == 1) {
+    if (!isset($_POST['change-address-action']) || intval($_POST['change-address-action']) !== 1) {
+      return;
+    }
+    if (!wp_verify_nonce($_POST['_erp_nonce'] ?? '', 'erp_address_change')) {
       return;
     }
 

@@ -308,7 +308,7 @@ class Shop extends Component
 
     list($email) = explode('|', $_COOKIE['wordpress_logged_in_' . COOKIEHASH]);
     if (strlen($email) > 0 && (Strings::isEmail($email) || $email == Strings::forceSlugString($email, true))) {
-      $id = $db->get_var('SELECT ID FROM ' . $db->users . ' WHERE user_login = "' . $email . '"');
+      $id = $db->get_var($db->prepare('SELECT ID FROM ' . $db->users . ' WHERE user_login = %s', $email));
       wp_set_current_user($id);
     }
   }
@@ -320,7 +320,7 @@ class Shop extends Component
   public static function getMetaListIdMap($field)
   {
     $db = WordPress::getDb();
-    $raw = $db->get_results('SELECT post_id, meta_value FROM ' . $db->postmeta . ' WHERE meta_key = "' . $field . '"');
+    $raw = $db->get_results($db->prepare('SELECT post_id, meta_value FROM ' . $db->postmeta . ' WHERE meta_key = %s', $field));
     $data = array();
     foreach ($raw as $row) {
       $data[$row->post_id] = $row->meta_value;
@@ -352,11 +352,10 @@ class Shop extends Component
   public static function translateSkuToId($skuIds)
   {
     $db = WordPress::getDb();
-    return array_map('intval', $db->get_col('
-      SELECT post_id FROM ' . $db->postmeta . '
-      WHERE meta_key = "_sku"
-      AND meta_value IN(' . implode(',', $skuIds) . ')
-    '));
+    $placeholders = implode(',', array_fill(0, count($skuIds), '%s'));
+    return array_map('intval', $db->get_col(
+      $db->prepare('SELECT post_id FROM ' . $db->postmeta . ' WHERE meta_key = "_sku" AND meta_value IN(' . $placeholders . ')', ...$skuIds)
+    ));
   }
 
   /**

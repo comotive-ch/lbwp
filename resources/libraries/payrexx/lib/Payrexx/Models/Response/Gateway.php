@@ -1,31 +1,48 @@
 <?php
 
+/**
+ * The Gateway response model
+ *
+ * @author    Payrexx Development <info@payrexx.com>
+ * @copyright Payrexx AG
+ * @since     v1.3.0
+ */
+
 namespace Payrexx\Models\Response;
 
 /**
  * Gateway response class
  *
- * @copyright   Payrexx AG
- * @author      Payrexx Development Team <info@payrexx.com>
- * @package     \Payrexx\Models\Response
+ * @package Payrexx\Models\Response
  */
 class Gateway extends \Payrexx\Models\Request\Gateway
 {
     /** @var string */
-    protected $hash;
+    protected $hash = '';
 
     /** @var string */
-    protected $link;
+    protected $link = '';
 
     /** @var string */
     protected $status;
 
-    /** @var integer */
+    /** @var int */
     protected $createdAt;
 
     /** @var array $invoices */
     protected $invoices;
 
+    /** @var int */
+    protected $transactionId;
+
+    /** @var string */
+    protected $appLink;
+
+    /** @var int */
+    protected $applicationFee;
+
+    /** @var int */
+    protected int $requestId;
 
     /**
      * @return string
@@ -56,6 +73,10 @@ class Gateway extends \Payrexx\Models\Request\Gateway
      */
     public function setLink($link)
     {
+        $language = $this->getLanguage();
+        if (!empty($language) && strpos($link, "/{$language}/") === false) {
+            $link = str_replace('/?', "/{$language}/?", $link);
+        }
         $this->link = $link;
     }
 
@@ -76,7 +97,7 @@ class Gateway extends \Payrexx\Models\Request\Gateway
     }
 
     /**
-     * @return integer
+     * @return int
      */
     public function getCreatedAt()
     {
@@ -84,7 +105,7 @@ class Gateway extends \Payrexx\Models\Request\Gateway
     }
 
     /**
-     * @param integer $createdAt
+     * @param int $createdAt
      */
     public function setCreatedAt($createdAt)
     {
@@ -113,5 +134,69 @@ class Gateway extends \Payrexx\Models\Request\Gateway
     public function setInvoices($invoices)
     {
         $this->invoices = $invoices;
+    }
+
+    /**
+     * @return int|null
+     */
+    public function getTransactionId(): ?int
+    {
+        return $this->transactionId;
+    }
+
+    /**
+     * @param int $transactionId
+     */
+    public function setTransactionId(int $transactionId): void
+    {
+        $this->transactionId = $transactionId;
+    }
+
+    /**
+     * @return string|null
+     */
+    public function getAppLink(): ?string
+    {
+        return $this->appLink;
+    }
+
+    /**
+     * @param string $appLink
+     */
+    public function setAppLink(string $appLink): void
+    {
+        $this->appLink = $appLink;
+    }
+
+    /**
+     * @return int
+     */
+    public function getApplicationFee()
+    {
+        return $this->applicationFee;
+    }
+
+    /**
+     * @param int $applicationFee
+     */
+    public function setApplicationFee($applicationFee)
+    {
+        $this->applicationFee = $applicationFee;
+    }
+
+    /**
+     * @return int
+     */
+    public function getRequestId()
+    {
+        return $this->requestId;
+    }
+
+    /**
+     * @param int $requestId
+     */
+    public function setRequestId($requestId)
+    {
+        $this->requestId = $requestId;
     }
 }

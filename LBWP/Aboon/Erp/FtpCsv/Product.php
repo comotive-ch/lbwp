@@ -653,15 +653,16 @@ abstract class Product extends ProductBase
     foreach ($data['config'] as $config) {
       $configTable .= '
         <tr>
-          <td>' . $config['name'] . '</td>
-          <td>' . $config['type'] . '</td>
-          <td>' . $config['config'] . '</td>
+          <td>' . esc_html($config['name']) . '</td>
+          <td>' . esc_html($config['type']) . '</td>
+          <td>' . esc_html($config['config']) . '</td>
         </tr>
       ';
     }
 
     // Handling of new import uploads
     if (isset($_POST['cmdStartBackgroundImport']) && isset($_FILES['uploadedFile'])) {
+      check_admin_referer('erp_product_import');
       $message = $this->validateAndStartManualImport($_FILES['uploadedFile']);
     }
 
@@ -739,6 +740,7 @@ abstract class Product extends ProductBase
           nach dem Upload die Seite, der Status in der Liste sollte sich dann aktualisieren. Bitte beachten, dass die ID-Spalte immer vorhanden sein muss.
         </p>
         <form action="" method="POST" enctype="multipart/form-data">
+          ' . wp_nonce_field('erp_product_import', '_wpnonce', true, false) . '
           <input type="file" name="uploadedFile" />
           <input type="submit" name="cmdStartBackgroundImport" value="Datenimport starten" class="button-primary" />
         </form>

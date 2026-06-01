@@ -108,7 +108,8 @@
 				data : {
 					action : 'updateListItem',
 					product : pId,
-					listId : listId
+					listId : listId,
+					nonce : watchlistData.nonce
 				},
 				success : function(response){
 					if(isButton){
@@ -147,6 +148,7 @@
 				action : 'getWatchlistHtml',
 				useLocalList : !watchlistData.loggedInMode,
 				localWatchlist : JSON.stringify(Watchlist.localLists),
+				nonce : watchlistData.nonce
 			},
 			success : function(response){
 				var listing = jQuery('.lbwp-watchlist__listing');
@@ -251,6 +253,7 @@
 				data : {
 					action : 'mergeWatchlists',
 					localWatchlist : JSON.stringify(Watchlist.localLists),
+					nonce : watchlistData.nonce
 				},
 				success : function(response){
 					// Flush local lists
@@ -330,6 +333,7 @@
 					data : {
 						action : 'setActiveWatchlist',
 						list : lSelect.val(),
+						nonce : watchlistData.nonce
 					},
 					success : function(response){
 						lSelect.prop('disabled', false);

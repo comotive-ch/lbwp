@@ -546,19 +546,23 @@ class Search extends ACFBase
   {
     register_rest_route('custom/search', 'autocomplete', array(
       'methods' => \WP_REST_Server::READABLE,
-      'callback' => array($this, 'getAutocompletion')
+      'callback' => array($this, 'getAutocompletion'),
+      'permission_callback' => '__return_true',
     ));
     register_rest_route('custom/search', 'categories', array(
       'methods' => \WP_REST_Server::READABLE,
-      'callback' => array($this, 'getCategories')
+      'callback' => array($this, 'getCategories'),
+      'permission_callback' => '__return_true',
     ));
     register_rest_route('custom/search', 'website', array(
       'methods' => \WP_REST_Server::READABLE,
-      'callback' => array($this, 'getWebsiteResults')
+      'callback' => array($this, 'getWebsiteResults'),
+      'permission_callback' => '__return_true',
     ));
     register_rest_route('custom/search', 'tracktermclick', array(
       'methods' => \WP_REST_Server::CREATABLE,
-      'callback' => array($this, 'trackSearchTermClick')
+      'callback' => array($this, 'trackSearchTermClick'),
+      'permission_callback' => '__return_true',
     ));
   }
 
@@ -1141,7 +1145,7 @@ class Search extends ACFBase
     if (!static::$BUILD_SEARCH_WORD_INDEX) {
       return;
     }
-    $word = addslashes($_POST['term']);
+    $word = sanitize_text_field($_POST['term'] ?? '');
     $searchWordIndex = self::getSearchWordIndex();
     $wid = array_search($word, $searchWordIndex);
     if ($wid > 0) {

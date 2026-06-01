@@ -217,45 +217,47 @@ class Strings
   }
 
   /**
-   * Cut a string into sentences
-   * @param $str string the string to cut
-   * @param $min int where the earliest can should be
-   * @param $max int where the cut should (maximal) end
-   * @param $addDots bool
-   * @param $sentenceEnd array final char to use to cut the sentence
+   * Cut a string at the last sentence boundary before $max, with $min as earliest allowed cut.
+   * Falls back to the last word boundary before $max when no sentence end is found.
+   * @param string $str the string to cut
+   * @param int $min earliest allowed cut position
+   * @param int $max maximum length of the result
+   * @param bool $addDots append "..." when falling back to a word-boundary cut
+   * @param array $sentenceEnd characters that mark a sentence end
+   * @param bool $cutSentenceEnd strip the sentence-end character from the result
    * @return string the cut string
    */
-  public static function chopToSentences($str, $min, $max, $addDots = false, $sentenceEnd = ['.', '?', '!'], $cutSentenceEnd = false)
+  public static function chopToSentences(string $str, int $min, int $max, bool $addDots = false, array $sentenceEnd = ['.', '?', '!'], bool $cutSentenceEnd = false): string
   {
-    $cutSomewhereHere = substr($str, $min, $max - $min);
-    $cutStr = $str;
-    $cutAnyway = true;
+    if (strlen($str) <= $max) {
+      return $str;
+    }
+
+    $head = substr($str, 0, $max);
+    $bestPos = -1;
+    $bestChar = '';
 
     foreach ($sentenceEnd as $endChar) {
-      if (self::contains($cutSomewhereHere, $endChar)) {
-        $cutAnyway = false;
-        $cutStr = substr($str, 0, $min + strpos($cutSomewhereHere, $endChar) + 1);
-
-        if ($cutSentenceEnd) {
-          $cutStr = substr($cutStr, 0, strlen($cutStr) - strlen($endChar));
-        }
-
-        break;
+      $pos = strrpos($head, $endChar);
+      if ($pos !== false && $pos >= $min && $pos > $bestPos) {
+        $bestPos = $pos;
+        $bestChar = $endChar;
       }
     }
 
-    if ($cutAnyway) {
-      // Dont chop if sentence is shorten than max
-      if (strlen($str) < $max) {
-        return $str;
+    if ($bestPos !== -1) {
+      $cutStr = substr($str, 0, $bestPos + strlen($bestChar));
+      if ($cutSentenceEnd) {
+        $cutStr = substr($cutStr, 0, strlen($cutStr) - strlen($bestChar));
       }
-
-      $cutStr = substr($str, 0, $min + strpos($cutSomewhereHere, ' '));
-      if ($cutStr != $str && $addDots) {
-        $cutStr .= '...';
-      }
+      return $cutStr;
     }
 
+    $lastSpace = strrpos($head, ' ');
+    $cutStr = substr($str, 0, $lastSpace !== false ? $lastSpace : $max);
+    if ($addDots) {
+      $cutStr .= '...';
+    }
     return $cutStr;
   }
 

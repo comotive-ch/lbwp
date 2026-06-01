@@ -273,7 +273,7 @@ class AuthSecurity extends ACFBase
       update_user_meta($user->ID, self::AUTH_NAME, null);
 
       // Check the auth code with the input
-      if ($_POST[self::AUTH_NAME] !== $authCode) {
+      if (!hash_equals((string) $authCode, (string) $_POST[self::AUTH_NAME])) {
         // TODO: add custom login error
         return new WP_Error(__('Der Authentifizierungs-Code ist nicht korrekt.', 'lbwp'));
       }

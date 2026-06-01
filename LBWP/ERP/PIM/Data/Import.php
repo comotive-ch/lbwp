@@ -5,9 +5,11 @@ namespace LBWP\ERP\PIM\Data;
 use LBWP\Core as LbwpCore;
 use LBWP\Helper\Cronjob;
 use LBWP\Helper\XlsxHelper;
+use LBWP\Module\Backend\MemcachedAdmin;
 use LBWP\Theme\Component\ACFBase;
 use LBWP\Util\File;
 use LBWP\Util\NativeWpImport;
+use mysqli;
 
 /**
  * PIM Import: admin page for uploading XLSX files, converting to CSV,
@@ -81,12 +83,16 @@ class Import extends ACFBase
   public function renderImportPage()
   {
     $message = '';
+    $pgImport = new ProductGroupImport();
 
-    // Handle file upload or reset
     if (isset($_POST['pimport_upload']) && isset($_FILES['pimport_file'])) {
       $message = $this->handleUpload();
     } elseif (isset($_POST['pimport_reset'])) {
       $message = $this->handleReset();
+    } elseif (isset($_POST['pg_tree_upload'])) {
+      $message = $pgImport->handleCategoryTreeUpload();
+    } elseif (isset($_POST['pg_assign_upload'])) {
+      $message = $pgImport->handleAssignmentUpload();
     }
 
     // Load current import state
@@ -120,14 +126,17 @@ class Import extends ACFBase
     }
 
     // Upload form
-    echo '<h2>XLSX / CSV hochladen</h2>';
+    echo '<h2>Produkt Stammdaten importieren</h2>';
     echo '<form method="post" enctype="multipart/form-data">';
     echo '<table class="form-table"><tr>';
     echo '<th><label for="pimport_file">XLSX / CSV Datei</label></th>';
     echo '<td><input type="file" name="pimport_file" id="pimport_file" accept=".xlsx,.csv" /></td>';
     echo '</tr></table>';
     echo '<p><input type="submit" name="pimport_upload" class="button-primary" value="Hochladen und Import starten" /></p>';
-    echo '</form>';
+    echo '</form><hr>';
+
+    $pgImport->renderForms();
+
     echo '</div>';
   }
 
@@ -372,9 +381,10 @@ class Import extends ACFBase
    * @param string $value raw value from CSV
    * @return string normalized value
    */
-  protected function normalizeMetaValue($value)
+  protected function normalizeMetaValue(string $value): string
   {
-    // ACF true_false fields expect 1/0
+    $value = trim($value, '"');
+
     if ($value === 'True') {
       return '1';
     }
@@ -427,7 +437,7 @@ class Import extends ACFBase
   /**
    * Background cron handler — performs the actual import
    */
-  public function runImport()
+  public function runImport(): void
   {
     ini_set('memory_limit', '2G');
     set_time_limit(0);
@@ -437,11 +447,9 @@ class Import extends ACFBase
       return;
     }
 
-    // Update status to running
     $current['status'] = 'running';
     update_option(self::OPTION_KEY, $current, false);
 
-    // Download CSV from S3
     $csvData = file_get_contents($current['url']);
     if ($csvData === false) {
       $current['status'] = 'error';
@@ -451,15 +459,13 @@ class Import extends ACFBase
       return;
     }
 
-    // Strip BOM
     $csvData = ltrim($csvData, "\xEF\xBB\xBF");
 
-    // Parse CSV from string
     $handle = fopen('php://temp', 'r+');
     fwrite($handle, $csvData);
     rewind($handle);
+    unset($csvData);
 
-    // Read header row
     $headers = fgetcsv($handle, 0, ';');
     if (!$headers || empty($headers)) {
       fclose($handle);
@@ -470,24 +476,33 @@ class Import extends ACFBase
       return;
     }
 
-    // Determine lookup column (first column must be "sku" or "ID")
-    $lookupColumn = strtolower(trim($headers[0]));
+    $headers = array_map('trim', $headers);
+    $lookupColumn = strtolower($headers[0]);
     $postsColumnsFlipped = array_flip(NativeWpImport::POSTS_COLUMNS);
 
-    // Init NativeWpImport
     global $table_prefix;
     $importer = new NativeWpImport(DB_HOST, DB_USER, DB_PASSWORD, DB_NAME, $table_prefix);
     $importer->setAutoCommitThreshold(500);
-    $importer->beginTransaction();
 
-    // Build SKU map if lookup is by SKU
     $skuMap = array();
     if ($lookupColumn === 'sku') {
       $skuMap = $this->buildSkuMap($importer);
     }
 
-    // Process rows
+    $relationSlugs = $this->loadRelationSlugs();
+    $pendingRelations = [];
+    $bufferDb = null;
+
+    if (!empty($relationSlugs)) {
+      $bufferDb = new mysqli(DB_HOST, DB_USER, DB_PASSWORD, DB_NAME);
+      $bufferDb->set_charset('utf8mb4');
+      $this->prepareRelationsBuffer($bufferDb, $table_prefix);
+    }
+
+    $importer->beginTransaction();
+
     $imported = 0;
+
     while (($row = fgetcsv($handle, 0, ';')) !== false) {
       if (count($row) !== count($headers)) {
         continue;
@@ -496,8 +511,8 @@ class Import extends ACFBase
       $record = array_combine($headers, $row);
       $post = array();
       $meta = array();
+      $relationData = [];
 
-      // Resolve existing post ID
       if ($lookupColumn === 'id' && !empty($record['ID'])) {
         $post['ID'] = (int)$record['ID'];
       } elseif ($lookupColumn === 'sku' && !empty($record['sku'])) {
@@ -506,36 +521,40 @@ class Import extends ACFBase
         }
       }
 
-      // Split fields into post columns vs. meta
       foreach ($record as $key => $value) {
         if ($key === 'ID') {
           continue;
         }
-        if (isset($postsColumnsFlipped[$key])) {
+        if (!empty($relationSlugs) && isset($relationSlugs[$key])) {
+          $skus = array_values(array_filter(array_map('trim', explode(';', $value))));
+          if (!empty($skus)) {
+            $relationData[$key] = $skus;
+          }
+        } elseif (isset($postsColumnsFlipped[$key])) {
           $post[$key] = $this->normalizePostValue($key, $value);
         } else {
           $meta[$key] = $this->normalizeMetaValue($value);
         }
       }
 
-      // Default post_type for new posts
       if (!isset($post['ID']) && !isset($post['post_type'])) {
         $post['post_type'] = self::PIM_TYPE_SLUG;
       }
 
-      // Make sure to have defaults that are absolutely needed
       $this->setPostDefaults($post);
 
       $newId = $importer->update($post, $meta);
 
-      // If this was a new post with SKU, add to map for potential duplicates in same file
       if (!isset($post['ID']) && $lookupColumn === 'sku' && !empty($record['sku'])) {
         $skuMap[$record['sku']] = $newId;
       }
 
+      foreach ($relationData as $slug => $skus) {
+        $pendingRelations[$slug][$newId] = $skus;
+      }
+
       $imported++;
 
-      // Update progress every 100 records
       if ($imported % 100 === 0) {
         $current['records_imported'] = $imported;
         $current['last_updated'] = date('Y-m-d H:i:s');
@@ -545,20 +564,245 @@ class Import extends ACFBase
 
     fclose($handle);
     $importer->commitTransaction();
+
+    if (!empty($pendingRelations) && $bufferDb !== null) {
+      $this->flushRelationsToBuffer($bufferDb, $pendingRelations, $table_prefix);
+      $this->resolveAndWriteRelations($importer, $bufferDb, $skuMap, $relationSlugs, $table_prefix);
+      $bufferDb->close();
+    }
+
     unset($importer);
 
-    // Remove CSV from S3 and update status to completed
     $this->deleteS3File($current['url']);
     $current['status'] = 'completed';
     $current['records_imported'] = $imported;
     $current['last_updated'] = date('Y-m-d H:i:s');
     update_option(self::OPTION_KEY, $current, false);
+    // Do a full flush of the cache
+    MemcachedAdmin::flushFullCacheHelper();
+  }
+
+  /**
+   * Load all configured relationship slugs from ACF options, keyed by slug with their ACF field key as value
+   * @return array slug => ACF field key (e.g. 'related_products' => 'field_pim_rel_0')
+   */
+  protected function loadRelationSlugs(): array
+  {
+    $count = intval(get_option('options_pim_cr_relations', 0));
+    $slugs = array();
+
+    for ($i = 0; $i < $count; $i++) {
+      $slug = get_option('options_pim_cr_relations_' . $i . '_rel_slug');
+      if (!empty($slug)) {
+        $slugs[$slug] = 'field_pim_rel_' . $i;
+      }
+    }
+
+    return $slugs;
+  }
+
+  /**
+   * Create (if absent) and truncate the permanent relation buffer table.
+   * Uses a separate connection so these writes never participate in the main import transaction.
+   * @param mysqli $db the buffer connection
+   * @param string $prefix table prefix
+   */
+  protected function prepareRelationsBuffer(mysqli $db, string $prefix): void
+  {
+    $db->query(
+      "CREATE TABLE IF NOT EXISTS `{$prefix}pim_relations_buffer` (
+        id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+        post_id INT UNSIGNED NOT NULL,
+        rel_slug VARCHAR(191) NOT NULL,
+        sku VARCHAR(191) NOT NULL,
+        sort_order SMALLINT UNSIGNED NOT NULL DEFAULT 0,
+        PRIMARY KEY (id),
+        KEY idx_slug_post (rel_slug, post_id),
+        KEY idx_slug_sku (rel_slug, sku)
+      ) ENGINE=InnoDB"
+    );
+    $db->query("TRUNCATE TABLE `{$prefix}pim_relations_buffer`");
+  }
+
+  /**
+   * Bulk-insert all accumulated pending relations into the permanent buffer table.
+   * Committed in 5 000-row transaction batches to bound undo-log size.
+   * @param mysqli $db the buffer connection (autocommit, separate from main import)
+   * @param array $pending slug => [postId => [skus]]
+   * @param string $prefix table prefix
+   */
+  protected function flushRelationsToBuffer(mysqli $db, array $pending, string $prefix): void
+  {
+    $table = "`{$prefix}pim_relations_buffer`";
+    $db->begin_transaction();
+    $values = [];
+    $count = 0;
+
+    foreach ($pending as $slug => $postSkuSets) {
+      $slugE = $db->real_escape_string($slug);
+      foreach ($postSkuSets as $postId => $skus) {
+        foreach ($skus as $order => $sku) {
+          $skuE = $db->real_escape_string($sku);
+          $values[] = "({$postId}, '{$slugE}', '{$skuE}', {$order})";
+          $count++;
+
+          if ($count >= 5000) {
+            $db->query("INSERT INTO {$table} (post_id, rel_slug, sku, sort_order) VALUES " . implode(',', $values));
+            $values = [];
+            $count = 0;
+            $db->commit();
+            $db->begin_transaction();
+          }
+        }
+      }
+    }
+
+    if (!empty($values)) {
+      $db->query("INSERT INTO {$table} (post_id, rel_slug, sku, sort_order) VALUES " . implode(',', $values));
+    }
+    $db->commit();
+  }
+
+  /**
+   * Resolve buffered relation SKUs to post IDs using the in-memory SKU map, then
+   * write ACF-compatible postmeta. Uses a diff approach: only INSERT new rows and
+   * UPDATE changed ones — unchanged relations are skipped entirely.
+   * Writes are committed every 2 000 posts to bound undo-log size.
+   * @param NativeWpImport $importer main import connection (for postmeta writes)
+   * @param mysqli $bufferDb buffer table connection
+   * @param array $skuMap sku => post_id (fully populated after the main loop)
+   * @param array $relationSlugs slug => ACF field key
+   * @param string $prefix table prefix
+   */
+  protected function resolveAndWriteRelations(
+    NativeWpImport $importer,
+    mysqli $bufferDb,
+    array $skuMap,
+    array $relationSlugs,
+    string $prefix
+  ): void {
+    $db = $importer->getDb();
+
+    foreach (array_keys($relationSlugs) as $slug) {
+      $fieldKey   = $relationSlugs[$slug];
+      $slugE      = $db->real_escape_string($slug);
+      $underSlugE = $db->real_escape_string('_' . $slug);
+      $fieldKeyE  = $db->real_escape_string($fieldKey);
+      $bufSlugE   = $bufferDb->real_escape_string($slug);
+
+      $result = $bufferDb->query(
+        "SELECT post_id, sku, sort_order FROM `{$prefix}pim_relations_buffer`
+         WHERE rel_slug = '{$bufSlugE}'
+         ORDER BY post_id, sort_order"
+      );
+
+      if (!$result) {
+        continue;
+      }
+
+      // Resolve SKUs → related post IDs using in-memory map (no extra JOIN needed)
+      $postRelations = [];
+      while ($row = $result->fetch_assoc()) {
+        $pid = (int) $row['post_id'];
+        if (isset($skuMap[$row['sku']])) {
+          $postRelations[$pid][] = $skuMap[$row['sku']];
+        }
+      }
+      $result->free();
+
+      if (empty($postRelations)) {
+        continue;
+      }
+
+      $postIds = array_keys($postRelations);
+
+      // Fetch existing meta for the diff
+      $existing = [];
+      foreach (array_chunk($postIds, 2000) as $chunk) {
+        $res = $db->query(
+          "SELECT post_id, meta_id, meta_value FROM `{$prefix}postmeta`
+           WHERE meta_key = '{$slugE}' AND post_id IN (" . implode(',', $chunk) . ")"
+        );
+        if ($res) {
+          while ($row = $res->fetch_assoc()) {
+            $existing[(int) $row['post_id']] = [
+              'meta_id'    => (int) $row['meta_id'],
+              'meta_value' => $row['meta_value'],
+            ];
+          }
+          $res->free();
+        }
+      }
+
+      $toInsert = [];
+      $toUpdate = [];
+
+      foreach ($postRelations as $pid => $relatedIds) {
+        $serialized = serialize($relatedIds);
+        if (!isset($existing[$pid])) {
+          $toInsert[$pid] = $serialized;
+        } elseif ($existing[$pid]['meta_value'] !== $serialized) {
+          $toUpdate[] = ['meta_id' => $existing[$pid]['meta_id'], 'value' => $serialized];
+        }
+      }
+
+      // INSERT new rows (value row + ACF key reference row), batch-committed
+      if (!empty($toInsert)) {
+        $db->begin_transaction();
+        $values   = [];
+        $rowCount = 0;
+
+        foreach ($toInsert as $pid => $serialized) {
+          $values[] = "({$pid}, '{$slugE}', '" . $db->real_escape_string($serialized) . "')";
+          if (!empty($fieldKey)) {
+            $values[] = "({$pid}, '{$underSlugE}', '{$fieldKeyE}')";
+          }
+          $rowCount++;
+
+          if ($rowCount >= 2000) {
+            $db->query("INSERT INTO `{$prefix}postmeta` (post_id, meta_key, meta_value) VALUES " . implode(',', $values));
+            $values   = [];
+            $rowCount = 0;
+            $db->commit();
+            $db->begin_transaction();
+          }
+        }
+
+        if (!empty($values)) {
+          $db->query("INSERT INTO `{$prefix}postmeta` (post_id, meta_key, meta_value) VALUES " . implode(',', $values));
+        }
+        $db->commit();
+      }
+
+      // UPDATE changed rows only, reusing a prepared statement
+      if (!empty($toUpdate)) {
+        $stmt = $db->prepare("UPDATE `{$prefix}postmeta` SET meta_value = ? WHERE meta_id = ?");
+        $db->begin_transaction();
+        $count = 0;
+
+        foreach ($toUpdate as $item) {
+          $stmt->bind_param('si', $item['value'], $item['meta_id']);
+          $stmt->execute();
+          $count++;
+
+          if ($count >= 2000) {
+            $db->commit();
+            $db->begin_transaction();
+            $count = 0;
+          }
+        }
+
+        $db->commit();
+        $stmt->close();
+      }
+    }
   }
 
   /**
    * Set default values for posts if not given
+   * @param array $post post data array, passed by reference
    */
-  protected function setPostDefaults(&$post)
+  protected function setPostDefaults(array &$post): void
   {
     if (!isset($post['post_content']))
       $post['post_content'] = '';

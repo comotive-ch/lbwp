@@ -418,17 +418,21 @@ abstract class Product extends Component
    */
   public function registerApiEndpoints()
   {
+    // TODO: These endpoints receive ERP webhook triggers. Review whether authentication should be added.
     register_rest_route('aboon/erp/product', 'trigger', array(
       'methods' => \WP_REST_Server::ALLMETHODS,
-      'callback' => array($this, 'queueExternalTrigger')
+      'callback' => array($this, 'queueExternalTrigger'),
+      'permission_callback' => '__return_true',
     ));
     register_rest_route('aboon/erp/product', 'inventory', array(
       'methods' => \WP_REST_Server::ALLMETHODS,
-      'callback' => array($this, 'runInventoryTrigger')
+      'callback' => array($this, 'runInventoryTrigger'),
+      'permission_callback' => '__return_true',
     ));
     register_rest_route('aboon/erp/product', 'pricelist', array(
       'methods' => \WP_REST_Server::ALLMETHODS,
-      'callback' => array($this, 'runPricelistTrigger')
+      'callback' => array($this, 'runPricelistTrigger'),
+      'permission_callback' => '__return_true',
     ));
   }
 

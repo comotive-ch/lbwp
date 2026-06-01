@@ -21,6 +21,7 @@ class AutoUnpublishPost
   protected $settings = array(
     'postTypes' => array('post', 'page'),
     'allowRedirects' => false,
+    'useStatus410' => false,
     'unpublishAssociatedMenus' => true,
   );
   /**
@@ -71,6 +72,47 @@ class AutoUnpublishPost
     // Eventually do redirects on unpublished posts
     if ($this->settings['allowRedirects']) {
       add_action('wp', array($this, 'eventuallyRedirect'));
+    }
+    // Replace 404 with 410 for auto-unpublished posts when enabled
+    if ($this->settings['useStatus410']) {
+      add_action('template_redirect', array($this, 'eventuallyServe410'));
+    }
+  }
+
+  /**
+   * Replace the 404 status with 410 Gone when the URL matches a draft post that was auto-unpublished
+   * @return void
+   */
+  public function eventuallyServe410(): void
+  {
+    if (!is_404()) {
+      return;
+    }
+
+    global $wp;
+    $parts = explode('/', trim($wp->request, '/'));
+    $slug = end($parts);
+
+    if (empty($slug)) {
+      return;
+    }
+
+    $postTypes = $this->settings['postTypes'];
+    $placeholders = implode(', ', array_fill(0, count($postTypes), '%s'));
+    $sql = $this->wpdb->prepare(
+      "SELECT p.ID FROM {$this->wpdb->posts} p
+       INNER JOIN {$this->wpdb->postmeta} pm ON p.ID = pm.post_id
+       WHERE p.post_status = 'draft'
+       AND p.post_name = %s
+       AND p.post_type IN ($placeholders)
+       AND pm.meta_key = 'auto_unpublish_on'
+       AND pm.meta_value != ''
+       LIMIT 1",
+      array_merge([$slug], $postTypes)
+    );
+
+    if ($this->wpdb->get_var($sql)) {
+      status_header(410);
     }
   }
 
@@ -175,6 +217,7 @@ class AutoUnpublishPost
     // Check for autosave and don't do anything
     if (
       defined('DOING_AUTOSAVE') && DOING_AUTOSAVE ||
+      defined('DOING_CRON') && DOING_CRON ||
       (isset($_REQUEST['action']) && $_REQUEST['action'] == 'inline-save') ||
       isset($_REQUEST['bulk_edit'])
     ) {

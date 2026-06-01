@@ -162,21 +162,29 @@ class Util
     }
 
     $paid_statuses = array_map('esc_sql', wc_get_is_paid_statuses());
-    $product_ids = is_array($product_ids) ? implode(',', $product_ids) : $product_ids;
+    $status_list = "'wc-" . implode("','wc-", $paid_statuses) . "'";
 
-    $line_meta_value = $product_ids != (0 || '') ? 'AND woim.meta_value IN (' . $product_ids . ')' : 'AND woim.meta_value != 0';
+    $ids = is_array($product_ids) ? array_map('intval', $product_ids) : [intval($product_ids)];
+    $non_zero_ids = array_filter($ids);
+    if (!empty($non_zero_ids)) {
+      $line_meta_value = 'AND woim.meta_value IN (' . implode(',', $non_zero_ids) . ')';
+    } else {
+      $line_meta_value = 'AND woim.meta_value != 0';
+    }
 
     // Count the number of products
-    $count = $wpdb->get_var("
-        SELECT COUNT(p.ID) FROM {$wpdb->prefix}posts AS p
-        INNER JOIN {$wpdb->prefix}postmeta AS pm ON p.ID = pm.post_id
-        INNER JOIN {$wpdb->prefix}woocommerce_order_items AS woi ON p.ID = woi.order_id
-        INNER JOIN {$wpdb->prefix}woocommerce_order_itemmeta AS woim ON woi.order_item_id = woim.order_item_id
-        WHERE p.post_status IN ( 'wc-" . implode("','wc-", $paid_statuses) . "' )
-        AND pm.meta_key = '$meta_key'
-        AND pm.meta_value = '$meta_value'
-        AND woim.meta_key IN ( '_product_id', '_variation_id' ) $line_meta_value 
-    ");
+    $count = $wpdb->get_var($wpdb->prepare(
+      "SELECT COUNT(p.ID) FROM {$wpdb->prefix}posts AS p
+      INNER JOIN {$wpdb->prefix}postmeta AS pm ON p.ID = pm.post_id
+      INNER JOIN {$wpdb->prefix}woocommerce_order_items AS woi ON p.ID = woi.order_id
+      INNER JOIN {$wpdb->prefix}woocommerce_order_itemmeta AS woim ON woi.order_item_id = woim.order_item_id
+      WHERE p.post_status IN ( $status_list )
+      AND pm.meta_key = %s
+      AND pm.meta_value = %s
+      AND woim.meta_key IN ( '_product_id', '_variation_id' ) $line_meta_value",
+      $meta_key,
+      $meta_value
+    ));
 
     // Return true if count is higher than 0 (or false)
     return $count > 0 ? true : false;

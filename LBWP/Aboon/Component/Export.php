@@ -41,6 +41,8 @@ class Export extends Component
    */
   public function maybeRunExportExternal()
   {
+    // TODO: This endpoint uses a hardcoded secret for authentication. Verify whether it is still in use
+    // and replace with a proper WordPress option-based secret or remove the endpoint entirely.
     if (isset($_REQUEST['shop-export']) && $_REQUEST['allowExternal'] == '739ztuhgoroz8053z3qhigrw08z53ihgo') {
       if (isset($_POST['postType']) && $_POST['postType'] == 'shop_subscription') {
         $this->exportCSVSubscriptions();

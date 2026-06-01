@@ -83,9 +83,11 @@ abstract class Order extends Component
    */
   public function registerApiEndpoints()
   {
+    // TODO: This endpoint receives ERP webhook triggers. Review whether authentication should be added.
     register_rest_route('aboon/erp/order', 'trigger', array(
       'methods' => \WP_REST_Server::ALLMETHODS,
-      'callback' => array($this, 'provideExternalTrigger')
+      'callback' => array($this, 'provideExternalTrigger'),
+      'permission_callback' => '__return_true',
     ));
   }
 

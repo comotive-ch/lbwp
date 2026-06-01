@@ -431,12 +431,12 @@ class SendMail extends Base
     if ($type == 'text') {
       $mail->isHTML(false);
       if (strlen($this->content) > 0) {
-        $mail->Body = $this->maybeFixCustomContent($email['content']);
+        $mail->Body = $this->maybeFixCustomContent($email['content'], $data);
       } else {
         $mail->Body = self::getDataTextTable($data, $skipEmpty);
       }
     } else {
-      $mail->Body = $this->getEmailTemplateBody($email);
+      $mail->Body = $this->getEmailTemplateBody($email, $data);
     }
   }
 
@@ -445,8 +445,10 @@ class SendMail extends Base
    * @param string $content
    * @return string
    */
-  protected function maybeFixCustomContent($content)
+  protected function maybeFixCustomContent($content, $data)
   {
+    // Handle labelled variables
+    $content = $this->handleLabelledVariables($content, $data);
     // Remove leftover {xxxx} variables if given
     $content = preg_replace('/\{.*?\}/', '', $content);
     // Replace all triple line breaks until there are no more
@@ -457,6 +459,44 @@ class SendMail extends Base
     $removeHtml = '<p><br />' . PHP_EOL . '<br />' . PHP_EOL . '</p>';
     $content = str_replace($removeHtml, '', $content);
 
+    return $content;
+  }
+
+  /**
+   * Handles variables like {labelled:xxxxx} for text only mails
+   */
+  protected function handleLabelledVariables($content, $data)
+  {
+    foreach ($data as $field) {
+      // Pagebreaks can be skipped
+      if ($field['item'] instanceof PageBreak) {
+        continue;
+      }
+      // There are some field id's that can be skipped
+      if (!isset($field['item']) || ($field['item'] instanceof BaseItem && $field['item']->get('show_in_mail_action') != 1 && !($field['item'] instanceof HtmlItem))) {
+        $name = strtolower($field['name']);
+        if (
+          $name == 'tsid' ||
+          $name == 'user-ip-adresse' ||
+          $name == 'zeitstempel' ||
+          $name == 'ursprungsformular' ||
+          $field['item'] instanceof Hiddenfield
+        ) {
+          continue;
+        }
+      }
+
+      $value = trim($field['value']);
+      if (strlen($value) == 0) {
+        $value = '_EMPTY_FIELD';
+      } else {
+        $value = $field['name'] . ': ' . $value;
+      }
+      $content  = str_replace('{labelled:' . $field['id'] . '}', $value, $content);
+    }
+
+    // Remove empty fields including their line break
+    $content = str_replace('_EMPTY_FIELD' . PHP_EOL, '', $content);
     return $content;
   }
 
@@ -622,7 +662,7 @@ class SendMail extends Base
    * @param array $variables the replace vars for the template
    * @return string the finished html template
    */
-  protected function getEmailTemplateBody($variables)
+  protected function getEmailTemplateBody($variables, $data)
   {
     $template = $this->htmlTemplates[self::DEFAULT_TEMPLATE_KEY];
     if (strlen($this->params['template']) > 0 && isset($this->htmlTemplates[$this->params['template']])) {
@@ -692,6 +732,6 @@ class SendMail extends Base
       return $variables[self::MINIMUM_TEMPLATE_VAR];
     }
 
-    return $this->maybeFixCustomContent($template);
+    return $this->maybeFixCustomContent($template, $data);
   }
 }

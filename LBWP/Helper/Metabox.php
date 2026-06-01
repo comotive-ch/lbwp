@@ -2054,6 +2054,7 @@ class Metabox
    */
   public static function ajaxAssignPostsData($types)
   {
+    // TODO: This admin AJAX handler has no nonce check. Add wp_verify_nonce() here and pass the nonce from JS.
     $results = array();
 
     if (strlen($_GET['term']) > 0) {

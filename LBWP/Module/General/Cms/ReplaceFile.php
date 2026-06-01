@@ -34,7 +34,7 @@ class ReplaceFile extends BaseSingleton
       'upload.php',
       'Datei ersetzen',
       'Datei ersetzen',
-      'administrator',
+      'edit_posts',
       'replace-file',
       array($this, 'displayUI')
     );
@@ -48,11 +48,17 @@ class ReplaceFile extends BaseSingleton
   public function addMediaReplaceLink($fields, $post)
   {
     $mimeType = get_post_mime_type($post->ID);
-    if ($mimeType === 'image/jpeg' || $mimeType === 'image/png') {
+    if (str_starts_with($mimeType, 'image/')) {
       $fields['file_replace_link'] = array(
         'label' => 'Bild ersetzen',
         'input' => 'html',
         'html' => '<a href="' . get_bloginfo('url') . '/wp-admin/upload.php?page=replace-file&attachment_id=' . $post->ID . '" target="_blank">Bild mit neuem Upload ersetzen</a>'
+      );
+    } else {
+      $fields['file_replace_link'] = array(
+        'label' => 'Datei ersetzen',
+        'input' => 'html',
+        'html' => '<a href="' . get_bloginfo('url') . '/wp-admin/upload.php?page=replace-file&attachment_id=' . $post->ID . '" target="_blank">Datei mit neuem Upload ersetzen</a>'
       );
     }
 
@@ -64,16 +70,19 @@ class ReplaceFile extends BaseSingleton
    */
   public function displayUI()
   {
+    $attachmentUrl = '';
     $attachmentId = intval($_GET['attachment_id']);
     $attachment = false;
 
     if(wp_attachment_is_image($attachmentId)){
       $attachment = wp_get_attachment_metadata($attachmentId);
+    } else {
+      $attachmentUrl = wp_get_attachment_url($attachmentId);
     }
 
     $replaceImage = '
       <p><strong>1.</strong> Link der zu ersetzenden Datei aus Mediathek kopieren</p>
-      <p><input type="text" value="" name="replace-file-url" style="width:600px" /></p>';
+      <p><input type="text" value="' . esc_attr($attachmentUrl) . '" name="replace-file-url" style="width:600px" /></p>';
 
     if($attachment !== false){
       $imageUrl = wp_get_attachment_image_url($attachmentId, 'original');

@@ -137,7 +137,7 @@ class SimpleField
 
     // Replace in the input field
     $input = '
-      <textarea id="' . $key . '" name="' . $key . '"' . $attr . '>' . $value . '</textarea>
+      <textarea id="' . $key . '" name="' . $key . '"' . $attr . '>' . esc_textarea($value) . '</textarea>
     ';
     $html = str_replace('{input}', $input, $html);
     return $html;

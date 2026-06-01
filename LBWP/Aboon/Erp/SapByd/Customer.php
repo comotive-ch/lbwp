@@ -151,7 +151,7 @@ abstract class Customer extends CustomerBase
    */
   public function allowReEnableUser()
   {
-    $userId = $_GET['user_id'];
+    $userId = intval($_GET['user_id'] ?? 0);
     if ($userId > 0) {
       echo '
         <script>
@@ -208,8 +208,8 @@ abstract class Customer extends CustomerBase
               <CustomerIndicator>true</CustomerIndicator> 
               <LifeCycleStatusCode>2</LifeCycleStatusCode> 
               <Person>
-                <GivenName>' . $meta['billing_first_name'] . '</GivenName>
-                <FamilyName>' . $meta['billing_last_name'] . '</FamilyName>
+                <GivenName>' . esc_xml($meta['billing_first_name']) . '</GivenName>
+                <FamilyName>' . esc_xml($meta['billing_last_name']) . '</FamilyName>
                 <NameFormatCountryCode>CH</NameFormatCountryCode>
                 <NonVerbalCommunicationLanguageCode>' . $language . '</NonVerbalCommunicationLanguageCode>
               </Person>
@@ -368,24 +368,24 @@ abstract class Customer extends CustomerBase
     $email = '';
     // Add email if given and only for billing
     if ($type == 'billing' && strlen($meta['billing_email']) > 0) {
-      $email = '<EmailURI>' . $meta['billing_email'] . '</EmailURI>';
+      $email = '<EmailURI>' . esc_xml($meta['billing_email']) . '</EmailURI>';
     }
 
-    return '      
+    return '
       <AddressInformation actionCode="01">
         <AddressUsage actionCode="01">
-          <ObjectNodeSenderTechnicalID>003</ObjectNodeSenderTechnicalID> 
+          <ObjectNodeSenderTechnicalID>003</ObjectNodeSenderTechnicalID>
           <AddressUsageCode>' . ($type == 'shipping' ? 'SHIP_TO' : 'XXDEFAULT') . '</AddressUsageCode>
           <DefaultIndicator>' . ($defaut ? 'true' : 'false') . '</DefaultIndicator>
         </AddressUsage>
         <Address actionCode="01">
           ' . $email . '
           <PostalAddress>
-            <CountryCode>' . strtoupper($meta[$type . '_country']) . '</CountryCode>
-            <CityName>' . $meta[$type . '_city'] . '</CityName>
-            <StreetPostalCode>' . $meta[$type . '_postcode'] . '</StreetPostalCode>
-            <StreetName>' . $street . '</StreetName>
-            <HouseID>' . $houseId . '</HouseID>
+            <CountryCode>' . esc_xml(strtoupper($meta[$type . '_country'])) . '</CountryCode>
+            <CityName>' . esc_xml($meta[$type . '_city']) . '</CityName>
+            <StreetPostalCode>' . esc_xml($meta[$type . '_postcode']) . '</StreetPostalCode>
+            <StreetName>' . esc_xml($street) . '</StreetName>
+            <HouseID>' . esc_xml($houseId) . '</HouseID>
           </PostalAddress>
         </Address>
       </AddressInformation>

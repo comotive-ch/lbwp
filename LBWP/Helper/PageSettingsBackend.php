@@ -161,6 +161,7 @@ class PageSettingsBackend
         <h2>' . $config['name'] . '</h2>
         ' . $message . '
         <form action="" method="post" enctype="multipart/form-data">
+          ' . wp_nonce_field('lbwp_page_settings_save', '_wpnonce', true, false) . '
           ' . $html . '
           <p style="clear:both">
             <input type="submit" class="button-primary" name="savePageSettings" value="Speichern">
@@ -177,6 +178,8 @@ class PageSettingsBackend
    */
   protected function saveConfig()
   {
+    check_admin_referer('lbwp_page_settings_save');
+
     $config = PageSettings::getConfiguration();
     $config = $config[$_GET['page']];
     $sections = $config['sections'];

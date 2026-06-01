@@ -33,13 +33,16 @@ class BillingApi extends Component
    */
   public function registerApiEndpoint()
   {
+    // TODO: These endpoints may no longer be in use. Review and add proper auth-based permission_callback or remove.
     register_rest_route('aboon/settings', 'update', array(
       'methods' => \WP_REST_Server::CREATABLE,
-      'callback' => array($this, 'updateInstanceSettings')
+      'callback' => array($this, 'updateInstanceSettings'),
+      'permission_callback' => '__return_true',
     ));
     register_rest_route('aboon/get', 'sales', array(
       'methods' => \WP_REST_Server::READABLE,
-      'callback' => array($this, 'getOrders')
+      'callback' => array($this, 'getOrders'),
+      'permission_callback' => '__return_true',
     ));
   }
 

@@ -227,10 +227,11 @@ class Product
    */
   protected function searchLocalIdConnection($remoteId): int
   {
-    return intval($this->db->get_var('
-      SELECT post_id FROM ' . $this->db->postmeta . ' 
-      WHERE meta_key = "erp-remote-product-id" AND meta_value = "' . $remoteId . '"
-    '));
+    return intval($this->db->get_var($this->db->prepare(
+      'SELECT post_id FROM ' . $this->db->postmeta .
+      ' WHERE meta_key = "erp-remote-product-id" AND meta_value = %s',
+      $remoteId
+    )));
   }
 
   /**

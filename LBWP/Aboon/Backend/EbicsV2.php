@@ -165,9 +165,9 @@ class EbicsV2
           <td><input type="checkbox" name="order_ids[]" value="' . $order->get_id() . '" checked /></td>
           <td><a href="/wp-admin/post.php?post=' . $order->get_id() . '&amp;action=edit" target="_blank" />' . $order->get_id() . '</a></td>
           <td>' . $order->get_total() . '</td>
-          <td>' . $order->get_billing_last_name() . '</td>
-          <td>' . $order->get_billing_city() . '</td>
-          <td>' . $order->get_status() . '</td>
+          <td>' . esc_html($order->get_billing_last_name()) . '</td>
+          <td>' . esc_html($order->get_billing_city()) . '</td>
+          <td>' . esc_html($order->get_status()) . '</td>
         </tr>
       ';
     }

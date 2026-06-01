@@ -121,6 +121,7 @@ class Watchlist extends ACFBase
 						'ajaxUrl' => admin_url('admin-ajax.php'),
 						'userLists' => json_encode($availableLists),
 						'loggedInMode' => is_user_logged_in(),
+						'nonce' => wp_create_nonce('watchlist_action'),
 				)
 		);
 	}
@@ -170,8 +171,11 @@ class Watchlist extends ACFBase
 		$theWatchlist = $this->getWatchlists();
 		$curList = $this->getCurrentList();
 
-		if($_POST['useLocalList'] == 'true'){
-			$decoded = json_decode($_POST['localWatchlist'], true);
+		if(defined('DOING_AJAX') && DOING_AJAX){
+			check_ajax_referer('watchlist_action', 'nonce');
+		}
+		if(isset($_POST['useLocalList']) && $_POST['useLocalList'] === 'true'){
+			$decoded = json_decode(wp_unslash($_POST['localWatchlist'] ?? ''), true);
 			if(is_array($decoded)){
 				$theWatchlist = $decoded;
 			}
@@ -351,12 +355,13 @@ class Watchlist extends ACFBase
 	 * The AJAX hook to add products to the list
 	 */
 	public function updateListItem(){
+		check_ajax_referer('watchlist_action', 'nonce');
 		$lists = $this->getWatchlists();
 		$currentList = self::getCurrentList();
 		$productId = intval($_POST['product']);
 
     if(isset($_POST['listId']) && $_POST['listId'] !== null){
-      $currentList = $_POST['listId'];
+      $currentList = sanitize_key($_POST['listId']);
     }
 
 		if(in_array($productId, $lists[$currentList]['products'])){
@@ -403,8 +408,9 @@ class Watchlist extends ACFBase
 	 * Set the current list (for ajax calls only)
 	 */
 	public function setCurrentListAjax(){
+		check_ajax_referer('watchlist_action', 'nonce');
 		$user = wp_get_current_user()->data->ID;
-		update_user_meta($user, self::USER_ACTIVE_LIST_KEY, $_POST['list']);
+		update_user_meta($user, self::USER_ACTIVE_LIST_KEY, intval($_POST['list']));
 
 		wp_send_json($this->getWatchlistMenuHtml($this->displayQty));
 	}
@@ -413,8 +419,9 @@ class Watchlist extends ACFBase
 	 * Merge the local list with the logged-in lists
 	*/
 	public function mergeWatchlists(){
+		check_ajax_referer('watchlist_action', 'nonce');
 		$userWl = $this->getWatchlists();
-		$localWl = (array) json_decode($_POST['localWatchlist']);
+		$localWl = (array) json_decode(wp_unslash($_POST['localWatchlist']));
 
 		if(empty($localWl['list_0']->products)){
 			wp_send_json(true);
@@ -574,8 +581,8 @@ class Watchlist extends ACFBase
 
 		// Change the name of the list
 		if(isset($_POST['change-name'])){
-			$listId = $_POST['list-id'];
-			$newListName = $_POST['new-list-name'];
+			$listId = sanitize_key($_POST['list-id']);
+			$newListName = sanitize_text_field($_POST['new-list-name']);
 
 			if($newListName === ''){
 				return $lists;
@@ -587,7 +594,7 @@ class Watchlist extends ACFBase
 
 		// Add a new list
 		if(isset($_POST['add-new-list'])){
-			$newListName = $_POST['new-list-name'];
+			$newListName = sanitize_text_field($_POST['new-list-name']);
 			$listCount = count($this->getWatchlists());
 
 			if($newListName === ''){
@@ -609,7 +616,7 @@ class Watchlist extends ACFBase
 
 		// Delete a list
 		if(isset($_POST['delete-list'])){
-			$listId = $_POST['list-id'];
+			$listId = sanitize_key($_POST['list-id']);
 			unset($lists[$listId]);
 			update_user_meta($userId, self::USER_LISTS_KEY, $lists);
 			$this->setCurrentList(0);

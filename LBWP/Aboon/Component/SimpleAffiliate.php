@@ -405,7 +405,7 @@ class SimpleAffiliate extends ACFBase
         <form method="post">
           <label>
             <span>' . __('Deine Bankverbindung für Auszahlungen', 'lbwp') . '</span>
-            <input type="text" name="affiliate-iban" value="' . $usermeta['affiliate-iban'] . '" placeholder="' . __('IBAN ggf. Bankname, Adresse, sofern abweichend von Adresse im Konto', 'lbwp') . '" required> 
+            <input type="text" name="affiliate-iban" value="' . esc_attr($usermeta['affiliate-iban']) . '" placeholder="' . __('IBAN ggf. Bankname, Adresse, sofern abweichend von Adresse im Konto', 'lbwp') . '" required> 
           </label>
           <div class="affiliate__send-button">
             <input type="submit" class="btn btn--primary" value="' . __('Speichern', 'lbwp') . '" name="save-iban">
@@ -446,14 +446,17 @@ class SimpleAffiliate extends ACFBase
   public function handleFormSubmitions()
   {
     if (isset($_POST['save-iban'])) {
-      $iban = substr($_POST['affiliate-iban'], 0, 50);
+      $iban = sanitize_text_field(substr($_POST['affiliate-iban'], 0, 50));
       update_user_meta(get_current_user_id(), 'affiliate-iban', $iban);
     }
 
     if (isset($_POST['recommendation-submit'])) {
+      $recommendationName = sanitize_text_field($_POST['recommendation-name'] ?? '');
+      $recommendationPlace = sanitize_text_field($_POST['recommendation-place'] ?? '');
+      $recommendationOrderNr = sanitize_text_field($_POST['recommendation-order-nr'] ?? '');
       if (
-        !Strings::isEmpty($_POST['recommendation-name']) &&
-        !Strings::isEmpty($_POST['recommendation-place'])
+        !Strings::isEmpty($recommendationName) &&
+        !Strings::isEmpty($recommendationPlace)
       ) {
         $userId = get_current_user_id();
         $usermeta = WordPress::getAccessibleUserMeta($userId);
@@ -463,8 +466,8 @@ class SimpleAffiliate extends ACFBase
         $mailContent = __('Guten Tag', 'lbwp') . PHP_EOL .
           PHP_EOL .
           __('Danke für deine Empfehlung, wir prüfen diese und geben Bescheid, wenn die Provision zur Auszahlung freigegeben wurde.', 'lbwp') . PHP_EOL .
-          'Deine Empfehlung: ' . $_POST['recommendation-name'] . ', ' . $_POST['recommendation-place'] .
-          (!Strings::isEmpty($_POST['recommendation-order-nr']) ? ', #' . $_POST['recommendation-order-nr'] : '') .
+          'Deine Empfehlung: ' . $recommendationName . ', ' . $recommendationPlace .
+          (!Strings::isEmpty($recommendationOrderNr) ? ', #' . $recommendationOrderNr : '') .
           PHP_EOL .
           'Deine Angaben: Kundennummer #' . $userId . ', ' . $usermeta['billing_first_name'] . ' ' . $usermeta['billing_last_name'] . ' ' . $usermeta['billing_email'] .
           PHP_EOL .

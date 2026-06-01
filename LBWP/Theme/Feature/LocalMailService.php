@@ -1519,6 +1519,8 @@ class LocalMailService
   public function tryAndSendMails()
   {
     $time = microtime(true);
+    set_time_limit(55);
+
     // The mailing id comes from the cron_data parameter
     $mailingId = $_GET['data'];
     // Check if the function is locked (= another cron is executing right now)

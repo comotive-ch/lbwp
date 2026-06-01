@@ -31,6 +31,7 @@ class Converter
   public static function initialize()
   {
     require_once File::getResourcePath() . '/libraries/cloudconvert/v2/vendor/autoload.php';
+    // TODO: Move this API key out of source code into a WordPress option or constant (e.g. CLOUDCONVERT_API_KEY).
     self::$api = new CloudConvert(array(
       'api_key' => 'eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiJ9.eyJhdWQiOiIxIiwianRpIjoiYzA1OWY0NDY5YmNlNjM2YjM4MDU2NmZkYmVmMmFiN2M2MzI5NWY2ZmNjYTViMjhiN2RhOTJhYzcwYzUyOTNlM2ZlMmQyMTM2OGNiZDBmOWUiLCJpYXQiOjE2NDE4MDQ5NzYuMzg1ODk5LCJuYmYiOjE2NDE4MDQ5NzYuMzg1OTAzLCJleHAiOjQ3OTc0Nzg1NzYuMzcxMTcxLCJzdWIiOiIzOTM1Mzc5MyIsInNjb3BlcyI6WyJ1c2VyLnJlYWQiLCJ0YXNrLnJlYWQiLCJ1c2VyLndyaXRlIiwidGFzay53cml0ZSJdfQ.X8PrIbRRA1pGOdyklavR0fKfACcvtdbEm-6vHK6lLn02KlancYnyNLWvsOj-eUECbcISEvJ3oksoN0KCKF2-iizQScyLPJfexs8bLRqISA0lBIJunvpL1jft-qGHJXU47Snnl2G22ilAUg7_cbpaiNtS7Jrxo6LDpC8fWWKL-5Byim3Vv4j2w_1Ewgebhfr-Jt4K4oqncozxrPwh-gJLtc73Fr0IURzhNG9zrRKEREihmxDlickuuUAlgpRpav-D6GdSh8e5ZLzncDc4c0D8BfxTnVWwJPks3gMruEeODVEwihjr7T5-AmJeU9OGcNSFx3PnChJSKC_PFSnBMw6cgpIDO3pS1QMYZCLyosAr3o3PJMrLCsSjIdoxH6hwsd3Q6iCflGwZc1yHLq4qagngSIzMKCxmjJCGh5zR25vzOHQfYqAdkfj9oNuBnMRiCvQ3ZGH6Iykg1EaYgY40iiKU_PIrmRHBY7z3AdSf73VQmhiRjscTXSa2wqXIOLZUqeZfZ1sflqftRwVK1cYVzvVbLg4__ioTiSCss1LZ9CQZbGgMCWAC-r6C08tRwzPj-CxtokBliI8wUjr8lLOq0dgIlg6o2mpQuNcYoTenPI3Es1y6QyZDDDZBzM5RMLBNjl_CXxa1XVSDgsIgfLwrbxTNJmk46ajLggFGgWHUWQQqNEo',
       'sandbox' => false
@@ -109,7 +110,7 @@ class Converter
     $localWebpPath = str_replace('.jpg', '.webp', $localJpgPath);
     file_put_contents($localWebpPath, $rawObject->get('Body'));
     // Convert the file on console
-    shell_exec('convert ' . $localWebpPath . ' ' . $localJpgPath);
+    shell_exec('convert ' . escapeshellarg($localWebpPath) . ' ' . escapeshellarg($localJpgPath));
     // Upload the file to the block storage
     $jpgUrl = $s3->uploadDiskFileFixedPath($localJpgPath, '/' . $jpgKey);
     $convertedFiles[$jpgKey] = true;
@@ -148,7 +149,7 @@ class Converter
     }
 
     // Convert html to docx
-    shell_exec('pandoc -s -f html -t docx ' . $useRefDocx . ' -V lang=' . $lang . ' ' . $htmlFile . ' -o ' . $docxFile);
+    shell_exec('pandoc -s -f html -t docx ' . $useRefDocx . ' -V lang=' . escapeshellarg($lang) . ' ' . escapeshellarg($htmlFile) . ' -o ' . escapeshellarg($docxFile));
 
     if($return){
       return $docxFile;
@@ -182,7 +183,7 @@ class Converter
     }
 
     // Convert html to docx (available variables: https://pandoc.org/chunkedhtml-demo/6.2-variables.html#variables-for-latex)
-    shell_exec('cd ' . $folder . ' && pandoc ' . $htmlFile . ' -o ' . $pdfFile . ' --pdf-engine=weasyprint' . ($styles !== false ? ' --css=' . $cssFile : ''));
+    shell_exec('cd ' . escapeshellarg($folder) . ' && pandoc ' . escapeshellarg($htmlFile) . ' -o ' . escapeshellarg($pdfFile) . ' --pdf-engine=weasyprint' . ($styles !== false ? ' --css=' . escapeshellarg($cssFile) : ''));
 
     // Download docx
     ob_end_clean();
@@ -205,7 +206,7 @@ class Converter
     file_put_contents($docxFile, file_get_contents($doc));
 
     // Convert html to docx (available variables: https://pandoc.org/chunkedhtml-demo/6.2-variables.html#variables-for-latex)
-    shell_exec('cd ' . $folder . ' && pandoc ' . $docxFile . ' -o ' . $pdfFile . ' --pdf-engine=weasyprint');
+    shell_exec('cd ' . escapeshellarg($folder) . ' && pandoc ' . escapeshellarg($docxFile) . ' -o ' . escapeshellarg($pdfFile) . ' --pdf-engine=weasyprint');
 
     if($return){
       return $pdfFile;

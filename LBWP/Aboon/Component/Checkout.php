@@ -271,7 +271,7 @@ class Checkout extends ACFBase
   public function maybeAddNewsletterSubscriber()
   {
     $listId = intval($_POST['newsletter-subscribe']);
-    $email = strtolower($_POST['billing_email']);
+    $email = strtolower(sanitize_email($_POST['billing_email'] ?? ''));
 
     // Leave, if no list is given (hence check was not set) or invalid email
     if ($listId == 0 || !Strings::checkEmail($email) || isset($_SESSION['Checkout_NL_Subscribe'])) {
@@ -284,8 +284,8 @@ class Checkout extends ACFBase
     $service = $newsletter->getService();
     $service->subscribe(array(
       'email' => $email,
-      'firstname' => $_POST['billing_first_name'],
-      'lastname' => $_POST['billing_last_name']
+      'firstname' => sanitize_text_field($_POST['billing_first_name'] ?? ''),
+      'lastname' => sanitize_text_field($_POST['billing_last_name'] ?? ''),
     ), $listId);
   }
 

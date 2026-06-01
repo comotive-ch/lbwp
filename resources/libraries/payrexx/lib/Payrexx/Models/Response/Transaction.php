@@ -3,9 +3,11 @@
 /**
  * Transaction response model
  *
- * @copyright   Payrexx AG
- * @author      Payrexx Development Team <info@payrexx.com>
+ * @author    Payrexx Development <info@payrexx.com>
+ * @copyright Payrexx AG
+ * @since     v1.5.0
  */
+
 namespace Payrexx\Models\Response;
 
 /**
@@ -16,8 +18,6 @@ namespace Payrexx\Models\Response;
 class Transaction extends \Payrexx\Models\Request\Transaction
 {
 
-    private $uuid;
-    private $referenceId;
     private $time;
     private $status;
     private $lang;
@@ -28,44 +28,29 @@ class Transaction extends \Payrexx\Models\Request\Transaction
     private $invoice;
     private $contact;
     private $pageUuid;
+    private $payrexxFee;
+    private $fee;
+    private $refundable;
+    private $partiallyRefundable;
+
+    public const CONFIRMED = 'confirmed';
+    public const INITIATED = 'initiated';
+    public const WAITING = 'waiting';
+    public const AUTHORIZED = 'authorized';
+    public const RESERVED = 'reserved';
+    public const CANCELLED = 'cancelled';
+    public const REFUNDED = 'refunded';
+    public const DISPUTED = 'disputed';
+    public const DECLINED = 'declined';
+    public const ERROR = 'error';
+    public const EXPIRED = 'expired';
+    public const PARTIALLY_REFUNDED = 'partially-refunded';
+    public const REFUND_PENDING = 'refund_pending';
+    public const INSECURE = 'insecure';
+    public const UNCAPTURED = 'uncaptured';
 
     /**
-     * @access  public
-     * @param   string  $uuid
-     */
-    public function setUuid($uuid)
-    {
-        $this->uuid = $uuid;
-    }
-
-    /**
-     * @access  public
-     * @return  string
-     */
-    public function getUuid()
-    {
-        return $this->uuid;
-    }
-
-    /**
-     * @return string
-     */
-    public function getReferenceId()
-    {
-        return $this->referenceId;
-    }
-
-    /**
-     * @param string $referenceId
-     */
-    public function setReferenceId($referenceId): void
-    {
-        $this->referenceId = $referenceId;
-    }
-
-    /**
-     * @access  public
-     * @param   string  $time
+     * @param string $time
      */
     public function setTime($time)
     {
@@ -73,8 +58,7 @@ class Transaction extends \Payrexx\Models\Request\Transaction
     }
 
     /**
-     * @access  public
-     * @return  string
+     * @return string
      */
     public function getTime()
     {
@@ -82,8 +66,7 @@ class Transaction extends \Payrexx\Models\Request\Transaction
     }
 
     /**
-     * @access  public
-     * @param   string  $status
+     * @param string $status
      */
     public function setStatus($status)
     {
@@ -91,8 +74,7 @@ class Transaction extends \Payrexx\Models\Request\Transaction
     }
 
     /**
-     * @access  public
-     * @return  string
+     * @return string
      */
     public function getStatus()
     {
@@ -100,8 +82,7 @@ class Transaction extends \Payrexx\Models\Request\Transaction
     }
 
     /**
-     * @access  public
-     * @param   string  $lang
+     * @param string $lang
      */
     public function setLang($lang)
     {
@@ -109,8 +90,7 @@ class Transaction extends \Payrexx\Models\Request\Transaction
     }
 
     /**
-     * @access  public
-     * @return  string
+     * @return string
      */
     public function getLang()
     {
@@ -118,8 +98,7 @@ class Transaction extends \Payrexx\Models\Request\Transaction
     }
 
     /**
-     * @access  public
-     * @param   string  $psp
+     * @param string $psp
      */
     public function setPsp($psp)
     {
@@ -127,8 +106,7 @@ class Transaction extends \Payrexx\Models\Request\Transaction
     }
 
     /**
-     * @access  public
-     * @return  string
+     * @return string
      */
     public function getPsp()
     {
@@ -146,13 +124,13 @@ class Transaction extends \Payrexx\Models\Request\Transaction
     /**
      * @param int $pspId
      */
-    public function setPspId($pspId): void
+    public function setPspId($pspId)
     {
         $this->pspId = $pspId;
     }
 
     /**
-     * @return mixed
+     * @return int
      */
     public function getMode()
     {
@@ -168,8 +146,7 @@ class Transaction extends \Payrexx\Models\Request\Transaction
     }
 
     /**
-     * @access  public
-     * @param   array  $payment
+     * @param array $payment
      */
     public function setPayment($payment)
     {
@@ -177,8 +154,7 @@ class Transaction extends \Payrexx\Models\Request\Transaction
     }
 
     /**
-     * @access  public
-     * @return  array
+     * @return array
      */
     public function getPayment()
     {
@@ -196,7 +172,7 @@ class Transaction extends \Payrexx\Models\Request\Transaction
     /**
      * @param array $invoice
      */
-    public function setInvoice($invoice): void
+    public function setInvoice($invoice)
     {
         $this->invoice = $invoice;
     }
@@ -212,7 +188,7 @@ class Transaction extends \Payrexx\Models\Request\Transaction
     /**
      * @param array $contact
      */
-    public function setContact($contact): void
+    public function setContact($contact)
     {
         $this->contact = $contact;
     }
@@ -228,8 +204,74 @@ class Transaction extends \Payrexx\Models\Request\Transaction
     /**
      * @param string $pageUuid
      */
-    public function setPageUuid($pageUuid): void
+    public function setPageUuid($pageUuid)
     {
         $this->pageUuid = $pageUuid;
+    }
+
+    /**
+     * @return int
+     */
+    public function getPayrexxFee()
+    {
+        return $this->payrexxFee;
+    }
+
+    /**
+     * @param int $payrexxFee
+     */
+    public function setPayrexxFee(int $payrexxFee)
+    {
+        $this->payrexxFee = $payrexxFee;
+    }
+
+    /**
+     * @return int
+     */
+    public function getFee()
+    {
+        return $this->fee;
+    }
+
+    /**
+     * @param int $fee
+     */
+    public function setFee(int $fee)
+    {
+        $this->fee = $fee;
+    }
+
+    /**
+     * Supported since version 1.2
+     * @return bool|null
+     */
+    public function getRefundable()
+    {
+        return $this->refundable;
+    }
+
+    /**
+     * @param bool|null $refundable
+     */
+    public function setRefundable($refundable)
+    {
+        $this->refundable = $refundable;
+    }
+
+    /**
+     * Supported since version 1.2
+     * @return bool|null
+     */
+    public function getPartiallyRefundable()
+    {
+        return $this->partiallyRefundable;
+    }
+
+    /**
+     * @param bool|null $partiallyRefundable
+     */
+    public function setPartiallyRefundable($partiallyRefundable)
+    {
+        $this->partiallyRefundable = $partiallyRefundable;
     }
 }

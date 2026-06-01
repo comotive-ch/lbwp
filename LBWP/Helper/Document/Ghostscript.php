@@ -22,15 +22,15 @@ class Ghostscript
   {
     exec('gs' .
       ' -sDEVICE=jpeg' .
-      ' -sOutputFile="' . $output . '"' .
-      ' -dLastPage=' . $page .
+      ' -sOutputFile=' . escapeshellarg($output) .
+      ' -dLastPage=' . intval($page) .
       ' -dBATCH' .
       ' -dNOPAUSE' .
       ' -q' .
       ' -dNumRenderingThreads=4' .
-      ' -dJPEGQ=' . $quality .
-      ' -r' . $res . 'x' . $res .
-      ' "' . $input . '"'
+      ' -dJPEGQ=' . intval($quality) .
+      ' -r' . intval($res) . 'x' . intval($res) .
+      ' ' . escapeshellarg($input)
     );
 
     return $output;
@@ -44,7 +44,7 @@ class Ghostscript
   public static function mergePdfFiles($output, $files)
   {
     exec(
-      'gs -dNOPAUSE -sDEVICE=pdfwrite -sOUTPUTFILE=' . $output . ' -dBATCH ' . implode(' ', $files)
+      'gs -dNOPAUSE -sDEVICE=pdfwrite -sOUTPUTFILE=' . escapeshellarg($output) . ' -dBATCH ' . implode(' ', array_map('escapeshellarg', $files))
     );
 
     return $output;
@@ -57,7 +57,7 @@ class Ghostscript
   public static function countPdfPages($file)
   {
     return intval(shell_exec(
-      'gs -q -dNODISPLAY -c "(' . $file . ') (r) file runpdfbegin pdfpagecount = quit"'
+      'gs -q -dNODISPLAY -c ' . escapeshellarg('(' . $file . ') (r) file runpdfbegin pdfpagecount = quit')
     ));
   }
 }

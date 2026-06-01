@@ -33,6 +33,9 @@ class Ebics extends Component
    */
   public function deletePaymentRow()
   {
+    if (!current_user_can('manage_woocommerce')) {
+      wp_die('Unauthorized', 403);
+    }
     // get the payment
     $paymentId = $_POST['pid'];
     $payments = ArrayManipulation::forceArray(get_option('aboon_camtimports'));
@@ -52,6 +55,9 @@ class Ebics extends Component
    */
   public function getOrders()
   {
+    if (!current_user_can('manage_woocommerce')) {
+      wp_die('Unauthorized', 403);
+    }
     $amount = floatval($_POST['amount']);
     // Get all orders in betwen 90% and 110% of $amount
     $allOrders = wc_get_orders(array(
@@ -92,8 +98,11 @@ class Ebics extends Component
    */
   public function assignPayment()
   {
-    $orderId = $_POST['oId'];
-    $paymentId = $_POST['pId'];
+    if (!current_user_can('manage_woocommerce')) {
+      wp_die('Unauthorized', 403);
+    }
+    $orderId = intval($_POST['oId']);
+    $paymentId = intval($_POST['pId']);
     $payments = ArrayManipulation::forceArray(get_option('aboon_camtimports'));
 
     // update the payment and the payment status

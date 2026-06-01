@@ -28,8 +28,9 @@ class AdminReactivation extends Component
   public function addReactivationButton($subscription)
   {
     if ($subscription->get_status() == 'cancelled' || $subscription->get_status() == 'expired')  {
+      $nonce = wp_create_nonce('admin_reactivate_subscription');
       echo '
-        <p><a class="button reactivate-subscription" data-id="' . $subscription->get_id() . '">Abonnement wieder aktivieren</a></p>
+        <p><a class="button reactivate-subscription" data-id="' . $subscription->get_id() . '" data-nonce="' . esc_attr($nonce) . '">Abonnement wieder aktivieren</a></p>
         <script type="text/javascript">
           jQuery(function() {
             // Move the button up, as it can be placed only in the middle by the filter
@@ -38,7 +39,7 @@ class AdminReactivation extends Component
             // Make Confirm and ajax request when the subscription should be activated
             button.on("click", function() {
               if (confirm("Bitte stellen Sie sicher, dass sie zur Reaktivierung dieses Abonnements die Einwilligung des Kunden eingeholt haben. Ist dies der Fall, kann das Abonnement wieder reaktiviert werden. Bitte beachten Sie, dass sie womöglich das Datum der nächsten Zahlung anpassen müssen")) {
-                jQuery.post("/wp-admin/admin-ajax.php?action=adminReactivateCancelledSubscription&id=" + button.data("id"), function(response) {
+                jQuery.post("/wp-admin/admin-ajax.php?action=adminReactivateCancelledSubscription&id=" + button.data("id") + "&_wpnonce=" + button.data("nonce"), function(response) {
                   if (response.success && response.id > 0) {
                     document.location.reload();
                   } else {
@@ -58,6 +59,10 @@ class AdminReactivation extends Component
    */
   public function reactivateSubscription()
   {
+    check_ajax_referer('admin_reactivate_subscription');
+    if (!current_user_can('manage_woocommerce')) {
+      wp_die('Unauthorized', 403);
+    }
     $response = array('success' => false);
     $id = intval($_GET['id']);
     $subscription = wcs_get_subscription($id);
