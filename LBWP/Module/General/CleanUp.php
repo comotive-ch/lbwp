@@ -110,6 +110,7 @@ class CleanUp extends \LBWP\Module\Base
 
     // do those actions on every page
     add_filter('should_load_separate_core_block_assets', '__return_false', 99);
+    add_filter('cmplz_geoip_enabled', '__return_false', 1000);
     add_action('wp_before_admin_bar_render', array($this, 'adminBar'), 1000);
     add_filter('login_headerurl', array($this, 'headerUrl'));
     add_filter('login_errors', array($this, 'obfuscateLoginError'));
