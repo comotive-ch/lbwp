@@ -218,6 +218,7 @@ class AutoUnpublishPost
     if (
       defined('DOING_AUTOSAVE') && DOING_AUTOSAVE ||
       defined('DOING_CRON') && DOING_CRON ||
+      defined('DOING_LBWP_CRON') && DOING_LBWP_CRON ||
       (isset($_REQUEST['action']) && $_REQUEST['action'] == 'inline-save') ||
       isset($_REQUEST['bulk_edit'])
     ) {
