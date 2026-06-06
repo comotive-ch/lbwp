@@ -59,6 +59,10 @@ class HTMLCache extends \LBWP\Module\Base
    */
   const MINUTE = 60;
   /**
+   * @var int seven days in seconds, used for long-lived static resources like sitemaps
+   */
+  const SITEMAP_CACHE_TIME = 864000;
+  /**
    * @var int the minimum time to cache
    */
   const MIN_CACHE_TIME = 300;
@@ -541,11 +545,15 @@ class HTMLCache extends \LBWP\Module\Base
    */
   protected function getCacheTime()
   {
+    $uri = $_SERVER['REQUEST_URI'] ?? '';
+    if (defined('LBWP_FRONTEND_CACHE_SITEMAPS') && str_contains($uri, 'sitemap') && str_contains($uri, '.xml')) {
+      return self::SITEMAP_CACHE_TIME;
+    }
     if (is_singular()) {
       return $this->cacheTimeSingle;
-    } else {
-      return $this->cacheTime;
     }
+
+    return $this->cacheTime;
   }
 
   /**
