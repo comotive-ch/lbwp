@@ -65,6 +65,34 @@ class XlsxHelper
   }
 
   /**
+   * Generate an XLSX file from a plain PHP array and stream it as a browser download.
+   * @param array  $headers Column header labels for the first row
+   * @param array  $rows    Two-dimensional array of data rows
+   * @param string $filename Suggested download filename including .xlsx extension
+   * @return void
+   */
+  public static function downloadFromArray(array $headers, array $rows, string $filename): void
+  {
+    require_once ABSPATH . '/wp-content/plugins/lbwp/resources/libraries/phpspreadsheet/vendor/autoload.php';
+
+    $spreadsheet = new Spreadsheet();
+    $sheet       = $spreadsheet->getActiveSheet();
+
+    $sheet->fromArray([$headers], null, 'A1');
+    if (!empty($rows)) {
+      $sheet->fromArray($rows, null, 'A2');
+    }
+
+    header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+    header('Content-Disposition: attachment; filename="' . $filename . '"');
+    header('Cache-Control: max-age=0');
+
+    $writer = IOFactory::createWriter($spreadsheet, 'Xlsx');
+    $writer->save('php://output');
+    exit;
+  }
+
+  /**
    * @param string $pointer name of file in $_FILES
    * @return false|string path to moved file
    */
