@@ -6,8 +6,10 @@ require '../../../../../wp-load.php';
 do_action('cron_hourly');
 
 // Run an hourly hookable daily cron
-$hour = intval(date('G', current_time('timestamp')));
-$dayOfMonth = intval(date('j', current_time('timestamp')));
+$now = current_time('timestamp');
+$hour = intval(date('G', $now));
+$dayOfMonth = intval(date('j', $now));
+$weekday = intval(date('N', $now));
 
 // Allow testing of the cron
 if (isset($_GET['hour']) && $_GET['hour'] > 0 && $_GET['hour'] <= 23) {
@@ -16,6 +18,7 @@ if (isset($_GET['hour']) && $_GET['hour'] > 0 && $_GET['hour'] <= 23) {
 // Run the hourly cron (executed every hour) or specific our on day of month
 do_action('cron_daily_' . $hour);
 do_action('cron_monthly_' . $dayOfMonth . '_' . $hour);
+do_action('cron_weekday_' . $weekday . '_' . $hour);
 
 // Run cron at day time
 if (in_array($hour, array(7,9,11,13,15,17))) {
