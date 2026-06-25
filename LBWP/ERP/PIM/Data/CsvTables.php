@@ -56,9 +56,12 @@ class CsvTables extends ACFBase
    *   version       (int)     Increment to trigger dbDelta on next load
    *   cron_action   (string|null) WordPress action name for automatic FTP import, null to disable
    *   ftp_path      (string|null) Remote path on FTP server; null for upload-only tables
-   *   csv_delimiter (string)  CSV field separator (default ';')
-   *   primary_key   (string)  Column name used as the unique key for upsert
-   *   columns       (array)   Map of column_name => type ('int', 'varchar', 'text')
+   *   csv_delimiter        (string)  CSV field separator (default ';')
+   *   primary_key          (string)  Column name used as the unique key for upsert
+   *   columns              (array)   Map of column_name => type ('int', 'varchar', 'text')
+   *   columns_translation  (array)   Optional map of human-readable CSV header => technical column name.
+   *                                  When set, both the technical name and the translated name are accepted
+   *                                  during import. Export uses the human-readable name as the header.
    *
    * @return array[]
    */
@@ -80,6 +83,12 @@ class CsvTables extends ACFBase
           'price_net'   => 'int',
           'price_gross' => 'varchar',
           'stock'       => 'int',
+        ],
+        'columns_translation'  => [
+          'Artikel Nummer' => 'article_no',
+          'Beschreibung' => 'description',
+          'Nettopreis in CHF' => 'price_net',
+          'Kunden-Endpreis in CHF' => 'price_gross'
         ],
       ],
       [
@@ -259,10 +268,12 @@ class CsvTables extends ACFBase
 
     $pageUrl = admin_url('admin.php?page=' . self::MENU_SLUG . '_' . $config['key']);
 
+    $headers = $this->getExportHeaders($config);
+
     echo '<p>' . sprintf(__('%d Datensätze gesamt', 'lbwp'), $total) . '</p>';
     echo '<table class="wp-list-table widefat fixed striped"><thead><tr>';
-    foreach (array_keys($config['columns']) as $col) {
-      echo '<th>' . esc_html($col) . '</th>';
+    foreach ($headers as $label) {
+      echo '<th>' . esc_html($label) . '</th>';
     }
     echo '</tr></thead><tbody>';
 
@@ -272,14 +283,16 @@ class CsvTables extends ACFBase
       foreach ($rows as $row) {
         echo '<tr>';
         foreach (array_keys($config['columns']) as $col) {
-          echo '<td>' . esc_html($row[$col] ?? '') . '</td>';
+          $val = $row[$col] ?? '';
+          $display = mb_strlen($val) > 20 ? mb_substr($val, 0, 20) . '…' : $val;
+          echo '<td>' . esc_html($display) . '</td>';
         }
         echo '</tr>';
       }
     }
 
     echo '</tbody></table>';
-    echo '<div class="tablenav bottom"><div class="tablenav-pages" style="margin: 6px 0;">';
+    echo '<div class="tablenav bottom" style="clear:none;height:40px;"><div class="tablenav-pages">';
     if ($page > 1) {
       echo '<a class="button" href="' . esc_url($pageUrl . '&csv_page=' . ($page - 1)) . '">&laquo; ' . __('Zurück', 'lbwp') . '</a> ';
     }
@@ -296,13 +309,18 @@ class CsvTables extends ACFBase
   private function renderImportActions(array $config): void
   {
     echo '<hr>';
-    echo '<h2>' . __('CSV exportieren', 'lbwp') . '</h2>';
+    echo '<h2>' . __('XLSX exportieren', 'lbwp') . '</h2>';
     echo '<form method="post">';
     wp_nonce_field('pim_csv_export_' . $config['key']);
-    echo '<input type="submit" name="pim_csv_export" class="button-secondary" value="' . __('CSV exportieren', 'lbwp') . '" />';
+    echo '<input type="submit" name="pim_csv_export" class="button-secondary" value="' . __('XLSX exportieren', 'lbwp') . '" />';
     echo '</form>';
 
-    echo '<h2>' . __('CSV hochladen', 'lbwp') . '</h2>';
+    if (!empty($config['cron_action'])) {
+      echo '<p class="description" style="margin-top:20px;">' . __('Diese Tabelle wird automatisch importiert, die manuellen Import-Funktionen sind deaktiviert.', 'lbwp') . '</p>';
+      return;
+    }
+
+    echo '<h2>' . __('XLSX/CSV hochladen', 'lbwp') . '</h2>';
     echo '<form method="post" enctype="multipart/form-data">';
     wp_nonce_field('pim_csv_upload_' . $config['key']);
     echo '<table class="form-table"><tr>';
@@ -364,31 +382,45 @@ class CsvTables extends ACFBase
   }
 
   /**
-   * Stream the full table contents as a CSV download and exit.
+   * Stream the full table contents as an XLSX download and exit.
    * @param array $config Table configuration entry from getTables()
    */
   private function handleExport(array $config): void
   {
     global $wpdb;
 
+    require_once WP_PLUGIN_DIR . '/lbwp/resources/libraries/phpspreadsheet/vendor/autoload.php';
+
     $table = $wpdb->prefix . $config['table'];
-    $delimiter = $config['csv_delimiter'] ?? ';';
     $safeCols = implode(', ', array_map(fn($c) => "`{$c}`", array_keys($config['columns'])));
     $rows = $wpdb->get_results("SELECT {$safeCols} FROM `{$table}`", ARRAY_A);
 
-    $filename = $config['table'] . '_' . date('Y-m-d') . '.csv';
+    $spreadsheet = new \PhpOffice\PhpSpreadsheet\Spreadsheet();
+    $sheet = $spreadsheet->getActiveSheet();
 
-    header('Content-Type: text/csv; charset=utf-8');
-    header('Content-Disposition: attachment; filename="' . $filename . '"');
-    header('Pragma: no-cache');
-
-    $out = fopen('php://output', 'w');
-    fwrite($out, "\xEF\xBB\xBF");
-    fputcsv($out, array_keys($config['columns']), $delimiter);
-    foreach ($rows as $row) {
-      fputcsv($out, $row, $delimiter);
+    $columns = array_keys($config['columns']);
+    $headers = $this->getExportHeaders($config);
+    foreach ($headers as $i => $label) {
+      $cell = \PhpOffice\PhpSpreadsheet\Cell\Coordinate::stringFromColumnIndex($i + 1) . '1';
+      $sheet->setCellValue($cell, $label);
     }
-    fclose($out);
+
+    foreach ($rows as $rowIndex => $row) {
+      $excelRow = $rowIndex + 2;
+      foreach ($columns as $colIndex => $col) {
+        $cell = \PhpOffice\PhpSpreadsheet\Cell\Coordinate::stringFromColumnIndex($colIndex + 1) . $excelRow;
+        $sheet->setCellValue($cell, $row[$col] ?? '');
+      }
+    }
+
+    $filename = $config['table'] . '_' . date('Y-m-d') . '.xlsx';
+
+    header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+    header('Content-Disposition: attachment; filename="' . $filename . '"');
+    header('Cache-Control: max-age=0');
+
+    $writer = new \PhpOffice\PhpSpreadsheet\Writer\Xlsx($spreadsheet);
+    $writer->save('php://output');
     exit;
   }
 
@@ -531,6 +563,10 @@ class CsvTables extends ACFBase
     }
     $header = array_map('trim', $header);
 
+    if (!empty($config['columns_translation'])) {
+      $header = $this->applyHeaderTranslation($header, $config['columns_translation']);
+    }
+
     $colMap = $this->buildColumnMap($config['columns'], $header);
     if (is_string($colMap)) {
       fclose($handle);
@@ -613,6 +649,33 @@ class CsvTables extends ACFBase
       $map[$col] = $pos;
     }
     return $map;
+  }
+
+  /**
+   * Replace CSV header cells that match a columns_translation key with the technical column name.
+   * Unrecognised header cells are left as-is so buildColumnMap can still produce a useful error.
+   * @param array $header Parsed CSV header row
+   * @param array $translation Map of human-readable label => technical column name
+   * @return array Header with translated values substituted
+   */
+  private function applyHeaderTranslation(array $header, array $translation): array
+  {
+    return array_map(fn($cell) => $translation[$cell] ?? $cell, $header);
+  }
+
+  /**
+   * Return export header labels: human-readable names from columns_translation (reversed),
+   * or the technical column names when no translation is configured.
+   * @param array $config Table configuration entry from getTables()
+   * @return array Ordered list of header labels matching the columns order
+   */
+  private function getExportHeaders(array $config): array
+  {
+    if (empty($config['columns_translation'])) {
+      return array_keys($config['columns']);
+    }
+    $reversed = array_flip($config['columns_translation']);
+    return array_map(fn($col) => $reversed[$col] ?? $col, array_keys($config['columns']));
   }
 
   /**
