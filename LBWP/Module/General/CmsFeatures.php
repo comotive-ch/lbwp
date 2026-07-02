@@ -3,6 +3,7 @@
 namespace LBWP\Module\General;
 
 use LBWP\Core;
+use LBWP\Helper\Converter;
 use LBWP\Helper\Cronjob;
 use LBWP\Helper\Location;
 use LBWP\Module\Backend\MemcachedAdmin;
@@ -1214,9 +1215,15 @@ class CmsFeatures extends \LBWP\Module\Base
         }
       }
 
-      $fileSize = isset($metaData['sizes'][$imageSize]['filesize']) ? $metaData['sizes'][$imageSize]['filesize'] : 0;
-      echo '<enclosure url="' . $url . '" type="' . $attachment->post_mime_type . '" length="' . $fileSize . '" />' . "\n";
-      echo '<media:content url="' . $url . '" type="' . $attachment->post_mime_type . '" expression="sample" />' . "\n";
+      if (isset($_GET['forcejpg']) && $_GET['forcejpg'] == 1 && str_ends_with($url, '.webp')) {
+        $url = Converter::forceNonWebpImageUrl($url);
+        echo '<enclosure url="' . $url . '" type="image/jpeg" />' . "\n";
+        echo '<media:content url="' . $url . '" type="image/jpeg" expression="sample" />' . "\n";
+      } else {
+        $fileSize = isset($metaData['sizes'][$imageSize]['filesize']) ? $metaData['sizes'][$imageSize]['filesize'] : 0;
+        echo '<enclosure url="' . $url . '" type="' . $attachment->post_mime_type . '" length="' . $fileSize . '" />' . "\n";
+        echo '<media:content url="' . $url . '" type="' . $attachment->post_mime_type . '" expression="sample" />' . "\n";
+      }
     }
   }
 
