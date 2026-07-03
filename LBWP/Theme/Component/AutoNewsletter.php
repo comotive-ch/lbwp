@@ -2,7 +2,6 @@
 
 namespace LBWP\Theme\Component;
 
-use BrevoScoped\Swoole\Coroutine\System;
 use CMNL;
 use ComotiveNL\Newsletter\Actions\ItemActions;
 use ComotiveNL\Newsletter\Actions\NewsletterActions;
@@ -10,7 +9,9 @@ use ComotiveNL\Newsletter\Newsletter\Newsletter;
 use LBWP\Helper\Cronjob;
 use LBWP\Helper\Import\Rss2;
 use LBWP\Module\General\Cms\SystemLog;
+use LBWP\Newsletter\Core as NLCore;
 use LBWP\Util\ArrayManipulation;
+use LBWP\Util\External;
 use LBWP\Util\Strings;
 
 /**
@@ -37,10 +38,23 @@ class AutoNewsletter extends ACFBase
     $config = get_field('lbwp-auto-newsletter', 'option');
     // Go trough the config and run every valid config
     foreach ($config as $newsletter) {
-      if ($newsletter['send-rule'] == 'daily') {
+      if ($this->isDueToday($newsletter)) {
         $this->generateNewsletter($newsletter);
       }
     }
+  }
+
+  /**
+   * @param array $config a single auto-newsletter configuration
+   * @return bool true if the configured send rule matches today
+   */
+  protected function isDueToday(array $config): bool
+  {
+    if ($config['send-rule'] == 'weekly') {
+      return intval($config['weekly-day']) == intval(current_time('N'));
+    }
+
+    return $config['send-rule'] == 'daily';
   }
 
   /**
@@ -58,14 +72,14 @@ class AutoNewsletter extends ACFBase
     // Check if it passes max, this is an error most likely, mark all as sent and inform
     if (count($articles) > $config['max-articles']) {
       SystemLog::add('autoNewsletter', 'critical', 'Too many auto-newsletter articles', $config);
-      $this->markArticlesAsSent($config['rss-feed'], $articles);
+      $this->markArticlesAsSent($this->getSourceIdentifier($config), $articles);
       return;
     }
 
     // Create the actual newsletter object and time it
     $this->createNewsletterObject($config, $articles);
     // At the end, mark the articles as sent
-    $this->markArticlesAsSent($config['rss-feed'], $articles);
+    $this->markArticlesAsSent($this->getSourceIdentifier($config), $articles);
   }
 
   /**
@@ -110,23 +124,55 @@ class AutoNewsletter extends ACFBase
     // Set the target
     $newsletter->setTarget($config['list-ids']);
 
-    // Schedule the newsletter
-    $newsletter->setSchedulingMode('future');
-    $newsletter->setStatus('readytosend');
-    switch ($config['send-rule']) {
-      case 'daily':
-      default:
-        $date = date('Y-m-d', current_time('timestamp')) . ' ' . $config['daily-hour'] . ':00';
-        $newsletter->setScheduledTimestamp(strtotime($date));
-        break;
+    // Schedule the newsletter, unless configured to only create a draft
+    if ($config['schedule-sending'] != 'no') {
+      switch ($config['send-rule']) {
+        case 'daily':
+        case 'weekly':
+        default:
+          $date = date('Y-m-d', current_time('timestamp')) . ' ' . $config['daily-hour'] . ':00';
+          $newsletter->setSchedulingMode('future');
+          $newsletter->setStatus('readytosend');
+          $newsletter->setScheduledTimestamp(strtotime($date));
+          break;
+      }
     }
 
     // Save the newsletter with the scheduling settings
     $newsletterBackend->saveNewsletter($newsletter);
-    // Add a cronjob to actually execute sending
-    Cronjob::register(array(
-      $newsletter->getScheduledTimestamp() => 'newsletter_send',
-    ));
+    // Add a cronjob to actually execute sending, if a timestamp was scheduled
+    if ($newsletter->getScheduledTimestamp() > 0) {
+      Cronjob::register(array(
+        $newsletter->getScheduledTimestamp() => 'newsletter_send',
+      ));
+    }
+
+    // Notify the configured recipient about the newly created newsletter draft
+    $this->sendNotificationEmail($config, $newsletter);
+  }
+
+  /**
+   * Sends a short notification email with a link to the newly created newsletter draft
+   * @param array $config
+   * @param Newsletter $newsletter
+   * @return void
+   */
+  protected function sendNotificationEmail($config, Newsletter $newsletter)
+  {
+    if (strlen($config['notification-email']) == 0) {
+      return;
+    }
+
+    $link = admin_url('admin.php?page=comotive-newsletter%2Fadmin%2Fdispatcher.php&view=DesignNewsletter&id=' . $newsletter->getId());
+
+    $mail = External::PhpMailer();
+    $mail->addAddress($config['notification-email']);
+    $mail->Subject = 'Newsletter-Entwurf erstellt: ' . $newsletter->getSubject();
+    $mail->Body = '
+      Der automatische Newsletter "' . $newsletter->getSubject() . '" wurde als Entwurf erstellt.<br><br>
+      <a href="' . $link . '">Newsletter im Backend öffnen</a>
+    ';
+    $mail->send();
   }
 
   /**
@@ -227,18 +273,9 @@ class AutoNewsletter extends ACFBase
    */
   protected function getSendableArticles($config)
   {
-    $sent = ArrayManipulation::forceArray(get_option('autonl_rss_sent_' . md5($config['rss-feed'])));
+    $sent = ArrayManipulation::forceArray(get_option('autonl_rss_sent_' . md5($this->getSourceIdentifier($config))));
     $threshold = current_time('timestamp') - ($config['max-age'] * 86400);
-    $raw = new Rss2($config['rss-feed']);
-    // Check if the feed is readable and have a mail sent to admin if not
-    if (!$raw->is_readable()) {
-      SystemLog::add('AutoNewsletter', 'critical', 'RSS Feed unreadable: ' . $config['rss-feed']);
-      return array();
-    }
-
-    $raw->set_category_concat_char(' ');
-    $raw->read();
-    $articles = $raw->data;
+    $articles = $this->fetchArticles($config);
 
     // Skip items already sent nd too old
     foreach ($articles as $key => $article) {
@@ -251,6 +288,37 @@ class AutoNewsletter extends ACFBase
     $this->sortArticles($articles, $config);
 
     return $articles;
+  }
+
+  /**
+   * Fetches the raw list of possible articles for a given configuration, unfiltered
+   * by sent-state or age. Override this to use a different data source than RSS.
+   * @param array $config
+   * @return array a list of articles, each having at least guidmd5, date, title, description, link, category, image
+   */
+  protected function fetchArticles($config)
+  {
+    $raw = new Rss2($config['rss-feed']);
+    // Check if the feed is readable and have a mail sent to admin if not
+    if (!$raw->is_readable()) {
+      SystemLog::add('AutoNewsletter', 'critical', 'RSS Feed unreadable: ' . $config['rss-feed']);
+      return array();
+    }
+
+    $raw->set_category_concat_char(' ');
+    $raw->read();
+    return $raw->data;
+  }
+
+  /**
+   * Provides a unique identifier for the configured data source, used to track sent articles.
+   * Override this together with fetchArticles() when using a different data source than RSS.
+   * @param array $config
+   * @return string a unique identifier for the data source of this configuration
+   */
+  protected function getSourceIdentifier($config)
+  {
+    return $config['rss-feed'];
   }
 
   protected function sortArticles(&$articles, $config)
@@ -267,14 +335,14 @@ class AutoNewsletter extends ACFBase
   }
 
   /**
-   * Marks the given articles as sent in our rss-specific option
-   * Remembers the last 500 sent articles (which should be largely enought with RRS providing only 10-20)
-   * @param string $rss
+   * Marks the given articles as sent in our source-specific option
+   * Remembers the last 500 sent articles (which should be largely enough for any source)
+   * @param string $sourceIdentifier the identifier as returned by getSourceIdentifier()
    * @param array $articles
    */
-  protected function markArticlesAsSent($rss, $articles)
+  protected function markArticlesAsSent($sourceIdentifier, $articles)
   {
-    $key = 'autonl_rss_sent_' . md5($rss);
+    $key = 'autonl_rss_sent_' . md5($sourceIdentifier);
     $sent = ArrayManipulation::forceArray(get_option($key));
     foreach ($articles as $article) {
       $sent[$article['guidmd5']] = $article['date'];
@@ -316,6 +384,17 @@ class AutoNewsletter extends ACFBase
     );
     foreach (get_posts($args) as $list) {
       $lists[$list->ID . '$$' . $list->post_title] = $list->post_title;
+    }
+
+    // Add other service support if class available and no lists found
+    $nlOptions = get_option('LbwpNewsletter');
+    if (empty($lists) && isset($nlOptions['serviceClass'])) {
+      $service = NLCore::getInstance()->getService();
+      $listId = $service->getSetting('listId');
+      $listName = $service->getSetting('listName');
+      if (strlen($listId) > 0 && strlen($listName) > 0) {
+        $lists[$listId . '$$' . $listName] = $listName;
+      }
     }
 
     acf_add_local_field_group(array(
@@ -365,8 +444,8 @@ class AutoNewsletter extends ACFBase
               'label' => 'RSS URL',
               'name' => 'rss-feed',
               'type' => 'url',
-              'instructions' => '',
-              'required' => 1,
+              'instructions' => 'Nur nötig, wenn diese Newsletter-Konfiguration RSS als Datenquelle verwendet',
+              'required' => 0,
               'conditional_logic' => 0,
               'wrapper' => array(
                 'width' => '',
@@ -546,6 +625,45 @@ class AutoNewsletter extends ACFBase
               ),
               'choices' => array(
                 'daily' => 'Täglich',
+                'weekly' => 'Wöchentlich',
+              ),
+              'default_value' => false,
+              'allow_null' => 0,
+              'multiple' => 0,
+              'ui' => 0,
+              'return_format' => 'value',
+              'ajax' => 0,
+              'placeholder' => '',
+            ),
+            array(
+              'key' => 'field_68e6a1000001',
+              'label' => 'Wochentag',
+              'name' => 'weekly-day',
+              'type' => 'select',
+              'instructions' => '',
+              'required' => 1,
+              'conditional_logic' => array(
+                array(
+                  array(
+                    'field' => 'field_62bbefa2967eb',
+                    'operator' => '==',
+                    'value' => 'weekly',
+                  ),
+                ),
+              ),
+              'wrapper' => array(
+                'width' => '',
+                'class' => '',
+                'id' => '',
+              ),
+              'choices' => array(
+                1 => 'Montag',
+                2 => 'Dienstag',
+                3 => 'Mittwoch',
+                4 => 'Donnerstag',
+                5 => 'Freitag',
+                6 => 'Samstag',
+                7 => 'Sonntag',
               ),
               'default_value' => false,
               'allow_null' => 0,
@@ -568,6 +686,13 @@ class AutoNewsletter extends ACFBase
                     'field' => 'field_62bbefa2967eb',
                     'operator' => '==',
                     'value' => 'daily',
+                  ),
+                ),
+                array(
+                  array(
+                    'field' => 'field_62bbefa2967eb',
+                    'operator' => '==',
+                    'value' => 'weekly',
                   ),
                 ),
               ),
@@ -662,6 +787,48 @@ class AutoNewsletter extends ACFBase
               'toggle' => 0,
               'save_custom' => 0,
               'custom_choice_button_text' => 'Eine neue Auswahlmöglichkeit hinzufügen',
+            ),
+            array(
+              'key' => 'field_68e6a1000010',
+              'label' => 'Versand einplanen',
+              'name' => 'schedule-sending',
+              'type' => 'select',
+              'required' => 1,
+              'conditional_logic' => 0,
+              'wrapper' => array(
+                'width' => '',
+                'class' => '',
+                'id' => '',
+              ),
+              'choices' => array(
+                'yes' => 'Ja, automatisch einplanen',
+                'no' => 'Nein, nur Entwurf erstellen',
+              ),
+              'default_value' => 'yes',
+              'allow_null' => 0,
+              'multiple' => 0,
+              'ui' => 0,
+              'return_format' => 'value',
+              'ajax' => 0,
+              'placeholder' => '',
+            ),
+            array(
+              'key' => 'field_68e6a1000011',
+              'label' => 'Benachrichtigungs-E-Mail',
+              'name' => 'notification-email',
+              'type' => 'email',
+              'instructions' => 'Info an dich, wenn Newsletter erstellt wird',
+              'required' => 0,
+              'conditional_logic' => 0,
+              'wrapper' => array(
+                'width' => '',
+                'class' => '',
+                'id' => '',
+              ),
+              'default_value' => '',
+              'placeholder' => '',
+              'prepend' => '',
+              'append' => '',
             ),
           ),
         ),
