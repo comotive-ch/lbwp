@@ -326,6 +326,45 @@ class Util
   }
 
   /**
+   * Updates the price of a product on all its existing active/on-hold subscriptions to match the
+   * product's current price, so that the next renewal is billed at the new price. This is needed
+   * because changing a product's price only affects newly created subscriptions by default. Works
+   * regardless of whether HPOS is enabled, as wcs_get_subscriptions_for_product() already handles
+   * both storage modes internally
+   * @param int $productId the id of the (subscription) product whose price changed
+   */
+  public static function updateSubscriptionPriceForFutureRenewals($productId)
+  {
+    $product = wc_get_product($productId);
+    if (!is_a($product, 'WC_Product')) {
+      return;
+    }
+
+    $subscriptions = wcs_get_subscriptions_for_product($productId, 'subscription', array(
+      'subscription_status' => array('active', 'on-hold', 'pending-cancel')
+    ));
+
+    foreach ($subscriptions as $subscription) {
+      $hasChangedItem = false;
+      foreach ($subscription->get_items() as $item) {
+        if ($item->get_product_id() != $productId) {
+          continue;
+        }
+
+        $newSubtotal = wc_get_price_excluding_tax($product, array('qty' => $item->get_quantity()));
+        $item->set_subtotal($newSubtotal);
+        $item->set_total($newSubtotal);
+        $hasChangedItem = true;
+      }
+
+      // Only recalculate and save the subscription if a matching item was actually found and changed
+      if ($hasChangedItem) {
+        $subscription->calculate_totals();
+      }
+    }
+  }
+
+  /**
    * Changes status from $status to $change on orders that are older than $days
    * @param string $status the orders by status that should be checked
    * @param string $change the new status of the orders, when number of days is reached

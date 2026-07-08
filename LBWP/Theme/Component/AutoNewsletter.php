@@ -54,6 +54,10 @@ class AutoNewsletter extends ACFBase
       return intval($config['weekly-day']) == intval(current_time('N'));
     }
 
+    if ($config['send-rule'] == 'biweekly') {
+      return intval($config['weekly-day']) == intval(current_time('N')) && intval(current_time('W')) % 2 == 0;
+    }
+
     return $config['send-rule'] == 'daily';
   }
 
@@ -129,6 +133,7 @@ class AutoNewsletter extends ACFBase
       switch ($config['send-rule']) {
         case 'daily':
         case 'weekly':
+        case 'biweekly':
         default:
           $date = date('Y-m-d', current_time('timestamp')) . ' ' . $config['daily-hour'] . ':00';
           $newsletter->setSchedulingMode('future');
@@ -626,6 +631,7 @@ class AutoNewsletter extends ACFBase
               'choices' => array(
                 'daily' => 'Täglich',
                 'weekly' => 'Wöchentlich',
+                'biweekly' => 'Alle zwei Wochen',
               ),
               'default_value' => false,
               'allow_null' => 0,
@@ -648,6 +654,13 @@ class AutoNewsletter extends ACFBase
                     'field' => 'field_62bbefa2967eb',
                     'operator' => '==',
                     'value' => 'weekly',
+                  ),
+                ),
+                array(
+                  array(
+                    'field' => 'field_62bbefa2967eb',
+                    'operator' => '==',
+                    'value' => 'biweekly',
                   ),
                 ),
               ),
@@ -693,6 +706,13 @@ class AutoNewsletter extends ACFBase
                     'field' => 'field_62bbefa2967eb',
                     'operator' => '==',
                     'value' => 'weekly',
+                  ),
+                ),
+                array(
+                  array(
+                    'field' => 'field_62bbefa2967eb',
+                    'operator' => '==',
+                    'value' => 'biweekly',
                   ),
                 ),
               ),
