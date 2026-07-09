@@ -675,6 +675,8 @@ class FormHandler extends Base
 
       // Success, if no errors happened
       if (!$this->executionError) {
+        // Let developers add functionality after submitting a form before redirect
+        do_action('lbwp_form_after_execution', $this->currentForm);
         // Reset post values for this form
         foreach ($this->currentItems as $item) {
           $item->removeValue();
