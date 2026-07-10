@@ -701,7 +701,13 @@ class FormHandler extends Base
         }
 
         // Message, if no redirect
-        return $args['meldung'];
+        if (strlen($args['meldung']) > 0) {
+          return $args['meldung'];
+        } else {
+          // If we have no message and no redirect, bascially reload same page
+          header('Location: ' . strtok($_SERVER['REQUEST_URI'], '?'));
+          exit;
+        }
       }
     }
 
