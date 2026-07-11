@@ -4,10 +4,22 @@ var sw = {
   cachedItems: '{cachePaths}',
   excludes: '{excludePaths}',
   cacheDelay: 1000,
-  preventCache: '{preventCache}'
+  preventCache: '{preventCache}',
+  offlinePage: '{offlinePage}'
+}
+
+// Config values that aren't set are replaced with the '[""]' array placeholder, not an empty string
+if (sw.offlinePage === '[""]') {
+  sw.offlinePage = false;
 }
 
 sw.cachedItems = sw.cachedItems.split(',');
+
+// Always precache the offline fallback page, regardless of preventCache, so it's
+// available for navigation requests made while there is no connection at all.
+if (sw.offlinePage && sw.cachedItems.indexOf(sw.offlinePage) === -1) {
+  sw.cachedItems.push(sw.offlinePage);
+}
 
 if (sw.excludes.length === 1 && sw.excludes[0] === '') {
   sw.excludes = false;
@@ -67,6 +79,14 @@ self.addEventListener('activate', (event) => {
 self.addEventListener('fetch', function (event) {
   // If set, ignore local cache
   if(sw.preventCache === '1'){
+    if (sw.offlinePage && event.request.mode === 'navigate') {
+      return event.respondWith(
+        fetch(event.request).catch(function () {
+          return caches.match(sw.offlinePage);
+        })
+      );
+    }
+
     return event.respondWith(fetch(event.request));
   }
 
@@ -110,6 +130,9 @@ self.addEventListener('fetch', function (event) {
         });
         return response;
       }).catch(function () {
+        if (sw.offlinePage && event.request.mode === 'navigate') {
+          return caches.match(sw.offlinePage);
+        }
         return caches.match('/');
       });
     }
