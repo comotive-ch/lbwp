@@ -218,6 +218,7 @@ class ServiceWorker
       'cachePaths' => array(),
       'excludes' => array(),
       'preventCache' => false,
+      'offlinePage' => false,
       'webpush_options' => array(),
       'webpush_timeout' => 30,
       'webpush_client_options' => array(),

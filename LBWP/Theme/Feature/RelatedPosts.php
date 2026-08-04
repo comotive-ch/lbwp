@@ -133,11 +133,12 @@ class RelatedPosts
    * @param int $postCount the maximum count to be returned
    * @param string $taxonomy to be queried
    * @param string $title the title that is set by the random terms name
+   * @param bool $requireThumbnail only return posts that have a featured image
    * @return \stdClass[] list of posts
    */
-  public static function postQuery($postId, $postCount, $taxonomy = 'post_tag', &$title = '')
+  public static function postQuery($postId, $postCount, $taxonomy = 'post_tag', &$title = '', $requireThumbnail = false)
   {
-    return self::$instance->getPostObjects($postId, $postCount, $taxonomy, $title);
+    return self::$instance->getPostObjects($postId, $postCount, $taxonomy, $title, $requireThumbnail);
   }
 
   /**
@@ -145,9 +146,10 @@ class RelatedPosts
    * @param int $postCount the maximum count to be returned
    * @param string $taxonomy to be queried
    * @param string $title the title that is set by the random terms name
+   * @param bool $requireThumbnail only return posts that have a featured image
    * @return \stdClass[] list of posts
    */
-  protected function getPostObjects($postId, $postCount, $taxonomy, &$title)
+  protected function getPostObjects($postId, $postCount, $taxonomy, &$title, $requireThumbnail = false)
   {
     if ($postCount == 0) {
       return array();
@@ -170,7 +172,7 @@ class RelatedPosts
         $title = get_term_by('id', $relatedTerm->term_id, $taxonomy)->name;
       }
 
-      return get_posts(array(
+      $args = array(
         'post__not_in' => array($postId),
         'posts_per_page' => $postCount,
         'tax_query' => array(
@@ -180,7 +182,19 @@ class RelatedPosts
             'terms' => array($relatedTerm->slug)
           )
         )
-      ));
+      );
+
+      // Only include posts that actually have a featured image
+      if ($requireThumbnail) {
+        $args['meta_query'] = array(
+          array(
+            'key' => '_thumbnail_id',
+            'compare' => 'EXISTS'
+          )
+        );
+      }
+
+      return get_posts($args);
     }
 
     return array();
