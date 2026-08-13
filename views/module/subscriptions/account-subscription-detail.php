@@ -9,6 +9,7 @@
 
 use LBWP\Aboon\Subscription\Account\AccountActions;
 use LBWP\Aboon\Subscription\Helper;
+use LBWP\Util\Date;
 
 if (!defined('ABSPATH')) {
   exit;
@@ -32,7 +33,7 @@ $nonceAction = 'lbwp_sub_account_action_' . $subscriptionPostId;
   <tbody>
     <tr>
       <th><?php esc_html_e('Status', 'lbwp'); ?></th>
-      <td><?php echo esc_html((string) $status); ?></td>
+      <td><?php echo esc_html(Helper::statusLabel((string) $status)); ?></td>
     </tr>
     <tr>
       <th><?php esc_html_e('Turnus', 'lbwp'); ?></th>
@@ -61,10 +62,10 @@ $nonceAction = 'lbwp_sub_account_action_' . $subscriptionPostId;
     <?php endif; ?>
     <?php foreach ($chargeLog as $row) : ?>
       <tr>
-        <td><?php echo esc_html($row['created_at']); ?></td>
-        <td><?php echo esc_html($row['type']); ?></td>
+        <td><?php echo esc_html(Date::convertDate(Date::SQL_DATETIME, Date::EU_DATETIME, $row['created_at'])); ?></td>
+        <td><?php echo esc_html(Helper::chargeTypeLabel($row['type'])); ?></td>
         <td><?php echo esc_html(Helper::formatAmount((int) $row['amount'], $row['currency'])); ?></td>
-        <td><?php echo esc_html($row['status']); ?></td>
+        <td><?php echo esc_html(Helper::chargeStatusLabel($row['status'])); ?></td>
       </tr>
     <?php endforeach; ?>
   </tbody>
@@ -93,13 +94,13 @@ $nonceAction = 'lbwp_sub_account_action_' . $subscriptionPostId;
 <?php endif; ?>
 
 <?php if (!empty($upgradeTargets)) : ?>
-  <form method="post" class="lbwp-sub-account-form">
+  <form method="post" class="lbwp-sub-account-form" style="padding: 1em 0;">
     <input type="hidden" name="subscription_id" value="<?php echo esc_attr((string) $subscriptionPostId); ?>">
     <input type="hidden" name="lbwp_sub_action" value="<?php echo esc_attr(AccountActions::ACTION_UPGRADE); ?>">
     <?php wp_nonce_field($nonceAction); ?>
     <label>
       <?php esc_html_e('Upgrade auf', 'lbwp'); ?>
-      <select name="target_product_id">
+      <select name="target_product_id" style="margin: 0 0.5em;">
         <?php foreach ($upgradeTargets as $targetProductId) : ?>
           <option value="<?php echo esc_attr((string) $targetProductId); ?>"><?php echo esc_html(get_the_title((int) $targetProductId)); ?></option>
         <?php endforeach; ?>

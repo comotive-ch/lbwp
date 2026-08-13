@@ -23,11 +23,16 @@ class TransactionApi
   public function getOne(string $transactionId): ?TransactionResponse
   {
     try {
+      PayrexxClient::requireSdk();
+
       $transaction = new Transaction();
       $transaction->setId($transactionId);
       return PayrexxClient::getInstance()->getOne($transaction);
     } catch (PayrexxException $exception) {
       SystemLog::add('AboonSubscription', 'error', 'Payrexx getOne(Transaction) failed: ' . $exception->getMessage());
+      return null;
+    } catch (\Throwable $throwable) {
+      SystemLog::add('AboonSubscription', 'error', 'Payrexx getOne(Transaction) failed (' . get_class($throwable) . '): ' . $throwable->getMessage());
       return null;
     }
   }
@@ -41,6 +46,8 @@ class TransactionApi
   public function refund(string $transactionId, ?int $partialAmountCents = null): ?TransactionResponse
   {
     try {
+      PayrexxClient::requireSdk();
+
       $transaction = new Transaction();
       $transaction->setId($transactionId);
       if ($partialAmountCents !== null) {
@@ -49,6 +56,9 @@ class TransactionApi
       return PayrexxClient::getInstance()->refund($transaction);
     } catch (PayrexxException $exception) {
       SystemLog::add('AboonSubscription', 'error', 'Payrexx refund(Transaction) failed: ' . $exception->getMessage());
+      return null;
+    } catch (\Throwable $throwable) {
+      SystemLog::add('AboonSubscription', 'error', 'Payrexx refund(Transaction) failed (' . get_class($throwable) . '): ' . $throwable->getMessage());
       return null;
     }
   }

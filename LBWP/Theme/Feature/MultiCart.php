@@ -11,6 +11,11 @@ use LBWP\Util\File;
 class MultiCart {
 
   /**
+   * @var bool whether the switcher UI has already been printed in this request
+   */
+  protected bool $switcherRendered = false;
+
+  /**
    * Register the init hook.
    */
   public function __construct() {
@@ -127,9 +132,16 @@ class MultiCart {
   }
 
   /**
-   * Output the cart switcher UI with buttons for each saved cart.
+   * Output the cart switcher UI with buttons for each saved cart. Both
+   * woocommerce_before_cart and woocommerce_cart_is_empty can fire in the same
+   * request (empty cart in some themes), so only the first call prints.
    */
   public function renderCartSwitcher(): void {
+    if ($this->switcherRendered) {
+      return;
+    }
+    $this->switcherRendered = true;
+
     $userId   = get_current_user_id();
     $carts    = $this->ensureDefaultCart($userId);
     $activeId = $this->getActiveCartId($userId);
@@ -162,7 +174,7 @@ class MultiCart {
     }
 
     $base = File::getResourceUri();
-    wp_enqueue_script('multicart', $base . '/js/multicart/multicart.js', [], false, true);
+    wp_enqueue_script('multicart', $base . '/js/multicart/multicart.js', ['jquery'], false, true);
     wp_localize_script('multicart', 'multicartData', [
       'nonce'   => wp_create_nonce('multicart_nonce'),
       'ajaxUrl' => admin_url('admin-ajax.php'),

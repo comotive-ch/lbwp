@@ -45,8 +45,8 @@ class WebhookController
    */
   public function handle(WP_REST_Request $request): WP_REST_Response
   {
-    $payload = $request->get_json_params();
-    if (!is_array($payload)) {
+    $payload = $request->get_params();
+    if (!is_array($payload) || $payload === []) {
       return new WP_REST_Response(['status' => 'ignored'], 200);
     }
 
@@ -114,10 +114,12 @@ class WebhookController
     (new OrderLinker())->handleConfirmedFirstPayment(
       $order->get_id(),
       (string) $transaction->getId(),
-      $subscription->getPspSubscriptionId(),
+      (string) $subscription->getId(),
       (string) $transaction->getPspId(),
       (int) $transaction->getAmount(),
-      (string) $transaction->getCurrency()
+      $order->get_currency(),
+      $subscription->getNextPayDate(),
+      (string) $subscription->getValidUntil()
     );
   }
 
@@ -143,7 +145,7 @@ class WebhookController
       'order_id' => $order->get_id(),
       'payrexx_transaction_id' => (string) $transaction->getId(),
       'amount' => (int) $transaction->getAmount(),
-      'currency' => (string) $transaction->getCurrency(),
+      'currency' => $order->get_currency(),
       'status' => 'confirmed',
       'type' => ChargeLog::TYPE_RENEWAL,
     ]);

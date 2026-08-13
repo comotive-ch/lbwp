@@ -251,7 +251,11 @@ class Search extends ACFBase
   {
     if ($query->is_search() && !is_admin() && $query->is_main_query()) {
       $term = $query->get('s');
-      $results = 0;
+      // Allow adding own results and bail if we find stuff with custom search
+      if (apply_filters('lbwp_search_custom_search_results', 0, $term, $query) > 0) {
+        return;
+      };
+
       if (static::$CHROMADB_OVERRIDE_WORDPRESS_SEARCH) {
         if (static::$CHROMADB_WORDPRESS_SEARCH_ONLY) {
           $this->overrideWordPressSeachChromaDb($term, $query, $results);

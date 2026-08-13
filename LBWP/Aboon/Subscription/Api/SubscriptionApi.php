@@ -27,11 +27,16 @@ class SubscriptionApi
   public function getOne(string $payrexxSubscriptionId): ?SubscriptionResponse
   {
     try {
+      PayrexxClient::requireSdk();
+
       $subscription = new Subscription();
       $subscription->setId($payrexxSubscriptionId);
       return PayrexxClient::getInstance()->getOne($subscription);
     } catch (PayrexxException $exception) {
       SystemLog::add('AboonSubscription', 'error', 'Payrexx getOne(Subscription) failed: ' . $exception->getMessage());
+      return null;
+    } catch (\Throwable $throwable) {
+      SystemLog::add('AboonSubscription', 'error', 'Payrexx getOne(Subscription) failed (' . get_class($throwable) . '): ' . $throwable->getMessage());
       return null;
     }
   }
@@ -46,6 +51,8 @@ class SubscriptionApi
   public function findByReferenceId(string $referenceId): ?SubscriptionResponse
   {
     try {
+      PayrexxClient::requireSdk();
+
       $filter = new Subscription();
       $filter->setReferenceId($referenceId);
       $filter->setLimit(1);
@@ -54,6 +61,9 @@ class SubscriptionApi
       return is_array($results) && count($results) > 0 ? $results[0] : null;
     } catch (PayrexxException $exception) {
       SystemLog::add('AboonSubscription', 'error', 'Payrexx getAll(Subscription) by referenceId failed: ' . $exception->getMessage());
+      return null;
+    } catch (\Throwable $throwable) {
+      SystemLog::add('AboonSubscription', 'error', 'Payrexx getAll(Subscription) by referenceId failed (' . get_class($throwable) . '): ' . $throwable->getMessage());
       return null;
     }
   }
@@ -67,6 +77,8 @@ class SubscriptionApi
   public function updateAmount(string $payrexxSubscriptionId, int $amountCents): bool
   {
     try {
+      PayrexxClient::requireSdk();
+
       $subscription = new Subscription();
       $subscription->setId($payrexxSubscriptionId);
       $subscription->setAmount($amountCents);
@@ -74,6 +86,9 @@ class SubscriptionApi
       return true;
     } catch (PayrexxException $exception) {
       SystemLog::add('AboonSubscription', 'error', 'Payrexx update(Subscription) failed: ' . $exception->getMessage());
+      return false;
+    } catch (\Throwable $throwable) {
+      SystemLog::add('AboonSubscription', 'error', 'Payrexx update(Subscription) failed (' . get_class($throwable) . '): ' . $throwable->getMessage());
       return false;
     }
   }
@@ -86,12 +101,17 @@ class SubscriptionApi
   public function cancel(string $payrexxSubscriptionId): bool
   {
     try {
+      PayrexxClient::requireSdk();
+
       $subscription = new Subscription();
       $subscription->setId($payrexxSubscriptionId);
       PayrexxClient::getInstance()->cancel($subscription);
       return true;
     } catch (PayrexxException $exception) {
       SystemLog::add('AboonSubscription', 'error', 'Payrexx cancel(Subscription) failed: ' . $exception->getMessage());
+      return false;
+    } catch (\Throwable $throwable) {
+      SystemLog::add('AboonSubscription', 'error', 'Payrexx cancel(Subscription) failed (' . get_class($throwable) . '): ' . $throwable->getMessage());
       return false;
     }
   }
@@ -108,6 +128,8 @@ class SubscriptionApi
   public function buildPaymentMethodUpdateLink(string $referenceId, string $purpose = 'Zahlungsmethode hinterlegen'): ?string
   {
     try {
+      PayrexxClient::requireSdk();
+
       $gateway = new Gateway();
       $gateway->setAmount(100);
       $gateway->setCurrency(PayrexxClient::getCurrency());
@@ -126,6 +148,9 @@ class SubscriptionApi
       return $response->getLink();
     } catch (PayrexxException $exception) {
       SystemLog::add('AboonSubscription', 'error', 'Payrexx create(Gateway) for payment method link failed: ' . $exception->getMessage());
+      return null;
+    } catch (\Throwable $throwable) {
+      SystemLog::add('AboonSubscription', 'error', 'Payrexx create(Gateway) for payment method link failed (' . get_class($throwable) . '): ' . $throwable->getMessage());
       return null;
     }
   }

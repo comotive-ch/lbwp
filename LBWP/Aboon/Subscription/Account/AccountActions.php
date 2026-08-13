@@ -73,7 +73,7 @@ class AccountActions
   {
     $link = (new SubscriptionApi())->buildPaymentMethodUpdateLink((string) $subscriptionPostId);
     if ($link !== null) {
-      wp_safe_redirect($link);
+      wp_redirect($link);
       exit;
     }
 

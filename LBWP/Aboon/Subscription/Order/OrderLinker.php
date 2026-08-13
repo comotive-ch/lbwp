@@ -41,6 +41,8 @@ class OrderLinker
     $interval = Helper::recurrenceToIso8601($recurrence);
 
     try {
+      PayrexxClient::requireSdk();
+
       $gateway = new Gateway();
       $gateway->setAmount((int) round($order->get_total() * 100));
       $gateway->setCurrency($order->get_currency());
@@ -64,6 +66,9 @@ class OrderLinker
     } catch (PayrexxException $exception) {
       SystemLog::add('AboonSubscription', 'error', 'Payrexx create(Gateway) for order ' . $order->get_id() . ' failed: ' . $exception->getMessage());
       return null;
+    } catch (\Throwable $throwable) {
+      SystemLog::add('AboonSubscription', 'error', 'Payrexx create(Gateway) for order ' . $order->get_id() . ' failed (' . get_class($throwable) . '): ' . $throwable->getMessage());
+      return null;
     }
   }
 
@@ -76,9 +81,11 @@ class OrderLinker
    * @param string $pspId the Payrexx PSP-on-file id, needed for later one-off charges
    * @param int $amountCents the confirmed charge amount in cents
    * @param string $currency the charge currency
+   * @param int $nextPayDate the confirmed subscription's next pay date, as a unix timestamp
+   * @param string $validUntil the confirmed subscription's valid-until date (Payrexx date format)
    * @return void
    */
-  public function handleConfirmedFirstPayment(int $orderId, string $transactionId, string $payrexxSubscriptionId, string $pspId, int $amountCents, string $currency): void
+  public function handleConfirmedFirstPayment(int $orderId, string $transactionId, string $payrexxSubscriptionId, string $pspId, int $amountCents, string $currency, int $nextPayDate = 0, string $validUntil = ''): void
   {
     $order = wc_get_order($orderId);
     if (!$order instanceof \WC_Order || $order->is_paid()) {
@@ -87,7 +94,7 @@ class OrderLinker
 
     $order->payment_complete($transactionId);
 
-    $subscriptionId = $this->createSubscriptionPost($order, $payrexxSubscriptionId, $pspId);
+    $subscriptionId = $this->createSubscriptionPost($order, $payrexxSubscriptionId, $pspId, nextPayDate: $nextPayDate, validUntil: $validUntil);
 
     (new ChargeLog())->append($subscriptionId, [
       'order_id' => $orderId,
@@ -106,9 +113,11 @@ class OrderLinker
    * @param string $payrexxSubscriptionId the Payrexx subscription id
    * @param string $pspId the Payrexx PSP-on-file id
    * @param string $status the initial internal status
+   * @param int $nextPayDate the subscription's next pay date, as a unix timestamp (0 if unknown yet)
+   * @param string $validUntil the subscription's valid-until date (empty if unknown yet)
    * @return int the created subscription post id
    */
-  public function createSubscriptionPost(\WC_Order $order, string $payrexxSubscriptionId, string $pspId, string $status = 'active'): int
+  public function createSubscriptionPost(\WC_Order $order, string $payrexxSubscriptionId, string $pspId, string $status = 'active', int $nextPayDate = 0, string $validUntil = ''): int
   {
     $productId = $this->getSubscriptionProductId($order);
     $recurrence = $productId !== null ? (string) get_field('subscription_recurrence', $productId) : 'month';
@@ -121,7 +130,7 @@ class OrderLinker
       $postId = wp_insert_post([
         'post_type' => PostType::SLUG,
         'post_status' => 'draft',
-        'post_title' => sprintf(__('Abo #%d', 'lbwp'), $order->get_id()),
+        'post_title' => $this->buildSubscriptionTitle($order, $productId),
       ]);
     }
 
@@ -132,6 +141,13 @@ class OrderLinker
     update_field('recurrence_snapshot', $recurrence, $postId);
     update_field('current_quantity', $quantity, $postId);
     update_post_meta($postId, '_lbwp_sub_customer_id', $order->get_customer_id());
+
+    if ($nextPayDate > 0) {
+      update_field('next_pay_date', $nextPayDate, $postId);
+    }
+    if ($validUntil !== '') {
+      update_field('valid_until', $validUntil, $postId);
+    }
 
     wp_update_post([
       'ID' => $postId,
@@ -178,7 +194,7 @@ class OrderLinker
     $postId = wp_insert_post([
       'post_type' => PostType::SLUG,
       'post_status' => 'draft',
-      'post_title' => sprintf(__('Abo #%d', 'lbwp'), $order->get_id()),
+      'post_title' => $this->buildSubscriptionTitle($order, $productId),
     ]);
 
     update_field('subscription_status', Helper::STATUS_AWAITING_FIRST_PAYMENT, $postId);
@@ -232,6 +248,21 @@ class OrderLinker
     ]);
 
     return $posts[0] ?? null;
+  }
+
+  /**
+   * Builds the subscription post's title, including the product name when known.
+   * @param \WC_Order $order the linked order
+   * @param int|null $productId the subscription product id, or null if not found
+   * @return string the title, e.g. "Abo #9999 / Comotive Storage Mini"
+   */
+  protected function buildSubscriptionTitle(\WC_Order $order, ?int $productId): string
+  {
+    if ($productId === null) {
+      return sprintf(__('Abo #%d', 'lbwp'), $order->get_id());
+    }
+
+    return sprintf(__('Abo #%d / %s', 'lbwp'), $order->get_id(), get_the_title($productId));
   }
 
   /**

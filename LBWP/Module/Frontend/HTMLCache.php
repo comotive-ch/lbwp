@@ -408,11 +408,13 @@ class HTMLCache extends \LBWP\Module\Base
             $key = lbwpGetHtmlCacheKey($this->getCacheSiteId());
             $cache->setex($key, $expireTime, $cacheVal);
             // Additional bot version if time given
-            if (self::$cacheTimeBots > 0 && $expireTime < self::$cacheTimeBots) {
+            if (self::$cacheTimeBots > 0 && $expireTime < self::$cacheTimeBots && file_exists(LBWP_BOT_CACHE_PATH_NODE)) {
               // Save on NFS bot cache disk
-              if (file_exists(LBWP_BOT_CACHE_PATH_NODE)) {
-                file_put_contents(LBWP_BOT_CACHE_PATH_NODE . $key, $cacheVal['content']);
+              $botCacheFile = LBWP_BOT_CACHE_PATH_NODE . lbwpGetHtmlBotCacheKey($this->getCacheSiteId());
+              if (!file_exists(dirname($botCacheFile))) {
+                mkdir(dirname($botCacheFile), 0777, true);
               }
+              file_put_contents($botCacheFile, $cacheVal['content']);
             }
           } catch (\Exception $e) {
             // Just don't cache at this point, but also don't crash :-)

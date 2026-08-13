@@ -9,6 +9,7 @@
 
 use LBWP\Aboon\Subscription\Admin\AdminActions;
 use LBWP\Aboon\Subscription\Helper;
+use LBWP\Util\Date;
 
 if (!defined('ABSPATH')) {
   exit;
@@ -89,7 +90,7 @@ if (!defined('ABSPATH')) {
         <?php foreach ($chargeLog as $row) : ?>
           <tr>
             <td><input type="checkbox" name="charge_log_ids[]" value="<?php echo esc_attr((string) $row['id']); ?>"></td>
-            <td><?php echo esc_html($row['created_at']); ?></td>
+            <td><?php echo esc_html(Date::convertDate(Date::SQL_DATETIME, Date::EU_DATETIME, $row['created_at'])); ?></td>
             <td><?php echo esc_html($row['type']); ?></td>
             <td><?php echo esc_html(Helper::formatAmount((int) $row['amount'], $row['currency'])); ?></td>
             <td><?php echo esc_html($row['status']); ?></td>

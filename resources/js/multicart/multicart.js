@@ -5,6 +5,32 @@ class MultiCart {
     this.i18n     = i18n;
     this.switcher = document.querySelector('.multicart-switcher');
     this.bindEvents();
+    this.bindCartUpdates();
+  }
+
+  /**
+   * WooCommerce replaces parts of the cart markup via AJAX (remove item, empty
+   * cart). The injected HTML carries its own switcher while the original one
+   * survives outside the replaced container, so drop the extra copies.
+   */
+  bindCartUpdates() {
+    if (typeof jQuery === 'undefined') { return; }
+
+    jQuery(document.body).on('updated_wc_div wc_cart_emptied updated_cart_totals', () => {
+      this.removeDuplicateSwitchers();
+    });
+  }
+
+  // Keep the first switcher (its listeners are still bound), remove the rest
+  removeDuplicateSwitchers() {
+    const switchers = document.querySelectorAll('.multicart-switcher');
+    if (switchers.length < 2) { return; }
+
+    switchers.forEach((el, index) => {
+      if (index > 0) { el.remove(); }
+    });
+
+    this.switcher = switchers[0];
   }
 
   bindEvents() {

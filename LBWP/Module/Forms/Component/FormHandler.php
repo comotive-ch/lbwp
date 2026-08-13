@@ -18,6 +18,7 @@ use LBWP\Module\Forms\Action\Base as BaseAction;
 use LBWP\Util\Strings;
 use LBWP\Util\WordPress;
 use LBWP\Helper\SpamCheck;
+use LBWP\Helper\IpReputation;
 
 /**
  * This class provides the shortcodes that will create the actual form elements with sub components.
@@ -97,6 +98,21 @@ class FormHandler extends Base
    */
   protected $formErrorMessage = '';
   /**
+   * @var array post keys that carry no user content and must not be spam checked
+   */
+  protected $spamCheckIgnoredKeys = array(
+    'lbwpFormSend', 'sentForm', 'form-token', 'form-nonce',
+    'lbwpHiddenFormFields', 'lbwp-bt-prob'
+  );
+  /**
+   * @var array post key prefixes that carry no user content and must not be spam checked
+   */
+  protected $spamCheckIgnoredPrefixes = array('second_nonce_', 'to_recept_');
+  /**
+   * @var bool|NULL cached spam verdict of the current request, NULL if not yet evaluated
+   */
+  protected $spamVerdict = NULL;
+  /**
    * @var string content to add at the bottom of a form
    */
   protected $bottomContent = '';
@@ -168,6 +184,18 @@ class FormHandler extends Base
    * @var string after submit cookie prefix
    */
   const AFTER_SUBMIT_COOKIE_PREFIX = 'lbwp_form_after_submit_';
+  /**
+   * @var string cache prefix to detect identical submissions repeated in short succession
+   */
+  const DUPLICATE_CACHE_PREFIX = 'lbwp_form_fingerprint_';
+  /**
+   * @var int time in seconds in which an identical submission is treated as duplicate
+   */
+  const DUPLICATE_TIMEFRAME = 300;
+  /**
+   * @var int ip reputation score from which on the content spam threshold is lowered
+   */
+  const BAD_IP_REPUTATION_SCORE = 3;
 
   /**
    * Called at init(50)
@@ -841,19 +869,149 @@ class FormHandler extends Base
   }
 
   /**
+   * Tells if the reinforced spam checks are switched on. As long as the constant is
+   * not defined, the form handling behaves exactly as before, so the new detection
+   * can be enabled per site while it is being evaluated on production.
+   * @return bool true if the reinforced checks should be executed
+   */
+  protected function reinforcedSpamCheckActive()
+  {
+    return SpamCheck::isReinforcedActive();
+  }
+
+  /**
    * Check if form content is spam using SpamCheck helper
    * @return bool True if spam detected, false otherwise
    */
   protected function maybeIsSpamContent()
   {
+    if ($this->reinforcedSpamCheckActive()) {
+      $result = SpamCheck::evaluateFields($this->getSubmittedValues());
+      return $result['isSpam'];
+    }
+
+    // Legacy evaluation, only looking at the actual text fields as one single text
     $text = '';
-    foreach ($_POST as $key => $value ) {
+    foreach ($_POST as $key => $value) {
       if (str_starts_with($key, 'text')) {
         $text .= $value . ' ';
       }
     }
 
     return SpamCheck::evaluate($text);
+  }
+
+  /**
+   * Collect all user entered values of the current submission. In contrast to only
+   * looking at text fields, this also covers name, company or subject fields that
+   * bots fill with random tokens as well.
+   * @return array all submitted values as a flat list of strings
+   */
+  protected function getSubmittedValues()
+  {
+    $values = array();
+
+    foreach ($_POST as $key => $value) {
+      if (!$this->isUserContentField($key)) {
+        continue;
+      }
+      // Flatten arrays of checkboxes, matrix fields and the like. Scalars must be
+      // included, so forceArray can not be used here as it drops them entirely.
+      foreach (ArrayManipulation::forceArrayAndInclude($value) as $entry) {
+        if (is_scalar($entry) && strlen(trim($entry)) > 0) {
+          $values[] = trim($entry);
+        }
+      }
+    }
+
+    return $values;
+  }
+
+  /**
+   * Tells if a post key contains user entered content instead of security or system data
+   * @param string $key the post key to check
+   * @return bool true if the key holds user content
+   */
+  protected function isUserContentField($key)
+  {
+    if (in_array($key, $this->spamCheckIgnoredKeys)) {
+      return false;
+    }
+
+    foreach ($this->spamCheckIgnoredPrefixes as $prefix) {
+      if (str_starts_with($key, $prefix)) {
+        return false;
+      }
+    }
+
+    return true;
+  }
+
+  /**
+   * Full spam evaluation of the current submission, combining content analysis,
+   * duplicate detection and the reputation of the sending ip address. The result
+   * is cached, as a form can be displayed multiple times within one request.
+   * @return bool true if the submission is considered spam
+   */
+  protected function submissionIsSpam()
+  {
+    if ($this->spamVerdict !== NULL) {
+      return $this->spamVerdict;
+    }
+
+    $result = SpamCheck::evaluateFields($this->getSubmittedValues());
+    $isSpam = $result['isSpam'];
+    $reason = 'spam fields: ' . $result['spamFields'] . ' / combined score: ' . $result['combinedScore'];
+
+    SystemLog::add('FormHandler/submissionIsSpam', 'debug', 'after field evaluation', $reason);
+
+    // A single random looking field alone is not enough, but together with an ip
+    // known for spam or anonymization it is. External services are only asked in
+    // this borderline case, so clean submissions never pay for the lookup time.
+    if (!$isSpam && $result['spamFields'] == 1) {
+      if (IpReputation::getScore() >= self::BAD_IP_REPUTATION_SCORE) {
+        $isSpam = true;
+        $reason .= ' / confirmed by bad ip reputation';
+
+        SystemLog::add('FormHandler/submissionIsSpam', 'debug', 'after IP Rep', $reason);
+      }
+    }
+
+    // Independently of the content, block identical submissions repeated in short succession
+    if (!$isSpam && $this->isDuplicateSubmission() && !defined('LOCAL_DEVELOPMENT')) {
+      $isSpam = true;
+      $reason = 'identical submission within ' . self::DUPLICATE_TIMEFRAME . ' seconds';
+    }
+
+    // Allow themes to override the verdict, for example for forms that legitimately
+    // contain random looking data like license keys or serial numbers
+    $isSpam = apply_filters('lbwp_form_submission_is_spam', $isSpam, $result, $this->currentForm);
+
+    if ($isSpam) {
+      SystemLog::add('FormHandler/submissionIsSpam', 'debug', $reason, $_POST);
+    }
+
+    $this->spamVerdict = $isSpam;
+    return $this->spamVerdict;
+  }
+
+  /**
+   * Check if the exact same submission from the same ip was already received within
+   * DUPLICATE_TIMEFRAME. The fingerprint is registered on the first call.
+   * @return bool true if this is a repeated submission
+   */
+  protected function isDuplicateSubmission()
+  {
+    $key = self::DUPLICATE_CACHE_PREFIX . md5(
+      IpReputation::getRequestIp() . '|' . $this->currentForm->ID . '|' . implode('|', $this->getSubmittedValues())
+    );
+
+    if (wp_cache_get($key, 'LbwpForm') == 1) {
+      return true;
+    }
+
+    wp_cache_set($key, 1, 'LbwpForm', self::DUPLICATE_TIMEFRAME);
+    return false;
   }
 
   /**
@@ -977,6 +1135,14 @@ class FormHandler extends Base
         $info = $secure ? 'secure' : 'insecure';
         SystemLog::add('use_spambotcheck marked ' . $info, 'debug', 'bot evaluation: ' . $result, $_POST);
       }
+    }
+
+    // Content, duplicate and reputation checks run on every submission that got this
+    // far, independently of what the bot check concluded. Bots that execute javascript
+    // pass the bot check, so the actual content is the last and most reliable signal.
+    if ($secure && $this->reinforcedSpamCheckActive() && $this->submissionIsSpam()) {
+      SystemLog::add('use_spambotcheck marked SPAM', 'debug', 'submissionIsSpam returned true', $_POST);
+      $secure = false;
     }
 
     return $secure;

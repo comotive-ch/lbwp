@@ -147,8 +147,15 @@ class ReplaceFile extends BaseSingleton
         $message = 'Sie haben nicht die Berechtigung diese Datei zu ersetzen.';
       }
       // Check if file endings are identical
-      $currentExt = File::getExtension($key);
-      $uploadExt = File::getExtension($file['name']);
+      $currentExt = strtolower(File::getExtension($key));
+      $uploadExt = strtolower(File::getExtension($file['name']));
+
+      // Convert the upload to webp if it replaces a webp file, instead of rejecting it
+      if ($currentExt == '.webp' && in_array($uploadExt, ['.jpg', '.jpeg', '.png'])) {
+        $this->convertReplacementToWebp($file);
+        $uploadExt = '.webp';
+      }
+
       if ($currentExt != $uploadExt) {
         $error = true;
         $message = 'Abgebrochen, da die neue Datei nicht vom gleichen Typ ist.';
@@ -197,5 +204,30 @@ class ReplaceFile extends BaseSingleton
     }
 
     return $message;
+  }
+
+  /**
+   * Converts an uploaded jpg/png replacement file to webp in place, using the same
+   * imagemagick command as CmsFeatures::eventuallyConvertWebpUploads
+   * @param array $file the $_FILES entry, its tmp_name content is replaced with the webp version
+   * @return void
+   */
+  protected function convertReplacementToWebp(array $file): void
+  {
+    $extension = strtolower(File::getExtension($file['name']));
+    $sourceName = $file['tmp_name'] . '.' . ($extension == '.png' ? 'png' : 'jpg');
+    $convertedName = $file['tmp_name'] . '.webp';
+
+    copy($file['tmp_name'], $sourceName);
+    $command = sprintf(
+      'convert %s -black-point-compensation -intent relative -profile %s -quality 85 -define webp:method=6 %s 2>&1',
+      escapeshellarg($sourceName),
+      '/usr/share/color/icc/sRGB.icc',
+      escapeshellarg($convertedName)
+    );
+
+    exec($command, $output, $returnCode);
+    rename($convertedName, $file['tmp_name']);
+    unlink($sourceName);
   }
 }

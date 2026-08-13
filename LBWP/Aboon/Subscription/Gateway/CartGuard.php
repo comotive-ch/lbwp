@@ -22,6 +22,7 @@ class CartGuard
   {
     add_filter('woocommerce_add_to_cart_validation', [$this, 'preventMixedCart'], 10, 3);
     add_filter('woocommerce_available_payment_gateways', [$this, 'restrictToSubscriptionGateway']);
+    add_filter('woocommerce_cart_needs_shipping', [$this, 'hideShippingForSubscriptionCart']);
     add_action('woocommerce_before_checkout_form', [$this, 'renderRecurrenceNotice']);
   }
 
@@ -123,6 +124,21 @@ class CartGuard
         ))
       );
     }
+  }
+
+  /**
+   * Treats a cart containing a subscription product as needing no shipping, same as a purely
+   * virtual/digital cart, since subscription products can never be mixed with shippable ones.
+   * @param bool $needsShipping whether WooCommerce currently thinks the cart needs shipping
+   * @return bool the (possibly overridden) value
+   */
+  public function hideShippingForSubscriptionCart(bool $needsShipping): bool
+  {
+    if ($this->cartHasSubscriptionProduct()) {
+      return false;
+    }
+
+    return $needsShipping;
   }
 
   /**

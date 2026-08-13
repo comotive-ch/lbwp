@@ -3,6 +3,7 @@
 namespace LBWP\Aboon\Subscription\Gateway;
 
 use LBWP\Aboon\Subscription\Order\OrderLinker;
+use LBWP\Module\General\Cms\SystemLog;
 
 /**
  * WooCommerce payment gateway that sells subscription products through Payrexx's own
@@ -104,7 +105,18 @@ class PayrexxSubscriptionGateway extends \WC_Payment_Gateway
   public function process_payment($orderId): array
   {
     $order = wc_get_order($orderId);
-    $link = (new OrderLinker())->startCheckout($order);
+    if (!$order instanceof \WC_Order) {
+      wc_add_notice(__('Die Zahlung konnte nicht gestartet werden. Bitte versuche es erneut.', 'lbwp'), 'error');
+      return ['result' => 'failure'];
+    }
+
+    try {
+      $link = (new OrderLinker())->startCheckout($order);
+    } catch (\Throwable $throwable) {
+      SystemLog::add('AboonSubscription', 'error', 'process_payment(): uncaught ' . get_class($throwable) . ' for order ' . $orderId . ': ' . $throwable->getMessage());
+      wc_add_notice(__('Die Zahlung konnte nicht gestartet werden. Bitte versuche es erneut.', 'lbwp'), 'error');
+      return ['result' => 'failure'];
+    }
 
     if ($link === null) {
       wc_add_notice(__('Die Zahlung konnte nicht gestartet werden. Bitte versuche es erneut.', 'lbwp'), 'error');

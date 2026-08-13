@@ -2,6 +2,8 @@
 
 namespace LBWP\Aboon\Subscription;
 
+use LBWP\Aboon\Subscription\Api\ChargeLog;
+
 /**
  * Internal plumbing shared by the subscription feature: recurrence/ISO-8601 mapping, amount
  * formatting and Payrexx status mapping. Not meant as a public developer API, see SubscriptionHelper
@@ -84,6 +86,54 @@ class Helper
       'year' => __('Jährlich', 'lbwp'),
       'week' => __('Wöchentlich', 'lbwp'),
       default => __('Monatlich', 'lbwp'),
+    };
+  }
+
+  /**
+   * Returns the human-readable German label for an internal subscription_status value.
+   * @param string $status one of the internal status constants (or "active"/"past_due")
+   * @return string the label, e.g. "Aktiv"
+   */
+  public static function statusLabel(string $status): string
+  {
+    return match ($status) {
+      'active' => __('Aktiv', 'lbwp'),
+      'past_due' => __('Zahlung überfällig', 'lbwp'),
+      self::STATUS_CANCELLED => __('Gekündigt', 'lbwp'),
+      self::STATUS_FAILED_FINAL => __('Zahlung endgültig fehlgeschlagen', 'lbwp'),
+      self::STATUS_AWAITING_FIRST_PAYMENT => __('Wartet auf Erstzahlung', 'lbwp'),
+      default => $status,
+    };
+  }
+
+  /**
+   * Returns the human-readable German label for a charge log row's type.
+   * @param string $type one of the ChargeLog::TYPE_* constants
+   * @return string the label, e.g. "Erstzahlung"
+   */
+  public static function chargeTypeLabel(string $type): string
+  {
+    return match ($type) {
+      ChargeLog::TYPE_INITIAL => __('Erstzahlung', 'lbwp'),
+      ChargeLog::TYPE_RENEWAL => __('Verlängerung', 'lbwp'),
+      ChargeLog::TYPE_REFUND => __('Rückerstattung', 'lbwp'),
+      ChargeLog::TYPE_UPGRADE => __('Upgrade', 'lbwp'),
+      default => $type,
+    };
+  }
+
+  /**
+   * Returns the human-readable German label for a charge log row's raw Payrexx status.
+   * @param string $status the raw status, e.g. "confirmed", "refunded"
+   * @return string the label, e.g. "Bestätigt"
+   */
+  public static function chargeStatusLabel(string $status): string
+  {
+    return match (strtolower($status)) {
+      'confirmed' => __('Bestätigt', 'lbwp'),
+      'refunded' => __('Zurückerstattet', 'lbwp'),
+      'partially-refunded', 'partially_refunded' => __('Teilweise zurückerstattet', 'lbwp'),
+      default => $status,
     };
   }
 }
