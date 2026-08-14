@@ -14,6 +14,9 @@ use LBWP\Util\External;
 use LBWP\Util\File;
 use LBWP\Util\Strings;
 use LBWP\Util\WordPress;
+use WP_Error;
+use WP_REST_Request;
+use WP_REST_Response;
 
 /**
  * Provide inventory functions
@@ -26,6 +29,9 @@ class Base extends ACFBase
   const BOOKING_SLUG = 'inventory-booking';
   const PRODUCT_GROUP_SLUG = PimBase::PRODUCT_GROUP_SLUG; // for compat, we use the pim cores type now
   const LOG_HISTORY_DAYS = 270;
+
+  /** REST namespace for the external booking draft API */
+  const string API_NAMESPACE = 'lbwp-inventory/v1';
 
   /**
    * Initialize the backend component, which is nice
@@ -51,6 +57,7 @@ class Base extends ACFBase
 
     add_action('acf/input/admin_head', array($this, 'addAcfMetaboxes'));
     add_action('acf/options_page/save', array($this, 'productGroupActions'));
+    add_action('rest_api_init', array($this, 'registerBookingApiRoutes'));
   }
 
   /**
@@ -78,6 +85,152 @@ class Base extends ACFBase
   protected function getSendingOrderIds()
   {
     return ArrayManipulation::forceArray(get_field('orders'));
+  }
+
+  /**
+   * Registers the REST endpoint used by external scripts (e.g. the mail-to-booking
+   * importer) to create inventory booking drafts.
+   * @return void
+   */
+  public function registerBookingApiRoutes(): void
+  {
+    register_rest_route(self::API_NAMESPACE, '/booking-draft', array(
+      'methods' => 'POST',
+      'callback' => array($this, 'apiCreateBookingDraft'),
+      'permission_callback' => array($this, 'apiCheckBookingPermission'),
+    ));
+  }
+
+  /**
+   * Validates the API secret from the X-Inventory-Secret header or `secret` body param.
+   * @param WP_REST_Request $request
+   * @return bool
+   */
+  public function apiCheckBookingPermission(WP_REST_Request $request): bool
+  {
+    $secret = get_field('inv-api-secret', 'option');
+    if (empty($secret)) {
+      return false;
+    }
+
+    $provided = $request->get_header('X-Inventory-Secret') ?: $request->get_param('secret');
+    return hash_equals($secret, (string) $provided);
+  }
+
+  /**
+   * Creates an inventory booking draft with normalised line items from an external caller.
+   * Always inserts as draft first, so all entries are written before any status change.
+   * @param WP_REST_Request $request
+   * @return WP_REST_Response|WP_Error
+   */
+  public function apiCreateBookingDraft(WP_REST_Request $request): WP_REST_Response|WP_Error
+  {
+    $params = $request->get_json_params() ?: $request->get_params();
+
+    $title = sanitize_text_field($params['title'] ?? '');
+    $date = sanitize_text_field($params['date'] ?? '');
+    $items = is_array($params['items'] ?? null) ? $params['items'] : array();
+
+    if (empty($title)) {
+      return new WP_Error('missing_title', __('Titel fehlt.', 'lbwp'), array('status' => 400));
+    }
+    if (empty($items)) {
+      return new WP_Error('missing_items', __('Keine Positionen übergeben.', 'lbwp'), array('status' => 400));
+    }
+
+    $postId = $this->insertBookingDraftPost($title, $date);
+    if (is_wp_error($postId)) {
+      return $postId;
+    }
+
+    list($rows, $unresolvedSkus) = $this->buildBookingEntryRows($items);
+    update_field('entries', $rows, $postId);
+
+    return rest_ensure_response(array(
+      'status' => 'OK',
+      'post_id' => $postId,
+      'edit_url' => get_edit_post_link($postId, ''),
+      'resolved_items' => count($rows) - count($unresolvedSkus),
+      'unresolved_skus' => $unresolvedSkus,
+    ));
+  }
+
+  /**
+   * Inserts the booking draft post, optionally dated to the given source date.
+   * @param string $title
+   * @param string $date Any strtotime-parsable date, e.g. the source mail date
+   * @return int|WP_Error
+   */
+  protected function insertBookingDraftPost(string $title, string $date): int|WP_Error
+  {
+    $postData = array(
+      'post_title' => $title,
+      'post_type' => self::BOOKING_SLUG,
+      'post_status' => 'draft',
+    );
+
+    $timestamp = strlen($date) > 0 ? strtotime($date) : false;
+    if ($timestamp !== false) {
+      $postData['post_date'] = date('Y-m-d H:i:s', $timestamp);
+      $postData['post_date_gmt'] = get_gmt_from_date($postData['post_date']);
+    }
+
+    return wp_insert_post($postData, true);
+  }
+
+  /**
+   * Builds "entries" repeater rows from raw API line items, resolving each SKU
+   * to an inventory post ID. Unresolved items are still added with an empty
+   * inventory-id, so the draft can be corrected manually.
+   * @param array $items List of ['sku', 'quantity', 'price', 'label']
+   * @return array{0: array, 1: string[]} Repeater rows and the list of unresolved SKUs
+   */
+  protected function buildBookingEntryRows(array $items): array
+  {
+    $rows = array();
+    $unresolvedSkus = array();
+
+    foreach ($items as $item) {
+      $sku = sanitize_text_field($item['sku'] ?? '');
+      $quantity = floatval($item['quantity'] ?? 0);
+      $price = floatval($item['price'] ?? 0);
+      $label = sanitize_text_field($item['label'] ?? '');
+      $inventoryId = $this->findInventoryIdBySku($sku);
+
+      if ($inventoryId === 0 && strlen($sku) > 0) {
+        $unresolvedSkus[] = $sku;
+      }
+
+      $rows[] = array(
+        'inventory-id' => $inventoryId > 0 ? $inventoryId : '',
+        'count' => $quantity,
+        'text' => trim($label . ($sku !== '' ? ' (SKU: ' . $sku . ')' : '')),
+        'value' => $price,
+      );
+    }
+
+    return array($rows, $unresolvedSkus);
+  }
+
+  /**
+   * Resolves a manufacturer SKU (provider-sku ACF field) to an inventory item post ID.
+   * @param string $sku
+   * @return int Post ID, or 0 if not found
+   */
+  protected function findInventoryIdBySku(string $sku): int
+  {
+    if (strlen($sku) === 0) {
+      return 0;
+    }
+
+    $db = WordPress::getDb();
+    $postId = $db->get_var($db->prepare('
+      SELECT post_id FROM ' . $db->postmeta . '
+      WHERE meta_key = "provider-sku" AND meta_value = %s
+      LIMIT 1
+    ', $sku));
+
+    return $postId !== null ? intval($postId) : 0;
   }
 
   /**
@@ -2032,6 +2185,26 @@ class Base extends ACFBase
       'key' => 'group_66cc620ba139f',
       'title' => 'Inventar Einstellungen',
       'fields' => array(
+        array(
+          'key' => 'field_9b335561fb86',
+          'label' => 'API Secret (Lagerbuchung)',
+          'name' => 'inv-api-secret',
+          'aria-label' => '',
+          'type' => 'text',
+          'instructions' => 'Wird vom Lagerbuchungs-Skript als HTTP «X-Inventory-Secret» übermittelt.',
+          'required' => 0,
+          'conditional_logic' => 0,
+          'wrapper' => array(
+            'width' => '',
+            'class' => '',
+            'id' => '',
+          ),
+          'default_value' => '',
+          'maxlength' => '',
+          'placeholder' => '',
+          'prepend' => '',
+          'append' => '',
+        ),
         array(
           'key' => 'field_667462681f0d4',
           'label' => 'Erste Warengruppe',

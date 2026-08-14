@@ -166,7 +166,7 @@ class S3Upload extends \LBWP\Module\Base
     $s3 = AwsFactoryV3::getS3Service();
     // Delete it.
     $filename = str_replace(Core::getCdnProtocol() . '://' . Core::getCdnName() . '/', '', $filename);
-    if (!defined('LOCAL_DEVELOPMENT')) {
+    if (!defined('LOCAL_DEVELOPMENT') && !defined('LBWP_PREVENT_BLOCK_STORAGE_ASSET_DELETE')) {
       /* Never used, activate when needed in debugging
       SystemLog::add('CDNUpload', 'debug', 'Deletion of file', array(
         'Bucket' => CDN_BUCKET_NAME,
