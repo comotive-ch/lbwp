@@ -36,6 +36,10 @@ if (!defined('ABSPATH')) {
         <td><?php echo esc_html(($next = (int) get_field('next_pay_date', $post->ID)) > 0 ? date_i18n('d.m.Y', $next) : '–'); ?></td>
       </tr>
       <tr>
+        <th><?php esc_html_e('Gültig bis', 'lbwp'); ?></th>
+        <td><?php echo esc_html(($until = (int) get_field('valid_until', $post->ID)) > 0 ? date_i18n('d.m.Y', $until) : '–'); ?></td>
+      </tr>
+      <tr>
         <th><?php esc_html_e('Payrexx Subscription ID', 'lbwp'); ?></th>
         <td><?php echo esc_html((string) get_field('payrexx_subscription_id', $post->ID)); ?></td>
       </tr>
@@ -69,52 +73,94 @@ if (!defined('ABSPATH')) {
   <?php endif; ?>
 
   <h3><?php esc_html_e('Zahlungsverlauf', 'lbwp'); ?></h3>
-  <form method="post" action="<?php echo esc_url(admin_url('admin-post.php')); ?>">
-    <input type="hidden" name="action" value="<?php echo esc_attr(AdminActions::ACTION_REFUND); ?>">
-    <input type="hidden" name="subscription_id" value="<?php echo esc_attr((string) $post->ID); ?>">
-    <?php wp_nonce_field(AdminActions::ACTION_REFUND . '_' . $post->ID); ?>
-    <table class="widefat striped">
-      <thead>
+  <table class="widefat striped">
+    <thead>
+      <tr>
+        <th></th>
+        <th><?php esc_html_e('Datum', 'lbwp'); ?></th>
+        <th><?php esc_html_e('Typ', 'lbwp'); ?></th>
+        <th><?php esc_html_e('Betrag', 'lbwp'); ?></th>
+        <th><?php esc_html_e('Status', 'lbwp'); ?></th>
+      </tr>
+    </thead>
+    <tbody>
+      <?php if (empty($chargeLog)) : ?>
+        <tr><td colspan="5"><?php esc_html_e('Noch keine Zahlungen.', 'lbwp'); ?></td></tr>
+      <?php endif; ?>
+      <?php foreach ($chargeLog as $row) : ?>
         <tr>
-          <th></th>
-          <th><?php esc_html_e('Datum', 'lbwp'); ?></th>
-          <th><?php esc_html_e('Typ', 'lbwp'); ?></th>
-          <th><?php esc_html_e('Betrag', 'lbwp'); ?></th>
-          <th><?php esc_html_e('Status', 'lbwp'); ?></th>
+          <td><input type="checkbox" class="lbwp-sub-charge-log-id" value="<?php echo esc_attr((string) $row['id']); ?>"></td>
+          <td><?php echo esc_html(Date::convertDate(Date::SQL_DATETIME, Date::EU_DATETIME, $row['created_at'])); ?></td>
+          <td><?php echo esc_html($row['type']); ?></td>
+          <td><?php echo esc_html(Helper::formatAmount((int) $row['amount'], $row['currency'])); ?></td>
+          <td><?php echo esc_html($row['status']); ?></td>
         </tr>
-      </thead>
-      <tbody>
-        <?php if (empty($chargeLog)) : ?>
-          <tr><td colspan="5"><?php esc_html_e('Noch keine Zahlungen.', 'lbwp'); ?></td></tr>
-        <?php endif; ?>
-        <?php foreach ($chargeLog as $row) : ?>
-          <tr>
-            <td><input type="checkbox" name="charge_log_ids[]" value="<?php echo esc_attr((string) $row['id']); ?>"></td>
-            <td><?php echo esc_html(Date::convertDate(Date::SQL_DATETIME, Date::EU_DATETIME, $row['created_at'])); ?></td>
-            <td><?php echo esc_html($row['type']); ?></td>
-            <td><?php echo esc_html(Helper::formatAmount((int) $row['amount'], $row['currency'])); ?></td>
-            <td><?php echo esc_html($row['status']); ?></td>
-          </tr>
-        <?php endforeach; ?>
-      </tbody>
-    </table>
-    <p><button type="submit" class="button"><?php esc_html_e('Ausgewählte Zahlungen zurückerstatten', 'lbwp'); ?></button></p>
-  </form>
+      <?php endforeach; ?>
+    </tbody>
+  </table>
+  <p>
+    <button
+      type="button"
+      class="button lbwp-sub-admin-action"
+      data-lbwp-sub-action="<?php echo esc_attr(AdminActions::ACTION_REFUND); ?>"
+      data-lbwp-sub-nonce="<?php echo esc_attr(wp_create_nonce(AdminActions::ACTION_REFUND . '_' . $post->ID)); ?>"
+      data-lbwp-sub-charge-log-ids="1"
+    ><?php esc_html_e('Ausgewählte Zahlungen zurückerstatten', 'lbwp'); ?></button>
+  </p>
 
   <h3><?php esc_html_e('Aktionen', 'lbwp'); ?></h3>
   <p>
-    <form method="post" action="<?php echo esc_url(admin_url('admin-post.php')); ?>" style="display:inline-block;">
-      <input type="hidden" name="action" value="<?php echo esc_attr(AdminActions::ACTION_GENERATE_LINK); ?>">
-      <input type="hidden" name="subscription_id" value="<?php echo esc_attr((string) $post->ID); ?>">
-      <?php wp_nonce_field(AdminActions::ACTION_GENERATE_LINK . '_' . $post->ID); ?>
-      <button type="submit" class="button"><?php esc_html_e('Zahlungsmethode-Link generieren & E-Mail senden', 'lbwp'); ?></button>
-    </form>
+    <button
+      type="button"
+      class="button lbwp-sub-admin-action"
+      data-lbwp-sub-action="<?php echo esc_attr(AdminActions::ACTION_GENERATE_LINK); ?>"
+      data-lbwp-sub-nonce="<?php echo esc_attr(wp_create_nonce(AdminActions::ACTION_GENERATE_LINK . '_' . $post->ID)); ?>"
+    ><?php esc_html_e('Zahlungsmethode-Link generieren & E-Mail senden', 'lbwp'); ?></button>
 
-    <form method="post" action="<?php echo esc_url(admin_url('admin-post.php')); ?>" style="display:inline-block;" onsubmit="return confirm('<?php echo esc_js(__('Abonnement wirklich kündigen?', 'lbwp')); ?>');">
-      <input type="hidden" name="action" value="<?php echo esc_attr(AdminActions::ACTION_CANCEL); ?>">
-      <input type="hidden" name="subscription_id" value="<?php echo esc_attr((string) $post->ID); ?>">
-      <?php wp_nonce_field(AdminActions::ACTION_CANCEL . '_' . $post->ID); ?>
-      <button type="submit" class="button button-secondary"><?php esc_html_e('Abonnement kündigen', 'lbwp'); ?></button>
-    </form>
+    <button
+      type="button"
+      class="button button-secondary lbwp-sub-admin-action"
+      data-lbwp-sub-action="<?php echo esc_attr(AdminActions::ACTION_CANCEL); ?>"
+      data-lbwp-sub-nonce="<?php echo esc_attr(wp_create_nonce(AdminActions::ACTION_CANCEL . '_' . $post->ID)); ?>"
+      data-lbwp-sub-confirm="<?php echo esc_attr(__('Abonnement wirklich kündigen?', 'lbwp')); ?>"
+    ><?php esc_html_e('Abonnement kündigen', 'lbwp'); ?></button>
   </p>
 </div>
+<script>
+  document.addEventListener('DOMContentLoaded', function () {
+    document.querySelectorAll('.lbwp-sub-admin-action').forEach(function (button) {
+      button.addEventListener('click', function () {
+        const confirmMessage = button.getAttribute('data-lbwp-sub-confirm');
+        if (confirmMessage && !window.confirm(confirmMessage)) {
+          return;
+        }
+
+        const form = document.createElement('form');
+        form.method = 'post';
+        form.action = '<?php echo esc_url(admin_url('admin-post.php')); ?>';
+        form.style.display = 'none';
+
+        const addField = function (name, value) {
+          const input = document.createElement('input');
+          input.type = 'hidden';
+          input.name = name;
+          input.value = value;
+          form.appendChild(input);
+        };
+
+        addField('action', button.getAttribute('data-lbwp-sub-action'));
+        addField('subscription_id', '<?php echo esc_js((string) $post->ID); ?>');
+        addField('_wpnonce', button.getAttribute('data-lbwp-sub-nonce'));
+
+        if (button.getAttribute('data-lbwp-sub-charge-log-ids')) {
+          document.querySelectorAll('.lbwp-sub-charge-log-id:checked').forEach(function (checkbox) {
+            addField('charge_log_ids[]', checkbox.value);
+          });
+        }
+
+        document.body.appendChild(form);
+        form.submit();
+      });
+    });
+  });
+</script>

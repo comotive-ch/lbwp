@@ -59,6 +59,8 @@ class Fields
           ],
           'wrapper' => ['width' => '', 'class' => '', 'id' => ''],
           'choices' => [
+            'day' => 'Täglich',
+            'week' => 'Wöchentlich',
             'month' => 'Monatlich',
             'year' => 'Jährlich',
           ],
@@ -222,6 +224,8 @@ class Fields
           'conditional_logic' => 0,
           'wrapper' => ['width' => '', 'class' => '', 'id' => ''],
           'choices' => [
+            'day' => 'Täglich',
+            'week' => 'Wöchentlich',
             'month' => 'Monatlich',
             'year' => 'Jährlich',
           ],

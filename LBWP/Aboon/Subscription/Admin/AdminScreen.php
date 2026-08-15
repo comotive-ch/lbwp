@@ -24,6 +24,40 @@ class AdminScreen
   {
     add_action('add_meta_boxes', [$this, 'addMetaBox']);
     add_action('admin_menu', [$this, 'addCreatePage']);
+    add_filter('manage_' . PostType::SLUG . '_posts_columns', [$this, 'addListColumns']);
+    add_action('manage_' . PostType::SLUG . '_posts_custom_column', [$this, 'renderListColumn'], 10, 2);
+  }
+
+  /**
+   * Adds the "Gültig bis" and "Rechnungsadresse" columns to the subscription list table.
+   * @param array $columns the existing list table columns
+   * @return array the extended columns
+   */
+  public function addListColumns(array $columns): array
+  {
+    $columns['valid_until'] = __('Gültig bis', 'lbwp');
+    $columns['billing_address'] = __('Rechnungsadresse', 'lbwp');
+    return $columns;
+  }
+
+  /**
+   * Renders the content of a custom subscription list table column.
+   * @param string $column the column key being rendered
+   * @param int $postId the subscription post id
+   * @return void
+   */
+  public function renderListColumn(string $column, int $postId): void
+  {
+    if ($column === 'valid_until') {
+      $until = (int) get_field('valid_until', $postId);
+      echo esc_html($until > 0 ? date_i18n('d.m.Y', $until) : '–');
+      return;
+    }
+
+    if ($column === 'billing_address') {
+      $order = SubscriptionHelper::getLinkedOrder($postId);
+      echo $order !== null ? wp_kses_post($order->get_formatted_billing_address() ?: '–') : '–';
+    }
   }
 
   /**

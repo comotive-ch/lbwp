@@ -43,6 +43,7 @@ class Helper
     return match ($recurrence) {
       'year' => 'P1Y',
       'week' => 'P1W',
+      'day' => 'P1D',
       default => 'P1M',
     };
   }
@@ -85,6 +86,7 @@ class Helper
     return match ($recurrence) {
       'year' => __('Jährlich', 'lbwp'),
       'week' => __('Wöchentlich', 'lbwp'),
+      'day' => __('Täglich', 'lbwp'),
       default => __('Monatlich', 'lbwp'),
     };
   }
