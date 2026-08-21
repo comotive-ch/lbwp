@@ -20,7 +20,8 @@ class Redirects extends \LBWP\Module\Base
    */
   protected static $settings = array(
     'check_leave_params' => false,
-    'attach_get_params' => false
+    'attach_get_params' => false,
+    'attach_utm_params' => true
   );
 
   /**
@@ -91,6 +92,12 @@ class Redirects extends \LBWP\Module\Base
     if (self::$settings['attach_get_params']) {
       foreach ($_GET as $key => $value) {
         if (strlen($value) > 0) {
+          $url = Strings::attachParam($key, $value, $url);
+        }
+      }
+    } else if (self::$settings['attach_utm_params']) {
+      foreach ($_GET as $key => $value) {
+        if (strlen($value) > 0 && (Strings::startsWith($key, 'utm_') || Strings::startsWith($key, 'mtm_'))) {
           $url = Strings::attachParam($key, $value, $url);
         }
       }

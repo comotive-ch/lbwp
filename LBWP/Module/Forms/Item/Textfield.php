@@ -160,6 +160,9 @@ class Textfield extends Base
       if ($this->params['type'] == 'date') {
         $value = date_i18n(get_option('date_format'), strtotime($value));
       }
+      if (isset($args['type']) && $args['type'] == 'email') {
+        $_SESSION['lbwp_forms__last_used_email'] = $value;
+      }
       return $value;
     }
 
