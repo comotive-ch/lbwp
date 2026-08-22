@@ -97,7 +97,7 @@ class Redirects extends \LBWP\Module\Base
       }
     } else if (self::$settings['attach_utm_params']) {
       foreach ($_GET as $key => $value) {
-        if (strlen($value) > 0 && (Strings::startsWith($key, 'utm_') || Strings::startsWith($key, 'mtm_'))) {
+        if ((Strings::startsWith($key, 'utm_') || Strings::startsWith($key, 'mtm_')) && strlen($value) > 0) {
           $url = Strings::attachParam($key, $value, $url);
         }
       }

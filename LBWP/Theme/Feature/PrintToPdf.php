@@ -200,9 +200,12 @@ class PrintToPdf
     // Grab the html locally, when developing
     if (defined('LOCAL_DEVELOPMENT')) {
       $html = file_get_contents($url);
+      // Swap the local dev host for the live host (both without protocol)
       $html = str_replace(LBWP_HOST, $this->options['devDomainReplace'], $html);
+      // The live site is always https, so force it everywhere
+      $html = str_replace('http://' . $this->options['devDomainReplace'], 'https://' . $this->options['devDomainReplace'], $html);
       $html = str_replace('="//', '="https://', $html);
-      $html = str_replace('="/', '="' . $this->options['devDomainReplace'] . '/', $html);
+      $html = str_replace('="/', '="https://' . $this->options['devDomainReplace'] . '/', $html);
       $document->setDocumentContent($html);
     } else {
       $document->setDocumentUrl($url);
