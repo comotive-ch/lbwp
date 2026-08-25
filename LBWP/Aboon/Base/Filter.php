@@ -79,6 +79,14 @@ abstract class Filter extends ACFBase
    */
   public static $PROD_MAP_TAXONOMIES = array('product_prop','product_cat');
   /**
+   * @var bool whether the deferred filter cache flush is already scheduled for this request
+   */
+  protected static $flushScheduledOnShutdown = false;
+  /**
+   * @var int minimum seconds between two filter cache flushes, to coalesce bursts of trash actions
+   */
+  protected static $FLUSH_DEBOUNCE_SECONDS = 20;
+  /**
    * @var string default sorting
    */
   public static $DEFAULT_SORT = 'sells';
@@ -342,7 +350,7 @@ abstract class Filter extends ACFBase
   }
 
   /**
-   * Make sure that on trashing, entries in filter get removed immediately
+   * Make sure that on trashing, entries in filter get removed, but debounced
    * @param $newStatus
    * @param $oldStatus
    * @param $post
@@ -351,9 +359,39 @@ abstract class Filter extends ACFBase
   public function onTrashPost($newStatus, $oldStatus, $post)
   {
     if ($newStatus === 'trash' && in_array($post->post_type, static::$POST_TYPE)) {
-      // Remove all result caches the might have contained the post
-      MemcachedAdmin::flushByKeyword('filter_request_');
+      $this->scheduleFilterCacheFlush();
     }
+  }
+
+  /**
+   * Defers the filter result cache flush to the end of the request, so bulk trash
+   * actions (e.g. trashing or emptying many posts at once) trigger it only once
+   * instead of once per post
+   * @return void
+   */
+  protected function scheduleFilterCacheFlush()
+  {
+    if (!static::$flushScheduledOnShutdown) {
+      static::$flushScheduledOnShutdown = true;
+      add_action('shutdown', array($this, 'flushFilterCacheOnce'));
+    }
+  }
+
+  /**
+   * Flushes the filter result caches, at most once per debounce window, no matter
+   * how many trash actions requested a flush within that window
+   * @return void
+   */
+  public function flushFilterCacheOnce()
+  {
+    $lockKey = 'aboonFilterCacheFlushLock';
+    if (get_transient($lockKey)) {
+      return;
+    }
+
+    set_transient($lockKey, 1, static::$FLUSH_DEBOUNCE_SECONDS);
+    // Remove all result caches the might have contained the post
+    MemcachedAdmin::flushByKeyword('filter_request_');
   }
 
   /**
