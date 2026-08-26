@@ -131,7 +131,8 @@ class Search
   {
     // Get the config and init the result array
     $config = LbwpCore::getInstance()->getConfig();
-    $terms = array_map('trim', explode(' ', $_POST['search']));
+    $searchTerm = sanitize_text_field($_POST['search'] ?? '');
+    $terms = array_map('trim', explode(' ', $searchTerm));
     if (count($terms) == 1) {
       $terms = array_map('trim', explode('+', $terms[0]));
     }
@@ -139,7 +140,7 @@ class Search
     // Prepare the url to be called
     $url = self::JSON_ENDPOINT;
     $url = str_replace('{searchEngineId}', $config['Various:GoogleEngineId'], $url);
-    $url = str_replace('{searchTerm}', urlencode($_POST['search']), $url);
+    $url = str_replace('{searchTerm}', urlencode($searchTerm), $url);
     $url = str_replace('{apiKey}', self::$apiConf['apiKey'], $url);
     // Set the language, defaulting to wordpress locale
     $language = substr(get_locale(), 0, 2);
@@ -216,33 +217,40 @@ class Search
   }
 
   /**
-   * @param $results
-   * @param $terms
-   * @param $language
+   * @param array $results reference to the result set, gets filled with local matches
+   * @param array $terms search terms, taken from unauthenticated user input
    * @return void
    */
   protected static function addLocalDbQueryResults(&$results, $terms)
   {
-    // Query post_content and post_title and post_excerpt for the $terms natively
     $db = WordPress::getDb();
-    $query = '
+    $postTypes = self::$apiConf['addLocalResultsFirstPage'];
+    $typePlaceholders = implode(',', array_fill(0, count($postTypes), '%s'));
+
+    $likeTerm = '%' . $db->esc_like(implode(' ', $terms)) . '%';
+    $query = $db->prepare('
       SELECT ID, post_name, post_title, post_content, post_excerpt, post_date FROM ' . $db->posts . '
-      WHERE post_status = "publish" AND post_type IN ("' . implode('","', self::$apiConf['addLocalResultsFirstPage']) . '") AND (
-    ';
-    $query .= "post_title LIKE '%" . implode(' ', $terms) . "%' OR post_content LIKE '%" . implode(' ', $terms) . "%' OR post_excerpt LIKE '%" . implode(' ', $terms) . "%' OR ";
-    $query = substr($query, 0, -4) . ')';
+      WHERE post_status = "publish" AND post_type IN (' . $typePlaceholders . ') AND (
+        post_title LIKE %s OR post_content LIKE %s OR post_excerpt LIKE %s
+      )
+    ', array_merge($postTypes, [$likeTerm, $likeTerm, $likeTerm]));
     $raw = $db->get_results($query, ARRAY_A);
 
     // Do a more open search if nothing was found
     if (count($raw) == 0) {
-      $query = '
-        SELECT ID, post_name, post_title, post_content, post_excerpt, post_date FROM ' . $db->posts . '
-        WHERE post_status = "publish" AND post_type IN ("' . implode('","', self::$apiConf['addLocalResultsFirstPage']) . '") AND (
-      ';
+      $conditions = [];
+      $params = $postTypes;
       foreach ($terms as $term) {
-        $query .= "post_title LIKE '%" . $term . "%' OR post_content LIKE '%" . $term . "%' OR post_excerpt LIKE '%" . $term . "%' OR ";
+        $likeTerm = '%' . $db->esc_like($term) . '%';
+        $conditions[] = 'post_title LIKE %s OR post_content LIKE %s OR post_excerpt LIKE %s';
+        $params[] = $likeTerm;
+        $params[] = $likeTerm;
+        $params[] = $likeTerm;
       }
-      $query = substr($query, 0, -4) . ')';
+      $query = $db->prepare('
+        SELECT ID, post_name, post_title, post_content, post_excerpt, post_date FROM ' . $db->posts . '
+        WHERE post_status = "publish" AND post_type IN (' . $typePlaceholders . ') AND (' . implode(' OR ', $conditions) . ')
+      ', $params);
       $raw = $db->get_results($query, ARRAY_A);
     }
 

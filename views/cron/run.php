@@ -4,8 +4,8 @@ define('LAST_CALL_FILE', '/var/www/util/last_cron_run.txt');
 $configPath = str_replace('wp-content/plugins/lbwp/views/cron', '', __DIR__);
 require_once $configPath . 'wp-config/core/lbwp-main.config.php';
 
-// if no cmd args, exit. can only be executed on cmd
-if ($argc == null && $argv == null) {
+// Reject any call that isn't the CLI SAPI
+if (PHP_SAPI !== 'cli') {
   exit;
 }
 

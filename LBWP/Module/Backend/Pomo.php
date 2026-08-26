@@ -45,6 +45,26 @@ class Pomo extends \LBWP\Module\Base
   const TMP_PO_STRINGS_FILE = '/tmp/pomo-strings.json';
 
   /**
+   * @var int seconds the local copy of the strings file is used before it is downloaded again
+   */
+  const PO_STRINGS_TTL = 604800;
+
+  /**
+   * @var string the cron identifier that rescans all mo files and rebuilds the strings file
+   */
+  const SCAN_CRON_IDENTIFIER = 'manual_scan_po_files';
+
+  /**
+   * @var string the view on the master host that runs the scan cron on demand
+   */
+  const SCAN_CRON_VIEW = '/wp-content/plugins/lbwp/views/cron/job.php';
+
+  /**
+   * @var int seconds to wait for the master host to finish the scan
+   */
+  const SCAN_CRON_TIMEOUT = 120;
+
+  /**
    * @var int the maximal results to show in the search
    */
   const MAX_SEARCH_RESULTS = 30;
@@ -111,9 +131,8 @@ class Pomo extends \LBWP\Module\Base
    */
   protected function getPomoStrings($filterByPlugin = false)
   {
-    if (!file_exists(self::TMP_PO_STRINGS_FILE)) {
-      $content = file_get_contents(self::PO_STRINGS_FILE);
-      file_put_contents(self::TMP_PO_STRINGS_FILE, $content);
+    if ($this->isStringCacheStale()) {
+      $this->downloadPomoStrings();
     }
     $strings = (array)json_decode(file_get_contents(self::TMP_PO_STRINGS_FILE));
 
@@ -128,6 +147,82 @@ class Pomo extends \LBWP\Module\Base
     }
 
     return $strings;
+  }
+
+  /**
+   * Tells if the local copy of the strings file is missing or older than the configured TTL
+   * @return bool true if the file needs to be downloaded again
+   */
+  protected function isStringCacheStale()
+  {
+    if (!file_exists(self::TMP_PO_STRINGS_FILE)) {
+      return true;
+    }
+
+    return filemtime(self::TMP_PO_STRINGS_FILE) < (time() - self::PO_STRINGS_TTL);
+  }
+
+  /**
+   * Download the strings file from the cdn into the local tmp folder. An empty or failing
+   * download never overrides an already existing local copy.
+   * @return bool true if a new file has been written
+   */
+  protected function downloadPomoStrings()
+  {
+    $content = file_get_contents(self::PO_STRINGS_FILE);
+    if ($content === false || strlen($content) === 0) {
+      return false;
+    }
+
+    return file_put_contents(self::TMP_PO_STRINGS_FILE, $content) !== false;
+  }
+
+  /**
+   * Remove the local copy of the strings file, so the next access downloads it again
+   */
+  protected function flushStringCache()
+  {
+    if (file_exists(self::TMP_PO_STRINGS_FILE)) {
+      unlink(self::TMP_PO_STRINGS_FILE);
+    }
+  }
+
+  /**
+   * Run the scan cron on the master host, which rebuilds the strings file on the cdn.
+   * The call is blocking, as the freshly built file is needed right after.
+   * @return bool true if the master host confirmed the run
+   */
+  protected function triggerStringScan()
+  {
+    $url = MASTER_HOST_PROTO . '://' . MASTER_HOST . self::SCAN_CRON_VIEW . '?identifier=' . self::SCAN_CRON_IDENTIFIER;
+    $response = wp_remote_get($url, [
+      'timeout' => self::SCAN_CRON_TIMEOUT,
+      'user-agent' => 'comotive/masterapi-v1.0'
+    ]);
+
+    return !is_wp_error($response) && wp_remote_retrieve_response_code($response) === 200;
+  }
+
+  /**
+   * Rebuild the strings file on the master host and load it into the local tmp folder
+   * @return string the message to be shown to the user
+   */
+  protected function reloadPomoStrings()
+  {
+    @set_time_limit(self::SCAN_CRON_TIMEOUT + 60);
+    $scanned = $this->triggerStringScan();
+    $this->flushStringCache();
+    $downloaded = $this->downloadPomoStrings();
+
+    if (!$downloaded) {
+      return 'Die Texte konnten nicht geladen werden. Bitte später nochmals versuchen.';
+    }
+
+    if (!$scanned) {
+      return 'Die Texte wurden neu geladen, konnten aber auf dem Master nicht neu eingelesen werden.';
+    }
+
+    return 'Die Texte wurden neu eingelesen und geladen.';
   }
 
   /**
@@ -150,8 +245,12 @@ class Pomo extends \LBWP\Module\Base
    */
   public function pomoEditor()
   {
+    $notice = '';
     if (isset($_POST['save-pomo-rewrites'])) {
       $this->setOverrides($_POST['pomo-override']);
+    }
+    if (isset($_POST['reload-pomo-strings']) && check_admin_referer('reload-pomo-strings')) {
+      $notice = '<div class="notice notice-info"><p>' . $this->reloadPomoStrings() . '</p></div>';
     }
 
     $overrides = $this->getOverrides();
@@ -175,11 +274,21 @@ class Pomo extends \LBWP\Module\Base
     echo '
       <div class="wrap">
         <h2>Systemtexte anpassen</h2>
+        ' . $notice . '
         <p>
           Die meisten Texte von WordPress und Plugins können hier gesucht und mit eigenem Text überschrieben werden.
           Es ist zu beachten, dass bei vielen überschriebenen Texten leichte Performance einbussen entstehen können.
           Texte mit Syntax etwa "%s" oder "%1$s" sollten diese im überschriebenen Text übernehmen, damit dieser korrekt zusammengestellt wird.
         </p>
+        <form method="POST">
+            ' . wp_nonce_field('reload-pomo-strings', '_wpnonce', true, false) . '
+          <input type="submit" name="reload-pomo-strings" class="button-secondary" value="Texte neu einlesen"/>
+          <p class="description">
+            Liest alle Sprachdateien auf dem Master neu ein und lädt die Liste der suchbaren Texte neu.
+            Nur zu benutzen falls Texte fehlen. Das kann bis zu zwei Minuten dauern.
+          </p>
+        </form>
+        <br>
         <div id="pomo-rewriter-form">
           <form method="POST">
             <div id="pomo-search-container">

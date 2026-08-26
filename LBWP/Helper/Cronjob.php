@@ -34,7 +34,8 @@ class Cronjob
     curl_setopt($call, CURLOPT_USERAGENT, "comotive/masterapi-v1.0");
     curl_setopt($call, CURLOPT_POSTFIELDS, http_build_query(array(
       'jobs' => $jobs,
-      'host' => $_SERVER['HTTP_HOST']
+      'host' => $_SERVER['HTTP_HOST'],
+      'secret' => MASTER_CRON_API_SECRET
     )));
 
     curl_exec($call);
@@ -85,7 +86,8 @@ class Cronjob
     curl_setopt($call, CURLOPT_RETURNTRANSFER, true);
     curl_setopt($call, CURLOPT_USERAGENT, "comotive/masterapi-v1.0");
     curl_setopt($call, CURLOPT_POSTFIELDS, http_build_query(array(
-      'host' => $_SERVER['HTTP_HOST']
+      'host' => $_SERVER['HTTP_HOST'],
+      'secret' => MASTER_CRON_API_SECRET
     )));
 
     $raw = curl_exec($call);
@@ -110,7 +112,8 @@ class Cronjob
     curl_setopt($call, CURLOPT_USERAGENT, "comotive/masterapi-v1.0");
     curl_setopt($call, CURLOPT_POSTFIELDS, http_build_query(array(
       'jobId' => intval($jobId),
-      'hash' => self::CONFIRM_HASH
+      'hash' => self::CONFIRM_HASH,
+      'secret' => MASTER_CRON_API_SECRET
     )));
 
     curl_exec($call);

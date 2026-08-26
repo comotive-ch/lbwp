@@ -1,14 +1,11 @@
 <?php
-define('CACHE_FLUSH_KEY', 'MK8RNE8MQ8DNR8EHDN8rMFH65QM8ADHR');
-define('CACHE_FLUSH_SECRET', 'md74bf71z93dkmnxv847t29wn9x46mf9m6zgb5sm9fzm3x4bhms');
-define('SKIP_WP_STACK', true);
+// Load the needed Redis by loading config without wp stack
+require_once '../../../../../wp-config.php';
 
+// check for the api secrets (loaded by wp-config.php)
 if (!isset($_REQUEST[CACHE_FLUSH_KEY]) || $_REQUEST[CACHE_FLUSH_KEY] != CACHE_FLUSH_SECRET) {
   exit;
 }
-
-// Load the needed Redis by loading config without wp stack
-require_once '../../../../../wp-config.php';
 
 // See if external depending on host
 $htmlCacheFlushKey = 'htmlCache';
