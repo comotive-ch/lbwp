@@ -39,7 +39,7 @@ class Search
     'loadingText' => '',                          // The text that is displayed when loading
     'buttonText' => '',                           // The text that is displayed in the "more results" button
     'buttonClasses' => 'lbwp-button',             // "more results" button class, can be multiple (sep. by space), if needed
-    'apiKey' => 'AIzaSyDcRBXI37rJlgSUCx1X0qy0cL_XVKKKFUE',  // Defaults to our main key
+    'apiKey' => LBWP_GOOGLE_SITE_SEARCH_API_KEY,  // Defaults to our main key
     'containerClasses' => 'lbwp-gss-results',     // Container class, can be multiple (sep. by space), if needed
     'filterResults' => false,                     // true filters the results (if post) for search term existence
     'forceFilterResults' => false,                // Forces no results if filterResults removed every result
