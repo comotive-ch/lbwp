@@ -222,6 +222,8 @@ class AutoNewsletter extends ACFBase
     $completeOrder = $cleanOrder = array();
     $parentGuid = $template->getDefaultParentGuid();
     $sortableGuid = $template->getDefaultSortableGuid();
+    // Allow adding stuff before articles
+    $newsletter = apply_filters('lbwp_auto_newsletter_before_articles', $newsletter, $parentGuid, $sortableGuid, $itemActions, $completeOrder, $cleanOrder);
 
     foreach ($articles as $key => $article) {
       $guid = CMNL::generateGuid();
@@ -247,6 +249,9 @@ class AutoNewsletter extends ACFBase
         )
       );
     }
+
+    // Allow adding stuff after articles
+    $newsletter = apply_filters('lbwp_auto_newsletter_after_articles', $newsletter, $parentGuid, $sortableGuid, $itemActions, $completeOrder, $cleanOrder);
 
     // Load the newsletter
     $newsletter = $newsletterBackend->getNewsletterByGuid($newsletter->getGuid());
