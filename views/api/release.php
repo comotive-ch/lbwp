@@ -1,6 +1,7 @@
 <?php
+require_once '../../../../../wp-config/core/lbwp-main.config.php';
 
-if (!isset($_GET['34ctn0q4x7hp973hor9j27x3qot8g3435ho9mb7th0m2837JG8h07k4osr2ph3aruhmfgiudare'])) {
+if (!isset($_GET[MASTER_CRON_API_SECRET])) {
   echo 'no access.';
   exit;
 }

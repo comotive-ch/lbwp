@@ -75,7 +75,10 @@ class Strings
   /**
    * Used for strip_tags mainly
    */
-  const TINYMCE_DEFAULT_TAGS = '<h1><h2><h3><h4><h5><strong><em><a><p><blockquote><img><ul><ol><li><del><ins><br>';
+  const TINYMCE_DEFAULT_TAGS = '<h1><h2><h3><h4><h5><strong><em><a><p><blockquote><img><ul><ol><li><del><ins><br>';  /**
+ * Used for strip_tags mainly
+ */
+  const TINYMCE_TABLE_TAGS = '<table><tbody><thead></tfoot><th><tr><td>';
 
   /**
    * Most common words in some languages
@@ -1762,7 +1765,7 @@ class Strings
     if ($proxy) {
       $options[CURLOPT_PROXY] = 'http://194.182.165.126';
       $options[CURLOPT_PROXYPORT] = '3128';
-      $options[CURLOPT_PROXYUSERPWD] = 'comotive:Kv8gnr9qd5erSquid';
+      $options[CURLOPT_PROXYUSERPWD] = LBWP_SQUID_PROXY_AUTH;
     }
 
     // Authenticate with basic auth, if needed

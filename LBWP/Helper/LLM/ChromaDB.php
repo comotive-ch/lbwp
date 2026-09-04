@@ -396,7 +396,7 @@ class ChromaDB
     if (defined('LOCAL_DEVELOPMENT')) {
       curl_setopt($ch, CURLOPT_PROXY, 'http://194.182.165.126');
       curl_setopt($ch, CURLOPT_PROXYPORT, '3128');
-      curl_setopt($ch, CURLOPT_PROXYUSERPWD, 'comotive:Kv8gnr9qd5erSquid');
+      curl_setopt($ch, CURLOPT_PROXYUSERPWD, LBWP_SQUID_PROXY_AUTH);
     }
 
     if ($data !== null) {

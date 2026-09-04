@@ -62,10 +62,10 @@ while ($row = mysqli_fetch_assoc($res)) {
     if (in_array($row['job_site'], $assistCronSites)) {
       $salts = explode('|', LBWP_VIRTUAL_HOST_SALT);
       $check = md5($salts[0] . $row['job_site'] . $salts[1]);
-      $virtualQuery = 'lbwp_virtual_host=' . $row['job_site'] . '&lbwp_virtual_host_hash=' . $check . '&jobId=' . $row['job_id'] . '&identifier=' . $row['job_identifier'];
+      $virtualQuery = 'lbwp_virtual_host=' . $row['job_site'] . '&lbwp_virtual_host_hash=' . $check . '&jobId=' . $row['job_id'] . '&key=' . MASTER_CRON_API_SECRET . '&&identifier=' . $row['job_identifier'];
       $url = 'https://swi1-assist-lbwp.sdd1.ch/wp-content/plugins/lbwp/views/cron/job.php?' . $virtualQuery;
     } else {
-      $url = 'http://' . $row['job_site'] . '/wp-content/plugins/lbwp/views/cron/job.php?jobId=' . $row['job_id'] . '&identifier=' . $row['job_identifier'];
+      $url = 'http://' . $row['job_site'] . '/wp-content/plugins/lbwp/views/cron/job.php?jobId=' . $row['job_id'] . '&key=' . MASTER_CRON_API_SECRET . '&identifier=' . $row['job_identifier'];
     }
     if (isset($row['job_data']) && strlen($row['job_data']) > 0) {
       $url .= '&data=' . urlencode($row['job_data']);

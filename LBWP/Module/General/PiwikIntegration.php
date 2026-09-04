@@ -68,11 +68,13 @@ class PiwikIntegration extends \LBWP\Module\Base
   public function addDashboardWidget()
   {
     // LBWP news widget
-    wp_add_dashboard_widget(
-      'lbwp-piwik-integration',
-      'Website Statistiken',
-      array($this, 'getDashboardWidgetHtml')
-    );
+    if (current_user_can('administrator')) {
+      wp_add_dashboard_widget(
+        'lbwp-piwik-integration',
+        'Website Statistiken',
+        array($this, 'getDashboardWidgetHtml')
+      );
+    }
   }
 
   /**

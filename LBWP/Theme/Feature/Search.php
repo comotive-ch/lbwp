@@ -194,7 +194,6 @@ class Search
           'resultCount' => count($results),
           'nativeCount' => $nativeResultCount,
           'html' => $itemHtml,
-          'call' => $url,
           'cached' => false
         );
       } else {
@@ -202,7 +201,6 @@ class Search
           'resultCount' => 0,
           'nativeCount' => $nativeResultCount,
           'html' => '<p class="gss-no-results">' . self::$apiConf['errorMessage'] . '</p>',
-          'call' => $url,
           'cached' => false
         );
       }

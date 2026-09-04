@@ -54,10 +54,10 @@ while ($row = mysqli_fetch_assoc($res)) {
   if ($row['sit_assist_cron'] == 1) {
     $salts = explode('|', LBWP_VIRTUAL_HOST_SALT);
     $check = md5($salts[0] . $row['sit_url'] . $salts[1]);
-    $virtualQuery = '?lbwp_virtual_host=' . $row['sit_url'] . '&lbwp_virtual_host_hash=' . $check . '&hash=' . CRON_HASH;
+    $virtualQuery = '?lbwp_virtual_host=' . $row['sit_url'] . '&lbwp_virtual_host_hash=' . $check . '&key=' . MASTER_CRON_API_SECRET . '&hash=' . CRON_HASH;
     $url = 'https://swi1-assist-lbwp.sdd1.ch/wp-content/plugins/lbwp/views/cron/' . $call . $virtualQuery;
   } else {
-    $url = 'https://' . $row['sit_url'] . '/wp-content/plugins/lbwp/views/cron/' . $call . '?hash=' . CRON_HASH;
+    $url = 'https://' . $row['sit_url'] . '/wp-content/plugins/lbwp/views/cron/' . $call . '?key=' . MASTER_CRON_API_SECRET . '&hash=' . CRON_HASH;
   }
   $curl = curl_init($url);
   curl_setopt_array($curl, $options);

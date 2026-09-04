@@ -321,6 +321,7 @@ class AutoUnpublishPost
         'ID' => $postId,
         'post_status' => 'draft'
       ));
+      delete_post_meta($postId, 'auto_unpublish_on');
 
       // Unpublish associated menu items as well (dont delete them!)
       if ($this->settings['unpublishAssociatedMenus']) {

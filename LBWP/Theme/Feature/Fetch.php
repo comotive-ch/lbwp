@@ -49,7 +49,7 @@ class Fetch
     if ($useProxy) {
       $options[CURLOPT_PROXY] = 'http://194.182.165.126';
       $options[CURLOPT_PROXYPORT] = '3128';
-      $options[CURLOPT_PROXYUSERPWD] = 'comotive:Kv8gnr9qd5erSquid';
+      $options[CURLOPT_PROXYUSERPWD] = LBWP_SQUID_PROXY_AUTH;
     }
 
     // Use basic auth if requested

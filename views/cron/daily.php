@@ -2,6 +2,12 @@
 define('DOING_LBWP_CRON',true);
 require '../../../../../wp-load.php';
 
+// Check for the key to be valid
+if (!isset($_GET['key']) || $_GET['key'] !== MASTER_CRON_API_SECRET) {
+  header('HTTP/1.0 403 Forbidden');
+  return;
+}
+
 // Allow devs do hook in here
 do_action('cron_daily');
 

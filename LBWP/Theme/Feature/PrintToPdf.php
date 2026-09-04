@@ -73,7 +73,8 @@ class PrintToPdf
   public function listenForPdfParam()
   {
     if (isset($_GET['print-to-pdf']) && intval($_GET['print-to-pdf']) > 0 && !$this->isBlacklisted() && !is_404()) {
-      $this->generatePostPdf(intval($_GET['print-to-pdf']));
+      $filename = isset($_GET['filename']) ? sanitize_title($_GET['filename']) : '';
+      $this->generatePostPdf(intval($_GET['print-to-pdf']), $filename);
     }
   }
 
@@ -117,13 +118,18 @@ class PrintToPdf
   /**
    * Generates a pdf, saves it as attachment to the post and saves a meta param
    * @param int $postId the post we should generate a pdf of
+   * @param string $filename optional filename override, defaults to the post's post_name
    */
-  protected function generatePostPdf($postId)
+  protected function generatePostPdf($postId, $filename = '')
   {
     $printedPost = get_post($postId);
+    if (Strings::isEmpty($filename)) {
+      $filename = $printedPost->post_name;
+    }
+
     // Get the pdf data and save as temporary file (That will be dismissed by the server)
-    $data = $this->getPdfDataStream($printedPost);
-    $fileUrl = $this->uploadToCdn($data, $printedPost);
+    $data = $this->getPdfDataStream($printedPost, $filename);
+    $fileUrl = $this->uploadToCdn($data, $printedPost, $filename);
     // Save a meta field with the actual URL
     update_post_meta($printedPost->ID, self::META_PDF_URL, $fileUrl);
 
@@ -132,8 +138,8 @@ class PrintToPdf
       // Save the PDF as an attachment to the post
       $attachment = array(
         'post_mime_type' => 'application/pdf',
-        'post_title' => $printedPost->post_name . '.pdf',
-        'post_name' => $printedPost->post_name . '-pdf',
+        'post_title' => $filename . '.pdf',
+        'post_name' => $filename . '-pdf',
         'post_content' => '',
         'post_status' => 'inherit',
         'post_parent' => $printedPost->ID,
@@ -163,12 +169,13 @@ class PrintToPdf
   /**
    * @param string $data file stream
    * @param \WP_Post $printedPost
+   * @param string $filename the filename to use, without extension
    * @return string the uploaded file url
    */
-  protected function uploadToCdn($data, $printedPost)
+  protected function uploadToCdn($data, $printedPost, $filename)
   {
     // Save the file on hard disk first
-    $filePath = File::getNewUploadFolder() . $printedPost->post_name . '.pdf';
+    $filePath = File::getNewUploadFolder() . $filename . '.pdf';
     file_put_contents($filePath, $data);
     /** @var S3Upload $upload to the upload */
     $upload = LbwpCore::getModule('S3Upload');
@@ -177,9 +184,10 @@ class PrintToPdf
 
   /**
    * @param \WP_Post $printedPost
+   * @param string $filename the filename to use, without extension
    * @return string the pdf data stream
    */
-  protected function getPdfDataStream($printedPost)
+  protected function getPdfDataStream($printedPost, $filename)
   {
     // Get the PDF stream from doc raptor
     $config = \DocRaptor\Configuration::getDefaultConfiguration();
@@ -190,7 +198,7 @@ class PrintToPdf
     // Configure the document
     $document->setTest(defined('LOCAL_DEVELOPMENT'));
     $document->setJavascript($this->options['useJavascript']);
-    $document->setName($printedPost->post_name . '.pdf');
+    $document->setName($filename . '.pdf');
     $document->setIgnoreConsoleMessages(true);
     $document->setDocumentType('pdf');
     $document->setStrict('none');
@@ -246,15 +254,21 @@ class PrintToPdf
 
   /**
    * @param int $postId the post that needs to be made a PDF of
+   * @param string $filename optional filename override, defaults to the post's post_name
    * @param array $params additional params
    * @return string url to generator or directly load the post PDF
    */
-  public static function getSinglePdfLink($postId, $params = array())
+  public static function getSinglePdfLink($postId, $filename = '', $params = array())
   {
     $url = get_post_meta($postId, self::META_PDF_URL, true);
     if (!Strings::isURL($url)) {
+      if (Strings::isEmpty($filename)) {
+        $filename = get_post($postId)->post_name;
+      }
+
       $url = get_permalink($postId);
       $url = Strings::attachParam('print-to-pdf', $postId, $url);
+      $url = Strings::attachParam('filename', sanitize_title($filename), $url);
       foreach ($params as $key => $value) {
         $url = Strings::attachParam($key, $value, $url);
       }
