@@ -38,8 +38,22 @@ class Cronjob
       'secret' => MASTER_CRON_API_SECRET
     )));
 
-    curl_exec($call);
+    $response = curl_exec($call);
+    $status = curl_getinfo($call, CURLINFO_HTTP_CODE);
+    $error = curl_error($call);
     curl_close($call);
+
+    if (strlen($error) > 0 || $status < 200 || $status >= 300) {
+      SystemLog::add('Cronjob', 'error', 'Failed to register job(s) on master', array(
+        'jobs' => $jobs,
+        'status' => $status,
+        'error' => $error,
+        'response' => $response
+      ));
+      return false;
+    }
+
+    return true;
   }
 
   /**
@@ -117,7 +131,17 @@ class Cronjob
     )));
 
     curl_exec($call);
+    $status = curl_getinfo($call, CURLINFO_HTTP_CODE);
+    $error = curl_error($call);
     curl_close($call);
+
+    if (strlen($error) > 0 || $status < 200 || $status >= 300) {
+      SystemLog::add('Cronjob', 'error', 'Failed to confirm job on master', array(
+        'jobId' => $jobId,
+        'status' => $status,
+        'error' => $error
+      ));
+    }
   }
 
   /**

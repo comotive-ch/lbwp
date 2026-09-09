@@ -4,6 +4,7 @@ require_once '../../../../../wp-config.php';
 
 // check for the api secrets (loaded by wp-config.php)
 if (!isset($_REQUEST[CACHE_FLUSH_KEY]) || $_REQUEST[CACHE_FLUSH_KEY] != CACHE_FLUSH_SECRET) {
+  header('HTTP/1.0 403 Forbidden');
   exit;
 }
 
