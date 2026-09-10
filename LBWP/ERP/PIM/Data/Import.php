@@ -384,6 +384,7 @@ class Import extends ACFBase
   protected function normalizeMetaValue(string $value): string
   {
     $value = trim($value, '"');
+    $value = str_replace('""', '"', $value);
 
     if ($value === 'True') {
       return '1';
