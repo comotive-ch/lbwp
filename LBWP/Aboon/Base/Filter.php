@@ -325,7 +325,7 @@ abstract class Filter extends ACFBase
     add_action('save_post_product', array($this, 'onSaveProduct'));
     add_action('transition_post_status', array($this, 'onTrashPost'), 10, 3);
     // Make sure to rebuild helper tables and caches
-    if (LBWP_ABOON_ERP_PRODUCTIVE) {
+    if (LBWP_ABOON_ERP_PRODUCTIVE || defined('LOCAL_DEVELOPMENT')) {
       add_action('cron_daily_4', array($this, 'buildProductMap'));
       add_action('cron_daily_6', array($this, 'fixMissingProductMapData'));
       add_action('cron_daily_6', array($this, 'updateCaches'));
@@ -2776,7 +2776,7 @@ abstract class Filter extends ACFBase
       if ($term->parent > 0) {
         // Add the term to the terms of that branch
         if (isset($tree[$term->parent])) {
-          $tree[$term->parent]['props'][$term->term_id] = Strings::removeUntil($term->name, '.');
+          $tree[$term->parent]['props'][$term->term_id] = $term->name;
         }
       }
     }

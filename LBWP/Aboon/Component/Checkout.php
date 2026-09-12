@@ -25,7 +25,7 @@ class Checkout extends ACFBase
     // Change some various settings with filters
     add_filter('woocommerce_billing_fields', array($this, 'alterBillingFieldConfig'), 10, 1);
     add_filter('woocommerce_shipping_fields', array($this, 'alterShippingFieldConfig'), 10, 1);
-    add_filter('woocommerce_get_country_locale', array($this, 'setStateRequired'), 10, 1);
+    add_filter('woocommerce_get_country_locale', array($this, 'alterCountryLocale'), 10, 1);
     add_filter('woocommerce_default_address_fields', array($this, 'alterAddressFields'), 10, 1);
     add_action('wpo_wcpdf_after_order_details', array($this, 'addPaidInfoToBilling'), 10, 2);
     add_action('wpo_wcpdf_before_document_label', array($this, 'addHeaderPaidInfo'), 10, 2);
@@ -73,14 +73,33 @@ class Checkout extends ACFBase
   }
 
   /**
+   * WooCommerce derives the client side required-field markup (the asterisk added by
+   * assets/js/frontend/address-i18n.js on page load) from this locale data, not from the
+   * woocommerce_billing_fields/woocommerce_shipping_fields filters. Without this, a field
+   * configured here as not-required (or required) would render correctly server side but get
+   * silently overridden by JS as soon as the country/state script runs.
    * @param array $locale
-   * @return array locales maybe changed
+   * @return array locale data with canton, phone and company required state aligned to settings
    */
-  public function setStateRequired($locale)
+  public function alterCountryLocale($locale)
   {
-    if ($this->getCheckoutField('canton') === 'required') {
-      foreach ($locale as $key => $sub) {
-        $locale[$key]['state']['required'] = true;
+    $localeKeyByField = array(
+      'canton' => 'state',
+      'phone' => 'phone',
+      'company' => 'company',
+    );
+
+    foreach ($localeKeyByField as $field => $localeKey) {
+      $value = $this->getCheckoutField($field);
+      foreach ($locale as $country => $sub) {
+        if ($value === 'required') {
+          $locale[$country][$localeKey]['required'] = true;
+        } else if ($value === 'not-required') {
+          $locale[$country][$localeKey]['required'] = false;
+        } else if ($value === 'disabled') {
+          $locale[$country][$localeKey]['required'] = false;
+          $locale[$country][$localeKey]['hidden'] = true;
+        }
       }
     }
 
