@@ -3001,6 +3001,9 @@ abstract class Filter extends ACFBase
     $charset = $wpdb->get_charset_collate();
     $table = $wpdb->prefix . 'lbwp_prod_map';
 
+    set_time_limit(300);
+    ini_set('memory_limit', '3072M');
+
     require_once(ABSPATH . 'wp-admin/includes/upgrade.php');
     // Create table if not existing
     dbDelta("CREATE TABLE $table (
@@ -3043,7 +3046,6 @@ abstract class Filter extends ACFBase
       }
     }
     for ($i = 1; $i < 25; $i++) {
-
       $limit = $i * 50000;
       $offset = $limit - 50000;
       $result = mysqli_query($sdb, '
@@ -3069,10 +3071,10 @@ abstract class Filter extends ACFBase
 
     // Get keys that are yet to be added
     $addable = array_diff_key($source, $target);
-    // If more than 10000 we are in bulk mode, just add and don't do delete checks
-    if (count($addable) > 10000) {
+    // If more than 20000 we are in bulk mode, just add and don't do delete checks
+    if (count($addable) > 20000) {
       // Make sure to not overload by only doing a 10k slice each time
-      $addable = array_slice($addable, 0, 10000);
+      $addable = array_slice($addable, 0, 20000);
       foreach ($addable as $data => $bool) {
         list($pid, $tid) = explode('-', $data);
         $db->query('INSERT INTO ' . $table . ' (pid,tid) VALUES ('.$pid.','.$tid.')');

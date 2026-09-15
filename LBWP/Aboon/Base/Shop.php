@@ -13,6 +13,7 @@ use LBWP\Util\WordPress;
 use LBWP\Helper\WooCommerce\Util;
 use LBWP\Util\File;
 use LBWP\Core;
+use LBWP\Module\Frontend\HTMLCache;
 
 class Shop extends Component
 {
@@ -46,6 +47,7 @@ class Shop extends Component
     add_action('wp', function () {
       Util::setDefaultCountryOnly(is_cart());
     });
+    add_action('wp', array($this, 'avoidCacheOnLostPassword'));
     // Also run it on updating cart shipping method
     if (isset($_GET['wc-ajax']) && $_GET['wc-ajax'] == 'update_shipping_method') {
       Util::setDefaultCountryOnly(true);
@@ -86,6 +88,19 @@ class Shop extends Component
 
     // Add custom pdf styles
     add_action('wpo_wcpdf_custom_styles', array($this, 'addCustomPdfStyles'));
+  }
+
+  /**
+   * Make sure the "my account" lost-password page is never served from the full-page HTML cache
+   * @return void
+   */
+  public function avoidCacheOnLostPassword(): void
+  {
+    if (!is_account_page() || !is_wc_endpoint_url('lost-password')) {
+      return;
+    }
+
+    HTMLCache::avoidCache();
   }
 
   public function checkTimeoutCancelledOrders()
