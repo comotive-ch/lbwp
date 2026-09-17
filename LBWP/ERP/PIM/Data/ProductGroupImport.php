@@ -21,6 +21,7 @@ class ProductGroupImport
   const string TAXONOMY_SLUG = 'product-group';
   const string POST_TYPE_SLUG = 'lbwp-pid';
   const string FIELD_KEY_NAME_FR = 'field_pg_name_fr';
+  const string FIELD_KEY_ORDER = 'field_pg_order';
   const array LEVEL_COLS_DE = ['Level1De', 'Level2De', 'Level3De', 'Level4De', 'Level5De'];
   const array LEVEL_COLS_FR = ['Level1Fr', 'Level2Fr', 'Level3Fr', 'Level4Fr', 'Level5Fr'];
 
@@ -120,6 +121,7 @@ class ProductGroupImport
 
     $parentAtLevel = array_fill(0, 5, 0);
     $count = 0;
+    $order = 0;
 
     while (($row = fgetcsv($handle, 0, ';')) !== false) {
       if (count($row) !== count($headers)) {
@@ -150,7 +152,7 @@ class ProductGroupImport
       }
 
       $parentId = $level > 0 ? $parentAtLevel[$level - 1] : 0;
-      $termId = $this->upsertTerm($slug, $nameDe, $nameFr, $parentId);
+      $termId = $this->upsertTerm($slug, $nameDe, $nameFr, $parentId, ++$order);
 
       if ($termId > 0) {
         $parentAtLevel[$level] = $termId;
@@ -175,9 +177,10 @@ class ProductGroupImport
    * @param string $nameDe German term name stored as the core term name
    * @param string $nameFr French name stored in ACF termmeta field name-fr
    * @param int $parentId parent term ID, 0 for top-level
+   * @param int $order sequential position of this term within the imported file
    * @return int term ID on success, 0 on failure
    */
-  protected function upsertTerm(string $slug, string $nameDe, string $nameFr, int $parentId): int
+  protected function upsertTerm(string $slug, string $nameDe, string $nameFr, int $parentId, int $order): int
   {
     $existing = get_term_by('slug', $slug, self::TAXONOMY_SLUG);
 
@@ -200,6 +203,8 @@ class ProductGroupImport
 
     update_term_meta($termId, 'name-fr', $nameFr);
     update_term_meta($termId, '_name-fr', self::FIELD_KEY_NAME_FR);
+    update_term_meta($termId, 'order', $order);
+    update_term_meta($termId, '_order', self::FIELD_KEY_ORDER);
 
     return $termId;
   }

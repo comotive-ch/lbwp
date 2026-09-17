@@ -3071,13 +3071,16 @@ abstract class Filter extends ACFBase
 
     // Get keys that are yet to be added
     $addable = array_diff_key($source, $target);
-    // If more than 20000 we are in bulk mode, just add and don't do delete checks
-    if (count($addable) > 20000) {
-      // Make sure to not overload by only doing a 10k slice each time
-      $addable = array_slice($addable, 0, 20000);
-      foreach ($addable as $data => $bool) {
-        list($pid, $tid) = explode('-', $data);
-        $db->query('INSERT INTO ' . $table . ' (pid,tid) VALUES ('.$pid.','.$tid.')');
+    // If more than 10000 we are in bulk mode, just add and don't do delete checks
+    if (count($addable) > 10000) {
+      // Batch-insert in chunks of 1000 rows per query instead of one query per row
+      foreach (array_chunk(array_keys($addable), 1000) as $chunk) {
+        $values = [];
+        foreach ($chunk as $data) {
+          list($pid, $tid) = explode('-', $data);
+          $values[] = '(' . intval($pid) . ',' . intval($tid) . ')';
+        }
+        $db->query('INSERT INTO ' . $table . ' (pid,tid) VALUES ' . implode(',', $values));
       }
     } else {
       // First add what needs to be added to the db

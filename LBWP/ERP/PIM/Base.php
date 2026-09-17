@@ -741,5 +741,48 @@ class Base extends ACFBase
       'description' => '',
       'show_in_rest' => 0,
     ]);
+
+    acf_add_local_field_group([
+      'key' => 'group_pim_product_group_order',
+      'title' => __('Sortierung', 'lbwp'),
+      'fields' => [
+        [
+          'key' => 'field_pg_order',
+          'label' => __('Reihenfolge', 'lbwp'),
+          'name' => 'order',
+          'aria-label' => '',
+          'type' => 'number',
+          'instructions' => __('Bestimmt die Sortierung in allen angebundenen Shops. Wird bei jedem Import des Kategoriebaums anhand der Dateireihenfolge neu vergeben, kann danach manuell angepasst werden.', 'lbwp'),
+          'required' => 0,
+          'conditional_logic' => 0,
+          'wrapper' => ['width' => '', 'class' => '', 'id' => ''],
+          'default_value' => '',
+          'min' => '',
+          'max' => '',
+          'step' => '',
+          'placeholder' => '',
+          'prepend' => '',
+          'append' => '',
+        ],
+      ],
+      'location' => [
+        [
+          [
+            'param' => 'taxonomy',
+            'operator' => '==',
+            'value' => self::PRODUCT_GROUP_SLUG,
+          ],
+        ],
+      ],
+      'menu_order' => 0,
+      'position' => 'normal',
+      'style' => 'default',
+      'label_placement' => 'left',
+      'instruction_placement' => 'label',
+      'hide_on_screen' => '',
+      'active' => true,
+      'description' => '',
+      'show_in_rest' => 0,
+    ]);
   }
 }
