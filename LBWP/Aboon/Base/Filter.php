@@ -51,6 +51,10 @@ abstract class Filter extends ACFBase
    */
   public static $AUTO_UPDATE_ON_CLICK = false;
   /**
+   * @var bool enables ir disables remove until on property names
+   */
+  public static $USE_REMOVE_UNTIL = true;
+  /**
    * @var int where actual IDS start, below this value are virtual props
    */
   public static $SEARCH_THRESHOLD_INEXACT = 50;
@@ -220,6 +224,9 @@ abstract class Filter extends ACFBase
     'Füllmenge in cl' => 'Füllmenge',
     'Füllmenge in dl' => 'Füllmenge',
     'Füllmenge in l' => 'Füllmenge',
+    'Klingenlänge in cm' => 'Klingenlänge',
+    'Stiellänge in cm' => 'Stiellänge',
+    'Zinkenlänge in cm' => 'Zinkenlänge',
   );
 
 	/**
@@ -232,6 +239,9 @@ abstract class Filter extends ACFBase
 		'Höhe' => 'width',
 		'Breite' => 'width',
 		'Füllmenge' => 'filling',
+		'Klingenlänge' => 'width',
+		'Stiellänge' => 'width',
+		'Zinkenlänge' => 'width',
 	);
   /**
    * At the moment a fixed list to only match certain properties for testing the feature
@@ -265,7 +275,10 @@ abstract class Filter extends ACFBase
     'Breite' => 33,
     'Höhe' => 34,
     'Gewicht' => 36,
-    'Füllmenge' => 37
+    'Füllmenge' => 37,
+    'Klingenlänge' => 38,
+    'Stiellänge' => 39,
+    'Zinkenlänge' => 40,
   );
   /**
    * @var array merge parent ids
@@ -575,9 +588,9 @@ abstract class Filter extends ACFBase
 
     // Generate a fallback title, for single tertiary/prop selections
     if (count($tertiaryIds) == 1) {
-      $title = Strings::removeUntil(get_term_by('id', $tertiaryIds[0], 'product_cat')->name, '.');
+      $title = static::maybeRemoveUntil(get_term_by('id', $tertiaryIds[0], 'product_cat')->name);
     } else if (count($propIds) == 1) {
-      $title = Strings::removeUntil(get_term_by('id', $propIds[0], 'product_prop')->name, '.');
+      $title = static::maybeRemoveUntil(get_term_by('id', $propIds[0], 'product_prop')->name);
     }
 
     // Reduce to whitelist if given
@@ -2642,6 +2655,18 @@ abstract class Filter extends ACFBase
   }
 
   /**
+   * @param string $value the term name, possibly prefixed with a sort key before the delimiter
+   * @param string $delimiter the delimiter separating the sort key from the actual name
+   * @return string $value with everything up to and including $delimiter removed, or $value
+   * unchanged if static::$USE_REMOVE_UNTIL is false (most shops still key their term names with a
+   * sort prefix, banholzer does not)
+   */
+  protected static function maybeRemoveUntil($value, $delimiter = '.')
+  {
+    return static::$USE_REMOVE_UNTIL ? Strings::removeUntilIf($value, $delimiter) : $value;
+  }
+
+  /**
    * Gets a cached meaningful complete list of the category tree for products
    */
   public static function getCategoryTree($forceRebuild = false)
@@ -2683,7 +2708,7 @@ abstract class Filter extends ACFBase
           $tree[$id]['sub'][$category->term_id] = array(
             'id' => $category->term_id,
             'slug' => $category->slug,
-            'name' => stristr($category->name, '.') !== false ? Strings::removeUntil($category->name, '.') : $category->name,
+            'name' => static::maybeRemoveUntil($category->name),
             'image' => $image,
             'sub' => array()
           );
@@ -2705,7 +2730,7 @@ abstract class Filter extends ACFBase
             $tree[$id]['sub'][$subid]['sub'][$category->term_id] = array(
               'id' => $category->term_id,
               'slug' => $category->slug,
-              'name' => stristr($category->name, '.') !== false ? Strings::removeUntil($category->name, '.') : $category->name,
+              'name' => static::maybeRemoveUntil($category->name),
               'image' => $image,
             );
             unset($raw[$key]);
@@ -2893,9 +2918,9 @@ abstract class Filter extends ACFBase
       if ($term->parent > 0) {
         // Add the term to the terms of that branch
         if (isset($tree[$term->parent])) {
-          $tree[$term->parent]['props'][$term->term_id] = Strings::removeUntil($term->name, '.');
+          $tree[$term->parent]['props'][$term->term_id] = static::maybeRemoveUntil($term->name);
         } else if (isset(self::$mergeParents[$term->parent])) {
-          $value = Strings::removeUntil($term->name, '.');
+          $value = static::maybeRemoveUntil($term->name);
           if (self::$mergeFactor[$term->parent]) {
             $value = (float) $value * self::$mergeFactor[$term->parent];
           }
