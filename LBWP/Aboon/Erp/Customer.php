@@ -162,9 +162,9 @@ abstract class Customer extends Component
         continue;
       }
 
-      $addressId = -1;
-      if (isset($_POST[$type . '-address-selection']) && is_numeric($_POST[$type . '-address-selection'])) {
-        $addressId = intval($_POST[$type . '-address-selection']);
+      $addressId = '';
+      if (isset($_POST[$type . '-address-selection'])) {
+        $addressId = sanitize_text_field(wp_unslash($_POST[$type . '-address-selection']));
       }
 
       // Create a label and the dropdown
@@ -240,13 +240,15 @@ abstract class Customer extends Component
     $user = wp_get_current_user();
     $addresses = get_user_meta($user->ID, 'erp-address-list', true);
     $type = Strings::forceSlugString($_POST['change-address-type']);
-    $addressId = intval($_POST[$type . '-address-selection']);
+    $addressId = sanitize_text_field(wp_unslash($_POST[$type . '-address-selection'] ?? ''));
     // See if that address exists
     if (isset($addresses[$type][$addressId])) {
       // Save that down to according meta fields
       foreach ($addresses[$type][$addressId] as $key => $value) {
         update_user_meta($user->ID, $type . '_' . $key, $value);
       }
+      // Also remember which erp-address-list entry was chosen, e.g. for order submission
+      update_user_meta($user->ID, $type . '_address_id', $addressId);
     }
   }
 

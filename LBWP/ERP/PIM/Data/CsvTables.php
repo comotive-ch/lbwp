@@ -897,6 +897,10 @@ HTML;
       return '<div class="notice notice-error"><p>' . __('Nur CSV- und XLSX-Dateien sind erlaubt.', 'lbwp') . '</p></div>';
     }
 
+    // Raise limits for larger files
+    set_time_limit(300);
+    ini_set('memory_limit', '1024M');
+
     if ($ext === 'xlsx') {
       $localPath = $this->convertXlsxToCsv($file, $config['csv_delimiter'] ?? ';');
       if ($localPath === false) {
