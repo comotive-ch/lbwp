@@ -570,6 +570,7 @@ class FormHandler extends Base
       $multisiteNav .= '</div>';
     }
 
+    $formclass = apply_filters('lbwp_forms_form_classes_string', $formclass);
     // Create the form and display an eventual message
     $html .= '
       <div class="wp-block-lbwp-form' . ($isMultisite ? ' is-multisite' : '') . '">
@@ -577,7 +578,7 @@ class FormHandler extends Base
           <div class="lbwp-form-override">
             ' . (isset($_POST['lbwpFormSend']) && $args['hide_after_success'] == 1 ? '' : $multisiteNav) . '
             ' . $messageHtml . '
-            <form id="lbwpForm-' . $formDisplayId . '" class="lbwp-form' . $formclass . '" method="POST"
+            <form id="lbwpForm-' . $formDisplayId . '" class="lbwp-form ' . $formclass . '" method="POST"
               data-message-multi="' . $errorMsgMulti . '" data-message-single="' . $errorMsgSingle . '"
               data-use-botcheck="' . (isset($this->currentArgs['use_spambotcheck']) && $this->currentArgs['use_spambotcheck'] ? '1' : '0') . '"
               data-show-survey-results="' . (isset($this->currentArgs['show_survey_results']) && $this->currentArgs['show_survey_results'] ? '1' : '0') . '"
@@ -595,7 +596,7 @@ class FormHandler extends Base
     if (isset($args['button']) && strlen($args['button']) > 0) {
       $buttonHtml = BaseItem::$sendButtonTemplate;
       $buttonHtml = str_replace('{class}', 'send-button', $buttonHtml);
-      $buttonHtml = str_replace('{field}', '<input type="submit" class="' . LbwpFormSettings::get('sendButtonClass') . '" value="' . $args['button'] . '" name="lbwpFormSend" />', $buttonHtml);
+      $buttonHtml = str_replace('{field}', '<input type="submit" class="' . apply_filters('lbwp_forms_send_button_classes_string', LbwpFormSettings::get('sendButtonClass')) . '" value="' . $args['button'] . '" name="lbwpFormSend" />', $buttonHtml);
     }
 
     // Add a honeypot field and a token
