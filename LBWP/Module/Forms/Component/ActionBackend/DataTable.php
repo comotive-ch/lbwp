@@ -342,6 +342,10 @@ class DataTable extends Base
       }
     }
 
+    // Let developers add data for their own default fields
+    $formId = intval(str_replace(self::TABLE_OPTION_PREFIX, '', $tableKey));
+    $row = apply_filters('lbwp_forms_datatable_default_field_data', $row, $formId);
+
     // Add the new row to the table
     $table = WordPress::getJsonOption($tableKey);
     $table['data'][] = $row;
@@ -577,6 +581,8 @@ class DataTable extends Base
       $row[$field] = '';
     }
 
+    $row = apply_filters('lbwp_forms_datatable_default_field_data', $row, $formId);
+
     // Override (or add) the usual keys
     $row['ursprungsformular'] = 'Backend / Manuell';
     $row['user-ip-adresse'] = $_SERVER['REMOTE_ADDR'];
@@ -682,6 +688,9 @@ class DataTable extends Base
         }
       }
     }
+
+    // Let developers add their own fields
+    $fields = apply_filters('lbwp_forms_datatable_default_fields', $fields, $formId);
 
     // Always add the default fields at the end
     $fields['ursprungsformular'] = 'Ursprungsformular';

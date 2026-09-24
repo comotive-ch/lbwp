@@ -252,11 +252,23 @@ class MemcachedAdmin extends \LBWP\Module\Base
    */
   public static function flushForeignHtmlCache($customerKey, $tablePrefix, $hostName)
   {
+    self::flushForeignCache($customerKey, $tablePrefix, $hostName, self::HTML_CACHE_PREFIX);
+  }
+
+  /**
+   * Flushes the cache of a foreign instance, full object and html cache if no search is given
+   * @param string $customerKey the foreign instance CUSTOMER_KEY
+   * @param string $tablePrefix the foreign instance table prefix
+   * @param string $hostName the foreign instance host name, used to load its config in the flush endpoint
+   * @param string $search optional keyword to only flush matching keys
+   */
+  public static function flushForeignCache($customerKey, $tablePrefix, $hostName, $search = '')
+  {
     $params = array(
       CACHE_FLUSH_KEY => CACHE_FLUSH_SECRET,
       'customer' => $customerKey,
       'prefix' => $tablePrefix,
-      'search' => self::HTML_CACHE_PREFIX
+      'search' => $search
     );
 
     // Flush on each node
