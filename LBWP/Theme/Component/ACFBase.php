@@ -2,6 +2,7 @@
 
 namespace LBWP\Theme\Component;
 
+use LBWP\Helper\ACF\BulkEditField;
 use LBWP\Theme\Base\Component;
 use LBWP\Theme\Base\CoreV2;
 use LBWP\Util\Strings;
@@ -146,6 +147,19 @@ abstract class ACFBase extends Component
       $page[$key] = $value;
     }
     acf_add_options_page($page);
+  }
+
+  /**
+   * Make an ACF true_false field editable via the WordPress bulk edit screen.
+   * Also adds a list column showing the current value. Call it in setup() or acfInit().
+   * @param string $fieldKey the ACF field key (field_xxx)
+   * @param string|array $postTypes one or more post types
+   * @param string $label optional label, defaults to the field message or label
+   * @return void
+   */
+  protected function addBulkEditField($fieldKey, $postTypes = 'post', $label = '')
+  {
+    (new BulkEditField($fieldKey, $postTypes, $label))->register();
   }
 
   /**
