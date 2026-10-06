@@ -291,7 +291,7 @@ class ChosenDropdown
     $list = array_map('intval', $_POST['ids']);
 
     // Override the meta list, if all is good
-    if ($postId > 0 && strlen($key) > 0) {
+    if ($postId > 0 && strlen($key) > 0 && current_user_can('edit_post', $postId)) {
       self::saveToMeta($postId, $key, $list);
     }
 
@@ -428,7 +428,7 @@ class ChosenDropdown
   public static function getUserHtmlCallback($user)
   {
     // Edit link for modals
-    $editLink = admin_url('user-edit.php?user_id=' . $user->ID . '&ui=show-as-modal&parent=' . $_GET['post']);
+    $editLink = admin_url('user-edit.php?user_id=' . $user->ID . '&ui=show-as-modal&parent=' . intval($_GET['post'] ?? 0));
 
     // Get a list of roles of the user
     global $wp_roles;

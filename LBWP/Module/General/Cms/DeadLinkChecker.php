@@ -181,7 +181,7 @@ class DeadLinkChecker extends BaseSingleton
     $getLinks = ArrayManipulation::forceArray($getLinks);
 
     // Delete link
-    if (!empty($_POST)) {
+    if (!empty($_POST) && isset($_POST['_wpnonce']) && wp_verify_nonce($_POST['_wpnonce'], 'lbwp-dlc-remove-link')) {
       $delIndex = explode('-', array_keys($_POST)[0])[1];
 
       // Delete all links
@@ -238,10 +238,10 @@ class DeadLinkChecker extends BaseSingleton
       if(!$maxLinkReached) {
         $linksHtml .=
           '<tr>
-            <td><a href="' . $link['link'] . '" target="_blank">' . Strings::chopStringCenter($link['link'], 50, 10) . '</a></td>
-            <td><a href="' . get_edit_post_link($link['source']) . '" target="_blank">' . get_the_title($link['source']) . '</a></td>
+            <td><a href="' . esc_url($link['link']) . '" target="_blank">' . esc_html(Strings::chopStringCenter($link['link'], 50, 10)) . '</a></td>
+            <td><a href="' . esc_url(get_edit_post_link($link['source'])) . '" target="_blank">' . esc_html(get_the_title($link['source'])) . '</a></td>
             <td>' . ($link['checked'] == 0 ? 'Nein' : date('d.m.Y, H:i:s', $link['checked'])) . '</td>
-            <td>' . $link['code'] . ' ' . self::STATUS_CODE_LABEL[$link['code']] . '</td>
+            <td>' . intval($link['code']) . ' ' . self::STATUS_CODE_LABEL[$link['code']] . '</td>
             <td>
               <label for="remove-link-button' . $index . '"><span class="dashicons-before dashicons-trash"></span></label>
               <input type="checkbox" id="remove-link-button' . $index . '">
@@ -263,7 +263,8 @@ class DeadLinkChecker extends BaseSingleton
       wp_cache_set('deadlink_total_links', $totalLinks, '', 60 * 60 * 24 * 10);
     }
 
-    $linksHtml .= '</tbody></table></form></div>' . ($maxLinkReached ? '<p>Um weitere Links anzuzeigen bitte Links korrigieren oder löschen.</p>' : '');
+    // Nonce must stay after all submit buttons, as the first posted key is used as delete index
+    $linksHtml .= '</tbody></table>' . wp_nonce_field('lbwp-dlc-remove-link', '_wpnonce', true, false) . '</form></div>' . ($maxLinkReached ? '<p>Um weitere Links anzuzeigen bitte Links korrigieren oder löschen.</p>' : '');
     $html = '
       <h1>Überprüfen von Links</h1>
         <div class="wrap">

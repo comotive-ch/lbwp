@@ -96,6 +96,11 @@ class PostDuplicate extends \LBWP\Module\Base
     $postId = intval($_GET['post']);
     $post = get_post($postId, ARRAY_A);
 
+    // Only users that are allowed to edit posts and read the source post may duplicate it
+    if (!is_array($post) || !current_user_can('edit_posts') || !current_user_can('read_post', $postId)) {
+      return false;
+    }
+
     // Remove the id to create a new post
     unset($post['ID']);
     $post['post_status'] = 'draft';

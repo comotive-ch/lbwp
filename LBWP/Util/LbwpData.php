@@ -94,7 +94,7 @@ class LbwpData
     $data = $this->db->get_results(Strings::prepareSql($sql, array(
       'lbwpData' => $this->db->lbwp_data,
       'rowKey' => $this->key,
-      'dataOrderBy' => $orderBy,
+      'dataOrderBy' => preg_replace('/[^a-zA-Z0-9_]/', '', $orderBy),
       'dataOrder' => ($order == 'ASC') ? 'ASC' : 'DESC'
     )));
 
@@ -103,7 +103,7 @@ class LbwpData
 
   public function searchRows($search, $orderBy = 'pid', $order = 'ASC', $limit = 0, $page = 0){
     $sql = '
-      SELECT * FROM {raw:lbwpData} WHERE row_key = {rowKey} AND row_data LIKE "%' . $search . '%"
+      SELECT * FROM {raw:lbwpData} WHERE row_key = {rowKey} AND row_data LIKE "%' . esc_sql($this->db->esc_like($search)) . '%"
       ORDER BY {raw:dataOrderBy} {raw:dataOrder}
     ';
     // Set a limit if given
@@ -120,7 +120,7 @@ class LbwpData
     $data = $this->db->get_results(Strings::prepareSql($sql, array(
       'lbwpData' => $this->db->lbwp_data,
       'rowKey' => $this->key,
-      'dataOrderBy' => $orderBy,
+      'dataOrderBy' => preg_replace('/[^a-zA-Z0-9_]/', '', $orderBy),
       'dataOrder' => ($order == 'ASC') ? 'ASC' : 'DESC'
     )));
 
@@ -131,7 +131,7 @@ class LbwpData
     $sql = 'SELECT COUNT(pid) FROM {raw:lbwpData} WHERE row_key = {rowKey}';
 
     if(strlen($search) > 0){
-      $sql .= ' AND row_data LIKE "%' . $search . '%"';
+      $sql .= ' AND row_data LIKE "%' . esc_sql($this->db->esc_like($search)) . '%"';
     }
 
     $data = $this->db->get_var(Strings::prepareSql($sql, array(
@@ -157,7 +157,7 @@ class LbwpData
       'rowKey' => $this->key,
       'from' => $from,
       'to' => $to,
-      'field' => $field
+      'field' => preg_replace('/[^a-zA-Z0-9_]/', '', $field)
     )));
 
     return $this->convert($data);

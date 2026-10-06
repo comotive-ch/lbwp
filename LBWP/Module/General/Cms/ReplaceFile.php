@@ -88,9 +88,9 @@ class ReplaceFile extends BaseSingleton
       $imageUrl = wp_get_attachment_image_url($attachmentId, 'original');
       $imageUrl = substr($imageUrl, 0, strripos($imageUrl,'?'));
       $replaceImage = '
-        <p><strong>1.</strong> Die Datei «' . basename($attachment['file']) . '» wird ersetzt.</p>
+        <p><strong>1.</strong> Die Datei «' . esc_html(basename($attachment['file'])) . '» wird ersetzt.</p>
         <p>
-          <input type="hidden" name="replace-image-url" value="' . $imageUrl . '">
+          <input type="hidden" name="replace-image-url" value="' . esc_attr($imageUrl) . '">
           <input type="hidden" name="replace-image-id" value="' . $attachmentId . '">
         </p>';
     }
@@ -101,6 +101,7 @@ class ReplaceFile extends BaseSingleton
         ' . $this->handleUpload() . '
         <p>Ersetze eine Datei, während der Link der Datei gleich bleibt. Bei sofort aktualisieren wird der Link geändert.</p>
         <form action="?page=replace-file&action=lbwp-save-replacement-file" method="post" enctype="multipart/form-data">
+          ' . wp_nonce_field('lbwp-save-replacement-file', '_wpnonce', true, false) . '
           ' . $replaceImage . '
           <p><strong>2.</strong> Wähle die Datei aus, welche die bestehende ersetzen soll</p>
           <p><input type="file" name="replacement-file" /></p>
@@ -121,6 +122,17 @@ class ReplaceFile extends BaseSingleton
     if (isset($_GET['action']) && $_GET['action'] == 'lbwp-save-replacement-file') {
       $error = false;
       $file = $_FILES['replacement-file'];
+      // Only users that can upload files are allowed to replace them
+      if (!current_user_can('upload_files') || !isset($_POST['_wpnonce']) || !wp_verify_nonce($_POST['_wpnonce'], 'lbwp-save-replacement-file')) {
+        return '<div class="notice notice-error"><p>Sie haben nicht die Berechtigung diese Datei zu ersetzen.</p></div>';
+      }
+      // Make sure the image id is numeric and editable by the user
+      if (isset($_POST['replace-image-id'])) {
+        $_POST['replace-image-id'] = intval($_POST['replace-image-id']);
+        if ($_POST['replace-image-id'] > 0 && !current_user_can('edit_post', $_POST['replace-image-id'])) {
+          return '<div class="notice notice-error"><p>Sie haben nicht die Berechtigung diese Datei zu ersetzen.</p></div>';
+        }
+      }
       // Leave if there is a general upload error
       if ($file['error'] != 0) {
         $error = true;
@@ -141,14 +153,21 @@ class ReplaceFile extends BaseSingleton
 
       $key = $s3->getKeyFromUrl($url);
 
-      // Validate if the key starts with the customers prefix
-      if (!Strings::startsWith($key, ASSET_KEY)) {
+      // Validate if the key starts with the customers prefix and contains no path traversal
+      if (!Strings::startsWith($key, ASSET_KEY) || preg_match('#(^|/)\.\.(/|$)#', $key) || str_contains($key, '\\') || str_contains($key, "\0")) {
         $error = true;
         $message = 'Sie haben nicht die Berechtigung diese Datei zu ersetzen.';
       }
       // Check if file endings are identical
       $currentExt = strtolower(File::getExtension($key));
       $uploadExt = strtolower(File::getExtension($file['name']));
+
+      // Only allow file types that are allowed to be uploaded in the media library
+      $allowedType = wp_check_filetype($file['name']);
+      if ($allowedType['ext'] === false) {
+        $error = true;
+        $message = 'Abgebrochen, da dieser Dateityp nicht erlaubt ist.';
+      }
 
       // Convert the upload to webp if it replaces a webp file, instead of rejecting it
       if ($currentExt == '.webp' && in_array($uploadExt, ['.jpg', '.jpeg', '.png'])) {

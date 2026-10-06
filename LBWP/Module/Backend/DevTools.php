@@ -121,16 +121,46 @@ class DevTools extends \LBWP\Module\Base
   protected function compressFiles()
   {
     $html = '';
-    if (isset($_POST['compressFiles'])) {
+    if (isset($_POST['compressFiles']) && current_user_can('administrator') && is_array($_POST['compressedFiles'])) {
       foreach ($_POST['compressedFiles'] as $file) {
+        $file = wp_unslash($file);
+        // Only allow existing css/js files within the configured search paths
+        if (!$this->isCompressableFile($file)) {
+          continue;
+        }
         $extension = substr(Strings::getExtension($file), 1);
         $minVersion = str_replace('.' . $extension, '.min.' . $extension, $file);
         file_put_contents($minVersion, '', FILE_TEXT);
-        exec('java -jar ' . $this->compressor . ' -o ' . $minVersion . ' ' . $file);
+        exec('java -jar ' . escapeshellarg($this->compressor) . ' -o ' . escapeshellarg($minVersion) . ' ' . escapeshellarg($file));
       }
       $html .= '<div class="updated"><p>Dateien wurden komprimiert.</p></div>';
     }
     return $html;
+  }
+
+  /**
+   * @param string $file the full path of a file to be compressed
+   * @return bool true, if the file is an existing css/js file within one of the search paths
+   */
+  protected function isCompressableFile($file)
+  {
+    if (!is_string($file) || !(Strings::endsWith($file, '.css') || Strings::endsWith($file, '.js'))) {
+      return false;
+    }
+
+    $realFile = realpath($file);
+    if ($realFile === false || !is_file($realFile) || $realFile !== $file) {
+      return false;
+    }
+
+    foreach ($this->paths as $path) {
+      $realPath = realpath(ABSPATH . $path);
+      if ($realPath !== false && Strings::startsWith($realFile, rtrim($realPath, '/') . '/')) {
+        return true;
+      }
+    }
+
+    return false;
   }
 
   /**

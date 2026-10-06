@@ -113,15 +113,15 @@ class DataDisplay
     }
     return '
       <ul class="subsubsub">
-        <li><a href="?page=' . $_GET['page'] . '&table=' . $_GET['table'] . '&flushtable" onclick="return confirm(\'Tabelle wirklich leeren?\')">Tabelle leeren</a></li>
-        <li> | <a href="?page=' . $_GET['page'] . '&table=' . $_GET['table'] . '&deletetable" onclick="return confirm(\'Tabelle wirklich löschen?\')">Tabelle löschen</a></li>
+        <li><a href="?page=' . esc_attr($_GET['page']) . '&table=' . intval($_GET['table']) . '&flushtable" onclick="return confirm(\'Tabelle wirklich leeren?\')">Tabelle leeren</a></li>
+        <li> | <a href="?page=' . esc_attr($_GET['page']) . '&table=' . intval($_GET['table']) . '&deletetable" onclick="return confirm(\'Tabelle wirklich löschen?\')">Tabelle löschen</a></li>
         <li> | <a href="#export-csv-utf8" class="export" data-type="csv" data-encoding="utf8">Export als CSV (UTF-8)</a></li>
         <li> | <a href="#export-csv-iso" class="export" data-type="csv" data-encoding="iso">Export als CSV (für Excel)</a></li>
         <li> | <a href="#export-excel-iso" class="export" data-type="excel" data-encoding="iso">Export als Excel-Datei</a></li>
-        <li> | <a href="?page=' . $_GET['page'] . '&table=' . $_GET['table'] . '&newrow">Neuen Datensatz anfügen</a></li>
+        <li> | <a href="?page=' . esc_attr($_GET['page']) . '&table=' . intval($_GET['table']) . '&newrow">Neuen Datensatz anfügen</a></li>
         ' . $additional . '
       </ul>
-      <form class="privacy-settings" style="display:none;clear:both;" method="post" action="' . $_SERVER['REQUEST_URI'] . '">
+      <form class="privacy-settings" style="display:none;clear:both;" method="post" action="' . esc_attr($_SERVER['REQUEST_URI']) . '">
         <p>Daten dieser Tabelle automatisch <input type="text" name="privacyDeleteAfter" style="width:50px;" value="' . $table['privacy-delete-after'] . '" /> Tage nach letzter Änderung löschen.</p>
         <input type="submit" class="button-primary" name="savePrivacyDeleteAfter" value="Speichern" /> 
         <input type="button" class="button-secondary close-privacy-settings" value="Abbrechen" />
@@ -168,7 +168,7 @@ class DataDisplay
 
     // Create the export form
     $exportForm = '
-      <form action="?page=' . $_GET['page'] . '&table=' . $_GET['table'] . '" method="POST" id="exportForm">
+      <form action="?page=' . esc_attr($_GET['page']) . '&table=' . intval($_GET['table']) . '" method="POST" id="exportForm">
         <input type="hidden" id="exportType" name="export" value="" />
         <input type="hidden" id="exportEncoding" name="type" value="" />
         <p>Bitte wählen und sortieren Sie die gewünschten Felder für den Export.</p>
@@ -207,8 +207,8 @@ class DataDisplay
             <input type="checkbox" id="toggle-menu-' . $id . '" />
             <ul class="options__menu">
               <li><a href="' . get_edit_post_link($formId) . '"><i class="dashicons dashicons-admin-links"></i> Formular bearbeiten</a></li>
-              <li><a title="Zeile als Docx-Datei herunterladen" class="export-row" href="' . $_SERVER['REQUEST_URI'] . '&export-row=' . $id . '" data-index="' . $id . '" data-formid="' . $formId . '"><i class="dashicons dashicons-download"></i> Als Word Exportieren</a></li>
-              <li><a href="' . $_SERVER['REQUEST_URI'] . '&export-row-pdf=' . $id . '"><i class="dashicons dashicons-download"></i> Als PDF exportieren</a></li>
+              <li><a title="Zeile als Docx-Datei herunterladen" class="export-row" href="' . esc_attr($_SERVER['REQUEST_URI']) . '&export-row=' . $id . '" data-index="' . $id . '" data-formid="' . $formId . '"><i class="dashicons dashicons-download"></i> Als Word Exportieren</a></li>
+              <li><a href="' . esc_attr($_SERVER['REQUEST_URI']) . '&export-row-pdf=' . $id . '"><i class="dashicons dashicons-download"></i> Als PDF exportieren</a></li>
               ' . $additional . '
             </ul>          
           </div>
@@ -356,9 +356,9 @@ class DataDisplay
         $html = '
           <h3>Ausstehende Antworten</h3>
           <p>
-            <a href="?page=' . $_GET['page'] . '&table=' . $_GET['table'] . '&export-unfilled=csv&type=utf8">Export als CSV (UTF-8)</a> | 
-            <a href="?page=' . $_GET['page'] . '&table=' . $_GET['table'] . '&export-unfilled=csv&type=iso">Export als CSV (für Excel)</a>
-            <a href="?page=' . $_GET['page'] . '&table=' . $_GET['table'] . '&export-unfilled=excel&type=iso">Export als Excel-Datei</a>
+            <a href="?page=' . esc_attr($_GET['page']) . '&table=' . intval($_GET['table']) . '&export-unfilled=csv&type=utf8">Export als CSV (UTF-8)</a> | 
+            <a href="?page=' . esc_attr($_GET['page']) . '&table=' . intval($_GET['table']) . '&export-unfilled=csv&type=iso">Export als CSV (für Excel)</a>
+            <a href="?page=' . esc_attr($_GET['page']) . '&table=' . intval($_GET['table']) . '&export-unfilled=excel&type=iso">Export als Excel-Datei</a>
           </p>
           <table class="widefat automatic-tablesort" data-sortlist="' . apply_filters('DataTable_table_default_sort', '[[0, 0]]') . '">
             <thead><tr><th>' . implode('</th><th>', $columnInfo) . '</th></tr></thead>
@@ -660,16 +660,17 @@ class DataDisplay
       // Eventually add table format style: https://github.com/jgm/pandoc/issues/3275
       $htmlTable = '<table style="table-layout: fixed; width: 10cm">';
 
-      foreach($data[$_GET['export-row']] as $rowName => $row){
+      $exportRow = intval($_GET['export-row']);
+      foreach($data[$exportRow] as $rowName => $row){
         $htmlTable .= '<tr>
-          <th>' . $fields[$rowName] . '</th>
-          <td>' . $row . '</td>
+          <th>' . esc_html($fields[$rowName]) . '</th>
+          <td>' . esc_html($row) . '</td>
         </tr>';
       }
 
       $htmlTable .= '</table>';
 
-      Converter::htmlToDoc($htmlTable, 'export-' . $_GET['table'] . '_zeile-' . ($_GET['export-row'] + 1));
+      Converter::htmlToDoc($htmlTable, 'export-' . intval($_GET['table']) . '_zeile-' . ($exportRow + 1));
     }
 
     if(isset($_GET['export-row-pdf'])){
@@ -697,10 +698,11 @@ class DataDisplay
         }
       ';
 
-      foreach($data[$_GET['export-row-pdf']] as $rowName => $row){
+      $exportRow = intval($_GET['export-row-pdf']);
+      foreach($data[$exportRow] as $rowName => $row){
         $htmlTable .= '<tr>
-          <td>' . $fields[$rowName] . '</td>
-          <td>' . $row . '</td>
+          <td>' . esc_html($fields[$rowName]) . '</td>
+          <td>' . esc_html($row) . '</td>
         </tr>';
       }
 
@@ -708,7 +710,7 @@ class DataDisplay
 
       /*$doc = Converter::htmlToDoc($htmlTable, 'export-' . $_GET['table'] . '_zeile-' . ($_GET['export-row-pdf'] + 1), 'de-CH', true);
       Converter::docxToPdf($doc, 'export-' . $_GET['table'] . '_zeile-' . ($_GET['export-row-pdf'] + 1));*/
-      Converter::htmlToPdf($htmlTable, 'export-' . $_GET['table'] . '_zeile-' . ($_GET['export-row-pdf'] + 1), $styles);
+      Converter::htmlToPdf($htmlTable, 'export-' . intval($_GET['table']) . '_zeile-' . ($exportRow + 1), $styles);
     }
   }
 

@@ -918,7 +918,7 @@ class CmsFeatures extends \LBWP\Module\Base
   public function filterAssetLinks($results)
   {
     // Save results in $files, other handling for polylang
-    $query = $_POST['search'];
+    $query = isset($_POST['search']) && is_string($_POST['search']) ? wp_unslash($_POST['search']) : '';
     // Initialize util arrays
     $additionalResults = array();
     $removedTypes = array('image/jpeg', 'image/png', 'image/gif');
@@ -928,17 +928,16 @@ class CmsFeatures extends \LBWP\Module\Base
     if (strlen($query) > 0) {
       // Do a direct database query, since media are not translated and not found
       $db = WordPress::getDb();
+      // Use wpdb prepare, as prepareSql would resolve placeholders given within the search term
       $sql = '
-        SELECT ID,post_mime_type,post_type,guid FROM {sql:postTable}
-        WHERE (post_title LIKE {escape:queryText} OR guid LIKE {escape:queryText})
+        SELECT ID,post_mime_type,post_type,guid FROM ' . $db->posts . '
+        WHERE (post_title LIKE %s OR guid LIKE %s)
         AND post_type = "attachment" ORDER BY post_date DESC
       ';
 
       // To the same query as if to load the post data used below
-      $additionalResults = $db->get_results(Strings::prepareSql($sql, array(
-        'postTable' => $db->posts,
-        'queryText' => '%' . str_replace('*', '%', $query) . '%'
-      )));
+      $queryText = '%' . str_replace('*', '%', $query) . '%';
+      $additionalResults = $db->get_results($db->prepare($sql, $queryText, $queryText));
     }
 
     // Filter existing results from images
@@ -1138,7 +1137,7 @@ class CmsFeatures extends \LBWP\Module\Base
    */
   public static function addRestGlobalAuthentication($result)
   {
-    if (!empty($result) || Strings::contains($_SERVER['REQUEST_URI'], 'wp-json/lbwp/')) {
+    if (!empty($result) || self::isLbwpRestRoute()) {
       return $result;
     }
     if (!is_user_logged_in()) {
@@ -1152,13 +1151,27 @@ class CmsFeatures extends \LBWP\Module\Base
    */
   public static function addRestGlobalAdminAuthentication($result)
   {
-    if (!empty($result) || Strings::contains($_SERVER['REQUEST_URI'], 'wp-json/lbwp/')) {
+    if (!empty($result) || self::isLbwpRestRoute()) {
       return $result;
     }
     if (!current_user_can('administrator')) {
       return new \WP_Error('rest_not_logged_in', 'You are not currently logged in as administrator.', array('status' => 401));
     }
     return $result;
+  }
+
+  /**
+   * Checks the actually served rest route, as the request uri (query string) could be used to fake an lbwp endpoint
+   * @return bool true if the current rest request is served by an lbwp/ route
+   */
+  protected static function isLbwpRestRoute()
+  {
+    if (isset($GLOBALS['wp']) && isset($GLOBALS['wp']->query_vars['rest_route'])) {
+      $route = '/' . ltrim((string) $GLOBALS['wp']->query_vars['rest_route'], '/');
+      return stripos($route, '/lbwp/') === 0;
+    }
+
+    return Strings::contains((string) parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH), 'wp-json/lbwp/');
   }
 
   /**

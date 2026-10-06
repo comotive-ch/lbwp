@@ -279,6 +279,10 @@ class Metabox
       return;
     }
 
+    if (!current_user_can('edit_post', $postId)) {
+      return;
+    }
+
     // If we save a revision, change the revision post id to the original, to make the preview work
     if ($origPostId = wp_is_post_revision($postId)) {
       $postId = $origPostId;
@@ -1130,7 +1134,7 @@ class Metabox
       (isset($_POST['action']) && $_POST['action'] == 'editpost') ||
       str_starts_with($_SERVER['REQUEST_URI'], '/wp-admin/post-new.php')
     ) {
-      $args = PostTypeDropdown::createDropdownArguments($postType, $args, $key, $_GET['post']);
+      $args = PostTypeDropdown::createDropdownArguments($postType, $args, $key, intval($_GET['post'] ?? 0));
       $this->addDropdown($key, $boxId, $title, $args);
     }
   }
@@ -2056,21 +2060,22 @@ class Metabox
   {
     // TODO: This admin AJAX handler has no nonce check. Add wp_verify_nonce() here and pass the nonce from JS.
     $results = array();
+    $term = isset($_GET['term']) ? wp_unslash((string) $_GET['term']) : '';
 
-    if (strlen($_GET['term']) > 0) {
+    if (strlen($term) > 0 && current_user_can('edit_posts')) {
       // Go directly to the database
       $sql = '
         SELECT ID, post_title FROM {sql:postTable}
         WHERE (ID = {postId} OR post_title LIKE {postTitle})
-        AND post_type IN({sql:postTypes})
+        AND post_type IN({postTypes})
       ';
 
       global $wpdb;
       $posts = $wpdb->get_results(Strings::prepareSql($sql, array(
         'postTable' => $wpdb->posts,
-        'postId' => intval($_GET['term']),
-        'postTitle' => '%' . $_GET['term'] . '%',
-        'postTypes' => '"' . implode('","', $types) . '"'
+        'postId' => intval($term),
+        'postTitle' => '%' . $wpdb->esc_like($term) . '%',
+        'postTypes' => array_map('strval', $types)
       )));
 
       foreach ($posts as $post) {

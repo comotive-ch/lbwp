@@ -195,7 +195,7 @@ class MigrationTools extends \LBWP\Module\Base
   protected function displayAttachmentFixForm()
   {
     return '
-      <form method="post" action="?page=' . $_GET['page'] . '&runSslInfo">
+      <form method="post" action="?page=' . esc_attr($_GET['page']) . '&runSslInfo">
         <h3>Attachment Fixing</h3>
         <p>
           Startet einen Prozess um alle Attachments mit inkompatiblen Dateinamen zu finden.
@@ -238,7 +238,7 @@ class MigrationTools extends \LBWP\Module\Base
   protected function displayPostMassDeleteForm()
   {
     $message = '';
-    if (isset($_POST['postMassDeleteIds']) && LbwpCore::isSuperlogin()) {
+    if (isset($_POST['postMassDeleteIds']) && LbwpCore::isSuperlogin() && $this->hasValidNonce()) {
       $deletedPosts = 0;
       $text = trim($_POST['postMassDeleteIds']);
       // replace everything to commas
@@ -260,8 +260,9 @@ class MigrationTools extends \LBWP\Module\Base
     }
 
     return '
-      <form method="post" action="?page=' . $_GET['page'] . '">
+      <form method="post" action="?page=' . esc_attr($_GET['page']) . '">
         <h3>Löschen von Posts</h3>
+        ' . $this->getNonceField() . '
         ' . $message . '
         <p>
           IDs können im unteren Feld per Komma, Semikolon, leerzeichen oder Zeilenumbruch getrennt eingegeben werden.
@@ -290,7 +291,7 @@ class MigrationTools extends \LBWP\Module\Base
     }
 
     return '
-      <form method="post" action="?page=' . $_GET['page'] . '&runSslInfo">
+      <form method="post" action="?page=' . esc_attr($_GET['page']) . '&runSslInfo">
         <h3>SSL /Asset Migration</h3>
         <p>Zeigt info, wo sich externe HTTP Ressourcen befinden etc.</p>
         ' . $results . '
@@ -358,6 +359,9 @@ class MigrationTools extends \LBWP\Module\Base
   protected function displayExecutionForm()
   {
     if (isset($_GET['runMigration'])) {
+      if (!$this->hasValidNonce()) {
+        return '<p><strong>Ungültige Anfrage, bitte erneut versuchen.</strong></p>';
+      }
       // Migrate and display the migration results
       return $this->migrateData($_POST['searchValue'], $_POST['replaceValue']);
     } else {
@@ -377,12 +381,17 @@ class MigrationTools extends \LBWP\Module\Base
     $html = '';
 
     if (isset($_GET['runMetaAdd'])) {
-      $html .= $this->saveMetaAdd();
+      if ($this->hasValidNonce()) {
+        $html .= $this->saveMetaAdd();
+      } else {
+        $html .= '<p><strong>Ungültige Anfrage, bitte erneut versuchen.</strong></p>';
+      }
     }
 
     $html .= '
-      <form method="post" action="?page=' . $_GET['page'] . '&runMetaAdd">
+      <form method="post" action="?page=' . esc_attr($_GET['page']) . '&runMetaAdd">
         <h3>Meta Daten erstellen</h3>
+        ' . $this->getNonceField() . '
         <p>Erstellt ein Metafeld auf allen wpX_posts Datensätzen die dem Filter entsprechen</p>
         <table width="600">
           <tr>
@@ -429,7 +438,23 @@ class MigrationTools extends \LBWP\Module\Base
       update_post_meta($postId, $_POST['metaKey'], $_POST['metaValue']);
     }
 
-    return '<p>' . $posts . ' Posts have got ' . $_POST['metaKey'] . '=' . $_POST['metaValue'] . ' added.</p>';
+    return '<p>' . $posts . ' Posts have got ' . esc_html($_POST['metaKey']) . '=' . esc_html($_POST['metaValue']) . ' added.</p>';
+  }
+
+  /**
+   * @return string hidden nonce field for the migration tool forms
+   */
+  protected function getNonceField()
+  {
+    return wp_nonce_field('lbwp-migration-tools', '_migrationnonce', false, false);
+  }
+
+  /**
+   * @return bool true, if the submitted migration tool nonce is valid
+   */
+  protected function hasValidNonce()
+  {
+    return isset($_POST['_migrationnonce']) && wp_verify_nonce($_POST['_migrationnonce'], 'lbwp-migration-tools');
   }
 
   /**
@@ -442,8 +467,9 @@ class MigrationTools extends \LBWP\Module\Base
   {
     // Display the submission form
     return '
-      <form method="post" action="?page=' . $_GET['page'] . '&' . $command . '">
+      <form method="post" action="?page=' . esc_attr($_GET['page']) . '&' . $command . '">
         <h3>' . $buttonText . '</h3>
+        ' . $this->getNonceField() . '
         <p>' . $infoText . '</p>
         <table width="600">
           <tr>
@@ -465,6 +491,10 @@ class MigrationTools extends \LBWP\Module\Base
    */
   public function processAttachmentFixing()
   {
+    if (!LbwpCore::isSuperlogin()) {
+      WordPress::sendJsonResponse(array('files' => array(), 'checked' => 0));
+    }
+
     $page = intval($_REQUEST['page']);
     $storage = LbwpCore::getModule('S3Upload');
 
@@ -739,7 +769,7 @@ class MigrationTools extends \LBWP\Module\Base
   {
     ini_set('memory_limit', '2048M');
     set_time_limit(600);
-    $html = '<p><strong>Ersetze "' . $search . '" mit "' . $replace . '".</strong></p>';
+    $html = '<p><strong>Ersetze "' . esc_html($search) . '" mit "' . esc_html($replace) . '".</strong></p>';
 
     // Run test trough every table
     foreach ($this->tables as $table => $config) {
@@ -797,13 +827,13 @@ class MigrationTools extends \LBWP\Module\Base
     $counter = 0;
     $sql = '
       SELECT {sql:keyField}, {sql:replaceField} FROM {sql:tableName}
-      WHERE {sql:replaceField} LIKE "%{raw:searchValue}%"
+      WHERE {sql:replaceField} LIKE {searchValue}
     ';
     $results = $this->wpdb->get_results(Strings::prepareSql($sql, array(
       'tableName' => $table,
       'keyField' => $keyField,
       'replaceField' => $replaceField,
-      'searchValue' => $search
+      'searchValue' => '%' . $search . '%'
     )), ARRAY_A);
 
     // Loop trough all items of the dataset

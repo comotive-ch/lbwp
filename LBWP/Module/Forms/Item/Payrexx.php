@@ -253,9 +253,13 @@ class Payrexx extends Base
 
     $paymentId = ($_POST['invoiceId'] == 'false') ? false : $_POST['invoiceId'];
 
-    $getPrxAmount = json_decode($_POST['fields']);
-    $prxAmount = floatval($getPrxAmount[array_search($_POST['variableAmountId'], array_column($getPrxAmount, 0))][1]);
-    $prxData['payment_amount'] = $prxAmount !== 0 ? $prxAmount : $prxData['payment_amount'];
+    // Only allow the amount to be overridden by the configured dynamic amount field
+    if (strlen($prxData['fields_amount']) > 0) {
+      $getPrxAmount = ArrayManipulation::forceArray(json_decode($_POST['fields']));
+      $amountKey = array_search($prxData['fields_amount'], array_column($getPrxAmount, 0));
+      $prxAmount = ($amountKey !== false) ? floatval($getPrxAmount[$amountKey][1]) : 0;
+      $prxData['payment_amount'] = $prxAmount > 0 ? $prxAmount : $prxData['payment_amount'];
+    }
 
     if($paymentId !== false) {
       $invoice = new Invoice();

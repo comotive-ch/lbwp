@@ -65,7 +65,7 @@ class Textarea extends Base
     $attr = $this->getDefaultAttributes($args);
 
     // Make the field
-    $field = '<textarea' . $attr . '>' . $this->getValue($args) . '</textarea>';
+    $field = '<textarea' . $attr . '>' . esc_html($this->getValue($args)) . '</textarea>';
 
     // Display a send button
     $html = Base::$template;

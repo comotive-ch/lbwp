@@ -278,6 +278,13 @@ class MenuManager extends \LBWP\Module\Base
   {
     $result = array();
 
+    // Only allow users that are able to edit the given page
+    $_POST['post_ID'] = intval($_POST['post_ID']);
+    if ($_POST['post_ID'] <= 0 || !current_user_can('edit_post', $_POST['post_ID'])) {
+      echo json_encode($result);
+      die;
+    }
+
     $post = get_post($_POST['post_ID']);
     $updateParent = false;
 

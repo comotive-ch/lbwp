@@ -84,13 +84,13 @@ class Hiddenfield extends Base
     $args['visible'] = 'nein';
     $attr = $this->getDefaultAttributes($args);
     // Make the field
-    $html = '<input type="hidden" value="' . $this->getValue($args) . '"' . $attr . '/>';
+    $html = '<input type="hidden" value="' . esc_attr($this->getValue($args)) . '"' . $attr . '/>';
 
     // Override in backend editor mode
     if (FormHandler::$isBackendForm) {
       // Make the field a text field and read only
       $field = '
-        <input type="text" class="disabled" readonly="readonly" value="' . $this->getValue($args) . '"' . $attr . '/>
+        <input type="text" class="disabled" readonly="readonly" value="' . esc_attr($this->getValue($args)) . '"' . $attr . '/>
         <span class="description">Unsichbares Feld, wird dem Besucher nicht angezeigt.</span>
       ';
 

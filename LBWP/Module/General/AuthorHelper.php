@@ -156,7 +156,12 @@ class AuthorHelper extends \LBWP\Module\Base
     }
 
     if ($userId > 0 && isset($_POST['short-description'])) {
-      update_user_meta($userId, 'short-description', $_POST['short-description']);
+      $shortDescription = $_POST['short-description'];
+      // Users that can't post unfiltered html get the same filtering as in posts
+      if (!current_user_can('unfiltered_html')) {
+        $shortDescription = is_string($shortDescription) ? wp_slash(wp_kses_post(wp_unslash($shortDescription))) : '';
+      }
+      update_user_meta($userId, 'short-description', $shortDescription);
     }
 
     do_action('AuthorHelper_save_additonal_fields', $userId);
@@ -249,6 +254,15 @@ class AuthorHelper extends \LBWP\Module\Base
         if (isset($_POST[$field['id']])) {
           if (!is_array($_POST[$field['id']])) {
             $value = strip_tags($_POST[$field['id']], '<p><strong><em><a>');
+            // strip_tags keeps attributes (like event handlers) on allowed tags
+            if (!current_user_can('unfiltered_html')) {
+              $value = wp_slash(wp_kses(wp_unslash($value), array(
+                'p' => array(),
+                'strong' => array(),
+                'em' => array(),
+                'a' => array('href' => true, 'title' => true, 'target' => true, 'rel' => true)
+              )));
+            }
           } else {
             $value = $_POST[$field['id']];
           }

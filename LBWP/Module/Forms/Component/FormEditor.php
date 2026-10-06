@@ -172,6 +172,10 @@ class FormEditor extends Base
    */
   public function updateFormHtml()
   {
+    if (!current_user_can('edit_posts')) {
+      exit;
+    }
+
     $handler = $this->core->getFormHandler();
     $shortcode = $handler->convertFormJsonToShortcode(trim($_REQUEST['formJson']));
     $data = $this->core->getFormHandler()->getFormEditData($shortcode);
@@ -189,6 +193,9 @@ class FormEditor extends Base
   public function getInterfaceHtml()
   {
     $formId = intval($_REQUEST['formId']);
+    if (!current_user_can('edit_posts') || ($formId > 0 && !current_user_can('edit_post', $formId))) {
+      exit;
+    }
 
     $html = '
       <div class="tabbed-navigation">

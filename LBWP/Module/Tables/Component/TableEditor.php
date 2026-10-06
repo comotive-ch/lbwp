@@ -115,6 +115,9 @@ class TableEditor extends Base
   public function getInterfaceHtml()
   {
     $tableId = intval($_REQUEST['tableId']);
+    if (!current_user_can('edit_posts') || ($tableId > 0 && !current_user_can('edit_post', $tableId))) {
+      wp_die(-1, 403);
+    }
     $isNew = ($_REQUEST['isNew'] == 'true') ? 1 : 0;
 
     $html = '
@@ -156,6 +159,9 @@ class TableEditor extends Base
    */
   public function getBackendTableHtml()
   {
+    if (!current_user_can('edit_posts')) {
+      wp_die(-1, 403);
+    }
     $table = ArrayManipulation::forceArray($_POST['json']);
     // Return empty string, if there is no data yet
     if (!is_array($table['data'])) {

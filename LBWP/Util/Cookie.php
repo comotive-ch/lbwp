@@ -37,6 +37,9 @@ class Cookie
     } else {
       if (strlen($_COOKIE['lbwpjc']) < 10000) {
         self::$data = json_decode($_COOKIE['lbwpjc'], true);
+        if (!is_array(self::$data)) {
+          self::$data = array();
+        }
       } else {
         self::$data = array();
       }

@@ -102,7 +102,7 @@ class XlsxHelper
     $file = $_FILES[$pointer];
     if ($file['error'] == 0 && is_readable($file['tmp_name'])) {
       $folder = File::getNewUploadFolder();
-      $result = $folder . $file['name'];
+      $result = $folder . sanitize_file_name(basename($file['name']));
       move_uploaded_file($file['tmp_name'], $result);
     }
 

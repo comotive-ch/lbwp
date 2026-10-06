@@ -275,12 +275,17 @@ class Cronjob
       $data = mysqli_fetch_assoc($set);
       // If both are set, delete by identifier/time to confirm all jobs that would have done the same and are now useless
       if (isset($data['job_identifier']) && strlen($data['job_identifier']) > 0 && isset($data['job_time']) && $data['job_time'] > 0) {
-        mysqli_query($conn, '
+        $sql = '
           DELETE FROM jobs WHERE
-          job_identifier = "' . $data['job_identifier'] . '" AND
-          job_data = "' . $data['job_data'] . '" AND
-          job_time = ' . intval($data['job_time']
-        ));
+          job_identifier = {identifier} AND
+          job_data = {data} AND
+          job_time = {timestamp}
+        ';
+        mysqli_query($conn, Strings::prepareSql($sql, array(
+          'identifier' => (string) $data['job_identifier'],
+          'data' => (string) $data['job_data'],
+          'timestamp' => intval($data['job_time'])
+        )));
       } else {
         // If not found that way, delete by ID
         mysqli_query($conn, 'DELETE FROM jobs WHERE job_id = ' . $jobId);

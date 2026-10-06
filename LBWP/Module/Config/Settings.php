@@ -120,7 +120,7 @@ class Settings extends \LBWP\Module\Base
     require ABSPATH . PLUGINDIR . '/lbwp/views/includes/LbwpConfig_configData.php';
     // Controller, to save the features
     $message = '';
-    if (isset($_POST['saveLbwpConfig'])) {
+    if (isset($_POST['saveLbwpConfig']) && check_admin_referer('lbwp-settings-save', '_lbwpconfignonce')) {
       $message = $this->saveConfig();
     }
 
@@ -191,6 +191,7 @@ class Settings extends \LBWP\Module\Base
         <h2>LBWP Einstellungen</h2>
         ' . $message . '
         <form action="" method="post">
+          ' . wp_nonce_field('lbwp-settings-save', '_lbwpconfignonce', true, false) . '
           ' . $html . '
           <p><input type="submit" class="button-primary" name="saveLbwpConfig" value="Änderungen übernehmen">' . $addition . '</p>
         </form>
@@ -364,12 +365,12 @@ class Settings extends \LBWP\Module\Base
     // Raise the value to minimum if it's too low
     if ($item['typeConfig']['rangeFrom'] > 0 && $item['typeConfig']['rangeFrom'] > $value) {
       $value = $item['typeConfig']['rangeFrom'];
-      $this->errors[] = 'Der Wert ' . $oldvalue . ' für "' . $item['title'] . '" ist zu niedrig und wurde auf ' . $value . ' korrigiert.';
+      $this->errors[] = 'Der Wert ' . esc_html($oldvalue) . ' für "' . $item['title'] . '" ist zu niedrig und wurde auf ' . $value . ' korrigiert.';
     }
     // Lower the value to maximum if it's too high
     if ($item['typeConfig']['rangeTo'] > 0 && $item['typeConfig']['rangeTo'] < $value) {
       $value = $item['typeConfig']['rangeTo'];
-      $this->errors[] = 'Der Wert ' . $oldvalue . ' für "' . $item['title'] . '" ist zu hoch und wurde auf ' . $value . ' korrigiert.';
+      $this->errors[] = 'Der Wert ' . esc_html($oldvalue) . ' für "' . $item['title'] . '" ist zu hoch und wurde auf ' . $value . ' korrigiert.';
     }
     // The value can be saved now
     $this->config[$key] = $value;
@@ -405,13 +406,13 @@ class Settings extends \LBWP\Module\Base
     if (File::isImage($value)) {
       $field .= '
         <div id="{fieldId}" ' . $class . '>
-          <img src="' . $value . '" width="' . $config['width'] . '" />
+          <img src="' . esc_attr($value) . '" width="' . $config['width'] . '" />
         </div>
       ';
     } else {
       $field .= '
         <div id="{fieldId}" ' . $class . '>
-          <a href="' . $value . '">' . File::getFileOnly($value) . '</a>
+          <a href="' . esc_attr($value) . '">' . esc_html(File::getFileOnly($value)) . '</a>
         </div>
       ';
     }
@@ -618,7 +619,7 @@ class Settings extends \LBWP\Module\Base
     }
 
     // Create the field
-    $field = $this->buildContainerTag('textarea', $attr, $value);
+    $field = $this->buildContainerTag('textarea', $attr, esc_textarea($value));
     // If html follows, do so
     if (isset($config['afterHtml'])) {
       $field .= ' ' . $config['afterHtml'];

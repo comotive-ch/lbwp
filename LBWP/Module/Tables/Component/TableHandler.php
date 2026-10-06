@@ -433,7 +433,7 @@ class TableHandler extends Base
       }
 
       // Save table json as meta info
-      if ($tableId > 0) {
+      if ($tableId > 0 && current_user_can('edit_post', $tableId)) {
         update_post_meta($tableId, 'tableData', $data);
       }
     }

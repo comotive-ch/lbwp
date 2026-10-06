@@ -55,6 +55,9 @@ class Scraper
     // Do this with curl and use a common user agent
     $ch = curl_init();
     curl_setopt($ch, CURLOPT_URL, $this->url);
+    // Only allow remote http(s) urls, prevents reading local files via file:// etc.
+    curl_setopt($ch, CURLOPT_PROTOCOLS, CURLPROTO_HTTP | CURLPROTO_HTTPS);
+    curl_setopt($ch, CURLOPT_REDIR_PROTOCOLS, CURLPROTO_HTTP | CURLPROTO_HTTPS);
     curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
     curl_setopt($ch, CURLOPT_FOLLOWLOCATION, 1);
     curl_setopt($ch, CURLOPT_TIMEOUT, 15);
@@ -64,7 +67,7 @@ class Scraper
     curl_close($ch);
 
     // If curl fails, try file_get_contents
-    if (empty($this->html)) {
+    if (empty($this->html) && preg_match('#^https?://#i', $this->url)) {
       $this->html = file_get_contents($this->url);
     }
   }

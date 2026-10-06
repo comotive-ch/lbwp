@@ -117,14 +117,14 @@ class SystemLog extends BaseSingleton
 
     foreach ($log as $entry) {
       $html .= '
-        <tr class="log-' . $entry['type'] . '">
-          <td>' . $entry['date'] . '</td>
-          <td class="log-entry-' . $entry['type'] . '">' . $entry['type'] . '</td>
-          <td>' . $entry['component'] . '</td>
-          <td>' . $entry['message'] . '</td>
+        <tr class="log-' . esc_attr($entry['type']) . '">
+          <td>' . esc_html($entry['date']) . '</td>
+          <td class="log-entry-' . esc_attr($entry['type']) . '">' . esc_html($entry['type']) . '</td>
+          <td>' . esc_html($entry['component']) . '</td>
+          <td>' . esc_html($entry['message']) . '</td>
           <td>
             <a href="javascript:void(0)" class="show-more">Anzeigen</a>
-            <pre class="show-more-content" style="display:none;">' . print_r($entry['data'], true) . '</pre>
+            <pre class="show-more-content" style="display:none;">' . htmlspecialchars(print_r($entry['data'], true), ENT_QUOTES | ENT_SUBSTITUTE) . '</pre>
           </td>
         </tr>
       ';

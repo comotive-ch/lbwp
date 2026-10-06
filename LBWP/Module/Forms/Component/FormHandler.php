@@ -299,6 +299,7 @@ class FormHandler extends Base
   {
     $html = '';
     list ($key, $formId) = explode('-', $_REQUEST['id']);
+    $formId = intval($formId);
     // Load the actual form
     $form = get_post($formId);
     // See if the setting for survey results is enabled (by parsing the shortcode...)
@@ -389,7 +390,7 @@ class FormHandler extends Base
           $percent = round(($count / $field['total']) * 100, 0);
           $answersHtml .= str_replace(
             array('{answer}', '{percent}'),
-            array($answer, $percent),
+            array(esc_html($answer), $percent),
             $tplAnswer
           );
         }

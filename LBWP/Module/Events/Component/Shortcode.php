@@ -465,7 +465,7 @@ class Shortcode extends Base
 
     // Now, make it possible for some range/config arguments to be overridden
     foreach ($this->getParamMatch as $param => $argument) {
-      if (isset($_REQUEST[$param]) && strlen($_REQUEST[$param]) > 0) {
+      if (isset($_REQUEST[$param]) && is_string($_REQUEST[$param]) && strlen($_REQUEST[$param]) > 0) {
         $config[$argument] = $_REQUEST[$param];
       }
     }
@@ -627,6 +627,9 @@ class Shortcode extends Base
       if (isset($_REQUEST['terms'][$taxonomy]) && is_array($_REQUEST['terms'][$taxonomy])) {
         // Reset and validate what's coming on
         foreach ($_REQUEST['terms'][$taxonomy] as $slug) {
+          if (!is_string($slug)) {
+            continue;
+          }
           $slug = Strings::validateField($slug);
           if (strlen($slug) > 0) {
             $terms[] = $slug;

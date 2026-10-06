@@ -103,7 +103,7 @@ class PostTypeDropdown
       $args['items'][$postItem->ID] = array(
         'title' => self::getPostElementName($postItem, $postTypeMap),
         'data' => array(
-          'url' => admin_url('post.php?post=' . $postItem->ID . '&action=edit&ui=show-as-modal&parent=' . $_GET['post']),
+          'url' => admin_url('post.php?post=' . $postItem->ID . '&action=edit&ui=show-as-modal&parent=' . intval($_GET['post'] ?? 0)),
           'html' => esc_attr(call_user_func($callback, $postItem, $postTypeMap)),
           'is-modal' => 1
         )
@@ -139,6 +139,10 @@ class PostTypeDropdown
     $elementId = intval($_POST['elementId']);
     $postId = intval($_POST['postId']);
 
+    if (!current_user_can('edit_post', $postId) || !current_user_can('delete_post', $elementId)) {
+      WordPress::sendJsonResponse(array('result' => $success));
+    }
+
     // Since these are multi elements, we can just delete the one meta record we need
     delete_post_meta($postId, $metaKey, $elementId);
     // Now trash the element that was removed
@@ -155,6 +159,11 @@ class PostTypeDropdown
     // Create a new empty post with the title
     $assignedPostId = intval($_POST['postId']);
     $postType = Strings::forceSlugString($_POST['postType']);
+    $typeObject = get_post_type_object($postType);
+    if ($typeObject === null || !current_user_can($typeObject->cap->edit_posts) || !current_user_can('edit_post', $assignedPostId)) {
+      WordPress::sendJsonResponse(array('newPostId' => 0, 'newOptionHtml' => ''));
+    }
+
     $newPostId = intval(wp_insert_post(array(
       'post_title' => $_POST['title'],
       'post_type' => $postType,
@@ -180,7 +189,7 @@ class PostTypeDropdown
     $optionHtml = '
       <option value="' . $newPostId . '" selected="selected"
         data-html="' . esc_attr(call_user_func($callback, get_post($newPostId), array())) . '"
-        data-is-modal="1">' . $_POST['title'] . ' (Entwurf)
+        data-is-modal="1">' . esc_html(wp_unslash($_POST['title'])) . ' (Entwurf)
       </option>
     ';
 

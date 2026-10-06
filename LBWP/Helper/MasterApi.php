@@ -53,7 +53,7 @@ class MasterApi
 
     if (!defined('LBWP_EXTERNAL') || defined('LBWP_USE_NON_BLOCKING_CACHE_FLUSH')) {
       // Use real async by forking a new curl process that doesn't block
-      $cmd = 'curl -X POST -A "comotive/masterapi-v1.0" --data "' . $payload . '" "' . $url . '" > /dev/null 2>&1 &';
+      $cmd = 'curl -X POST -A "comotive/masterapi-v1.0" --data ' . escapeshellarg($payload) . ' ' . escapeshellarg($url) . ' > /dev/null 2>&1 &';
       exec($cmd, $output);
     } else {
       // Use classic curl call that is actually "quite blocky"
@@ -75,7 +75,7 @@ class MasterApi
    */
   public static function getAsynchronous($url)
   {
-    exec('curl "' . $url . '" > /dev/null 2>&1 &', $output);
+    exec('curl ' . escapeshellarg($url) . ' > /dev/null 2>&1 &', $output);
   }
 
   /**

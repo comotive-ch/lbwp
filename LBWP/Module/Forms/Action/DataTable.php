@@ -481,8 +481,8 @@ class DataTable extends Base
             // This is best effort, as it's saved in one string rather than zip/city separated
             list($zip) = explode(' ', $row[$cellKey]);
             $city = str_replace($zip . ' ', '', $row[$cellKey]);
-            $script .= 'jQuery("#' . $item->get('id') . '-zip").val("' . $zip . '");';
-            $script .= 'jQuery("#' . $item->get('id') . '-city").val("' . $city . '");';
+            $script .= 'jQuery("#' . $item->get('id') . '-zip").val("' . esc_js($zip) . '");';
+            $script .= 'jQuery("#' . $item->get('id') . '-city").val("' . esc_js($city) . '");';
             break;
           case 'radio':
             // Double escape strings \' to \\' in order to esc_js *and* escape the query selector
@@ -492,11 +492,11 @@ class DataTable extends Base
               foreach ($selectables as $selectable) {
                 $key = Strings::forceSlugString($item->get('feldname') . '-' . html_entity_decode($selectable, ENT_QUOTES));
                 if ($row[$key] == 'X' || $row[$key] == '1') {
-                  $value = html_entity_decode(str_replace('\\\'', '\\\\\'', esc_js($selectable)), ENT_QUOTES);
+                  $value = $this->getSelectorJsValue($selectable);
                 }
               }
             } else {
-              $value = html_entity_decode(str_replace('\\\'', '\\\\\'', esc_js($row[$cellKey])));
+              $value = $this->getSelectorJsValue($row[$cellKey]);
             }
             $script .= 'jQuery("input[name=' . $item->get('id') . '][value=\'' . $value . '\']").attr("checked", "checked");' . PHP_EOL;
             $script .= 'jQuery("input[name=' . $item->get('id') . '][value=\'' . $value . '\']").prop("checked", true).trigger("change");' . PHP_EOL;
@@ -509,11 +509,11 @@ class DataTable extends Base
               foreach ($selectables as $selectable) {
                 $key = Strings::forceSlugString($item->get('feldname') . '-' . html_entity_decode($selectable, ENT_QUOTES));
                 if ($row[$key] == 'X' || $row[$key] == '1') {
-                  $value = html_entity_decode(str_replace('\\\'', '\\\\\'', esc_js($selectable)), ENT_QUOTES);
+                  $value = $this->getSelectorJsValue($selectable);
                 }
               }
             } else {
-              $value = html_entity_decode(str_replace('\\\'', '\\\\\'', esc_js($row[$cellKey])));
+              $value = $this->getSelectorJsValue($row[$cellKey]);
             }
             $script .= 'jQuery("select[name=' . $item->get('id') . '] option[value=\'' . $value . '\']").attr("selected", "selected");' . PHP_EOL;
             $script .= 'jQuery("select[name=' . $item->get('id') . '] option[value=\'' . $value . '\']").prop("selected", true).trigger("change");' . PHP_EOL;
@@ -566,6 +566,18 @@ class DataTable extends Base
       </script>
       <input type="hidden" name="editingTsId" value="' . $tsid . '" />
     ');
+  }
+
+  /**
+   * Builds a value to be used in a single quoted jQuery attribute selector within a double quoted JS string
+   * @param string $value the raw (maybe html encoded) value
+   * @return string escaped value, safe for the selector and the JS string
+   */
+  protected function getSelectorJsValue($value)
+  {
+    $value = html_entity_decode($value, ENT_QUOTES, 'UTF-8');
+    $value = str_replace(array('\\', '\''), array('\\\\', '\\\''), $value);
+    return substr(json_encode($value, JSON_HEX_TAG | JSON_HEX_AMP | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES), 1, -1);
   }
 
   /**

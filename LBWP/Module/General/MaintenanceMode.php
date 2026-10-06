@@ -92,7 +92,8 @@ class MaintenanceMode extends BaseSingleton
   {
     // Try a login and set a cookie if valid, also allow a direct one time login
     if (isset($_POST['maintenancePassword'])) {
-      if($_POST['maintenancePassword'] == $this->config['Various:MaintenancePassword']){
+      $password = (string) $this->config['Various:MaintenancePassword'];
+      if(strlen($password) > 0 && is_string($_POST['maintenancePassword']) && hash_equals($password, $_POST['maintenancePassword'])){
         setcookie('MMValidLogin', self::COOKIE_HASH, time() + self::COOKIE_EXPIRE, '/', LBWP_HOST);
         $this->failedLogin = false;
         $this->hasPasswordLogin = true;
@@ -361,7 +362,7 @@ class MaintenanceMode extends BaseSingleton
     }
 
     // Omit maintenance mode with sha1'd url parameter matching
-    if (isset($_GET['mm_login']) && $_GET['mm_login'] == sha1($this->config['Various:MaintenancePassword'])) {
+    if (isset($_GET['mm_login']) && is_string($_GET['mm_login']) && strlen($this->config['Various:MaintenancePassword']) > 0 && hash_equals(sha1($this->config['Various:MaintenancePassword']), $_GET['mm_login'])) {
       return false;
     }
 

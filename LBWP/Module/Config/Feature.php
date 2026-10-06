@@ -79,7 +79,7 @@ class Feature extends \LBWP\Module\Base
     // Controller, to save the features
     $html = '';
     $message = '';
-    if (isset($_POST['saveLbwpSettings'])) {
+    if (isset($_POST['saveLbwpSettings']) && check_admin_referer('lbwp-modules-save', '_lbwpmodulesnonce')) {
       $message = $this->saveSettings();
     }
 
@@ -158,6 +158,7 @@ class Feature extends \LBWP\Module\Base
         '.$message.'
         '.$this->getTotalCost($totalCost).'
         <form action="" method="post">
+          '.wp_nonce_field('lbwp-modules-save', '_lbwpmodulesnonce', true, false).'
           '.$html.'
           <div class="lbwp-cfg-column lbwp-cfg-submit">
             <input type="submit" class="button-primary" name="saveLbwpSettings" value="Änderungen übernehmen">

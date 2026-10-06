@@ -246,7 +246,7 @@ class Pomo extends \LBWP\Module\Base
   public function pomoEditor()
   {
     $notice = '';
-    if (isset($_POST['save-pomo-rewrites'])) {
+    if (isset($_POST['save-pomo-rewrites']) && check_admin_referer('save-pomo-rewrites', '_pomononce')) {
       $this->setOverrides($_POST['pomo-override']);
     }
     if (isset($_POST['reload-pomo-strings']) && check_admin_referer('reload-pomo-strings')) {
@@ -262,9 +262,9 @@ class Pomo extends \LBWP\Module\Base
       $overridesHtml .= '<tr>
           <td>' . $pomoStrings[$override['key']]->plugin . '</td>
           <td>' . $pomoStrings[$override['key']]->lang . '</td>
-          <td>' . $override['key'] . '</td>
+          <td>' . esc_html($override['key']) . '</td>
           <td>
-            <input type="text" name="' . $inputName . '[string]" value="' . $override['string'] . '"/>
+            <input type="text" name="' . $inputName . '[string]" value="' . esc_attr($override['string']) . '"/>
             <input type="hidden" name="' . $inputName . '[key]" value="' . htmlentities($override['key']) . '"/>
           </td>
           <td><div class="delete-button"></div></td>
@@ -291,6 +291,7 @@ class Pomo extends \LBWP\Module\Base
         <br>
         <div id="pomo-rewriter-form">
           <form method="POST">
+            ' . wp_nonce_field('save-pomo-rewrites', '_pomononce', true, false) . '
             <div id="pomo-search-container">
               <input type="text" id="pomo-search" placeholder="Text eintippen, suche startet automatisch und kann 3-4 Sekunden dauern"/>
               <div class="search-results"></div>
@@ -343,6 +344,10 @@ class Pomo extends \LBWP\Module\Base
    */
   public function searchTranslations()
   {
+    if (!current_user_can('administrator')) {
+      WordPress::sendJsonResponse(array());
+    }
+
     $searched = $_POST['searched'];
     $strings = $this->getPomoStrings();
     $matches = array();

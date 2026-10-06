@@ -322,9 +322,10 @@ class Upload extends Base
     /** @var FormHandler $handler */
     $handler = $forms->getFormHandler();
     $handler->loadForm(array('id' => $formId));
+    $config = false;
     /** @var Upload $item */
     foreach ($handler->getCurrentItems() as $item) {
-      if ($item->get('id') == $fieldId) {
+      if ($item instanceof Upload && $item->get('id') == $fieldId) {
         $config = $item->getAllParams();
         $config['filetypes'] = self::getExtensionList($config['filetypes']);
         break;

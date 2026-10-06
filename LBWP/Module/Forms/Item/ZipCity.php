@@ -66,7 +66,7 @@ class ZipCity extends Base
         class="zip-field-part"' . $attr . $hide . '
         name="' . $this->get('id') . '[zip]"
         id="' . $this->get('id') . '-zip"
-        value="' . $value['zip'] . '"
+        value="' . esc_attr($value['zip']) . '"
         autocomplete="postal-code"
         data-field="' . $this->get('id') . '"
       />
@@ -74,7 +74,7 @@ class ZipCity extends Base
         class="city-field-part"' . $attr . '
         name="' . $this->get('id') . '[city]"
         id="' . $this->get('id') . '-city"
-        value="' . $value['city'] . '"
+        value="' . esc_attr($value['city']) . '"
         autocomplete="address-level2"
         data-field="' . $this->get('id') . '"
       />

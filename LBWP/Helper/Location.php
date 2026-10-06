@@ -146,7 +146,7 @@ class Location
   {
     // Allow admin override mode
     if (current_user_can('administrator') || current_user_can('shop_manager') || isset($_GET['country_hash'])) {
-      if (isset($_GET['country_code']) && strlen($_GET['country_code']) === 2) {
+      if (isset($_GET['country_code']) && strlen($_GET['country_code']) === 2 && ctype_alpha($_GET['country_code'])) {
         $_SESSION['LocationHelper_country'] = strtoupper($_GET['country_code']);
       } else if (isset($_GET['country_code']) && strlen($_GET['country_code']) === 0) {
         unset($_SESSION['LocationHelper_country']);

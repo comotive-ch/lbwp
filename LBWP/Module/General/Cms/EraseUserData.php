@@ -34,7 +34,7 @@ class EraseUserData extends \LBWP\Module\Base
 
     add_action('before_delete_post', function($postId){
       if(isset($_GET['request_id']) && $_GET['action'] === 'delete' && get_post_type($postId) === 'user_request' && get_current_screen()->id === 'export-personal-data'){
-        $requests = $_GET['request_id'];
+        $requests = (array) $_GET['request_id'];
 
         foreach($requests as $request){
           $this->deleteExportFile(intval($request), true);

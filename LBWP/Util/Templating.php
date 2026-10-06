@@ -165,6 +165,10 @@ class Templating
 	 * @return string|bool the image source or false if no image has been found
 	 */
 	public static function getRemoteImage($remoteUrl){
+		// Only allow remote http(s) urls, prevents reading local files
+		if (!preg_match('#^https?://#i', $remoteUrl)) {
+			return false;
+		}
 		$remoteContent = file_get_contents($remoteUrl);
 
 		// First check for "og:image" in the head meta

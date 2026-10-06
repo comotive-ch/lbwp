@@ -125,7 +125,7 @@ class WordPress
   public static function getOptionsByQuery($query)
   {
     $db = self::getDb();
-    return $db->get_col('SELECT option_name FROM ' . $db->options . ' WHERE option_name LIKE "%' . $query . '%"');
+    return $db->get_col($db->prepare('SELECT option_name FROM ' . $db->options . ' WHERE option_name LIKE %s', '%' . $db->esc_like($query) . '%'));
   }
 
   /**
@@ -145,10 +145,10 @@ class WordPress
   public static function getPostNameListByType($type, $status = 'publish')
   {
     $db = self::getDb();
-    return $db->get_results('
+    return $db->get_results($db->prepare('
       SELECT ID, post_name FROM ' . $db->posts . '
-      WHERE post_type = "' . $type . '" AND post_status = "' . $status . '"
-    ');
+      WHERE post_type = %s AND post_status = %s
+    ', $type, $status));
   }
 
   /**
@@ -832,7 +832,7 @@ class WordPress
     $sql = 'SELECT option_name FROM {sql:optionTable} WHERE option_name LIKE "{raw:keySearch}"';
     return $db->get_col(Strings::prepareSql($sql, array(
       'optionTable' => $db->prefix . 'options',
-      'keySearch' => '%' . $key . '%'
+      'keySearch' => esc_sql('%' . $db->esc_like($key) . '%')
     )));
   }
 
@@ -1306,7 +1306,7 @@ class WordPress
     // Check if the referer is internal, then switch
     if (strlen($_SERVER['HTTP_REFERER']) > 0 && Strings::startsWith($_SERVER['HTTP_REFERER'], get_bloginfo('url'))) {
       $link = array(
-        'url' => $_SERVER['HTTP_REFERER'],
+        'url' => esc_url_raw($_SERVER['HTTP_REFERER']),
         'text' => $config['goto_previous_page_text']
       );
     }

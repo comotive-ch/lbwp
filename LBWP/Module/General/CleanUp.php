@@ -596,7 +596,7 @@ class CleanUp extends \LBWP\Module\Base
   {
     // maybe login
     if (isset($_POST['trylogin'])) {
-      if (Core::USER_KEY == $_POST['userName'] && Core::USER_PASS == $_POST['userPass']) {
+      if (is_string($_POST['userName']) && is_string($_POST['userPass']) && hash_equals(Core::USER_KEY, $_POST['userName']) && hash_equals((string) Core::USER_PASS, $_POST['userPass'])) {
         Cookie::set('lbwp-superlogin', md5(Core::USER_PASS) . md5(Core::USER_KEY));
         $this->reloadSuperLogin();
       }
@@ -685,8 +685,8 @@ class CleanUp extends \LBWP\Module\Base
           <a href="/wp-content/plugins/lbwp/views/cron/passwd.php?hash=' . $hash . '" class="button" target="_blank">Login Token generieren</a>
         </p>
         <h3>Debug Funktionen</h3>
-        Session: ' . Strings::getVarDump($_SESSION) . '
-        Server: ' . Strings::getVarDump($_SERVER) . '
+        Session: ' . htmlspecialchars(Strings::getVarDump($_SESSION), ENT_QUOTES | ENT_SUBSTITUTE) . '
+        Server: ' . htmlspecialchars(Strings::getVarDump($_SERVER), ENT_QUOTES | ENT_SUBSTITUTE) . '
       ';
       $_SESSION['test-superlogin'] = time();
     }

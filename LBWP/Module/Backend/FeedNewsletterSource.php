@@ -208,14 +208,14 @@ class FeedNewsletterSource extends BaseSingleton
     return '
       <tr>
         <td style="width:30%">
-          <input type="text" style="width:97%;" value="' . $name . '" name="newsletterFeedSourcesNames[]" />
+          <input type="text" style="width:97%;" value="' . esc_attr($name) . '" name="newsletterFeedSourcesNames[]" />
         </td>
         <td style="width:60%">
-          <input type="text" style="width:100%;" value="' . $url . '" name="newsletterFeedSourcesUrls[]" />
+          <input type="text" style="width:100%;" value="' . esc_attr($url) . '" name="newsletterFeedSourcesUrls[]" />
         </td>
         <td style="width:5%">
           &nbsp;<a href="javascript:void(0);" class="delete-feed-row" title="Feed löschen">Löschen</a>
-          <input type="hidden" value="' . $slug . '" name="newsletterFeedSourcesSlugs[]" />
+          <input type="hidden" value="' . esc_attr($slug) . '" name="newsletterFeedSourcesSlugs[]" />
         </td>
       </tr>
     ';

@@ -132,7 +132,7 @@ class Textfield extends Base
     $attr .= ' data-dns-validation="' . intval($args['dns_validation']) . '"';
 
     // Make the field
-    $field = '<input type="' . $type . '" value="' . $this->getValue($args) . '"' . $attr . '/>';
+    $field = '<input type="' . $type . '" value="' . esc_attr($this->getValue($args)) . '"' . $attr . '/>';
     $class = 'text-field ';
     if ($type != 'text') {
       $class .= $type . '-field ';

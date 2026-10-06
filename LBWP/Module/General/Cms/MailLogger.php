@@ -77,7 +77,7 @@ class MailLogger
   }
 
   public function renderAdminPage(){
-    if(isset($_POST['set_debugging_mode'])){
+    if(isset($_POST['set_debugging_mode']) && isset($_POST['_wpnonce']) && wp_verify_nonce($_POST['_wpnonce'], 'lbwp_mail_log_debugging_mode')){
       $this->debuggingMode = isset($_POST['lbwp_mail_log_debugging_mode']) && $_POST['lbwp_mail_log_debugging_mode'] == 1;
       update_option('lbwp_mail_log_debugging_mode', $this->debuggingMode ? 1 : 0);
     }
@@ -88,8 +88,11 @@ class MailLogger
     $page = intval($_GET['paged']) ?? 0;
     $order = isset($_GET['order']) && $_GET['order'] === 'desc' ? 'DESC' : 'ASC';
 
-    if(isset($_GET['s']) && $_GET['s'] !== ''){
-      $rows = $table->searchRows($_GET['s'], 'row_created', $order, 50, $page);
+    // Unslashed search term, LbwpData escapes it for the LIKE query
+    $search = isset($_GET['s']) && is_string($_GET['s']) ? wp_unslash($_GET['s']) : '';
+
+    if($search !== ''){
+      $rows = $table->searchRows($search, 'row_created', $order, 50, $page);
     }else{
       $rows = $table->getRows('row_created', 'DESC', 50, $page);
     }
@@ -104,7 +107,7 @@ class MailLogger
       echo '<h1>' . __('Mail Log', 'lbwp') . '</h1>
       <div class="wrap">
         <a href="#back" onclick="history.back()">' . __('< Zurück', 'lbwp') . '</a>
-        <h2>' . date('d.m.Y H:i:s', $row['date']) . ' - ' . $row['subject'] . '</h2>
+        <h2>' . date('d.m.Y H:i:s', $row['date']) . ' - ' . esc_html($row['subject']) . '</h2>
         ' . $row['body'] . '        
       </div>';
 
@@ -153,12 +156,16 @@ class MailLogger
           if(!$this->debuggingMode){
             continue;
           }else{
-            $value = '<a href="' . $_SERVER['REQUEST_URI'] . '&email-html=' . $rowId . '">' . __('HTML Ansehen') . '</a>';
+            $value = '<a href="' . esc_attr($_SERVER['REQUEST_URI'] . '&email-html=' . $rowId) . '">' . __('HTML Ansehen') . '</a>';
           }
         }
 
         if($key === 'date'){
           $value = date('d.m.Y H:i:s', $value);
+        }
+
+        if($key !== 'body'){
+          $value = esc_html($value);
         }
 
         $body .= '<td>' . $value . '</td>';
@@ -171,22 +178,23 @@ class MailLogger
       $body .= '</tr>';
     }
 
-    $resultsNum = $table->countRows($_GET['s'] ?? '');
+    $resultsNum = $table->countRows($search);
+    $requestUri = esc_attr($_SERVER['REQUEST_URI']);
     $currentPage = $page > 0 ? $page : 1;
     $totalPages = ceil($resultsNum / 50);
 
     $pagingNav = '<div class="tablenav-pages">
       <span class="displaying-num">' . sprintf(__('%s Einträge', 'lbwp'), $resultsNum) . '</span>
       <span class="pagination-links">
-        ' . ($currentPage === 1 ? '<span class="tablenav-pages-navspan button disabled" aria-hidden="true">«</span>' : '<a class="first-page button" href="' . $_SERVER['REQUEST_URI'] . '&amp;paged=1"><span aria-hidden="true">«</span></a>') .
-        ($currentPage === 1 ? '<span class="tablenav-pages-navspan button disabled" aria-hidden="true">‹</span>' : '<a class="prev-page button" href="' . $_SERVER['REQUEST_URI'] . '&amp;paged=' . ($currentPage - 1) . '"><span aria-hidden="true">‹</span></a>') . '
+        ' . ($currentPage === 1 ? '<span class="tablenav-pages-navspan button disabled" aria-hidden="true">«</span>' : '<a class="first-page button" href="' . $requestUri . '&amp;paged=1"><span aria-hidden="true">«</span></a>') .
+        ($currentPage === 1 ? '<span class="tablenav-pages-navspan button disabled" aria-hidden="true">‹</span>' : '<a class="prev-page button" href="' . $requestUri . '&amp;paged=' . ($currentPage - 1) . '"><span aria-hidden="true">‹</span></a>') . '
                   
         <span id="table-paging" class="paging-input">
           <span class="tablenav-paging-text">' . $currentPage . ' von <span class="total-pages">' . $totalPages . '</span></span>
         </span>
         
-        ' . ($currentPage >= $totalPages ? '<span class="tablenav-pages-navspan button disabled" aria-hidden="true">›</span>' : '<a class="next-page button" href="' . $_SERVER['REQUEST_URI'] . '&amp;paged=' . ($currentPage + 1) . '"><span aria-hidden="true">›</span></a>') .
-        ($currentPage >= $totalPages ? '<span class="tablenav-pages-navspan button disabled" aria-hidden="true">»</span>' : '<a class="last-page button" href="' . $_SERVER['REQUEST_URI'] . '&amp;paged=' . $totalPages . '"><span aria-hidden="true">»</span></a>') . '
+        ' . ($currentPage >= $totalPages ? '<span class="tablenav-pages-navspan button disabled" aria-hidden="true">›</span>' : '<a class="next-page button" href="' . $requestUri . '&amp;paged=' . ($currentPage + 1) . '"><span aria-hidden="true">›</span></a>') .
+        ($currentPage >= $totalPages ? '<span class="tablenav-pages-navspan button disabled" aria-hidden="true">»</span>' : '<a class="last-page button" href="' . $requestUri . '&amp;paged=' . $totalPages . '"><span aria-hidden="true">»</span></a>') . '
       </span>
     </div>';
 
@@ -196,7 +204,7 @@ class MailLogger
       <div class="search-box">
         <form method="get" action="">
           <input type="hidden" name="page" value="lbwp-mail-log">
-          <input type="text" name="s" value="' . $_GET['s'] . '" placeholder="' . __('Suchbegriff eingeben', 'lbwp') . '" class="search-input">
+          <input type="text" name="s" value="' . esc_attr($search) . '" placeholder="' . __('Suchbegriff eingeben', 'lbwp') . '" class="search-input">
           <input type="submit" class="button" value="' . __('Suchen', 'lbwp') . '">
         </form>
       </div>
@@ -214,6 +222,7 @@ class MailLogger
       <div class="alignleft settings">
         <form method="post" action="">
           <input type="hidden" name="page" value="lbwp-mail-log">
+          ' . wp_nonce_field('lbwp_mail_log_debugging_mode', '_wpnonce', true, false) . '
           <label for="lbwp_mail_log_debugging_mode">
             <input type="checkbox" id="lbwp_mail_log_debugging_mode" name="lbwp_mail_log_debugging_mode" value="1"' . ($this->debuggingMode ? ' checked' : '') . '>
             ' . __('Debugging aktivieren / Mail Inhalt speichern', 'lbwp') . '

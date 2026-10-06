@@ -150,10 +150,10 @@ class WriteContact extends Base
 
     // If we have no ID but a merge email, try getting the ID from email
     if ($userId == 0 && strlen($mergeEmail) > 0 && Strings::checkEmail($mergeEmail)) {
-      $candidates = $db->get_results('
+      $candidates = $db->get_results($db->prepare('
         SELECT user_id, meta_value FROM ' . $db->usermeta . '
-        WHERE meta_key = "crm-contacts-' . $contactTypeId . '" AND meta_value LIKE "%' . $mergeEmail . '%"
-      ');
+        WHERE meta_key = %s AND meta_value LIKE %s
+      ', 'crm-contacts-' . $contactTypeId, '%' . $db->esc_like($mergeEmail) . '%'));
       // Loop trough candidates and see if we have an exact match
       foreach ($candidates as $candidate) {
         if (maybe_unserialize($candidate->meta_value)[0]['email'] == $mergeEmail) {

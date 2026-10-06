@@ -131,7 +131,7 @@ class DataTable extends Base
   protected function displayTableOverview()
   {
     $hasEvents = Core::hasFeature('PublicModules', 'Events');
-    $baseUrl = get_admin_url() . 'admin.php?page=data-tables&dss=' . $_GET['dss'];
+    $baseUrl = get_admin_url() . 'admin.php?page=data-tables&dss=' . urlencode(strval($_GET['dss']));
     if ($hasEvents) {
       $eventHandler = FormCore::getInstance()->getFormHandler();
     }
@@ -150,11 +150,11 @@ class DataTable extends Base
       <div class="wrap">
         <h2>' . __('Alle Datenspeicher', 'lbwp') . '</h2>
         <form id="datatables-filter" method="get">
-          <input type="hidden" name="order" value="' . $_GET['order'] . '" />
-          <input type="hidden" name="page" value="' . $_GET['page'] . '" />
+          <input type="hidden" name="order" value="' . esc_attr($_GET['order']) . '" />
+          <input type="hidden" name="page" value="' . esc_attr($_GET['page']) . '" />
           <p class="search-box">
             <label class="screen-reader-text" for="table-search-input">Datenspeicher suchen:</label>
-            <input type="search" id="table-search" name="dss" value="' . $_GET['dss'] . '">
+            <input type="search" id="table-search" name="dss" value="' . esc_attr($_GET['dss']) . '">
             <input type="submit" id="search-submit" class="button" value="Datenspeicher suchen">
           </p>
           <table class="wp-list-table widefat fixed striped posts float-left-top-margin">
@@ -772,6 +772,10 @@ class DataTable extends Base
    */
   public function deleteDataTableRow()
   {
+    if (!current_user_can('edit_pages')) {
+      exit;
+    }
+
     $formId = intval($_POST['formId']);
     $eventId = intval($_POST['eventId']);
     $rowIndex = intval($_POST['rowIndex']);
@@ -822,6 +826,10 @@ class DataTable extends Base
    */
   public function editDataTableRow()
   {
+    if (!current_user_can('edit_pages')) {
+      exit;
+    }
+
     $formId = intval($_POST['formId']);
     $eventId = intval($_POST['eventInfo']['eventId']);
     $rowIndex = intval($_POST['rowIndex']);

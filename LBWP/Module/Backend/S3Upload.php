@@ -231,6 +231,8 @@ class S3Upload extends \LBWP\Module\Base
     if (strlen($filename) == 0) {
       $filename = File::getFileOnly($url);
     }
+    // Never allow path components in the local file name
+    $filename = basename(str_replace('\\', '/', $filename));
     // Save the file locally
     $localFile = File::getNewUploadFolder() . $filename;
     file_put_contents($localFile, file_get_contents($url));
@@ -376,7 +378,8 @@ class S3Upload extends \LBWP\Module\Base
       mkdir($path, 0777, true);
     }
 
-    // Move the file
+    // Move the file (strip any path components from the name to avoid traversal)
+    $name = basename(str_replace('\\', '/', $name));
     $renamedFile = $path . $name;
     $renamedFile = $this->fixAndRename($renamedFile);
     move_uploaded_file($file, $renamedFile);
