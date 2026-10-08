@@ -50,6 +50,7 @@ class Search
     'displayImages' => true,                      // Display images, if available
     'displayFiles' => false,                      // Skip file search results completely
     'fileBlackList' => array('xml', 'css', 'js', 'json'), // XML and various assets files are not allowed to show
+    'rawResultFallbackOnly' => false,             // Skips the google API completely, only giving raw result fallback
     'rawResultFallback' => false,                 // Fallback to a raw result, if postType matching didn't work
     'rawResultFallbackUseImages' => true,         // Wheter to use google defined images for raw result fallback
     'imageFallback' => '<div></div>',             // Fallback html, if no image can be displayed
@@ -73,6 +74,10 @@ class Search
    * Maximum number of pages to show in navigation
    */
   const RESULTS_PAGES_IN_NAV = 10;
+  /**
+   * Maximum number of results from the local db query
+   */
+  const int LOCAL_RESULTS_LIMIT = 100;
 
   /**
    * @param array $config override API config
@@ -165,13 +170,22 @@ class Search
 
     // If not in cache, make the request and cache the ajax resonse
     if (!is_array($cachedResult)) {
-      $data = json_decode(file_get_contents($url), true);
-      $nativeResultCount = is_array($data['items']) ? count($data['items']) : 0;
-      // Filter the results as of config
-      $results = self::prepareAndFilterResults($data, $terms, $language);
+      if (self::$apiConf['rawResultFallbackOnly'] === false) {
+        $data = json_decode(file_get_contents($url), true);
+        $nativeResultCount = is_array($data['items']) ? count($data['items']) : 0;
+        $results = self::prepareAndFilterResults($data, $terms, $language);
+      } else {
+        // All local matches are returned on the first page, hence no further pages for the frontend
+        $results = [];
+        $nativeResultCount = 0;
+        if ($page == 1 && strlen($searchTerm) > 0) {
+          self::addLocalDbQueryResults($results, $terms, self::$apiConf['postTypes']);
+        }
+      }
+
       // Add more results on first page if configured to also query locally
       if ($page == 1 && count(self::$apiConf['addLocalResultsFirstPage']) > 0) {
-        self::addLocalDbQueryResults($results, $terms);
+        self::addLocalDbQueryResults($results, $terms, self::$apiConf['addLocalResultsFirstPage']);
       }
 
       // Show the results or print the error message
@@ -217,12 +231,12 @@ class Search
   /**
    * @param array $results reference to the result set, gets filled with local matches
    * @param array $terms search terms, taken from unauthenticated user input
+   * @param array $postTypes the post types to search in
    * @return void
    */
-  protected static function addLocalDbQueryResults(&$results, $terms)
+  protected static function addLocalDbQueryResults(&$results, $terms, $postTypes)
   {
     $db = WordPress::getDb();
-    $postTypes = self::$apiConf['addLocalResultsFirstPage'];
     $typePlaceholders = implode(',', array_fill(0, count($postTypes), '%s'));
 
     $likeTerm = '%' . $db->esc_like(implode(' ', $terms)) . '%';
@@ -231,7 +245,9 @@ class Search
       WHERE post_status = "publish" AND post_type IN (' . $typePlaceholders . ') AND (
         post_title LIKE %s OR post_content LIKE %s OR post_excerpt LIKE %s
       )
-    ', array_merge($postTypes, [$likeTerm, $likeTerm, $likeTerm]));
+      ORDER BY post_date DESC
+      LIMIT %d
+    ', array_merge($postTypes, [$likeTerm, $likeTerm, $likeTerm, self::LOCAL_RESULTS_LIMIT]));
     $raw = $db->get_results($query, ARRAY_A);
 
     // Do a more open search if nothing was found
@@ -248,7 +264,9 @@ class Search
       $query = $db->prepare('
         SELECT ID, post_name, post_title, post_content, post_excerpt, post_date FROM ' . $db->posts . '
         WHERE post_status = "publish" AND post_type IN (' . $typePlaceholders . ') AND (' . implode(' OR ', $conditions) . ')
-      ', $params);
+        ORDER BY post_date DESC
+        LIMIT %d
+      ', array_merge($params, [self::LOCAL_RESULTS_LIMIT]));
       $raw = $db->get_results($query, ARRAY_A);
     }
 
@@ -268,7 +286,7 @@ class Search
           'imageHtml' => self::$apiConf['imageFallback'],
           'title' => $item['post_title'],
           'meta' => date_i18n(get_option('date_format'), strtotime($item['post_date'])),
-          'description' => self::getPostDescription($item, array('snippet' => $item['post_excerpt'])),
+          'description' => self::getPostDescription(get_post($item['ID']), array('snippet' => $item['post_excerpt'])),
           'target' => '_self',
           'type' => 'content'
         );
