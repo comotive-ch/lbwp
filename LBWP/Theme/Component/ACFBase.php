@@ -311,6 +311,11 @@ abstract class ACFBase extends Component
 
       if(!empty($block['data']) && !$forcePreview){
         foreach ($block['data'] as $fieldKey => $field){
+          // Skip internal meta like "_{name}_layout_meta" (flexible content), which holds an array, not a field key reference
+          if(Strings::startsWith($fieldKey, '_') && !is_string($field)){
+            continue;
+          }
+
           $theField = $field;
           $theFieldKey = $fieldKey;
           $fieldData = get_field_object($theFieldKey);
@@ -378,13 +383,8 @@ abstract class ACFBase extends Component
       }
 
       if($emptyBlock && !$forcePreview){
-        $msg = isset($block['missing_settings_message']) ? $block['missing_settings_message'] : 'Der Block &laquo;' . $block['title'] . '&raquo; benötigt noch Einstellungen.';
-        echo '
-          <div class="lbwp-empty-block-fallback">
-            <div class="no-content-text">
-              <p>' . $msg . '</p>
-            </div>
-          </div>';
+        $msg = $this->getEmptyBlockMessage($block);
+        $this->showBlockPlaceHolderHtml($msg, (empty(acf_get_block_fields($block)) ? 'empty-block' : ''));
       }
     }
 
@@ -399,6 +399,22 @@ abstract class ACFBase extends Component
         include($path);
       }
     }
+  }
+
+  /**
+   * Get the fallback message for an empty block. Distinguishes between blocks
+   * that have no ACF fields registered at all and blocks with unfilled fields.
+   * Both texts can be overridden per block via "no_settings_message" and "missing_settings_message"
+   * @param array $block the full block object
+   * @return string the message to display
+   */
+  protected function getEmptyBlockMessage($block)
+  {
+    if (empty(acf_get_block_fields($block))) {
+      return isset($block['no_settings_message']) ? $block['no_settings_message'] : 'Der Block &laquo;' . $block['title'] . '&raquo; hat keine Einstellungen.';
+    }
+
+    return isset($block['missing_settings_message']) ? $block['missing_settings_message'] : 'Der Block &laquo;' . $block['title'] . '&raquo; benötigt noch Einstellungen.';
   }
 
   /**
@@ -579,5 +595,15 @@ abstract class ACFBase extends Component
 
     // Update to inform it has one more row
     update_option($mainName, ++$rows);
+  }
+
+  private function showBlockPlaceHolderHtml(string $msg, string $additionalClass = '')
+  {
+    echo '
+          <div class="lbwp-empty-block-fallback ' . $additionalClass . '">
+            <div class="no-content-text">
+              <p>' . $msg . '</p>
+            </div>
+          </div>';
   }
 }
