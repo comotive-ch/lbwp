@@ -557,25 +557,62 @@ class Coupons extends Component
     $sheet = $objPHPExcel->getSheet(0);
     $data = $sheet->toArray();
 
-    foreach($data as $rowNum => $row){
+    foreach($data as $row){
+      $categoryIds = $this->getImportCategoryIds($row[3]);
+      $productIds = array_filter(array_map('intval', $this->splitImportList($row[4])));
+
       for($i = 0; $i < intval($row[2]); $i++){
-        $name = strtoupper($row[0] . '-' . Strings::getRandom(intval($row[1])));
-        $metadata = array(
-          'discount_type' => strtolower($row[4]) === 'prozent' ? 'percent' : 'fixed_cart',
-          'coupon_amount' => intval($row[5]),
-          'individual_use' => strtolower($row[6]) === 'nein' ? 'yes' : 'no',
-          'expiry_date' => $row[7] !== null ? date('Y-m-d', strtotime($row[7])) : '',
-          'usage_limit' => max(intval($row[8]), 1),
-        );
+        $randomLength = intval($row[1]);
+        $name = strtoupper($randomLength > 0 ? $row[0] . '-' . Strings::getRandom($randomLength) : $row[0]);
+        $metadata = [
+          'discount_type' => strtolower($row[5]) === 'prozent' ? 'percent' : 'fixed_cart',
+          'coupon_amount' => intval($row[6]),
+          'individual_use' => strtolower($row[7]) === 'nein' ? 'yes' : 'no',
+          'expiry_date' => $row[8] !== null ? date('Y-m-d', strtotime($row[8])) : '',
+          'usage_limit' => max(intval($row[9]), 1),
+          'product_ids' => implode(',', $productIds),
+        ];
 
-        $taxonomy = get_term_by('name', $row[3], self::TAX_SLUG);
-        $taxonomy = $taxonomy === false ? false : array($taxonomy->term_id);
-
-        $this->generateCoupon($name, $metadata, $taxonomy);
+        $this->generateCoupon($name, $metadata, count($categoryIds) > 0 ? $categoryIds : false);
       }
     }
 
     wp_admin_notice('Gutscheine wurden importiert', array('type' => 'success'));
+  }
+
+  /**
+   * Resolve comma separated coupon category names or slugs to their term ids, ignoring unknown entries
+   * @param mixed $value raw cell value
+   * @return array term ids
+   */
+  private function getImportCategoryIds(mixed $value): array
+  {
+    $ids = [];
+    foreach ($this->splitImportList($value) as $nameOrSlug) {
+      $term = get_term_by('name', $nameOrSlug, self::TAX_SLUG);
+      if ($term === false) {
+        $term = get_term_by('slug', $nameOrSlug, self::TAX_SLUG);
+      }
+      if ($term !== false) {
+        $ids[] = $term->term_id;
+      }
+    }
+
+    return $ids;
+  }
+
+  /**
+   * Split a comma separated import cell into trimmed, non-empty values
+   * @param mixed $value raw cell value
+   * @return array list of values
+   */
+  private function splitImportList(mixed $value): array
+  {
+    if ($value === null) {
+      return [];
+    }
+
+    return array_values(array_filter(array_map('trim', explode(',', (string) $value)), 'strlen'));
   }
 
   private function generateCoupon($name, $metadata = array(), $taxonomies = false){
