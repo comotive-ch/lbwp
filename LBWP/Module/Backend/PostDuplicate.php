@@ -2,7 +2,8 @@
 
 namespace LBWP\Module\Backend;
 
-use LBWP\Theme\Component\Crm\Core;
+use LBWP\Helper\PostCopy;
+use WP_Post;
 
 /**
  * Adds the link to duplicate posts
@@ -19,16 +20,6 @@ class PostDuplicate extends \LBWP\Module\Base
    * @var array Types where the post_date is duplicated as well (and not reset to current date)
    */
   protected $duplicateDateTypes = array('lbwp-selection-ad');
-  /**
-   * @var array global meta data duplication blacklist
-   */
-  protected $globalMetaBlacklist = array(
-    '_edit_lock',
-    '_edit_last',
-    'snap_isAutoPosted',
-    'subscribeInfo',
-    Core::LIST_HISTORY_META
-  );
 
   /**
    * Initialize the module
@@ -94,102 +85,31 @@ class PostDuplicate extends \LBWP\Module\Base
     }
 
     $postId = intval($_GET['post']);
-    $post = get_post($postId, ARRAY_A);
+    $post = get_post($postId);
 
     // Only users that are allowed to edit posts and read the source post may duplicate it
-    if (!is_array($post) || !current_user_can('edit_posts') || !current_user_can('read_post', $postId)) {
+    if (!$post instanceof WP_Post || !current_user_can('edit_posts') || !current_user_can('read_post', $postId)) {
       return false;
     }
 
-    // Remove the id to create a new post
-    unset($post['ID']);
-    $post['post_status'] = 'draft';
-    $post['post_title'] = 'Kopie von ' . $post['post_title'];
+    $overrides = [
+      'post_status' => 'draft',
+      'post_title' => 'Kopie von ' . $post->post_title
+    ];
     // Set current date for most types
-    if (!in_array($post['post_type'], $this->duplicateDateTypes)) {
-      $post['post_date'] = current_time('mysql');
-      $post['post_date_gmt'] = get_gmt_from_date($post['post_date']);
+    if (!in_array($post->post_type, $this->duplicateDateTypes)) {
+      $overrides['post_date'] = current_time('mysql');
+      $overrides['post_date_gmt'] = get_gmt_from_date($overrides['post_date']);
     }
 
-    // Set a surely unique post name, which is changed to a normal one after insert
-    $postNameOriginal = $post['post_name'];
-    $post['post_name'] = $post['post_name'].'-'.md5(time());
-
-    $meta = get_post_custom($postId);
-    $fmeta = array();
-    $blacklist = apply_filters('duplicate_post_meta_key_blacklist', $this->globalMetaBlacklist);
-    foreach($meta as $key => $value) {
-      if (!in_array($key, $blacklist)) {
-        $fmeta[$key] = count($value) == 1 ? $value[0] : $value;
-      }
+    $newPostId = PostCopy::createCopy($postId, $overrides);
+    if ($newPostId === 0) {
+      return false;
     }
-
-    // Preserve content, as normal insert *break* ACF / Gutenberg blocks
-    $content = $post['post_content'];
-    $post['post_content'] = '';
-
-    // Duplicate primitively or with logic
-    if (apply_filters('duplicate_post_' . $post['post_type'] . '_has_callback', false)) {
-      $newPostId = apply_filters('duplicate_post_' . $post['post_type'], $post, $fmeta);
-    } else {
-      $newPostId = wp_insert_post($post);
-    }
-
-    // Now generate a new slug and update the record
-    $postName = wp_unique_post_slug(
-      $postNameOriginal,
-      $newPostId,
-      'publish',
-      $post['post_type'],
-      $post['post_parent']
-    );
-
-    // Update the record with the content natively
-    $this->wpdb->update(
-      $this->wpdb->posts,
-      array(
-        'post_name' => $postName,
-        'post_content' => apply_filters('lbwp_duplicate_post_content_before_save', $content)
-      ),
-      array('ID' => $newPostId)
-    );
-
-    // Copy the taxonomies
-    $taxonomies = get_object_taxonomies($post['post_type']);
-
-    // Make sure to not copy post translations from multilang plugin
-    if (($key = array_search('post_translations', $taxonomies)) !== false) {
-      unset($taxonomies[$key]);
-    }
-
-    foreach ($taxonomies as $tax) {
-      $terms = wp_get_object_terms($postId, $tax);
-      $term = array();
-
-      foreach ($terms as $t) {
-        $term[] = $t->slug;
-      }
-
-      wp_set_object_terms($newPostId, $term, $tax);
-    }
-
-    // Save the post meta data
-    foreach ($fmeta as $k => $v) {
-      if (is_array($v)) {
-        foreach ($v as $iv) {
-          add_post_meta($newPostId, $k, $iv);
-        }
-      } else {
-        update_post_meta($newPostId, $k, maybe_unserialize($v));
-      }
-    }
-
-    // Clean the cache for this post (Since we changed the db directly)
-    clean_post_cache($newPostId);
 
     // Let developers and other modules do their stuff
-    do_action('after_post_duplicate', $postId, $newPostId, $post['post_type']);
-    do_action('after_duplicate_' . $post['post_type'], $postId, $newPostId);
+    do_action('after_post_duplicate', $postId, $newPostId, $post->post_type);
+    do_action('after_duplicate_' . $post->post_type, $postId, $newPostId);
 
     // Send back to the original page
     wp_redirect(admin_url('post.php?action=edit&post=' . $newPostId));

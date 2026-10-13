@@ -6,6 +6,7 @@ use LBWP\Core as LbwpCore;
 use LBWP\Helper\Cronjob;
 use LBWP\Helper\XlsxHelper;
 use LBWP\Module\Backend\MemcachedAdmin;
+use LBWP\Module\General\Cms\SystemLog;
 use LBWP\Theme\Component\ACFBase;
 use LBWP\Util\File;
 use LBWP\Util\NativeWpImport;
@@ -28,6 +29,14 @@ class Import extends ACFBase
   const DATETIME_COLUMNS = array(
     'post_date', 'post_date_gmt', 'post_modified', 'post_modified_gmt'
   );
+  /**
+   * Safety stop for delete_missing: never delete more than this share of existing products in one run,
+   * protects against truncated or otherwise broken full import files. The resulting absolute limit can
+   * be overridden with the lbwp_pim_import_max_deletions filter, lbwp_pim_import_deletions_blocked
+   * fires whenever the limit stops a deletion.
+   */
+  const float MAX_DELETE_RATIO = 0.1;
+  const int DELETE_CHUNK_SIZE = 500;
 
   /**
    * Initialize the backend component
@@ -503,9 +512,14 @@ class Import extends ACFBase
     $importer->beginTransaction();
 
     $imported = 0;
+    $seenIds = [];
 
     while (($row = fgetcsv($handle, 0, ';')) !== false) {
       if (count($row) !== count($headers)) {
+        // Malformed rows are skipped, but their product must not count as missing for delete_missing
+        if ($lookupColumn === 'sku' && isset($skuMap[$row[0] ?? ''])) {
+          $seenIds[$skuMap[$row[0]]] = true;
+        }
         continue;
       }
 
@@ -549,6 +563,7 @@ class Import extends ACFBase
       if (!isset($post['ID']) && $lookupColumn === 'sku' && !empty($record['sku'])) {
         $skuMap[$record['sku']] = $newId;
       }
+      $seenIds[$newId] = true;
 
       foreach ($relationData as $slug => $skus) {
         $pendingRelations[$slug][$newId] = $skus;
@@ -572,6 +587,11 @@ class Import extends ACFBase
       $bufferDb->close();
     }
 
+    if (!empty($current['delete_missing']) && $lookupColumn === 'sku') {
+      $importer->commitTransaction();
+      $current['records_deleted'] = $this->deleteMissingProducts($importer, $seenIds, $current);
+    }
+
     unset($importer);
 
     $this->deleteS3File($current['url']);
@@ -581,6 +601,89 @@ class Import extends ACFBase
     update_option(self::OPTION_KEY, $current, false);
     // Do a full flush of the cache
     MemcachedAdmin::flushFullCacheHelper();
+  }
+
+  /**
+   * Fully deletes every PIM product that was not part of a full import file. Only runs when the import
+   * state has delete_missing set (automated full imports), never for manual, possibly partial uploads.
+   * @param NativeWpImport $importer the importer holding the db connection
+   * @param array $seenIds post_id => true for every product the import file contained
+   * @param array $current the import state, passed by reference to append log messages
+   * @return int number of deleted products
+   */
+  protected function deleteMissingProducts(NativeWpImport $importer, array $seenIds, array &$current): int
+  {
+    $existingIds = array_values($this->buildSkuMap($importer));
+    $missingIds = array_values(array_filter($existingIds, fn($id) => !isset($seenIds[$id])));
+    if (empty($missingIds)) {
+      return 0;
+    }
+
+    $defaultLimit = (int)floor(count($existingIds) * self::MAX_DELETE_RATIO);
+    $limit = (int)apply_filters('lbwp_pim_import_max_deletions', $defaultLimit, count($existingIds));
+    if (count($missingIds) > $limit) {
+      $message = 'Löschung übersprungen: ' . count($missingIds) . ' von ' . count($existingIds) . ' Produkten fehlen in der Import-Datei (Sicherheitslimit ' . $limit . ').';
+      $current['log'][] = $message;
+      SystemLog::add('PIMport', 'error', $message);
+      do_action('lbwp_pim_import_deletions_blocked', count($missingIds), count($existingIds), $limit);
+      return 0;
+    }
+
+    $db = $importer->getDb();
+    $prefix = $importer->getPrefix();
+    $affectedTermTaxonomyIds = [];
+    $db->begin_transaction();
+    foreach (array_chunk($missingIds, self::DELETE_CHUNK_SIZE) as $chunk) {
+      $affectedTermTaxonomyIds += $this->deletePostsWithRelations($db, $prefix, $chunk);
+    }
+    $this->recomputeTermCounts($db, $prefix, array_keys($affectedTermTaxonomyIds));
+    $db->commit();
+
+    $current['log'][] = count($missingIds) . ' nicht mehr vorhandene Produkte gelöscht.';
+    SystemLog::add('PIMport', 'info', count($missingIds) . ' products deleted (missing in full import)');
+    return count($missingIds);
+  }
+
+  /**
+   * Deletes a chunk of posts including their meta and term relationships
+   * @param mysqli $db database connection
+   * @param string $prefix table prefix
+   * @param array $postIds post IDs to delete
+   * @return array term_taxonomy_id => true for every term the deleted posts were assigned to
+   */
+  protected function deletePostsWithRelations(mysqli $db, string $prefix, array $postIds): array
+  {
+    $inList = implode(',', array_map('intval', $postIds));
+    $affected = [];
+    $result = $db->query("SELECT DISTINCT term_taxonomy_id FROM `{$prefix}term_relationships` WHERE object_id IN ({$inList})");
+    while ($row = $result->fetch_row()) {
+      $affected[(int)$row[0]] = true;
+    }
+
+    $db->query("DELETE FROM `{$prefix}term_relationships` WHERE object_id IN ({$inList})");
+    $db->query("DELETE FROM `{$prefix}postmeta` WHERE post_id IN ({$inList})");
+    $db->query("DELETE FROM `{$prefix}posts` WHERE ID IN ({$inList})");
+
+    return $affected;
+  }
+
+  /**
+   * Recomputes term_taxonomy.count for the given terms from their actual relationships
+   * @param mysqli $db database connection
+   * @param string $prefix table prefix
+   * @param array $termTaxonomyIds the term_taxonomy_ids to recount
+   * @return void
+   */
+  protected function recomputeTermCounts(mysqli $db, string $prefix, array $termTaxonomyIds): void
+  {
+    foreach (array_chunk($termTaxonomyIds, self::DELETE_CHUNK_SIZE) as $chunk) {
+      $inList = implode(',', array_map('intval', $chunk));
+      $db->query("
+        UPDATE `{$prefix}term_taxonomy` tt
+        SET tt.count = (SELECT COUNT(*) FROM `{$prefix}term_relationships` tr WHERE tr.term_taxonomy_id = tt.term_taxonomy_id)
+        WHERE tt.term_taxonomy_id IN ({$inList})
+      ");
+    }
   }
 
   /**
