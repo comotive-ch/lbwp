@@ -78,6 +78,10 @@ class Search
    * Maximum number of results from the local db query
    */
   const int LOCAL_RESULTS_LIMIT = 100;
+  /**
+   * Instance config constant that enables indexing and searching pdf contents
+   */
+  const PDF_INDEX_CONSTANT = 'LBWP_SEARCH_INDEX_PDFS';
 
   /**
    * @param array $config override API config
@@ -237,12 +241,13 @@ class Search
   protected static function addLocalDbQueryResults(&$results, $terms, $postTypes)
   {
     $db = WordPress::getDb();
+    $postTypes = self::getLocalPostTypes($postTypes);
     $typePlaceholders = implode(',', array_fill(0, count($postTypes), '%s'));
 
     $likeTerm = '%' . $db->esc_like(implode(' ', $terms)) . '%';
     $query = $db->prepare('
       SELECT ID, post_name, post_title, post_content, post_excerpt, post_date FROM ' . $db->posts . '
-      WHERE post_status = "publish" AND post_type IN (' . $typePlaceholders . ') AND (
+      WHERE ' . self::getLocalStatusCondition() . ' AND post_type IN (' . $typePlaceholders . ') AND (
         post_title LIKE %s OR post_content LIKE %s OR post_excerpt LIKE %s
       )
       ORDER BY post_date DESC
@@ -263,7 +268,7 @@ class Search
       }
       $query = $db->prepare('
         SELECT ID, post_name, post_title, post_content, post_excerpt, post_date FROM ' . $db->posts . '
-        WHERE post_status = "publish" AND post_type IN (' . $typePlaceholders . ') AND (' . implode(' OR ', $conditions) . ')
+        WHERE ' . self::getLocalStatusCondition() . ' AND post_type IN (' . $typePlaceholders . ') AND (' . implode(' OR ', $conditions) . ')
         ORDER BY post_date DESC
         LIMIT %d
       ', array_merge($params, [self::LOCAL_RESULTS_LIMIT]));
@@ -280,7 +285,7 @@ class Search
       }
 
       if (!$existing) {
-        $results[] = array(
+        $results[] = self::isPdfResult($item) ? self::getPdfResult($item) : array(
           'url' => get_permalink($item['ID']),
           'classes' => 'result-item',
           'imageHtml' => self::$apiConf['imageFallback'],
@@ -292,6 +297,70 @@ class Search
         );
       }
     }
+  }
+
+  /**
+   * Checks if pdf contents are indexed and searchable, enabled by a constant in the instance config
+   * @return bool true if pdf indexing is active
+   */
+  public static function isPdfIndexActive()
+  {
+    return defined(self::PDF_INDEX_CONSTANT) && constant(self::PDF_INDEX_CONSTANT);
+  }
+
+  /**
+   * Adds attachments to the locally searched post types if pdf indexing is active
+   * @param array $postTypes the configured post types
+   * @return array the post types to query
+   */
+  protected static function getLocalPostTypes($postTypes)
+  {
+    if (self::isPdfIndexActive() && !in_array('attachment', $postTypes)) {
+      $postTypes[] = 'attachment';
+    }
+
+    return $postTypes;
+  }
+
+  /**
+   * Gets the post status sql condition, allowing pdf attachments (status inherit) if pdf indexing is active
+   * @return string the sql condition
+   */
+  protected static function getLocalStatusCondition()
+  {
+    if (self::isPdfIndexActive()) {
+      return '(post_status = "publish" OR (post_type = "attachment" AND post_mime_type = "application/pdf"))';
+    }
+
+    return 'post_status = "publish"';
+  }
+
+  /**
+   * @param array $item a raw local db result row
+   * @return bool true if the row is a pdf attachment
+   */
+  protected static function isPdfResult($item)
+  {
+    return self::isPdfIndexActive() && get_post_mime_type($item['ID']) === 'application/pdf';
+  }
+
+  /**
+   * Builds a search result linking directly to the pdf file
+   * @param array $item a raw local db result row
+   * @return array the search result
+   */
+  protected static function getPdfResult($item)
+  {
+    return array(
+      'url' => wp_get_attachment_url($item['ID']),
+      'classes' => 'result-item result-item--pdf',
+      'imageHtml' => self::$apiConf['imageFallback'],
+      'title' => $item['post_title'],
+      'meta' => 'PDF',
+      'description' => Strings::chopToWords($item['post_content'], 40, true),
+      'target' => '_blank',
+      'type' => 'file'
+    );
   }
 
   /**

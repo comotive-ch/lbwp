@@ -18,6 +18,8 @@ use LBWP\Module\General\Cms\SystemLog;
 use LBWP\Module\General\Cms\UsageBasedBilling;
 use LBWP\Module\General\Multilang\OptionBridge;
 use LBWP\Theme\Feature\MoodOwl;
+use LBWP\Theme\Feature\PdfSearchIndex;
+use LBWP\Theme\Feature\Search;
 use LBWP\Theme\Feature\SecureAssets;
 use LBWP\Theme\Component\WesignBase;
 use LBWP\Util\ArrayManipulation;
@@ -154,6 +156,11 @@ class CmsFeatures extends \LBWP\Module\Base
     // Register the image-mood-colors-tool a.k.a. MoodOwl
     if (!defined('LBWP_DISABLE_MOODOWL')) {
       new MoodOwl();
+    }
+
+    // Index pdf contents for the search, if enabled in the instance config
+    if (Search::isPdfIndexActive()) {
+      new PdfSearchIndex();
     }
 
     // Features that are run only in logged in password protection mode of posts
@@ -1033,6 +1040,12 @@ class CmsFeatures extends \LBWP\Module\Base
     // DISABLED: We'll see how the reactions are to full screen mode (as it can be disabled)
     //$script = "window.onload = function() { const isFullscreenMode = wp.data.select( 'core/edit-post' ).isFeatureActive( 'fullscreenMode' ); if ( isFullscreenMode ) { wp.data.dispatch( 'core/edit-post' ).toggleFeature( 'fullscreenMode' ); } }";
     //wp_add_inline_script( 'wp-blocks', $script );
+
+    // Show the block slug next to its title in the inserter, admins only
+    if (Core::isSuperlogin()) {
+      $script = "wp.hooks.addFilter('blocks.registerBlockType','lbwp/admin-block-slug',function(settings,name){settings.title=settings.title+' ('+name+')';return settings;});";
+      wp_add_inline_script('wp-blocks', $script);
+    }
   }
 
   /**
