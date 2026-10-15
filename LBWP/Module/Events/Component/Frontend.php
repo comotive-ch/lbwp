@@ -247,10 +247,10 @@ class Frontend extends Base
     $config = $this->getFilteredConfiguration();
     $config = array_merge($config, $override);
     $currentTime = current_time('timestamp');
-    // Merge display configuration with defaults
+    // Merge display configuration with defaults (subscription info default respects the event setting)
     $display = array_merge(array(
       'showDates' => true,
-      'showSubscriptionInfo' => true,
+      'showSubscriptionInfo' => get_post_meta($event->ID, 'hide-subscribe-info', true) !== 'on',
       'showLocation' => true,
       'showAddressAfterLocation' => true,
       'showMapLinks' => true,

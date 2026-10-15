@@ -3,8 +3,10 @@
 namespace LBWP\Helper;
 
 use LBWP\Util\File;
+use PhpOffice\PhpSpreadsheet\Cell\DataType;
 use PhpOffice\PhpSpreadsheet\IOFactory;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
+use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
 
 /**
  * Helper to use PhpSpreadsheet for common tasks
@@ -69,18 +71,23 @@ class XlsxHelper
    * @param array  $headers Column header labels for the first row
    * @param array  $rows    Two-dimensional array of data rows
    * @param string $filename Suggested download filename including .xlsx extension
+   * @param bool   $asText  Write every cell as text, so values like SKUs keep leading zeros and long digits on re-import
    * @return void
    */
-  public static function downloadFromArray(array $headers, array $rows, string $filename): void
+  public static function downloadFromArray(array $headers, array $rows, string $filename, bool $asText = false): void
   {
     require_once ABSPATH . '/wp-content/plugins/lbwp/resources/libraries/phpspreadsheet/vendor/autoload.php';
 
     $spreadsheet = new Spreadsheet();
     $sheet       = $spreadsheet->getActiveSheet();
 
-    $sheet->fromArray([$headers], null, 'A1');
-    if (!empty($rows)) {
-      $sheet->fromArray($rows, null, 'A2');
+    if ($asText) {
+      self::writeRowsAsText($sheet, array_merge([$headers], $rows));
+    } else {
+      $sheet->fromArray([$headers], null, 'A1');
+      if (!empty($rows)) {
+        $sheet->fromArray($rows, null, 'A2');
+      }
     }
 
     header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
@@ -90,6 +97,24 @@ class XlsxHelper
     $writer = IOFactory::createWriter($spreadsheet, 'Xlsx');
     $writer->save('php://output');
     exit;
+  }
+
+  /**
+   * Write rows starting at A1 with every cell explicitly typed as string.
+   * @param Worksheet $sheet target worksheet
+   * @param array $rows two-dimensional array of rows, including the header row
+   * @return void
+   */
+  protected static function writeRowsAsText(Worksheet $sheet, array $rows): void
+  {
+    foreach (array_values($rows) as $rowIndex => $row) {
+      foreach (array_values($row) as $colIndex => $value) {
+        if ($value === null || $value === '') {
+          continue;
+        }
+        $sheet->setCellValueExplicitByColumnAndRow($colIndex + 1, $rowIndex + 1, (string)$value, DataType::TYPE_STRING);
+      }
+    }
   }
 
   /**

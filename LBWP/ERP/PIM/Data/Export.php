@@ -5,56 +5,72 @@ namespace LBWP\ERP\PIM\Data;
 use LBWP\Theme\Component\ACFBase;
 
 /**
- * Provide PIM post type base functions
- * @package LBWP\Aboon\Backend
+ * PIM Export: admin page to download the current data in the formats the PIM import expects.
+ * @package LBWP\ERP\PIM\Data
  * @author Michael Sebel <michael@comotive.ch>
  */
 class Export extends ACFBase
 {
-  const PIM_TYPE_SLUG = 'lbwp-pid';
+  const string PIM_TYPE_SLUG = 'lbwp-pid';
 
   /**
-   * Initialize the backend component, which is nice
+   * @var ProductGroupExport
    */
-  public function init()
+  protected ProductGroupExport $productGroupExport;
+
+  /**
+   * Register the admin menu and the download handlers.
+   * @return void
+   */
+  public function init(): void
   {
-    add_action('admin_menu', array($this, 'registerMenu'));
+    $this->productGroupExport = new ProductGroupExport();
+    $this->productGroupExport->registerHandlers();
+    add_action('admin_menu', [$this, 'registerMenu']);
   }
 
   /**
-   * Register the PIMport admin menu and submenu
+   * Register the export submenu below PIMport.
+   * @return void
    */
-  public function registerMenu()
+  public function registerMenu(): void
   {
     add_submenu_page(
       'pimport',
       'Export',
       'Export',
-      'edit_pages',
+      ProductGroupExport::CAPABILITY,
       'pexport',
-      array($this, 'renderExportPage')
+      [$this, 'renderExportPage']
     );
   }
 
-  public function renderExportPage()
+  /**
+   * Render the export admin page.
+   * @return void
+   */
+  public function renderExportPage(): void
   {
-    echo 'work in progress';
+    echo '<div class="wrap">';
+    echo '<h1>' . esc_html__('PIMport Export', 'lbwp') . '</h1>';
+    echo '<p>' . esc_html__('Die exportierten Dateien können bearbeitet und unter PIMport > Import wieder importiert werden.', 'lbwp') . '</p>';
+    $this->productGroupExport->renderForms();
+    echo '</div>';
   }
 
-
   /**
-   * No blocks needed here
+   * No blocks needed here.
+   * @return void
    */
-  public function blocks()
+  public function blocks(): void
   {
-
   }
 
   /**
-   * Adds field settings
+   * No field settings needed here.
+   * @return void
    */
-  public function fields()
+  public function fields(): void
   {
-
   }
 }

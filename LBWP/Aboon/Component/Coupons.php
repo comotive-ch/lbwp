@@ -557,35 +557,123 @@ class Coupons extends Component
     $sheet = $objPHPExcel->getSheet(0);
     $data = $sheet->toArray();
 
-    foreach($data as $row){
-      $categoryIds = $this->getImportCategoryIds($row[3]);
-      $productIds = array_filter(array_map('intval', $this->splitImportList($row[4])));
+    $warnings = [];
+    $created = 0;
+    foreach($data as $index => $row){
+      $line = $index + 1;
+      if (intval($row[2]) <= 0) {
+        continue;
+      }
+      $categoryIds = $this->getImportCategoryIds($row[3], $line, $warnings);
+      $productIds = $this->getImportProductIds($row[4], $line, $warnings);
+      $expires = $this->getImportExpiryTimestamp($row[8], $line, $warnings);
 
       for($i = 0; $i < intval($row[2]); $i++){
-        $randomLength = intval($row[1]);
-        $name = strtoupper($randomLength > 0 ? $row[0] . '-' . Strings::getRandom($randomLength) : $row[0]);
+        $name = $this->getUniqueImportCode((string) $row[0], intval($row[1]));
+        if ($name === '') {
+          $warnings[] = sprintf('Zeile %d: Gutschein %s existiert bereits und wurde übersprungen.', $line, strtoupper($row[0]));
+          break;
+        }
+
         $metadata = [
           'discount_type' => strtolower($row[5]) === 'prozent' ? 'percent' : 'fixed_cart',
           'coupon_amount' => intval($row[6]),
           'individual_use' => strtolower($row[7]) === 'nein' ? 'yes' : 'no',
-          'expiry_date' => $row[8] !== null ? date('Y-m-d', strtotime($row[8])) : '',
+          'date_expires' => $expires,
           'usage_limit' => max(intval($row[9]), 1),
           'product_ids' => implode(',', $productIds),
         ];
 
         $this->generateCoupon($name, $metadata, count($categoryIds) > 0 ? $categoryIds : false);
+        $created++;
       }
     }
 
-    wp_admin_notice('Gutscheine wurden importiert', array('type' => 'success'));
+    wp_admin_notice(sprintf('%d Gutscheine wurden importiert', $created), array('type' => 'success'));
+    if (count($warnings) > 0) {
+      wp_admin_notice(implode('<br>', array_map('esc_html', $warnings)), array('type' => 'warning'));
+    }
   }
 
   /**
-   * Resolve comma separated coupon category names or slugs to their term ids, ignoring unknown entries
+   * Build a coupon code from prefix and random suffix that does not exist yet
+   * @param string $prefix code prefix from the import
+   * @param int $randomLength number of random chars, 0 for a fixed code
+   * @return string the unique uppercase code or empty string if a fixed code already exists
+   */
+  private function getUniqueImportCode(string $prefix, int $randomLength): string
+  {
+    for ($attempt = 0; $attempt < 100; $attempt++) {
+      $code = strtoupper($randomLength > 0 ? $prefix . '-' . Strings::getRandom($randomLength) : $prefix);
+      if (wc_get_coupon_id_by_code($code) === 0) {
+        return $code;
+      }
+      if ($randomLength === 0) {
+        return '';
+      }
+    }
+
+    return '';
+  }
+
+  /**
+   * Resolve product ids of an import cell. Excel may turn "1,2" into the number 1.2, hence dots are separators too
    * @param mixed $value raw cell value
+   * @param int $line spreadsheet line for warnings
+   * @param array $warnings collected warnings
+   * @return array valid product ids
+   */
+  private function getImportProductIds(mixed $value, int $line, array &$warnings): array
+  {
+    $ids = [];
+    foreach (preg_split('/[\s,;.]+/', (string) $value, -1, PREG_SPLIT_NO_EMPTY) as $candidate) {
+      $id = intval($candidate);
+      if (!in_array(get_post_type($id), ['product', 'product_variation'], true)) {
+        $warnings[] = sprintf('Zeile %d: Produkt-ID %s existiert nicht.', $line, $candidate);
+        continue;
+      }
+      $ids[] = $id;
+    }
+
+    return array_values(array_unique($ids));
+  }
+
+  /**
+   * Convert an excel serial date or a dd.mm.yyyy string to the end of that day in site timezone
+   * @param mixed $value raw cell value
+   * @param int $line spreadsheet line for warnings
+   * @param array $warnings collected warnings
+   * @return string unix timestamp or empty string for no expiry
+   */
+  private function getImportExpiryTimestamp(mixed $value, int $line, array &$warnings): string
+  {
+    if ($value === null || $value === '') {
+      return '';
+    }
+
+    $timezone = wp_timezone();
+    if (is_numeric($value)) {
+      $date = \PhpOffice\PhpSpreadsheet\Shared\Date::excelToDateTimeObject($value, $timezone);
+    } else {
+      $date = \DateTime::createFromFormat('!d.m.Y', trim($value), $timezone);
+    }
+
+    if ($date === false) {
+      $warnings[] = sprintf('Zeile %d: Verfallsdatum %s ist ungültig und wurde ignoriert.', $line, $value);
+      return '';
+    }
+
+    return (string) $date->setTime(23, 59, 59)->getTimestamp();
+  }
+
+  /**
+   * Resolve comma separated coupon category names or slugs to their term ids, warning about unknown entries
+   * @param mixed $value raw cell value
+   * @param int $line spreadsheet line for warnings
+   * @param array $warnings collected warnings
    * @return array term ids
    */
-  private function getImportCategoryIds(mixed $value): array
+  private function getImportCategoryIds(mixed $value, int $line, array &$warnings): array
   {
     $ids = [];
     foreach ($this->splitImportList($value) as $nameOrSlug) {
@@ -593,9 +681,11 @@ class Coupons extends Component
       if ($term === false) {
         $term = get_term_by('slug', $nameOrSlug, self::TAX_SLUG);
       }
-      if ($term !== false) {
-        $ids[] = $term->term_id;
+      if ($term === false) {
+        $warnings[] = sprintf('Zeile %d: Kategorie %s existiert nicht.', $line, $nameOrSlug);
+        continue;
       }
+      $ids[] = $term->term_id;
     }
 
     return $ids;

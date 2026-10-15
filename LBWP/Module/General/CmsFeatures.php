@@ -552,6 +552,10 @@ class CmsFeatures extends \LBWP\Module\Base
     add_action('wp_login', array($this, 'logLastLogin'), 10, 2);
     add_action('wp_footer', array($this, 'preventPreviewContentCaching'));
     add_filter('script_loader_tag', array($this, 'filterScripts'), 10, 2);
+    // ACF v3 enforcement and renaming the untranslated button
+    add_filter('acf/blocks/default_block_version', array($this, 'getAcfBlockVersion'), 10, 2);
+    add_filter('acf/blocks/wrap_frontend_innerblocks', '__return_false');
+    add_filter('acf/blocks/default_expanded_editor_button_text', array($this, 'getAcfExpandButtonText'), 10, 2);
     // Use our own mail services unless disabled
     if (!defined('LBWP_USE_EXTERNAL_WP_MAIL_SERVICE')) {
       add_filter('wp_mail_from', array($this, 'replaceEmailFrom'), 50);
@@ -569,6 +573,27 @@ class CmsFeatures extends \LBWP\Module\Base
     if (defined('LBWP_WESIGN_INSTANCE')) {
       new WesignBase();
     }
+  }
+
+  /**
+   * @param $text
+   * @param $block
+   * @return string|null
+   */
+  public function getAcfExpandButtonText($text, $block) {
+    if (!empty($block['hide_fields_in_sidebar'])) {
+      return __('Einstellungen bearbeiten', 'standard-03');
+    }
+    return __('Eingabebereich vergrössern', 'standard-03');
+  }
+
+  /**
+   * @param $version
+   * @param $block
+   * @return int
+   */
+  public function getAcfBlockVersion($version, $block) {
+    return 3;
   }
 
   /**
