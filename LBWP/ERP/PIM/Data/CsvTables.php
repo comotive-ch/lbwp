@@ -26,6 +26,9 @@ class CsvTables extends ACFBase
   const string VERSION_OPTION_PREFIX = 'pim_csv_table_v_';
   const int ROWS_PER_PAGE = 50;
   const int INSERT_BATCH_SIZE = 500;
+  const int EXPORT_MEMORY_BASE_MB = 500;
+  const int EXPORT_MEMORY_STEP_MB = 500;
+  const int EXPORT_MEMORY_STEP_ROWS = 50000;
 
   /**
    * Register admin menu, cron hooks, and run DB migrations when needed.
@@ -847,6 +850,7 @@ HTML;
 
     $table = $wpdb->prefix . $config['table'];
     $safeCols = implode(', ', array_map(fn($c) => "`{$c}`", array_keys($config['columns'])));
+    $this->raiseExportMemoryLimit((int) $wpdb->get_var("SELECT COUNT(*) FROM `{$table}`"));
     $rows = $wpdb->get_results("SELECT {$safeCols} FROM `{$table}`", ARRAY_A);
 
     $spreadsheet = new \PhpOffice\PhpSpreadsheet\Spreadsheet();
@@ -876,6 +880,23 @@ HTML;
     $writer = new \PhpOffice\PhpSpreadsheet\Writer\Xlsx($spreadsheet);
     $writer->save('php://output');
     exit;
+  }
+
+  /**
+   * Raise the memory limit for an export: base amount plus one step per full block of rows.
+   * @param int $rowCount Number of rows that will be exported
+   * @return void
+   */
+  private function raiseExportMemoryLimit(int $rowCount): void
+  {
+    $steps = intdiv($rowCount, self::EXPORT_MEMORY_STEP_ROWS);
+    $limitMb = self::EXPORT_MEMORY_BASE_MB + $steps * self::EXPORT_MEMORY_STEP_MB;
+    $current = ini_get('memory_limit');
+    if ($current === '-1' || wp_convert_hr_to_bytes($current) >= $limitMb * MB_IN_BYTES) {
+      return;
+    }
+
+    ini_set('memory_limit', $limitMb . 'M');
   }
 
   /**

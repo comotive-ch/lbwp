@@ -1,0 +1,30 @@
+/* Locked PIM product fields and meta boxes (see LBWP\ERP\PIM\ReadonlyFields) */
+.acf-field.lbwp-pim-readonly > .acf-input,
+.postbox.lbwp-pim-readonly .inside {
+  opacity: 0.6;
+}
+
+/* !important on every child, as ACF re-enables pointer events on some buttons (e.g. image "add") */
+.acf-field.lbwp-pim-readonly > .acf-input,
+.acf-field.lbwp-pim-readonly > .acf-input *,
+.postbox.lbwp-pim-readonly .inside,
+.postbox.lbwp-pim-readonly .inside * {
+  pointer-events: none !important;
+}
+
+.acf-field.lbwp-pim-readonly > .acf-label label::after,
+.postbox.lbwp-pim-readonly .hndle::after {
+  content: "\f160";
+  font-family: dashicons;
+  margin-left: 4px;
+  vertical-align: middle;
+  color: #8c8f94;
+}
+
+/* Hide the "add new term" forms of locked taxonomies */
+.postbox.lbwp-pim-readonly .category-add,
+.postbox.lbwp-pim-readonly .wp-hidden-children,
+.postbox.lbwp-pim-readonly .ajaxtag,
+.postbox.lbwp-pim-readonly .tagcloud-link {
+  display: none;
+}

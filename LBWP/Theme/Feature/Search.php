@@ -606,6 +606,25 @@ class Search
    */
   public static function getApiSearchInput()
   {
+    return self::getSearchInput('q');
+  }
+
+  /**
+   * Get a frontend search input compatible with the native WordPress search
+   * @return string the engine search input
+   */
+  public static function getCompatWordPressSearchInput()
+  {
+    return self::getSearchInput('s');
+  }
+
+  /**
+   * Build the search input field using the configured attributes
+   * @param string $name the query parameter name ("q" for GSC, "s" for WordPress)
+   * @return string the search input html
+   */
+  protected static function getSearchInput(string $name): string
+  {
     $attributes = '';
 
     // Set a placeholder if given
@@ -618,12 +637,11 @@ class Search
       $attributes .= ' class="' . self::$apiConf['textFieldClass'] . '"';
     }
 
-    // Print the script and form input code
     return '
       <input
         type="' . self::$apiConf['textFieldType'] . '"' . $attributes . '
-        name="q" id="' . self::$apiConf['textFieldId'] . '"
-        value="' . htmlspecialchars(strip_tags(stripslashes($_REQUEST['q']))) . '"
+        name="' . $name . '" id="' . self::$apiConf['textFieldId'] . '"
+        value="' . htmlspecialchars(strip_tags(stripslashes($_REQUEST[$name]))) . '"
       />
     ';
   }

@@ -12,11 +12,16 @@ use LBWP\Theme\Component\ACFBase;
 class Export extends ACFBase
 {
   const string PIM_TYPE_SLUG = 'lbwp-pid';
+  const string FILTER_CUSTOM_EXPORTS = 'lbwp_pim_custom_exports';
 
   /**
    * @var ProductGroupExport
    */
   protected ProductGroupExport $productGroupExport;
+  /**
+   * @var CustomExport[]
+   */
+  protected array $customExports = [];
 
   /**
    * Register the admin menu and the download handlers.
@@ -26,7 +31,31 @@ class Export extends ACFBase
   {
     $this->productGroupExport = new ProductGroupExport();
     $this->productGroupExport->registerHandlers();
+    add_action('wp_loaded', [$this, 'registerCustomExports']);
     add_action('admin_menu', [$this, 'registerMenu']);
+  }
+
+  /**
+   * Collect the project specific exports and register their download handlers.
+   * Runs on wp_loaded so filters added in any component's init() are already in place.
+   * @return void
+   */
+  public function registerCustomExports(): void
+  {
+    $exports = apply_filters(self::FILTER_CUSTOM_EXPORTS, $this->getCustomExports());
+    $this->customExports = array_filter($exports, fn($export) => $export instanceof CustomExport);
+    foreach ($this->customExports as $export) {
+      $export->registerHandler();
+    }
+  }
+
+  /**
+   * Project specific exports shown after the general ones, override in a subclass to add some.
+   * @return CustomExport[]
+   */
+  protected function getCustomExports(): array
+  {
+    return [];
   }
 
   /**
@@ -55,7 +84,28 @@ class Export extends ACFBase
     echo '<h1>' . esc_html__('PIMport Export', 'lbwp') . '</h1>';
     echo '<p>' . esc_html__('Die exportierten Dateien können bearbeitet und unter PIMport > Import wieder importiert werden.', 'lbwp') . '</p>';
     $this->productGroupExport->renderForms();
+    $this->renderCustomExports();
     echo '</div>';
+  }
+
+  /**
+   * Render the project specific exports in their own section, if there are any.
+   * @return void
+   */
+  protected function renderCustomExports(): void
+  {
+    if (empty($this->customExports)) {
+      return;
+    }
+
+    echo '<hr>';
+    echo '<h3 style="font-size:22px;">' . esc_html__('Kundenspezifische Exporte', 'lbwp') . '</h3>';
+    foreach (array_values($this->customExports) as $index => $export) {
+      if ($index > 0) {
+        echo '<hr>';
+      }
+      $export->renderForm();
+    }
   }
 
   /**

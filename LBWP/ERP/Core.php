@@ -83,6 +83,7 @@ class Core
       $components['LBWP\ERP\PIM\Data\Import'] = true;
       $components['LBWP\ERP\PIM\Data\ImageImport'] = true;
       $components['LBWP\ERP\PIM\Data\Export'] = true;
+      $components['LBWP\ERP\PIM\ReadonlyFields'] = true;
     }
     if ($this->config['components']['inventory_base']) {
       $components['LBWP\ERP\Inventory\Base'] = true;
