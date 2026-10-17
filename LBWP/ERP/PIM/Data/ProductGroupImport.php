@@ -62,7 +62,7 @@ class ProductGroupImport
       return '<div class="notice notice-error"><p>' . __('Datei konnte nicht verarbeitet werden.', 'lbwp') . '</p></div>';
     }
 
-    $result = $this->importAssignments($csvPath);
+    $result = $this->importAssignments($csvPath, !empty($_POST['pg_assign_additive']));
     @unlink($csvPath);
     return $result;
   }
@@ -87,6 +87,10 @@ class ProductGroupImport
     echo '<table class="form-table"><tr>';
     echo '<th><label for="pg_assign_file">' . __('XLSX / CSV Datei', 'lbwp') . '</label></th>';
     echo '<td><input type="file" name="pg_assign_file" id="pg_assign_file" accept=".xlsx,.csv" /></td>';
+    echo '</tr><tr>';
+    echo '<th>' . __('Modus', 'lbwp') . '</th>';
+    echo '<td><label><input type="checkbox" name="pg_assign_additive" value="1" /> ' . __('Nur hinzufügen', 'lbwp') . '</label>';
+    echo '<p class="description">' . __('Bestehende Zuweisungen bleiben erhalten. Ohne diese Option werden alle bisherigen Zuweisungen der in der Datei vorkommenden Produktgruppen ersetzt.', 'lbwp') . '</p></td>';
     echo '</tr></table>';
     echo '<p><input type="submit" name="pg_assign_upload" class="button-primary" value="' . esc_attr(__('Hochladen und Zuweisungen importieren', 'lbwp')) . '" /></p>';
     echo '</form>';
@@ -211,11 +215,12 @@ class ProductGroupImport
 
   /**
    * Import product-to-group assignments using direct DB operations.
-   * Replaces all existing assignments for terms that appear in the CSV.
+   * Replaces all existing assignments for terms that appear in the CSV, unless additive mode only adds them.
    * @param string $csvPath path to the local semicolon-delimited UTF-8 CSV
+   * @param bool $additive keep existing assignments and only insert the new ones
    * @return string HTML feedback message
    */
-  protected function importAssignments(string $csvPath): string
+  protected function importAssignments(string $csvPath, bool $additive = false): string
   {
     ini_set('memory_limit', '2G');
     set_time_limit(0);
@@ -266,11 +271,13 @@ class ProductGroupImport
 
     $ttids = array_keys($assignments);
 
-    foreach (array_chunk($ttids, 1000) as $chunk) {
-      $db->query(
-        "DELETE FROM `{$table_prefix}term_relationships`
-         WHERE term_taxonomy_id IN (" . implode(',', $chunk) . ")"
-      );
+    if (!$additive) {
+      foreach (array_chunk($ttids, 1000) as $chunk) {
+        $db->query(
+          "DELETE FROM `{$table_prefix}term_relationships`
+           WHERE term_taxonomy_id IN (" . implode(',', $chunk) . ")"
+        );
+      }
     }
 
     $inserted = 0;
@@ -298,13 +305,7 @@ class ProductGroupImport
       $inserted += count($buffer);
     }
 
-    foreach ($assignments as $ttid => $postIds) {
-      $db->query(
-        "UPDATE `{$table_prefix}term_taxonomy`
-         SET count = " . count($postIds) . "
-         WHERE term_taxonomy_id = {$ttid}"
-      );
-    }
+    $this->recountTerms($db, $table_prefix, $ttids);
 
     $db->close();
 
@@ -312,6 +313,28 @@ class ProductGroupImport
         __('%d Zuweisungen importiert.', 'lbwp'),
         $inserted
       ) . '</p></div>';
+  }
+
+  /**
+   * Recalculate the term counts from the actual relationships, in additive mode the file
+   * only holds part of a term's products.
+   * @param mysqli $db native DB connection
+   * @param string $prefix table prefix
+   * @param int[] $ttids term_taxonomy_ids to recount
+   * @return void
+   */
+  protected function recountTerms(mysqli $db, string $prefix, array $ttids): void
+  {
+    foreach (array_chunk(array_map('intval', $ttids), 1000) as $chunk) {
+      $db->query(
+        "UPDATE `{$prefix}term_taxonomy` tt
+         SET tt.count = (
+           SELECT COUNT(*) FROM `{$prefix}term_relationships` tr
+           WHERE tr.term_taxonomy_id = tt.term_taxonomy_id
+         )
+         WHERE tt.term_taxonomy_id IN (" . implode(',', $chunk) . ")"
+      );
+    }
   }
 
   /**

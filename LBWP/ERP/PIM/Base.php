@@ -49,7 +49,11 @@ class Base extends ACFBase
       'Hauptgruppe',
       'Hauptgruppen',
       '',
-      array('public' => false),
+      array(
+        'public' => false,
+        // Replaced by the ACF taxonomy field in addProductGroupFields()
+        'meta_box_cb' => false
+      ),
       self::TYPE_SLUG
     );
 
@@ -108,10 +112,66 @@ class Base extends ACFBase
   }
 
   /**
+   * Adds the product group selection that replaces the default taxonomy metabox.
+   * Terms are saved to and loaded from the term relationships, not only ACF meta.
+   * @return void
+   */
+  protected function addProductGroupFields()
+  {
+    acf_add_local_field_group([
+      'key' => 'group_pim_product_groups',
+      'title' => 'Hauptgruppen',
+      'fields' => [
+        [
+          'key' => 'field_pim_product_groups',
+          'label' => 'Hauptgruppen',
+          'name' => 'product-groups',
+          'aria-label' => '',
+          'type' => 'taxonomy',
+          'instructions' => '',
+          'required' => 0,
+          'conditional_logic' => 0,
+          'wrapper' => ['width' => '', 'class' => '', 'id' => ''],
+          'taxonomy' => self::PRODUCT_GROUP_SLUG,
+          'add_term' => 0,
+          'save_terms' => 1,
+          'load_terms' => 1,
+          'return_format' => 'id',
+          'field_type' => 'multi_select',
+          'allow_null' => 1,
+          'bidirectional' => 0,
+          'multiple' => 1,
+          'bidirectional_target' => [],
+        ],
+      ],
+      'location' => [
+        [
+          [
+            'param' => 'post_type',
+            'operator' => '==',
+            'value' => self::TYPE_SLUG,
+          ],
+        ],
+      ],
+      'menu_order' => 0,
+      'position' => 'side',
+      'style' => 'default',
+      'label_placement' => 'top',
+      'instruction_placement' => 'label',
+      'hide_on_screen' => '',
+      'active' => true,
+      'description' => '',
+      'show_in_rest' => 0,
+    ]);
+  }
+
+  /**
    * Adds field settings
    */
   public function fields()
   {
+    $this->addProductGroupFields();
+
     acf_add_local_field_group(array(
       'key' => 'group_649019f6c6405',
       'title' => 'Einstellungen',

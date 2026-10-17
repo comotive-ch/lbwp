@@ -21,6 +21,10 @@ class Export extends ACFBase
   /**
    * @var CustomExport[]
    */
+  protected array $defaultExports = [];
+  /**
+   * @var CustomExport[]
+   */
   protected array $customExports = [];
 
   /**
@@ -31,6 +35,10 @@ class Export extends ACFBase
   {
     $this->productGroupExport = new ProductGroupExport();
     $this->productGroupExport->registerHandlers();
+    $this->defaultExports = $this->getDefaultExports();
+    foreach ($this->defaultExports as $export) {
+      $export->registerHandler();
+    }
     add_action('wp_loaded', [$this, 'registerCustomExports']);
     add_action('admin_menu', [$this, 'registerMenu']);
   }
@@ -47,6 +55,18 @@ class Export extends ACFBase
     foreach ($this->customExports as $export) {
       $export->registerHandler();
     }
+  }
+
+  /**
+   * General exports available in every PIM, shown after the product group exports.
+   * @return CustomExport[]
+   */
+  protected function getDefaultExports(): array
+  {
+    return [
+      new ProductsWithoutImageExport(),
+      new ProductsWithoutCategoryExport(),
+    ];
   }
 
   /**
@@ -84,6 +104,10 @@ class Export extends ACFBase
     echo '<h1>' . esc_html__('PIMport Export', 'lbwp') . '</h1>';
     echo '<p>' . esc_html__('Die exportierten Dateien können bearbeitet und unter PIMport > Import wieder importiert werden.', 'lbwp') . '</p>';
     $this->productGroupExport->renderForms();
+    foreach ($this->defaultExports as $export) {
+      echo '<hr>';
+      $export->renderForm();
+    }
     $this->renderCustomExports();
     echo '</div>';
   }
