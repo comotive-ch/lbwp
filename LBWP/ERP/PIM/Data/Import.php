@@ -23,6 +23,7 @@ class Import extends ACFBase
   const PIM_TYPE_SLUG = 'lbwp-pid';
   const OPTION_KEY = 'current_pimport';
   const CRON_IDENTIFIER = 'pimport_run';
+  const string FILTER_CUSTOM_IMPORTS = 'lbwp_pim_custom_imports';
   /**
    * Datetime columns in wp_posts that need date format normalization
    */
@@ -93,8 +94,12 @@ class Import extends ACFBase
   {
     $message = '';
     $pgImport = new ProductGroupImport();
+    $customImports = $this->collectCustomImports();
+    $submittedImport = current(array_filter($customImports, fn($import) => $import->isSubmitted()));
 
-    if (isset($_POST['pimport_upload']) && isset($_FILES['pimport_file'])) {
+    if ($submittedImport) {
+      $message = $submittedImport->handleUpload();
+    } elseif (isset($_POST['pimport_upload']) && isset($_FILES['pimport_file'])) {
       $message = $this->handleUpload();
     } elseif (isset($_POST['pimport_reset'])) {
       $message = $this->handleReset();
@@ -145,8 +150,49 @@ class Import extends ACFBase
     echo '</form><hr>';
 
     $pgImport->renderForms();
+    $this->renderCustomImports($customImports);
 
     echo '</div>';
+  }
+
+  /**
+   * Collect the project specific imports from the subclass and the filter.
+   * @return CustomImport[]
+   */
+  protected function collectCustomImports(): array
+  {
+    $imports = apply_filters(self::FILTER_CUSTOM_IMPORTS, $this->getCustomImports());
+    return array_values(array_filter($imports, fn($import) => $import instanceof CustomImport));
+  }
+
+  /**
+   * Project specific imports shown after the general ones, override in a subclass to add some.
+   * @return CustomImport[]
+   */
+  protected function getCustomImports(): array
+  {
+    return [];
+  }
+
+  /**
+   * Render the project specific imports in their own section, if there are any.
+   * @param CustomImport[] $imports the imports to render
+   * @return void
+   */
+  protected function renderCustomImports(array $imports): void
+  {
+    if (empty($imports)) {
+      return;
+    }
+
+    echo '<hr>';
+    echo '<h3 style="font-size:22px;">' . esc_html__('Kundenspezifische Importe', 'lbwp') . '</h3>';
+    foreach ($imports as $index => $import) {
+      if ($index > 0) {
+        echo '<hr>';
+      }
+      $import->renderForm();
+    }
   }
 
   /**

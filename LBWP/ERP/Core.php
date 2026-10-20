@@ -95,16 +95,21 @@ class Core
       $components[$addon] = true;
     }
 
-    // Do replacements if configured
+    // Create array from keys and set the components (register instantiates and loads automatically)
+    $components = array_keys($components);
+
+    // Replacements keep the position of the default, as e.g. submenus need their parent menu registered first
     if (!empty($this->config['replacements'])) {
       foreach ($this->config['replacements'] as $default => $replacement) {
-        unset($components[$default]);
-        $components[$replacement] = true;
+        $index = array_search($default, $components, true);
+        if ($index === false) {
+          $components[] = $replacement;
+        } else {
+          $components[$index] = $replacement;
+        }
       }
     }
 
-    // Create array from keys and set the components (register instantiates and loads automatically)
-    $components = array_keys($components);
     $this->theme->registerComponents($components);
   }
 }
