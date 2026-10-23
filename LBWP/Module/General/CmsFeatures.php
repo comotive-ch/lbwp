@@ -11,7 +11,6 @@ use LBWP\Module\Backend\MonitorLogins;
 use LBWP\Module\Backend\S3Upload;
 use LBWP\Module\Forms\Component\Posttype;
 use LBWP\Module\Frontend\HTMLCache;
-use LBWP\Module\General\Cms\DeadLinkChecker;
 use LBWP\Module\General\Cms\EraseUserData;
 use LBWP\Module\General\Cms\PageSpeed;
 use LBWP\Module\General\Cms\SystemLog;
@@ -141,11 +140,6 @@ class CmsFeatures extends \LBWP\Module\Base
     }
 
     SystemLog::getInstance();
-    // Call dead link checker for customers who activate it
-    if (!defined('LBWP_DISABLE_DEADLINK_CHECKER')) {
-      DeadLinkChecker::getInstance();
-    }
-
     // Usage based billing if applicable
     UsageBasedBilling::getInstance();
     // Handle user privacy data erasement
