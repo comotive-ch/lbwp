@@ -2,7 +2,7 @@ import API from "../classes/API";
 
 function Pagination({current, total, per_page, setPage, setRows}){
   const pages = Math.ceil(total / per_page);
-  const ajax = new API('http://crm.swsmedien.local/wp-json/lbwp/bettertables/');
+  const ajax = new API('http://crm.swsmedien.localhost/wp-json/lbwp/bettertables/');
   const goToPage = (page) => {
     switch (page) {
       case 'next':

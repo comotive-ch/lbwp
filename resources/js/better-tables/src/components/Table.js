@@ -7,7 +7,7 @@ import Pagination from "./Pagination";
 function Table({data, settings}){
   const [sortedRows, setRows] = useState(data.rows);
   const [totalPages, setTotalPages] = useState(data.total);
-  const ajax = new API('http://crm.swsmedien.local/wp-json/lbwp/bettertables/');
+  const ajax = new API('http://crm.swsmedien.localhost/wp-json/lbwp/bettertables/');
   const perPage = settings.per_page;
   const debounceTimeout = useRef(null);
   const [debouncedFilter, setDebouncedFilter] = useState(null);

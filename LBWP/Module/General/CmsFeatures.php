@@ -15,6 +15,7 @@ use LBWP\Module\General\Cms\EraseUserData;
 use LBWP\Module\General\Cms\PageSpeed;
 use LBWP\Module\General\Cms\SystemLog;
 use LBWP\Module\General\Cms\UsageBasedBilling;
+use LBWP\Module\General\Cms\WebpConversion;
 use LBWP\Module\General\Multilang\OptionBridge;
 use LBWP\Theme\Feature\MoodOwl;
 use LBWP\Theme\Feature\PdfSearchIndex;
@@ -26,6 +27,7 @@ use LBWP\Util\File;
 use LBWP\Util\Multilang;
 use LBWP\Util\Strings;
 use LBWP\Util\WordPress;
+use WP_HTML_Tag_Processor;
 
 /**
  * This module holds serveral backend/frontend CMS features
@@ -76,6 +78,8 @@ class CmsFeatures extends \LBWP\Module\Base
    */
   public function initialize()
   {
+    // Block editor uploads are REST requests, which are not is_admin()
+    WebpConversion::getInstance();
     if (is_admin()) {
       $this->eventuallyConvertWebpUploads();
       // Backend features
@@ -213,42 +217,16 @@ class CmsFeatures extends \LBWP\Module\Base
    */
   protected function eventuallyConvertWebpUploads()
   {
-    $config = Core::getInstance()->getConfig();
-    $disabled = isset($config['Various:DisableWebpConversion']) && ($config['Various:DisableWebpConversion'] == 1);
-
-    if (!defined('LBWP_DISABLE_AUTO_WEBP_CONVERSION') && !$disabled && isset($_POST['action']) && $_POST['action'] == 'upload-attachment') {
+    if (WebpConversion::isEnabled() && isset($_POST['action']) && $_POST['action'] == 'upload-attachment') {
       // Check $_FILES for jpg/png images and convert them so woredpress thinks a webp was uploaded
       if (isset($_FILES) && is_array($_FILES)) {
         foreach ($_FILES as $key => $file) {
-          if (is_array($file) && isset($file['type']) && in_array($file['type'], array('image/jpeg', 'image/png'))) {
+          if (is_array($file) && WebpConversion::isConvertible($file)) {
             // Capture IPTC/EXIF metadata before conversion strips it
-            if (file_exists($file['tmp_name'])) {
-              require_once ABSPATH . 'wp-admin/includes/image.php';
-              self::$capturedUploadImageMeta = wp_read_image_metadata($file['tmp_name']);
-            }
-            $originalType = $file['type'];
-            $file['type'] = 'image/webp';
-            // Change its original name to the new extension
-            $file['name'] = preg_replace('/\.(jpg|jpeg|png)$/i', '.webp', $file['name']);
-            $file['full_path'] = preg_replace('/\.(jpg|jpeg|png)$/i', '.webp', $file['full_path']);
+            require_once ABSPATH . 'wp-admin/includes/image.php';
+            self::$capturedUploadImageMeta = wp_read_image_metadata($file['tmp_name']);
+            $file = WebpConversion::convertUploadedFile($file);
             $_POST['name'] = $file['name'];
-            // Convert the actual file
-            $sourceName = str_contains($originalType, '/jp') ? $file['tmp_name'] . '.jpg' : $file['tmp_name'] . '.png';
-            $convertedName = $file['tmp_name'] . '.webp';
-            // Convert to webp
-            copy($file['tmp_name'], $sourceName);
-            $command = sprintf(
-              'convert %s -black-point-compensation -intent relative -profile %s -quality 85 -define webp:method=6 %s 2>&1',
-              escapeshellarg($sourceName),
-              '/usr/share/color/icc/sRGB.icc',
-              escapeshellarg($convertedName)
-            );
-
-            exec($command, $output, $returnCode);
-            //exec('convert ' . $sourceName . ' ' . $convertedName);
-            rename($convertedName, $file['tmp_name']);
-            $file['size'] = filesize($file['tmp_name']);
-            unlink($sourceName);
             $_FILES[$key] = $file;
           }
         }
@@ -604,16 +582,31 @@ class CmsFeatures extends \LBWP\Module\Base
   }
 
   /**
-   * @param $tag
-   * @param $handle
-   * @return array|string|string[]
+   * Applies a custom type attribute (e.g. "module") set via wp_scripts()->add_data($handle, 'type', …)
+   * @param string $tag the script tag html
+   * @param string $handle the script handle
+   * @return string the tag with the custom type applied
    */
-  public function filterScripts($tag, $handle){
+  public function filterScripts($tag, $handle): string
+  {
     $alternateType = wp_scripts()->get_data($handle, 'type');
-    if ($alternateType) {
+    if (!$alternateType) {
+      return $tag;
+    }
+
+    // WP < 7.1 prints type="text/javascript", newer versions print no type attribute at all
+    if (str_contains($tag, 'text/javascript')) {
       return str_replace('text/javascript', $alternateType, $tag);
     }
-    return $tag;
+
+    $processor = new WP_HTML_Tag_Processor($tag);
+    while ($processor->next_tag('script')) {
+      if ($processor->get_attribute('id') === $handle . '-js') {
+        $processor->set_attribute('type', $alternateType);
+      }
+    }
+
+    return $processor->get_updated_html();
   }
 
   /**

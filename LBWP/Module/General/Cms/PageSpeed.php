@@ -191,8 +191,8 @@ class PageSpeed extends BaseSingleton
         fnmatch('*' . LBWP_HOST . '*.css?ver=*', $match[0]) ||
         fnmatch('*' . LBWP_HOST . '*.js?ver=*', $match[0])
       ) {
-        // Strip trailing non-URL characters (quotes, commas, parentheses, etc.)
-        $url = rtrim($match[0], "'\",);");
+        // Cut at the first quote or tag bracket, since WP 7.1 prints src as the last attribute (src="…"></script>)
+        $url = rtrim(substr($match[0], 0, strcspn($match[0], "'\"<>")), ",);");
         $trailingChars = substr($match[0], strlen($url));
         $verpos = strrpos($url, '?ver=');
         $version = str_replace('.', '', substr($url, $verpos + 5));

@@ -180,7 +180,7 @@ class Cronjob
   {
     // If DB_MASTER is not set, nothing can be done. This method
     // is only called by the API job-register.php and hence executed on master
-    if (defined('EXTERNAL_LBWP')) {
+    if (defined('EXTERNAL_LBWP') || defined('LOCAL_DEVELOPMENT')) {
       return false;
     }
 

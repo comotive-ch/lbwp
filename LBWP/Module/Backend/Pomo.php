@@ -374,7 +374,7 @@ class Pomo extends \LBWP\Module\Base
   }
 
   /**
-   * http://master.lbwp.sdd1.local/wp-content/plugins/lbwp/views/cron/job.php?identifier=manual_scan_po_files
+   * http://master.lbwp.sdd1.localhost/wp-content/plugins/lbwp/views/cron/job.php?identifier=manual_scan_po_files
    * Scan for mo files and write it into the json file (the name of the method is fake news)
    * Translation object:
    *  [string_key]=> object(Translation_Entry)#ID (9){

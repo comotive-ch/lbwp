@@ -1,0 +1,243 @@
+// Visual refresh of the form editor, aligned with the WordPress 7 admin design system.
+// Only overrides looks (colors, borders, spacing), the layout and behaviour stays in app.scss.
+
+$feAccent: var(--wp-admin-theme-color, #3858e9);
+$feAccentDark: var(--wp-admin-theme-color-darker-10, #2145e6);
+$feAccentRgb: var(--wp-admin-theme-color--rgb, 56, 88, 233);
+$feText: #1e1e1e;
+$feTextMuted: #757575;
+$feBorder: #e0e0e0;
+$feBorderStrong: #dcdcde;
+$feSurface: #fff;
+$feSurfaceMuted: #f6f7f7;
+$feRadiusS: 4px;
+$feRadiusL: 8px;
+
+.form-editor-container {
+
+	// Underlined tabs instead of the boxed nav-tabs
+	.tabbed-navigation .nav-tab-wrapper {
+		display: flex;
+		align-items: flex-end;
+		gap: 4px;
+		padding: 0;
+		border-bottom: 1px solid $feBorderStrong;
+
+		.nav-tab {
+			float: none;
+			margin: 0;
+			padding: 12px 16px;
+			border: 0;
+			background: transparent;
+			color: #50575e;
+			font-size: 14px;
+			font-weight: 500;
+			line-height: 1.4;
+			box-shadow: inset 0 -3px 0 transparent;
+			transition: color .15s, box-shadow .15s;
+
+			&:hover {
+				color: $feAccent;
+			}
+
+			&:focus {
+				outline: none;
+				box-shadow: inset 0 0 0 2px $feAccent;
+			}
+
+			&.nav-tab-active {
+				color: $feText;
+				font-weight: 600;
+				box-shadow: inset 0 -3px 0 $feAccent;
+			}
+		}
+
+		.save-form-button {
+			float: none;
+			margin: 0 0 8px auto;
+		}
+	}
+
+	.tab-container .form-editor-tab {
+		margin-top: 24px;
+	}
+
+	// Cards in the side columns
+	.frame .postbox {
+		margin-bottom: 16px;
+		border: 1px solid $feBorder;
+		border-radius: $feRadiusL;
+		background: $feSurface;
+		box-shadow: none;
+		overflow: hidden;
+
+		.hndle,
+		.hndle.ui-state-default,
+		.hndle.ui-state-active,
+		.hndle.ui-state-hover {
+			margin: 0;
+			padding: 12px 16px;
+			border: 0;
+			border-radius: 0;
+			background: $feSurface;
+			color: $feText;
+			font-size: 13px;
+			font-weight: 600;
+		}
+
+		.ui-accordion-header-icon {
+			display: none;
+		}
+
+		.inside,
+		.inside.ui-widget-content {
+			margin: 0;
+			padding: 4px 16px 16px;
+			border: 0;
+			background: $feSurface;
+			color: inherit;
+		}
+	}
+
+	.frame.frame-right .ui-accordion > h3.ui-accordion-header-active + div + h3 {
+		border-top: 1px solid $feBorder;
+	}
+
+	// Canvases in the middle column and the settings tab
+	.lbwp-form-preview,
+	.lbwp-action-list,
+	.frame .settings {
+		border: 1px solid $feBorder;
+		border-radius: $feRadiusL;
+		background: $feSurface;
+		padding: 24px;
+	}
+
+	.frame .settings {
+		label.checkbox-wrap {
+			width: calc(100% - 251px);
+
+			@media screen and (max-width: 728px) {
+				width: 100%;
+			}
+		}
+
+		hr {
+			border: 0;
+			border-top: 1px solid $feBorder;
+		}
+	}
+
+	div.drag-target {
+		border: 2px dashed rgba($feAccentRgb, .5);
+		border-radius: $feRadiusS;
+		background: rgba($feAccentRgb, .04);
+	}
+
+	.frame .field-invisible {
+		background-color: $feSurfaceMuted;
+	}
+
+	// Items to drag from the left column
+	.draggable-item {
+		margin-bottom: 8px;
+		padding: 8px 12px;
+		border: 1px solid $feBorderStrong;
+		border-radius: $feRadiusS;
+		background: $feSurface;
+		box-shadow: none;
+		color: $feTextMuted;
+		cursor: grab;
+		transition: border-color .15s, box-shadow .15s;
+
+		strong {
+			color: $feText;
+			font-weight: 500;
+		}
+
+		&:hover {
+			border-color: $feAccent;
+			box-shadow: 0 1px 3px rgba(0, 0, 0, .08);
+		}
+
+		&:active {
+			cursor: grabbing;
+		}
+	}
+
+	// Fields in the form preview
+	.lbwp-form-preview .forms-item:not(.send-button) {
+		border-radius: $feRadiusS;
+		transition: background .15s;
+
+		&:hover {
+			background: $feSurfaceMuted;
+		}
+
+		&.selected {
+			&, &:hover {
+				background: rgba($feAccentRgb, .08);
+				color: $feText;
+
+				.default-label,
+				.default-container {
+					border-color: $feAccent;
+				}
+			}
+		}
+
+		&:hover .default-container:after,
+		.delete,
+		.duplicate {
+			background: $feAccent;
+		}
+
+		&.selected {
+			&:hover .default-container:after,
+			.delete,
+			.duplicate {
+				background: $feAccent;
+				color: #fff;
+			}
+		}
+	}
+
+	// Actions in the action list
+	.frame.frame-middle .lbwp-action-list .action-item {
+		border: 1px solid $feBorderStrong;
+		border-radius: $feRadiusL;
+		background: $feSurface;
+		box-shadow: none;
+		transition: border-color .15s, box-shadow .15s;
+
+		&:hover {
+			border-color: $feAccent;
+			box-shadow: 0 1px 3px rgba(0, 0, 0, .08);
+		}
+
+		&.selected {
+			border-color: $feAccent;
+			background: rgba($feAccentRgb, .08);
+			color: $feText;
+			box-shadow: inset 0 0 0 1px $feAccent;
+		}
+
+		.delete,
+		.edit {
+			background: $feAccent;
+		}
+	}
+
+	// Icon hover colors follow the admin theme
+	.frame {
+		.help:hover,
+		.edit-optin:hover,
+		.ref:hover {
+			color: $feAccent;
+		}
+	}
+
+	.lbwp-editField .textfieldArray .dashicons:hover {
+		color: $feAccent;
+	}
+}
