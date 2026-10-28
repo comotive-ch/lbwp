@@ -1,5 +1,6 @@
 <?php
-// Load the needed Redis by loading config without wp stack
+// Load the needed Redis by loading config without wp stack, so plugins/themes can't exit before flushing
+define('SKIP_WP_STACK', true);
 require_once '../../../../../wp-config.php';
 
 // check for the api secrets (loaded by wp-config.php)

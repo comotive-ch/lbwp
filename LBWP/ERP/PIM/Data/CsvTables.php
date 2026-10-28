@@ -2,6 +2,7 @@
 
 namespace LBWP\ERP\PIM\Data;
 
+use LBWP\Helper\Cronjob;
 use LBWP\Helper\XlsxHelper;
 use LBWP\Module\General\Cms\SystemLog;
 use LBWP\Theme\Component\ACFBase;
@@ -24,6 +25,8 @@ class CsvTables extends ACFBase
 
   const string MENU_SLUG = 'pimtables';
   const string VERSION_OPTION_PREFIX = 'pim_csv_table_v_';
+  const string LAST_IMPORT_OPTION_PREFIX = 'pim_csv_table_last_import_';
+  const string FTP_IMPORT_JOB_PREFIX = 'pim_csv_ftp_import_';
   const int ROWS_PER_PAGE = 50;
   const int INSERT_BATCH_SIZE = 500;
   const int EXPORT_MEMORY_BASE_MB = 500;
@@ -153,18 +156,54 @@ class CsvTables extends ACFBase
   }
 
   /**
-   * Hook each table's cron_action to the FTP import runner.
+   * Tables that are imported automatically from FTP by a cron action.
+   * @return array[] table configuration entries from getTables()
+   */
+  public function getAutomatedFtpTables(): array
+  {
+    return array_values(array_filter($this->getTables(), function (array $config): bool {
+      return !empty($config['cron_action']) && !empty($config['ftp_path']);
+    }));
+  }
+
+  /**
+   * Last successful import of a table, recorded after each committed import.
+   * @param string $key table key from getTables()
+   * @return array ['time' => int unix timestamp, 'rows' => int] or empty if never imported
+   */
+  public static function getLastImport(string $key): array
+  {
+    $lastImport = get_option(self::LAST_IMPORT_OPTION_PREFIX . $key, []);
+    return is_array($lastImport) ? $lastImport : [];
+  }
+
+  /**
+   * Hook each table's cron_action and its on-demand background job to the FTP import runner.
    */
   private function registerCronActions(): void
   {
     foreach ($this->getTables() as $config) {
-      if (empty($config['cron_action']) || empty($config['ftp_path'])) {
+      if (empty($config['ftp_path'])) {
         continue;
       }
-      add_action($config['cron_action'], function () use ($config) {
+      $runImport = function () use ($config) {
         $this->runFtpImport($config);
-      });
+      };
+      add_action('cron_job_' . self::FTP_IMPORT_JOB_PREFIX . $config['key'], $runImport);
+      if (!empty($config['cron_action'])) {
+        add_action($config['cron_action'], $runImport);
+      }
     }
+  }
+
+  /**
+   * Registers a background job on master that runs the FTP import of one table immediately.
+   * @param string $key table key from getTables(), the table needs an ftp_path
+   * @return bool true if the job was registered
+   */
+  public static function scheduleFtpImport(string $key): bool
+  {
+    return Cronjob::register([time() => self::FTP_IMPORT_JOB_PREFIX . $key]);
   }
 
   /**
@@ -1331,6 +1370,10 @@ HTML;
       }
 
       $wpdb->query('COMMIT');
+      update_option(self::LAST_IMPORT_OPTION_PREFIX . $config['key'], [
+        'time' => time(),
+        'rows' => $inserted,
+      ], false);
       SystemLog::add('CsvTables', 'info', "Import {$config['key']}: {$inserted} Zeilen verarbeitet.");
       return '<div class="notice notice-success"><p>' . sprintf(__('%d Datensätze importiert.', 'lbwp'), $inserted) . '</p></div>';
 
