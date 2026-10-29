@@ -61,6 +61,14 @@ abstract class CustomExport
   }
 
   /**
+   * Additional form fields (e.g. filters), override to add some. Values are available in $_POST within getRows().
+   * @return void
+   */
+  protected function renderOptions(): void
+  {
+  }
+
+  /**
    * Register the admin-post handler that streams the download.
    * @return void
    */
@@ -81,6 +89,7 @@ abstract class CustomExport
     echo '<form method="post" action="' . esc_url(admin_url('admin-post.php')) . '">';
     echo '<input type="hidden" name="action" value="' . esc_attr($action) . '" />';
     wp_nonce_field($action);
+    $this->renderOptions();
     echo '<p><input type="submit" class="button-primary" value="' . esc_attr($this->getButtonLabel()) . '" /></p>';
     echo '</form>';
   }

@@ -161,10 +161,24 @@ class FormEditor extends Base
           useFromFieldHeading : "' . esc_js(__('Formular-Feld verwenden', 'lbwp')) . '",
           useFromFieldCheckbox : "' . esc_js(__('Feld-Inhalt anhängen statt überschreiben', 'lbwp')) . '",
           useFromFieldText : "' . esc_js(__('Klicken Sie auf ein Formular-Feld um dessen Inhalt für das gewählte Aktionsfeld zu verwenden', 'lbwp')) . '",
-          addOption : "' . esc_js(__('Option hinzufügen', 'lbwp')) . '"
+          addOption : "' . esc_js(__('Option hinzufügen', 'lbwp')) . '",
+          reservedFieldId : "' . esc_js(__('Diese Feld-ID ist von WordPress reserviert. Bitte wähle eine andere ID.', 'lbwp')) . '"
         };
+        // Field ids that collide with WordPress query vars
+        LbwpFormEditor.ReservedFieldIds = ' . json_encode($this->getReservedFieldIds()) . ';
       </script>
     ';
+  }
+
+  /**
+   * WordPress reads public query vars from $_POST too, so a form field with such an id
+   * overrides the queried page on submission and leads to a 404
+   * @return string[] the field ids that must not be used
+   */
+  protected function getReservedFieldIds()
+  {
+    global $wp;
+    return array_values(array_unique(apply_filters('query_vars', $wp->public_query_vars)));
   }
 
   /**

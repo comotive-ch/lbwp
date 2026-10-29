@@ -986,6 +986,37 @@ LbwpFormEditor.Form = {
 	},
 
 	/**
+	 * Resets the field id input to its last saved value, if a reserved id has been entered
+	 * @param params the params of the currently edited item
+	 */
+	preventReservedFieldId: function (params)
+	{
+		for (var key in params) {
+			if (params[key].key != 'id') continue;
+			var input = jQuery(LbwpFormEditor.Core.itemFieldSelector).eq(key).find("input");
+			// Only check changed ids, so existing forms can still be edited
+			if (input.val() != params[key].value && LbwpFormEditor.Form.isReservedFieldId(input.val())) {
+				input.val(params[key].value);
+				alert(LbwpFormEditor.Text.reservedFieldId);
+			}
+		}
+	},
+
+	/**
+	 * Checks if a field id collides with a WordPress query var
+	 * @param value the field id
+	 * @returns {boolean} true if the id must not be used
+	 */
+	isReservedFieldId: function (value)
+	{
+		if (typeof(LbwpFormEditor.ReservedFieldIds) == 'undefined') {
+			return false;
+		}
+
+		return LbwpFormEditor.ReservedFieldIds.indexOf(jQuery.trim(value)) > -1;
+	},
+
+	/**
 	 * Returns html for a textfield
 	 */
 	getTextfield: function(field)
@@ -1164,6 +1195,8 @@ LbwpFormEditor.Form = {
 				switch (item[key].type) {
 					case "textfield":
 					case "textarea":
+						// The field id is only taken over on change, after checking it
+						if (item[key].key == 'id') break;
 						LbwpFormEditor.Data.Items[current].params[key].value = jQuery(LbwpFormEditor.Core.itemFieldSelector).eq(key).find("input, select, textarea").val();
 						break;
 				}
@@ -1178,6 +1211,7 @@ LbwpFormEditor.Form = {
 				jQuery("#editor-form-tab .frame-middle .forms-item.selected label").attr("for")
 			);
 			var item = LbwpFormEditor.Data.Items[current].params;
+			LbwpFormEditor.Form.preventReservedFieldId(item);
 			for (var key in item) {
 				switch (item[key].type) {
 					case "textfield":

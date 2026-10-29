@@ -55,6 +55,20 @@ var setupIntervalId = setInterval(function() {
   }
 }, 20);
 
+// Since the editor canvas is an iframe, clicks on blocks don't bubble up to us, so also react on selection changes in the store
+var lbwp_multiStylesSelectedBlock = null;
+wp.domReady(() => {
+  wp.data.subscribe(function() {
+    var selectedBlock = wp.data.select('core/block-editor').getSelectedBlockClientId();
+    if (selectedBlock !== lbwp_multiStylesSelectedBlock) {
+      lbwp_multiStylesSelectedBlock = selectedBlock;
+      setTimeout(function() {
+        lbwp_setupMultiBlockstyles();
+      }, 100);
+    }
+  });
+});
+
 /**
  * Oh YAY, lets interfere with reacts magic a bit
  * @author Michael Sebel <michael@comotive.ch> (the author made this against his will)
@@ -62,8 +76,10 @@ var setupIntervalId = setInterval(function() {
 function lbwp_setupMultiBlockstyles()
 {
   var blockStyles = jQuery('.block-editor-block-styles');
+  // Older WP versions wrap styles in a collapsible panel body, newer ones (7.1+) in a tools panel that is only rendered when visible
+  var panelBody = blockStyles.closest('.components-panel__body');
 
-  if (blockStyles.length > 0 && blockStyles.closest('.components-panel__body').hasClass('is-opened')) {
+  if (blockStyles.length > 0 && (panelBody.length === 0 || panelBody.hasClass('is-opened'))) {
     // Unregister all the events on the items
     var items = jQuery('.block-editor-block-styles__item');
     items.removeClass('is-active');
