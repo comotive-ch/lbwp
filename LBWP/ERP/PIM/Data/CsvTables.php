@@ -32,6 +32,7 @@ class CsvTables extends ACFBase
   const int EXPORT_MEMORY_BASE_MB = 500;
   const int EXPORT_MEMORY_STEP_MB = 500;
   const int EXPORT_MEMORY_STEP_ROWS = 50000;
+  const string ID_HEADER = 'ID';
 
   /**
    * Register admin menu, cron hooks, and run DB migrations when needed.
@@ -71,6 +72,9 @@ class CsvTables extends ACFBase
    *   columns_translation  (array)   Optional map of human-readable CSV header => technical column name.
    *                                  When set, both the technical name and the translated name are accepted
    *                                  during import. Export uses the human-readable name as the header.
+   *   id_column            (bool)    Optional, for tables without primary_key. Shows and exports the internal id
+   *                                  as first column "ID". On import, rows with an ID update that row, rows with
+   *                                  an empty ID (or files without ID column) are added as new rows.
    *
    * @return array[]
    */
@@ -316,18 +320,23 @@ class CsvTables extends ACFBase
     $pageUrl = admin_url('admin.php?page=' . self::MENU_SLUG . '_' . $config['key']);
     $headers = $this->getExportHeaders($config);
     $colNames = array_keys($config['columns']);
-    $colCount = count($colNames);
+    $showId = $this->usesIdColumn($config);
+    $searchCols = $showId ? array_merge(['id'], $colNames) : $colNames;
+    $colCount = count($searchCols);
     $statusText = sprintf(__('%d Datensätze gesamt', 'lbwp'), $total);
 
     echo '<div id="pim-row-message" style="margin-bottom:4px;"></div>';
     echo '<p id="pim-table-status">' . esc_html($statusText) . '</p>';
     echo '<table id="pim-data-table" class="wp-list-table widefat fixed striped"><thead>';
     echo '<tr><th style="width:56px;"></th>';
+    if ($showId) {
+      echo '<th style="width:70px;">' . esc_html(self::ID_HEADER) . '</th>';
+    }
     foreach ($headers as $label) {
       echo '<th>' . esc_html($label) . '</th>';
     }
     echo '</tr><tr><th></th>';
-    foreach ($colNames as $col) {
+    foreach ($searchCols as $col) {
       echo '<th style="padding:0px 2px 2px 0px;">';
       echo '<input class="pim-col-search" type="text" data-col="' . esc_attr($col) . '" ';
       echo 'placeholder="' . esc_attr(__('Suche…', 'lbwp')) . '" ';
@@ -340,7 +349,7 @@ class CsvTables extends ACFBase
       echo '<tr><td colspan="' . ($colCount + 1) . '">' . __('Keine Daten vorhanden', 'lbwp') . '</td></tr>';
     } else {
       foreach ($rows as $row) {
-        echo $this->renderRow($row, (int) $row['id'], $colNames);
+        echo $this->renderRow($row, (int) $row['id'], $colNames, $showId);
       }
     }
 
@@ -552,9 +561,10 @@ SCRIPT;
    * @param array $row Associative row from wpdb (must include 'id')
    * @param int $rowId The row's AUTO_INCREMENT id
    * @param array $colNames Ordered list of configured column names
+   * @param bool $showId Whether to render the internal id as first data cell
    * @return string HTML for the <tr> element
    */
-  private function renderRow(array $row, int $rowId, array $colNames): string
+  private function renderRow(array $row, int $rowId, array $colNames, bool $showId = false): string
   {
     $editTitle   = esc_attr(__('Bearbeiten', 'lbwp'));
     $deleteTitle = esc_attr(__('Löschen', 'lbwp'));
@@ -565,6 +575,9 @@ SCRIPT;
     $html .= '<button type="button" class="pim-btn-delete button-link" title="' . $deleteTitle . '" style="padding:2px 4px;color:#b32d2e;">';
     $html .= '<span class="dashicons dashicons-trash"></span></button>';
     $html .= '</td>';
+    if ($showId) {
+      $html .= '<td>' . $rowId . '</td>';
+    }
     foreach ($colNames as $col) {
       $val     = (string) ($row[$col] ?? '');
       $display = mb_strlen($val) > 20 ? mb_substr($val, 0, 20) . '…' : $val;
@@ -631,12 +644,18 @@ HTML;
     echo '<td><input type="file" name="pim_csv_file" id="pim_csv_file" accept=".csv,.xlsx" /></td>';
     echo '</tr><tr>';
     echo '<th>' . __('Import-Modus', 'lbwp') . '</th>';
+    $showId = $this->usesIdColumn($config);
+    $fullChecked = $showId ? '' : ' checked';
+    $partialChecked = $showId ? ' checked' : '';
     echo '<td>';
-    echo '<label style="display:block;margin-bottom:4px;"><input type="radio" name="pim_csv_mode" value="full" checked /> ' . __('Vollimport – fehlende Zeilen werden gelöscht', 'lbwp') . '</label>';
-    if (!empty($config['primary_key'])) {
-      echo '<label style="display:block;margin-bottom:4px;"><input type="radio" name="pim_csv_mode" value="partial" /> ' . __('Teilimport – fehlende Zeilen bleiben erhalten', 'lbwp') . '</label>';
+    echo '<label style="display:block;margin-bottom:4px;"><input type="radio" name="pim_csv_mode" value="full"' . $fullChecked . ' /> ' . __('Vollimport – fehlende Zeilen werden gelöscht', 'lbwp') . '</label>';
+    if (!empty($config['primary_key']) || $showId) {
+      echo '<label style="display:block;margin-bottom:4px;"><input type="radio" name="pim_csv_mode" value="partial"' . $partialChecked . ' /> ' . __('Teilimport – fehlende Zeilen bleiben erhalten', 'lbwp') . '</label>';
     }
     echo '<label style="display:block;"><input type="radio" name="pim_csv_mode" value="delete" /> ' . __('Löschimport – nur die enthaltenen Zeilen löschen', 'lbwp') . '</label>';
+    if ($showId) {
+      echo '<p class="description">' . __('Zeilen mit ID in der ersten Spalte aktualisieren den bestehenden Datensatz. Zeilen ohne ID (oder Dateien ohne ID-Spalte) werden neu hinzugefügt.', 'lbwp') . '</p>';
+    }
     echo '</td>';
     echo '</tr></table>';
     echo '<p><input type="submit" name="pim_csv_upload" class="button-primary" value="' . __('Hochladen', 'lbwp') . '" /></p>';
@@ -718,10 +737,16 @@ HTML;
     $table = $wpdb->prefix . $config['table'];
     $safeCols = 'id, ' . implode(', ', array_map(fn($c) => "`{$c}`", array_keys($config['columns'])));
 
+    $showId = $this->usesIdColumn($config);
     $where = [];
     $params = [];
     foreach ((array) $rawTerms as $col => $term) {
       $term = trim((string) $term);
+      if ($showId && $col === 'id' && $term !== '') {
+        $where[] = 'id = %d';
+        $params[] = (int) $term;
+        continue;
+      }
       if ($term === '' || !array_key_exists($col, $config['columns'])) {
         continue;
       }
@@ -745,10 +770,10 @@ HTML;
     $tbody = '';
 
     if (empty($rows)) {
-      $tbody = '<tr><td colspan="' . ($colCount + 1) . '">' . esc_html(__('Keine Daten gefunden.', 'lbwp')) . '</td></tr>';
+      $tbody = '<tr><td colspan="' . ($colCount + ($showId ? 2 : 1)) . '">' . esc_html(__('Keine Daten gefunden.', 'lbwp')) . '</td></tr>';
     } else {
       foreach ($rows as $row) {
-        $tbody .= $this->renderRow($row, (int) $row['id'], $colNames);
+        $tbody .= $this->renderRow($row, (int) $row['id'], $colNames, $showId);
       }
     }
 
@@ -888,15 +913,19 @@ HTML;
     require_once WP_PLUGIN_DIR . '/lbwp/resources/libraries/phpspreadsheet/vendor/autoload.php';
 
     $table = $wpdb->prefix . $config['table'];
-    $safeCols = implode(', ', array_map(fn($c) => "`{$c}`", array_keys($config['columns'])));
+    $columns = array_keys($config['columns']);
+    $headers = $this->getExportHeaders($config);
+    if ($this->usesIdColumn($config)) {
+      array_unshift($columns, 'id');
+      array_unshift($headers, self::ID_HEADER);
+    }
+    $safeCols = implode(', ', array_map(fn($c) => "`{$c}`", $columns));
     $this->raiseExportMemoryLimit((int) $wpdb->get_var("SELECT COUNT(*) FROM `{$table}`"));
-    $rows = $wpdb->get_results("SELECT {$safeCols} FROM `{$table}`", ARRAY_A);
+    $rows = $wpdb->get_results("SELECT {$safeCols} FROM `{$table}` ORDER BY id", ARRAY_A);
 
     $spreadsheet = new \PhpOffice\PhpSpreadsheet\Spreadsheet();
     $sheet = $spreadsheet->getActiveSheet();
 
-    $columns = array_keys($config['columns']);
-    $headers = $this->getExportHeaders($config);
     foreach ($headers as $i => $label) {
       $cell = \PhpOffice\PhpSpreadsheet\Cell\Coordinate::stringFromColumnIndex($i + 1) . '1';
       $sheet->setCellValue($cell, $label);
@@ -1003,7 +1032,13 @@ HTML;
     }
 
     $table = $wpdb->prefix . $config['table'];
-    $safeCols = implode(', ', array_map(fn($c) => "`{$c}`", array_keys($config['columns'])));
+    $columns = array_keys($config['columns']);
+    $headers = $this->getExportHeaders($config);
+    if ($this->usesIdColumn($config)) {
+      array_unshift($columns, 'id');
+      array_unshift($headers, self::ID_HEADER);
+    }
+    $safeCols = implode(', ', array_map(fn($c) => "`{$c}`", $columns));
     $idList = implode(', ', array_map('intval', $ids));
     $rows = $wpdb->get_results("SELECT {$safeCols} FROM `{$table}` WHERE id IN ({$idList})", ARRAY_A);
 
@@ -1011,7 +1046,6 @@ HTML;
     set_transient('pim_csv_del_' . $config['key'] . '_' . $token, $ids, 30 * MINUTE_IN_SECONDS);
 
     $count = count($ids);
-    $headers = $this->getExportHeaders($config);
     $pageUrl = admin_url('admin.php?page=' . self::MENU_SLUG . '_' . $config['key']);
     $confirmMsg = esc_js(sprintf(__('%d Zeilen werden unwiderruflich gelöscht. Fortfahren?', 'lbwp'), $count));
 
@@ -1026,8 +1060,8 @@ HTML;
     echo '</tr></thead><tbody>';
     foreach ($rows as $row) {
       echo '<tr>';
-      foreach (array_keys($config['columns']) as $col) {
-        $val = $row[$col] ?? '';
+      foreach ($columns as $col) {
+        $val = (string) ($row[$col] ?? '');
         $display = mb_strlen($val) > 20 ? mb_substr($val, 0, 20) . '…' : $val;
         echo '<td>' . esc_html($display) . '</td>';
       }
@@ -1087,59 +1121,47 @@ HTML;
 
     $table = $wpdb->prefix . $config['table'];
     $delimiter = $config['csv_delimiter'] ?? ';';
-    $hasPk = !empty($config['primary_key']);
 
     $handle = fopen($filePath, 'r');
     if (!$handle) {
       return __('Datei konnte nicht geöffnet werden.', 'lbwp');
     }
 
-    $bom = fread($handle, 3);
-    if ($bom !== "\xEF\xBB\xBF") {
-      rewind($handle);
-    }
-
-    $header = fgetcsv($handle, 0, $delimiter);
-    if (!$header) {
-      fclose($handle);
-      return __('CSV-Header konnte nicht gelesen werden.', 'lbwp');
-    }
-    $header = array_map('trim', $header);
-
-    if (!empty($config['columns_translation'])) {
-      $header = $this->applyHeaderTranslation($header, $config['columns_translation']);
-    }
-
-    $colMap = $this->buildColumnMap($config['columns'], $header);
+    $header = $this->readCsvHeader($handle, $config);
+    $colMap = is_string($header) ? $header : $this->buildColumnMap($config['columns'], $header);
     if (is_string($colMap)) {
       fclose($handle);
       return $colMap;
     }
 
+    $idPos = $this->getIdColumnPosition($config, $header);
     $csvRows = [];
+    $idRows = [];
     while (($csvRow = fgetcsv($handle, 0, $delimiter)) !== false) {
-      $row = [];
-      foreach ($colMap as $col => $pos) {
-        $raw = $csvRow[$pos] ?? '';
-        $row[$col] = match ($config['columns'][$col]) {
-          'int'    => (int) $raw,
-          'double' => (float) $raw,
-          default  => (string) $raw,
-        };
+      if ($this->isEmptyCsvRow($csvRow)) {
+        continue;
       }
-      $csvRows[] = $row;
+      $id = $idPos === false ? 0 : (int) trim((string) ($csvRow[$idPos] ?? ''));
+      if ($id > 0) {
+        $idRows[] = ['id' => $id];
+        continue;
+      }
+      $csvRows[] = $this->parseCsvRow($csvRow, $colMap, $config['columns']);
     }
     fclose($handle);
 
-    if (empty($csvRows)) {
-      return [];
+    $ids = [];
+    if (!empty($idRows)) {
+      $ids = $this->findIdsByPrimaryKey($table, ['primary_key' => 'id', 'columns' => ['id' => 'int']], $idRows);
+    }
+    if (!empty($csvRows)) {
+      $matched = !empty($config['primary_key'])
+        ? $this->findIdsByPrimaryKey($table, $config, $csvRows)
+        : $this->findIdsByFullRowMatch($table, $config, $csvRows);
+      $ids = array_values(array_unique(array_merge($ids, $matched)));
     }
 
-    if ($hasPk) {
-      return $this->findIdsByPrimaryKey($table, $config, $csvRows);
-    }
-
-    return $this->findIdsByFullRowMatch($table, $config, $csvRows);
+    return $ids;
   }
 
   /**
@@ -1291,97 +1313,257 @@ HTML;
   {
     global $wpdb;
 
-    $table = $wpdb->prefix . $config['table'];
-    $delimiter = $config['csv_delimiter'] ?? ';';
-
     $handle = fopen($filePath, 'r');
     if (!$handle) {
       return '<div class="notice notice-error"><p>' . __('Datei konnte nicht geöffnet werden.', 'lbwp') . '</p></div>';
     }
 
-    $bom = fread($handle, 3);
-    if ($bom !== "\xEF\xBB\xBF") {
-      rewind($handle);
-    }
-
-    $header = fgetcsv($handle, 0, $delimiter);
-    if (!$header) {
-      fclose($handle);
-      return '<div class="notice notice-error"><p>' . __('CSV-Header konnte nicht gelesen werden.', 'lbwp') . '</p></div>';
-    }
-    $header = array_map('trim', $header);
-
-    if (!empty($config['columns_translation'])) {
-      $header = $this->applyHeaderTranslation($header, $config['columns_translation']);
-    }
-
-    $colMap = $this->buildColumnMap($config['columns'], $header);
+    $header = $this->readCsvHeader($handle, $config);
+    $colMap = is_string($header) ? $header : $this->buildColumnMap($config['columns'], $header);
     if (is_string($colMap)) {
       fclose($handle);
       return '<div class="notice notice-error"><p>' . $colMap . '</p></div>';
     }
 
-    $hasPk = !empty($config['primary_key']);
-    $batch = [];
-    $seenPks = [];
-    $inserted = 0;
-
     $wpdb->query('START TRANSACTION');
 
-    if (!$hasPk && !$partial) {
-      $wpdb->query("TRUNCATE TABLE `{$table}`");
-    }
-
     try {
-      while (($csvRow = fgetcsv($handle, 0, $delimiter)) !== false) {
-        $row = [];
-        foreach ($colMap as $col => $pos) {
-          $raw = $csvRow[$pos] ?? '';
-          $row[$col] = match ($config['columns'][$col]) {
-            'int'    => (int) $raw,
-            'double' => (float) $raw,
-            default  => (string) $raw,
-          };
-        }
-        if ($hasPk) {
-          $seenPks[] = $row[$config['primary_key']];
-        }
-        $batch[] = $row;
-
-        if (count($batch) >= self::INSERT_BATCH_SIZE) {
-          $hasPk
-            ? $this->upsertBatch($table, $batch, $config['columns'])
-            : $this->insertBatch($table, $batch, $config['columns']);
-          $inserted += count($batch);
-          $batch = [];
-        }
-      }
+      $result = $this->usesIdColumn($config)
+        ? $this->importRowsById($config, $handle, $colMap, $this->getIdColumnPosition($config, $header), $partial)
+        : $this->importRows($config, $handle, $colMap, $partial);
       fclose($handle);
-
-      if (!empty($batch)) {
-        $hasPk
-          ? $this->upsertBatch($table, $batch, $config['columns'])
-          : $this->insertBatch($table, $batch, $config['columns']);
-        $inserted += count($batch);
-      }
-
-      if ($hasPk && !$partial && !empty($seenPks)) {
-        $this->deleteMissingRows($table, $config['primary_key'], $seenPks, $config['columns'][$config['primary_key']] ?? 'varchar');
-      }
 
       $wpdb->query('COMMIT');
       update_option(self::LAST_IMPORT_OPTION_PREFIX . $config['key'], [
         'time' => time(),
-        'rows' => $inserted,
+        'rows' => $result['rows'],
       ], false);
-      SystemLog::add('CsvTables', 'info', "Import {$config['key']}: {$inserted} Zeilen verarbeitet.");
-      return '<div class="notice notice-success"><p>' . sprintf(__('%d Datensätze importiert.', 'lbwp'), $inserted) . '</p></div>';
+      SystemLog::add('CsvTables', 'info', "Import {$config['key']}: {$result['log']}");
+      return '<div class="notice notice-success"><p>' . esc_html($result['notice']) . '</p></div>';
 
     } catch (\Throwable $e) {
       $wpdb->query('ROLLBACK');
       SystemLog::add('CsvTables', 'error', "Import {$config['key']} fehlgeschlagen: " . $e->getMessage());
       return '<div class="notice notice-error"><p>' . __('Import fehlgeschlagen. Siehe System-Log.', 'lbwp') . '</p></div>';
     }
+  }
+
+  /**
+   * Import rows matched by primary key (upsert) or, without primary key, by truncate/insert.
+   * @param array $config Table configuration entry from getTables()
+   * @param resource $handle CSV file handle positioned after the header row
+   * @param array $colMap Map of column => CSV index from buildColumnMap()
+   * @param bool $partial When true, rows absent from the CSV are kept
+   * @return array ['rows' => int, 'notice' => string, 'log' => string]
+   */
+  private function importRows(array $config, $handle, array $colMap, bool $partial): array
+  {
+    global $wpdb;
+
+    $table = $wpdb->prefix . $config['table'];
+    $delimiter = $config['csv_delimiter'] ?? ';';
+    $hasPk = !empty($config['primary_key']);
+    $batch = [];
+    $seenPks = [];
+    $inserted = 0;
+
+    if (!$hasPk && !$partial) {
+      $wpdb->query("TRUNCATE TABLE `{$table}`");
+    }
+
+    while (($csvRow = fgetcsv($handle, 0, $delimiter)) !== false) {
+      if ($this->isEmptyCsvRow($csvRow)) {
+        continue;
+      }
+      $row = $this->parseCsvRow($csvRow, $colMap, $config['columns']);
+      if ($hasPk) {
+        $seenPks[] = $row[$config['primary_key']];
+      }
+      $batch[] = $row;
+
+      if (count($batch) >= self::INSERT_BATCH_SIZE) {
+        $hasPk
+          ? $this->upsertBatch($table, $batch, $config['columns'])
+          : $this->insertBatch($table, $batch, $config['columns']);
+        $inserted += count($batch);
+        $batch = [];
+      }
+    }
+
+    if (!empty($batch)) {
+      $hasPk
+        ? $this->upsertBatch($table, $batch, $config['columns'])
+        : $this->insertBatch($table, $batch, $config['columns']);
+      $inserted += count($batch);
+    }
+
+    if ($hasPk && !$partial && !empty($seenPks)) {
+      $this->deleteMissingRows($table, $config['primary_key'], $seenPks, $config['columns'][$config['primary_key']] ?? 'varchar');
+    }
+
+    return [
+      'rows' => $inserted,
+      'notice' => sprintf(__('%d Datensätze importiert.', 'lbwp'), $inserted),
+      'log' => "{$inserted} Zeilen verarbeitet.",
+    ];
+  }
+
+  /**
+   * Import rows for id_column tables: rows with an ID are upserted by id, rows without are inserted.
+   * A full import deletes all rows that existed before the import and whose id is not in the file.
+   * @param array $config Table configuration entry from getTables()
+   * @param resource $handle CSV file handle positioned after the header row
+   * @param array $colMap Map of column => CSV index from buildColumnMap()
+   * @param int|false $idPos CSV index of the ID column, false if the file has none
+   * @param bool $partial When true, rows absent from the CSV are kept
+   * @return array ['rows' => int, 'notice' => string, 'log' => string]
+   */
+  private function importRowsById(array $config, $handle, array $colMap, int|false $idPos, bool $partial): array
+  {
+    global $wpdb;
+
+    $table = $wpdb->prefix . $config['table'];
+    $delimiter = $config['csv_delimiter'] ?? ';';
+    $idColumnTypes = ['id' => 'int'] + $config['columns'];
+    $maxIdBefore = (int) $wpdb->get_var("SELECT MAX(id) FROM `{$table}`");
+    $updates = [];
+    $inserts = [];
+    $seenIds = [];
+    $updated = 0;
+    $inserted = 0;
+
+    while (($csvRow = fgetcsv($handle, 0, $delimiter)) !== false) {
+      if ($this->isEmptyCsvRow($csvRow)) {
+        continue;
+      }
+      $row = $this->parseCsvRow($csvRow, $colMap, $config['columns']);
+      $id = $idPos === false ? 0 : (int) trim((string) ($csvRow[$idPos] ?? ''));
+      if ($id > 0) {
+        $seenIds[] = $id;
+        $updates[] = ['id' => $id] + $row;
+      } else {
+        $inserts[] = $row;
+      }
+
+      if (count($updates) >= self::INSERT_BATCH_SIZE) {
+        $this->upsertBatch($table, $updates, $idColumnTypes);
+        $updated += count($updates);
+        $updates = [];
+      }
+      if (count($inserts) >= self::INSERT_BATCH_SIZE) {
+        $this->insertBatch($table, $inserts, $config['columns']);
+        $inserted += count($inserts);
+        $inserts = [];
+      }
+    }
+
+    if (!empty($updates)) {
+      $this->upsertBatch($table, $updates, $idColumnTypes);
+      $updated += count($updates);
+    }
+    if (!empty($inserts)) {
+      $this->insertBatch($table, $inserts, $config['columns']);
+      $inserted += count($inserts);
+    }
+
+    $deleted = ($partial || $maxIdBefore === 0) ? 0 : $this->deleteMissingRows($table, 'id', $seenIds, 'int', $maxIdBefore);
+
+    return [
+      'rows' => $updated + $inserted,
+      'notice' => sprintf(__('%d Datensätze aktualisiert, %d neu hinzugefügt, %d gelöscht.', 'lbwp'), $updated, $inserted, $deleted),
+      'log' => "{$updated} aktualisiert, {$inserted} neu, {$deleted} gelöscht.",
+    ];
+  }
+
+  /**
+   * Skip an optional UTF-8 BOM and read the trimmed header row, with columns_translation applied.
+   * @param resource $handle CSV file handle positioned at the start of the file
+   * @param array $config Table configuration entry from getTables()
+   * @return array|string Header cells, or an error message string
+   */
+  private function readCsvHeader($handle, array $config): array|string
+  {
+    $bom = fread($handle, 3);
+    if ($bom !== "\xEF\xBB\xBF") {
+      rewind($handle);
+    }
+
+    $header = fgetcsv($handle, 0, $config['csv_delimiter'] ?? ';');
+    if (!$header) {
+      return __('CSV-Header konnte nicht gelesen werden.', 'lbwp');
+    }
+    $header = array_map(fn($cell) => trim((string) $cell), $header);
+
+    if (!empty($config['columns_translation'])) {
+      $header = $this->applyHeaderTranslation($header, $config['columns_translation']);
+    }
+
+    return $header;
+  }
+
+  /**
+   * Cast the raw CSV cells of one row to the configured column types.
+   * @param array $csvRow Raw row from fgetcsv()
+   * @param array $colMap Map of column => CSV index from buildColumnMap()
+   * @param array $columns Column config map (name => type)
+   * @return array Associative row of column => typed value
+   */
+  private function parseCsvRow(array $csvRow, array $colMap, array $columns): array
+  {
+    $row = [];
+    foreach ($colMap as $col => $pos) {
+      $raw = $csvRow[$pos] ?? '';
+      $row[$col] = match ($columns[$col]) {
+        'int'    => (int) $raw,
+        'double' => (float) $raw,
+        default  => (string) $raw,
+      };
+    }
+    return $row;
+  }
+
+  /**
+   * Whether a CSV row has no content at all (blank line or trailing empty XLSX row).
+   * @param array $csvRow Raw row from fgetcsv()
+   * @return bool
+   */
+  private function isEmptyCsvRow(array $csvRow): bool
+  {
+    foreach ($csvRow as $cell) {
+      if (trim((string) $cell) !== '') {
+        return false;
+      }
+    }
+    return true;
+  }
+
+  /**
+   * Whether the table exposes its internal id in the backend, the export and the import.
+   * @param array $config Table configuration entry from getTables()
+   * @return bool
+   */
+  private function usesIdColumn(array $config): bool
+  {
+    return !empty($config['id_column']);
+  }
+
+  /**
+   * Position of the ID column in a CSV header, only for tables with id_column enabled.
+   * @param array $config Table configuration entry from getTables()
+   * @param array $header Parsed CSV header row
+   * @return int|false Column index, or false if the table or file has no ID column
+   */
+  private function getIdColumnPosition(array $config, array $header): int|false
+  {
+    if (!$this->usesIdColumn($config)) {
+      return false;
+    }
+    foreach ($header as $pos => $cell) {
+      if (strtolower($cell) === 'id') {
+        return $pos;
+      }
+    }
+    return false;
   }
 
   /**
@@ -1501,8 +1683,10 @@ HTML;
    * @param string $pkCol Primary key column name
    * @param array $seenPks All primary key values present in the import file
    * @param string $pkType Column type ('int' or 'varchar')
+   * @param int $maxId When > 0, only rows with an id up to this value are deleted (keeps rows inserted by the import)
+   * @return int Number of deleted rows
    */
-  private function deleteMissingRows(string $table, string $pkCol, array $seenPks, string $pkType): void
+  private function deleteMissingRows(string $table, string $pkCol, array $seenPks, string $pkType, int $maxId = 0): int
   {
     global $wpdb;
 
@@ -1521,10 +1705,12 @@ HTML;
       $wpdb->query("INSERT IGNORE INTO `{$tmpTable}` (pk) VALUES {$values}");
     }
 
-    $wpdb->query(
-      "DELETE t FROM `{$table}` t LEFT JOIN `{$tmpTable}` tmp ON t.`{$pkCol}` = tmp.pk WHERE tmp.pk IS NULL"
+    $idLimit = $maxId > 0 ? ' AND t.id <= ' . $maxId : '';
+    $deleted = (int) $wpdb->query(
+      "DELETE t FROM `{$table}` t LEFT JOIN `{$tmpTable}` tmp ON t.`{$pkCol}` = tmp.pk WHERE tmp.pk IS NULL{$idLimit}"
     );
     $wpdb->query("DROP TEMPORARY TABLE IF EXISTS `{$tmpTable}`");
+    return $deleted;
   }
 
   /**

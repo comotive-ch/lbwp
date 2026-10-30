@@ -65,8 +65,8 @@ var LbwpForm = {
    * Make sure nonces are generated and renewed
    */
   setupNonceRenewal : function(){
-    // We don't need this on comment forms
-    if (jQuery('#lbwpForm-comment').length > 0) {
+    // We don't need this if the comment form is the only form on the page
+    if (jQuery('form.lbwp-form').not('#lbwpForm-comment').length == 0) {
       return;
     }
     // Refresh form nonce every 15 minutes (nonce is valid 45 minutes)
@@ -103,7 +103,8 @@ var LbwpForm = {
    * Generate actual nonces for forms
    */
   updateFormNonce: function () {
-    jQuery('form.lbwp-form').each(function () {
+    // Comment forms post to wp-comments-post.php and don't need a nonce
+    jQuery('form.lbwp-form').not('#lbwpForm-comment').each(function () {
       var field = jQuery(this).find('input[name=form-nonce]');
       jQuery.post(lbwpFormNonceRetrievalUrl + '/wp-json/lbwp/form/nonce/', function (response) {
         field.val(response.nonce);
