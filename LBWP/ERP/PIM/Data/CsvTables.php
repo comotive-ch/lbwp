@@ -33,6 +33,10 @@ class CsvTables extends ACFBase
   const int EXPORT_MEMORY_STEP_MB = 500;
   const int EXPORT_MEMORY_STEP_ROWS = 50000;
   const string ID_HEADER = 'ID';
+  /**
+   * Action fired with the table key after rows of a table were imported or deleted
+   */
+  const string ROWS_CHANGED_ACTION = 'lbwp_pim_csv_table_rows_changed';
 
   /**
    * Register admin menu, cron hooks, and run DB migrations when needed.
@@ -816,6 +820,7 @@ HTML;
     }
 
     SystemLog::add('CsvTables', 'info', "Row {$id} deleted from {$config['key']}.");
+    do_action(self::ROWS_CHANGED_ACTION, $config['key']);
     wp_send_json_success();
   }
 
@@ -1105,6 +1110,7 @@ HTML;
     $deleted = $wpdb->query("DELETE FROM `{$table}` WHERE id IN ({$idList})");
 
     SystemLog::add('CsvTables', 'info', "Löschimport {$config['key']}: {$deleted} Zeilen gelöscht.");
+    do_action(self::ROWS_CHANGED_ACTION, $config['key']);
     return '<div class="notice notice-success"><p>' . sprintf(__('%d Datensätze gelöscht.', 'lbwp'), $deleted) . '</p></div>';
   }
 
@@ -1339,6 +1345,7 @@ HTML;
         'rows' => $result['rows'],
       ], false);
       SystemLog::add('CsvTables', 'info', "Import {$config['key']}: {$result['log']}");
+      do_action(self::ROWS_CHANGED_ACTION, $config['key']);
       return '<div class="notice notice-success"><p>' . esc_html($result['notice']) . '</p></div>';
 
     } catch (\Throwable $e) {
