@@ -7,6 +7,7 @@ use LBWP\Helper\XlsxHelper;
 use LBWP\Module\General\Cms\SystemLog;
 use LBWP\Theme\Component\ACFBase;
 use LBWP\Util\File;
+use RuntimeException;
 
 /**
  * Base class for importing external CSV files into dedicated DB tables, with
@@ -48,6 +49,7 @@ class CsvTables extends ACFBase
     add_action('wp_ajax_pim_csv_search', [$this, 'handleSearchAjax']);
     add_action('wp_ajax_pim_csv_delete_row', [$this, 'handleDeleteRowAjax']);
     add_action('wp_ajax_pim_csv_update_row', [$this, 'handleUpdateRowAjax']);
+    add_action('wp_ajax_pim_csv_insert_row', [$this, 'handleInsertRowAjax']);
     $this->registerCronActions();
     if (is_admin()) {
       $this->maybeRunDbDelta();
@@ -79,6 +81,21 @@ class CsvTables extends ACFBase
    *   id_column            (bool)    Optional, for tables without primary_key. Shows and exports the internal id
    *                                  as first column "ID". On import, rows with an ID update that row, rows with
    *                                  an empty ID (or files without ID column) are added as new rows.
+   *   row_actions          (array)   Optional map of key => action for additional row icons. An action opens the
+   *                                  modal prefilled with the row like "Kopieren" and saves a new row. Keys:
+   *                                    icon        (string)   dashicon class, e.g. 'dashicons-calendar-alt'
+   *                                    title       (string)   icon title and modal heading
+   *                                    fields      (array)    additional modal fields, each with name, label,
+   *                                                           type ('int', 'varchar', 'checkbox'), default,
+   *                                                           position ('before' or 'after' the columns, default
+   *                                                           'after') and an optional description
+   *                                    visible     (callable) optional, fn(array $row): bool, show the icon only
+   *                                                           for some rows
+   *                                    callback    (callable) optional, fn(array $config, int $sourceId, int $newId,
+   *                                                           array $values): void with the parsed additional
+   *                                                           fields. Runs in the transaction of the insert, so it
+   *                                                           must not start its own. Throw a RuntimeException with
+   *                                                           a user message to roll everything back.
    *
    * @return array[]
    */
@@ -292,7 +309,9 @@ class CsvTables extends ACFBase
     $page = max(1, intval($_GET['csv_page'] ?? 1));
 
     echo '<div class="wrap">';
-    echo '<h1>' . esc_html($config['label']) . '</h1>';
+    echo '<h1 class="wp-heading-inline">' . esc_html($config['label']) . '</h1>';
+    echo '<button type="button" id="pim-btn-create" class="page-title-action">' . esc_html__('Neuer Datensatz', 'lbwp') . '</button>';
+    echo '<hr class="wp-header-end">';
 
     if (!empty($message)) {
       echo $message;
@@ -332,7 +351,7 @@ class CsvTables extends ACFBase
     echo '<div id="pim-row-message" style="margin-bottom:4px;"></div>';
     echo '<p id="pim-table-status">' . esc_html($statusText) . '</p>';
     echo '<table id="pim-data-table" class="wp-list-table widefat fixed striped"><thead>';
-    echo '<tr><th style="width:56px;"></th>';
+    echo '<tr><th style="width:' . $this->getActionColumnWidth($config) . 'px;"></th>';
     if ($showId) {
       echo '<th style="width:70px;">' . esc_html(self::ID_HEADER) . '</th>';
     }
@@ -353,7 +372,7 @@ class CsvTables extends ACFBase
       echo '<tr><td colspan="' . ($colCount + 1) . '">' . __('Keine Daten vorhanden', 'lbwp') . '</td></tr>';
     } else {
       foreach ($rows as $row) {
-        echo $this->renderRow($row, (int) $row['id'], $colNames, $showId);
+        echo $this->renderRow($row, $config);
       }
     }
 
@@ -387,6 +406,12 @@ class CsvTables extends ACFBase
       'noDataMsg'     => __('Keine Daten gefunden.', 'lbwp'),
       'statusOrig'    => $statusText,
       'colMeta'       => $colMeta,
+      'rowActions'    => $this->getRowActionsForScript($config),
+      'titleEdit'     => __('Datensatz bearbeiten', 'lbwp'),
+      'titleCreate'   => __('Neuer Datensatz', 'lbwp'),
+      'titleCopy'     => __('Datensatz kopieren', 'lbwp'),
+      'saveFailed'    => __('Speichern fehlgeschlagen.', 'lbwp'),
+      'insertSuccess' => __('Datensatz hinzugefügt.', 'lbwp'),
       'confirmDelete' => __('Diesen Datensatz wirklich löschen?', 'lbwp'),
       'deleteSuccess' => __('Datensatz gelöscht.', 'lbwp'),
       'deleteFailed'  => __('Löschen fehlgeschlagen.', 'lbwp'),
@@ -473,87 +498,176 @@ class CsvTables extends ACFBase
     });
   });
 
-  // ── Edit / modal ─────────────────────────────────────────────
+  // ── Edit / create / copy modal ───────────────────────────────
+  const modalTitle = document.getElementById('pim-modal-title');
+  const saveBtn    = document.getElementById('pim-modal-save');
+  const titles     = { edit: cfg.titleEdit, create: cfg.titleCreate, copy: cfg.titleCopy };
+  let modalMode    = null;
+  let rowAction    = null;
+
   function esc(s) {
     return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
   }
 
-  document.addEventListener('click', ev => {
-    const btn = ev.target.closest('.pim-btn-edit');
-    if (!btn) return;
-    editingTr = btn.closest('tr');
+  function buildInput(name, type, val) {
+    if (type === 'text') {
+      return '<textarea name="' + name + '" style="width:100%;height:80px;resize:vertical;">' + esc(val) + '</textarea>';
+    }
+    if (type === 'checkbox') {
+      return '<input type="checkbox" name="' + name + '" value="1"' + (val ? ' checked' : '') + ' style="margin-top:8px;" />';
+    }
+    if (type === 'int') {
+      return '<input type="number" step="1" name="' + name + '" value="' + esc(val) + '" style="width:100%;" />';
+    }
+    if (type === 'double') {
+      return '<input type="number" step="any" name="' + name + '" value="' + esc(val) + '" style="width:100%;" />';
+    }
+    return '<input type="text" maxlength="500" name="' + name + '" value="' + esc(val) + '" style="width:100%;" />';
+  }
+
+  function buildField(name, label, type, val, description) {
+    return '<div style="display:flex;gap:12px;margin-bottom:8px;">' +
+        '<div style="width:160px;flex-shrink:0;font-weight:600;padding-top:8px;">' + esc(label) + '</div>' +
+        '<div style="flex:1;">' + buildInput(name, type, val) +
+          (description ? '<p class="description" style="margin:2px 0 0;">' + esc(description) + '</p>' : '') +
+          '<div id="pim-err-' + name + '" style="display:none;color:#b32d2e;font-size:12px;margin-top:2px;"></div>' +
+        '</div>' +
+      '</div>';
+  }
+
+  function buildActionFields(position) {
+    if (!rowAction) return '';
+    return rowAction.fields
+      .filter(field => field.position === position)
+      .map(field => buildField('extra_' + field.name, field.label, field.type, field.default, field.description))
+      .join('');
+  }
+
+  function openModal(mode, tr, action) {
+    modalMode = mode;
+    editingTr = tr;
+    rowAction = action || null;
+    modalTitle.textContent = rowAction ? rowAction.title : titles[mode];
     modalMsg.innerHTML = '';
-    modalFields.innerHTML = '';
+    let html = buildActionFields('before');
     cfg.colMeta.forEach(col => {
-      const td = editingTr.querySelector('td[data-col="' + col.name + '"]');
-      const val = td ? td.dataset.val : '';
-      let inp;
-      if (col.type === 'text') {
-        inp = '<textarea name="' + col.name + '" style="width:100%;height:80px;resize:vertical;">' + esc(val) + '</textarea>';
-      } else if (col.type === 'int') {
-        inp = '<input type="number" step="1" name="' + col.name + '" value="' + esc(val) + '" style="width:100%;" />';
-      } else if (col.type === 'double') {
-        inp = '<input type="number" step="any" name="' + col.name + '" value="' + esc(val) + '" style="width:100%;" />';
-      } else {
-        inp = '<input type="text" maxlength="500" name="' + col.name + '" value="' + esc(val) + '" style="width:100%;" />';
-      }
-      modalFields.innerHTML +=
-        '<div style="display:flex;gap:12px;margin-bottom:8px;">' +
-          '<div style="width:160px;flex-shrink:0;font-weight:600;padding-top:8px;">' + esc(col.label) + '</div>' +
-          '<div style="flex:1;">' + inp +
-            '<div id="pim-err-' + col.name + '" style="display:none;color:#b32d2e;font-size:12px;margin-top:2px;"></div>' +
-          '</div>' +
-        '</div>';
+      const td = tr ? tr.querySelector('td[data-col="' + col.name + '"]') : null;
+      html += buildField(col.name, col.label, col.type, td ? td.dataset.val : '', '');
     });
+    modalFields.innerHTML = html + buildActionFields('after');
     modal.style.display = 'flex';
+  }
+
+  document.getElementById('pim-btn-create').addEventListener('click', () => openModal('create', null));
+  document.addEventListener('click', ev => {
+    const btn = ev.target.closest('.pim-btn-edit, .pim-btn-copy, .pim-btn-action');
+    if (!btn) return;
+    const tr = btn.closest('tr');
+    if (btn.classList.contains('pim-btn-edit')) {
+      openModal('edit', tr);
+    } else if (btn.classList.contains('pim-btn-copy')) {
+      openModal('copy', tr);
+    } else {
+      openModal('action', tr, cfg.rowActions[btn.dataset.action]);
+    }
   });
 
-  function closeModal() { modal.style.display = 'none'; editingTr = null; }
+  function closeModal() { modal.style.display = 'none'; editingTr = null; rowAction = null; }
   document.getElementById('pim-modal-cancel').addEventListener('click', closeModal);
   modal.addEventListener('click', ev => { if (ev.target === modal) closeModal(); });
 
-  document.getElementById('pim-modal-save').addEventListener('click', () => {
-    let valid = true;
-    cfg.colMeta.forEach(col => {
-      const errEl = document.getElementById('pim-err-' + col.name);
-      const inp   = modalFields.querySelector('[name="' + col.name + '"]');
-      if (!inp || !errEl) return;
-      errEl.style.display = 'none';
-      const val = inp.value;
-      if (col.type === 'int' && !/^-?\d+$/.test(val.trim())) {
-        errEl.textContent = cfg.errInt; errEl.style.display = ''; valid = false;
-      } else if (col.type === 'double' && (val.trim() === '' || isNaN(Number(val)))) {
-        errEl.textContent = cfg.errDouble; errEl.style.display = ''; valid = false;
-      } else if (col.type === 'varchar' && val.length > 500) {
-        errEl.textContent = cfg.errVarchar; errEl.style.display = ''; valid = false;
-      }
-    });
-    if (!valid) return;
+  function validateField(name, type) {
+    const errEl = document.getElementById('pim-err-' + name);
+    const inp   = modalFields.querySelector('[name="' + name + '"]');
+    if (!inp || !errEl) return true;
+    errEl.style.display = 'none';
+    const val = inp.value;
+    let error = '';
+    if (type === 'int' && !/^-?\d+$/.test(val.trim())) {
+      error = cfg.errInt;
+    } else if (type === 'double' && (val.trim() === '' || isNaN(Number(val)))) {
+      error = cfg.errDouble;
+    } else if (type === 'varchar' && val.length > 500) {
+      error = cfg.errVarchar;
+    }
+    if (error === '') return true;
+    errEl.textContent = error;
+    errEl.style.display = '';
+    return false;
+  }
 
-    const body = new URLSearchParams({ action: 'pim_csv_update_row', nonce: cfg.rowNonce, table_key: cfg.key, id: editingTr.dataset.id });
+  function validateModal() {
+    const results = cfg.colMeta.map(col => validateField(col.name, col.type));
+    if (rowAction) {
+      rowAction.fields.forEach(field => results.push(validateField('extra_' + field.name, field.type)));
+    }
+    return results.every(Boolean);
+  }
+
+  function buildRequest() {
+    const isEdit = modalMode === 'edit';
+    const body = new URLSearchParams({ action: isEdit ? 'pim_csv_update_row' : 'pim_csv_insert_row', nonce: cfg.rowNonce, table_key: cfg.key });
+    if (isEdit) body.set('id', editingTr.dataset.id);
     cfg.colMeta.forEach(col => {
       const inp = modalFields.querySelector('[name="' + col.name + '"]');
       body.set('fields[' + col.name + ']', inp ? inp.value : '');
     });
+    if (rowAction) {
+      body.set('row_action', rowAction.key);
+      body.set('source_id', editingTr.dataset.id);
+      rowAction.fields.forEach(field => {
+        const inp = modalFields.querySelector('[name="extra_' + field.name + '"]');
+        const val = field.type === 'checkbox' ? (inp.checked ? '1' : '') : inp.value;
+        body.set('extra[' + field.name + ']', val);
+      });
+    }
+    return body;
+  }
 
-    fetch(cfg.ajaxUrl, { method: 'POST', body })
+  function parseRow(html) {
+    const holder = document.createElement('tbody');
+    holder.innerHTML = html;
+    return holder.firstElementChild;
+  }
+
+  function showSavedRows(data) {
+    if (modalMode === 'edit') {
+      if (data.row) editingTr.replaceWith(parseRow(data.row));
+      return;
+    }
+    let anchor = editingTr;
+    if (anchor && data.sourceRow) {
+      anchor = parseRow(data.sourceRow);
+      editingTr.replaceWith(anchor);
+    }
+    const newTr = parseRow(data.row);
+    if (anchor) {
+      anchor.after(newTr);
+    } else {
+      tbody.querySelectorAll('tr:not([data-id])').forEach(tr => tr.remove());
+      tbody.prepend(newTr);
+    }
+  }
+
+  saveBtn.addEventListener('click', () => {
+    if (!validateModal()) return;
+    saveBtn.disabled = true;
+    fetch(cfg.ajaxUrl, { method: 'POST', body: buildRequest() })
       .then(r => r.json())
       .then(data => {
         if (!data.success) {
-          modalMsg.innerHTML = '<div class="notice notice-error" style="padding:6px 12px;margin-top:8px;"><p>' + esc(data.data || 'Fehler') + '</p></div>';
+          modalMsg.innerHTML = '<div class="notice notice-error" style="padding:6px 12px;margin-top:8px;"><p>' + esc(data.data || cfg.saveFailed) + '</p></div>';
           return;
         }
-        const vals = data.data.values;
-        cfg.colMeta.forEach(col => {
-          const td = editingTr.querySelector('td[data-col="' + col.name + '"]');
-          if (!td) return;
-          const v = String(vals[col.name] ?? '');
-          td.dataset.val = v;
-          td.textContent = v.length > 20 ? v.substring(0, 20) + '…' : v;
-        });
+        const message = modalMode === 'edit' ? cfg.saveSuccess : cfg.insertSuccess;
+        showSavedRows(data.data);
         closeModal();
-        showRowMsg(cfg.saveSuccess, 'success');
-      });
+        showRowMsg(message, 'success');
+      })
+      .catch(() => {
+        modalMsg.innerHTML = '<div class="notice notice-error" style="padding:6px 12px;margin-top:8px;"><p>' + esc(cfg.saveFailed) + '</p></div>';
+      })
+      .finally(() => { saveBtn.disabled = false; });
   });
 })();
 </script>
@@ -561,34 +675,111 @@ SCRIPT;
   }
 
   /**
-   * Render a single data table row with edit/delete action buttons and full data-val attributes.
+   * Render a single data table row with its action buttons and full data-val attributes.
    * @param array $row Associative row from wpdb (must include 'id')
-   * @param int $rowId The row's AUTO_INCREMENT id
-   * @param array $colNames Ordered list of configured column names
-   * @param bool $showId Whether to render the internal id as first data cell
+   * @param array $config Table configuration entry from getTables()
    * @return string HTML for the <tr> element
    */
-  private function renderRow(array $row, int $rowId, array $colNames, bool $showId = false): string
+  private function renderRow(array $row, array $config): string
   {
-    $editTitle   = esc_attr(__('Bearbeiten', 'lbwp'));
-    $deleteTitle = esc_attr(__('Löschen', 'lbwp'));
+    $rowId = (int) $row['id'];
     $html  = '<tr data-id="' . $rowId . '">';
-    $html .= '<td style="white-space:nowrap;">';
-    $html .= '<button type="button" class="pim-btn-edit button-link" title="' . $editTitle . '" style="padding:2px 4px;">';
-    $html .= '<span class="dashicons dashicons-edit"></span></button> ';
-    $html .= '<button type="button" class="pim-btn-delete button-link" title="' . $deleteTitle . '" style="padding:2px 4px;color:#b32d2e;">';
-    $html .= '<span class="dashicons dashicons-trash"></span></button>';
-    $html .= '</td>';
-    if ($showId) {
+    $html .= '<td style="white-space:nowrap;">' . $this->renderRowButtons($row, $config) . '</td>';
+    if ($this->usesIdColumn($config)) {
       $html .= '<td>' . $rowId . '</td>';
     }
-    foreach ($colNames as $col) {
+    foreach (array_keys($config['columns']) as $col) {
       $val     = (string) ($row[$col] ?? '');
       $display = mb_strlen($val) > 20 ? mb_substr($val, 0, 20) . '…' : $val;
       $html .= '<td data-col="' . esc_attr($col) . '" data-val="' . esc_attr($val) . '">' . esc_html($display) . '</td>';
     }
     $html .= '</tr>';
     return $html;
+  }
+
+  /**
+   * Edit, copy, the configured row actions visible for the row and delete.
+   * @param array $row Associative row from wpdb
+   * @param array $config Table configuration entry from getTables()
+   * @return string
+   */
+  private function renderRowButtons(array $row, array $config): string
+  {
+    $html = $this->renderRowButton('pim-btn-edit', 'dashicons-edit', __('Bearbeiten', 'lbwp'));
+    $html .= $this->renderRowButton('pim-btn-copy', 'dashicons-admin-page', __('Kopieren', 'lbwp'));
+    foreach ($this->getRowActions($config) as $key => $action) {
+      if (is_callable($action['visible']) && !call_user_func($action['visible'], $row)) {
+        continue;
+      }
+      $html .= $this->renderRowButton('pim-btn-action', $action['icon'], $action['title'], $key);
+    }
+    return $html . $this->renderRowButton('pim-btn-delete button-link-delete', 'dashicons-trash', __('Löschen', 'lbwp'));
+  }
+
+  /**
+   * A single icon button of a row.
+   * @param string $class Button classes besides button-link
+   * @param string $icon Dashicon class
+   * @param string $title Tooltip
+   * @param string $actionKey Key of a configured row action, empty for the built-in buttons
+   * @return string
+   */
+  private function renderRowButton(string $class, string $icon, string $title, string $actionKey = ''): string
+  {
+    $data = $actionKey === '' ? '' : ' data-action="' . esc_attr($actionKey) . '"';
+    return '<button type="button" class="' . esc_attr($class) . ' button-link" title="' . esc_attr($title) . '"' . $data . ' style="padding:2px 4px;">'
+      . '<span class="dashicons ' . esc_attr($icon) . '"></span></button> ';
+  }
+
+  /**
+   * Width of the action column, depending on the number of buttons.
+   * @param array $config Table configuration entry from getTables()
+   * @return int Pixels
+   */
+  private function getActionColumnWidth(array $config): int
+  {
+    return (3 + count($this->getRowActions($config))) * 30 + 16;
+  }
+
+  /**
+   * The configured row actions with defaults applied, see getTables().
+   * @param array $config Table configuration entry from getTables()
+   * @return array Map of key => icon, title, fields, visible, callback
+   */
+  private function getRowActions(array $config): array
+  {
+    $actions = [];
+    foreach ($config['row_actions'] ?? [] as $key => $action) {
+      $actions[sanitize_key($key)] = [
+        'icon' => $action['icon'] ?? 'dashicons-admin-generic',
+        'title' => $action['title'] ?? $key,
+        'fields' => array_map(fn(array $field): array => [
+          'name' => sanitize_key($field['name']),
+          'label' => $field['label'] ?? $field['name'],
+          'type' => $field['type'] ?? 'varchar',
+          'default' => $field['default'] ?? '',
+          'position' => ($field['position'] ?? 'after') === 'before' ? 'before' : 'after',
+          'description' => $field['description'] ?? '',
+        ], $action['fields'] ?? []),
+        'visible' => $action['visible'] ?? null,
+        'callback' => $action['callback'] ?? null,
+      ];
+    }
+    return $actions;
+  }
+
+  /**
+   * The row actions without their callables, for the modal script.
+   * @param array $config Table configuration entry from getTables()
+   * @return array Map of key => key, title, fields
+   */
+  private function getRowActionsForScript(array $config): array
+  {
+    $actions = [];
+    foreach ($this->getRowActions($config) as $key => $action) {
+      $actions[$key] = ['key' => $key, 'title' => $action['title'], 'fields' => $action['fields']];
+    }
+    return $actions;
   }
 
   /**
@@ -610,7 +801,7 @@ SCRIPT;
 </style>
 <div id="pim-edit-modal" style="display:none;">
   <div id="pim-modal-box">
-    <h2>{$labelEdit}</h2>
+    <h2 id="pim-modal-title">{$labelEdit}</h2>
     <div id="pim-modal-fields"></div>
     <div id="pim-modal-actions">
       <button type="button" id="pim-modal-save" class="button button-primary">{$labelSave}</button>
@@ -777,7 +968,7 @@ HTML;
       $tbody = '<tr><td colspan="' . ($colCount + ($showId ? 2 : 1)) . '">' . esc_html(__('Keine Daten gefunden.', 'lbwp')) . '</td></tr>';
     } else {
       foreach ($rows as $row) {
-        $tbody .= $this->renderRow($row, (int) $row['id'], $colNames, $showId);
+        $tbody .= $this->renderRow($row, $config);
       }
     }
 
@@ -825,9 +1016,68 @@ HTML;
   }
 
   /**
-   * WP AJAX handler to update a single row's column values. Returns updated values as JSON.
+   * WP AJAX handler to update a single row's column values. Returns the values and the new row HTML as JSON.
    */
   public function handleUpdateRowAjax(): void
+  {
+    $config = $this->getRowAjaxConfig();
+    $id = (int) ($_POST['id'] ?? 0);
+    if ($id <= 0) {
+      wp_send_json_error('Invalid ID');
+    }
+
+    $values = $this->parseFields($config['columns'], (array) ($_POST['fields'] ?? []));
+    if (is_string($values)) {
+      wp_send_json_error($values);
+    }
+
+    global $wpdb;
+    $formats = $this->getColumnFormats($config['columns']);
+    if ($wpdb->update($wpdb->prefix . $config['table'], $values, ['id' => $id], $formats, ['%d']) === false) {
+      wp_send_json_error(__('Speichern fehlgeschlagen.', 'lbwp'));
+    }
+
+    SystemLog::add('CsvTables', 'info', "Row {$id} updated in {$config['key']}.");
+    wp_send_json_success(['values' => $values, 'row' => $this->renderStoredRow($config, $id)]);
+  }
+
+  /**
+   * WP AJAX handler to add a row, either new, copied or by a configured row action of a source row.
+   * Returns the HTML of the new row and of the source row, which a row action may have changed.
+   */
+  public function handleInsertRowAjax(): void
+  {
+    $config = $this->getRowAjaxConfig();
+    $values = $this->parseFields($config['columns'], (array) ($_POST['fields'] ?? []));
+    if (is_string($values)) {
+      wp_send_json_error($values);
+    }
+
+    $request = $this->parseRowActionRequest($config);
+    if (is_string($request)) {
+      wp_send_json_error($request);
+    }
+
+    try {
+      $newId = $this->insertRow($config, $values, $request);
+    } catch (RuntimeException $e) {
+      wp_send_json_error($e->getMessage());
+    }
+
+    $source = $request === null ? '' : " by {$request['key']} of row {$request['source_id']}";
+    SystemLog::add('CsvTables', 'info', "Row {$newId} added to {$config['key']}{$source}.");
+    do_action(self::ROWS_CHANGED_ACTION, $config['key']);
+    wp_send_json_success([
+      'row' => $this->renderStoredRow($config, $newId),
+      'sourceRow' => $request === null ? '' : $this->renderStoredRow($config, $request['source_id']),
+    ]);
+  }
+
+  /**
+   * Verify nonce and capability of a row AJAX request and return its table config, ends the request otherwise.
+   * @return array Table configuration entry from getTables()
+   */
+  private function getRowAjaxConfig(): array
   {
     check_ajax_referer('pim_csv_row_ops', 'nonce');
 
@@ -835,61 +1085,139 @@ HTML;
       wp_die('', '', ['response' => 403]);
     }
 
-    $key    = sanitize_key($_POST['table_key'] ?? '');
-    $id     = (int) ($_POST['id'] ?? 0);
-    $fields = (array) ($_POST['fields'] ?? []);
-
-    if ($id <= 0) {
-      wp_send_json_error('Invalid ID');
-    }
-
-    $config = $this->findTableConfig($key);
+    $config = $this->findTableConfig(sanitize_key($_POST['table_key'] ?? ''));
     if ($config === null) {
       wp_send_json_error('Table not found');
     }
 
+    return $config;
+  }
+
+  /**
+   * The row action of an insert request with its source row and parsed additional fields.
+   * @param array $config Table configuration entry from getTables()
+   * @return array|string|null key, action, source_id and values, null for a plain insert, or an error message
+   */
+  private function parseRowActionRequest(array $config): array|string|null
+  {
+    $key = sanitize_key($_POST['row_action'] ?? '');
+    if ($key === '') {
+      return null;
+    }
+
+    $action = $this->getRowActions($config)[$key] ?? null;
+    $sourceId = (int) ($_POST['source_id'] ?? 0);
+    if ($action === null || $this->getRow($config, $sourceId) === null) {
+      return __('Aktion oder Datensatz nicht gefunden.', 'lbwp');
+    }
+
+    $types = array_column($action['fields'], 'type', 'name');
+    $values = $this->parseFields($types, (array) ($_POST['extra'] ?? []));
+    if (is_string($values)) {
+      return $values;
+    }
+
+    return ['key' => $key, 'action' => $action, 'source_id' => $sourceId, 'values' => $values];
+  }
+
+  /**
+   * Insert the row and run the callback of the row action in one transaction.
+   * @param array $config Table configuration entry from getTables()
+   * @param array $values Parsed values by column
+   * @param array|null $request see parseRowActionRequest()
+   * @return int Id of the new row
+   * @throws RuntimeException if the insert or the callback failed, nothing is changed then
+   */
+  private function insertRow(array $config, array $values, ?array $request): int
+  {
     global $wpdb;
-    $table = $wpdb->prefix . $config['table'];
-    $sets = [];
-    $params = [];
-    $updated = [];
 
-    foreach ($config['columns'] as $col => $type) {
-      $raw = $fields[$col] ?? '';
-      switch ($type) {
-        case 'int':
-          $val = (int) $raw;
-          $sets[]  = "`{$col}` = %d";
-          $params[] = $val;
-          break;
-        case 'double':
-          $val = (float) $raw;
-          $sets[]  = "`{$col}` = %f";
-          $params[] = $val;
-          break;
-        default:
-          $val = (string) $raw;
-          if ($type === 'varchar' && mb_strlen($val) > 500) {
-            wp_send_json_error(sprintf(__('Feld "%s" ist zu lang (max. 500 Zeichen).', 'lbwp'), $col));
-          }
-          $sets[]  = "`{$col}` = %s";
-          $params[] = $val;
+    $wpdb->query('START TRANSACTION');
+    try {
+      $suppress = $wpdb->suppress_errors();
+      $inserted = $wpdb->insert($wpdb->prefix . $config['table'], $values, $this->getColumnFormats($config['columns']));
+      $wpdb->suppress_errors($suppress);
+      if ($inserted === false) {
+        throw new RuntimeException(sprintf(__('Speichern fehlgeschlagen: %s', 'lbwp'), $wpdb->last_error));
       }
-      $updated[$col] = $val;
+
+      $newId = (int) $wpdb->insert_id;
+      $callback = $request['action']['callback'] ?? null;
+      if (is_callable($callback)) {
+        call_user_func($callback, $config, $request['source_id'], $newId, $request['values']);
+      }
+      $wpdb->query('COMMIT');
+      return $newId;
+    } catch (RuntimeException $e) {
+      $wpdb->query('ROLLBACK');
+      throw $e;
     }
+  }
 
-    $params[] = $id;
-    $result = $wpdb->query($wpdb->prepare(
-      "UPDATE `{$table}` SET " . implode(', ', $sets) . " WHERE id = %d",
-      ...$params
-    ));
-
-    if ($result === false) {
-      wp_send_json_error(__('Speichern fehlgeschlagen.', 'lbwp'));
+  /**
+   * Parse posted modal values by their type.
+   * @param array $types Map of name => type ('int', 'double', 'text', 'varchar', 'checkbox')
+   * @param array $fields Raw posted values by name
+   * @return array|string Values by name in the order of $types, or an error message
+   */
+  private function parseFields(array $types, array $fields): array|string
+  {
+    $values = [];
+    foreach ($types as $name => $type) {
+      $raw = $fields[$name] ?? '';
+      $raw = is_scalar($raw) ? wp_unslash((string) $raw) : '';
+      if ($type === 'varchar' && mb_strlen($raw) > 500) {
+        return sprintf(__('Feld "%s" ist zu lang (max. 500 Zeichen).', 'lbwp'), $name);
+      }
+      $values[$name] = match ($type) {
+        'int' => (int) $raw,
+        'double' => (float) $raw,
+        'checkbox' => $raw !== '',
+        default => $raw,
+      };
     }
+    return $values;
+  }
 
-    SystemLog::add('CsvTables', 'info', "Row {$id} updated in {$config['key']}.");
-    wp_send_json_success(['values' => $updated]);
+  /**
+   * wpdb formats of the configured columns, in their order.
+   * @param array $columns Column config map (name => type)
+   * @return string[]
+   */
+  private function getColumnFormats(array $columns): array
+  {
+    return array_values(array_map(fn(string $type): string => match ($type) {
+      'int' => '%d',
+      'double' => '%f',
+      default => '%s',
+    }, $columns));
+  }
+
+  /**
+   * A single row with all configured columns.
+   * @param array $config Table configuration entry from getTables()
+   * @param int $id
+   * @return array|null Associative row including 'id', null if it doesn't exist
+   */
+  private function getRow(array $config, int $id): ?array
+  {
+    global $wpdb;
+
+    $cols = 'id, ' . implode(', ', array_map(fn($c) => "`{$c}`", array_keys($config['columns'])));
+    $row = $wpdb->get_row($wpdb->prepare("SELECT {$cols} FROM `{$wpdb->prefix}{$config['table']}` WHERE id = %d", $id), ARRAY_A);
+    return is_array($row) ? $row : null;
+  }
+
+  /**
+   * HTML of a row as currently stored.
+   * @param array $config Table configuration entry from getTables()
+   * @param int $id
+   * @return string Empty if the row doesn't exist
+   */
+  private function renderStoredRow(array $config, int $id): string
+  {
+    $row = $this->getRow($config, $id);
+    return $row === null ? '' : $this->renderRow($row, $config);
   }
 
   /**

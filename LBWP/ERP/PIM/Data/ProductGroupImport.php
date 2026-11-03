@@ -11,7 +11,7 @@ use mysqli;
  *
  * Two import operations:
  *  - Category tree: creates/updates the full product-group taxonomy tree from XLSX/CSV
- *  - Assignments: bulk-assigns products to product groups from XLSX/CSV
+ *  - Assignments: bulk-assigns products to product groups from XLSX/CSV (replace, add or delete)
  *
  * @package LBWP\ERP\PIM\Data
  * @author Michael Sebel <michael@comotive.ch>
@@ -24,6 +24,9 @@ class ProductGroupImport
   const string FIELD_KEY_ORDER = 'field_pg_order';
   const array LEVEL_COLS_DE = ['Level1De', 'Level2De', 'Level3De', 'Level4De', 'Level5De'];
   const array LEVEL_COLS_FR = ['Level1Fr', 'Level2Fr', 'Level3Fr', 'Level4Fr', 'Level5Fr'];
+  const string MODE_REPLACE = 'replace';
+  const string MODE_ADD = 'add';
+  const string MODE_DELETE = 'delete';
 
   /**
    * Handle category tree file upload and run synchronous import.
@@ -62,7 +65,12 @@ class ProductGroupImport
       return '<div class="notice notice-error"><p>' . __('Datei konnte nicht verarbeitet werden.', 'lbwp') . '</p></div>';
     }
 
-    $result = $this->importAssignments($csvPath, !empty($_POST['pg_assign_additive']));
+    $mode = $_POST['pg_assign_mode'] ?? self::MODE_REPLACE;
+    if (!in_array($mode, [self::MODE_REPLACE, self::MODE_ADD, self::MODE_DELETE], true)) {
+      $mode = self::MODE_REPLACE;
+    }
+
+    $result = $this->importAssignments($csvPath, $mode);
     @unlink($csvPath);
     return $result;
   }
@@ -89,10 +97,16 @@ class ProductGroupImport
     echo '<td><input type="file" name="pg_assign_file" id="pg_assign_file" accept=".xlsx,.csv" /></td>';
     echo '</tr><tr>';
     echo '<th>' . __('Modus', 'lbwp') . '</th>';
-    echo '<td><label><input type="checkbox" name="pg_assign_additive" value="1" /> ' . __('Nur hinzufügen', 'lbwp') . '</label>';
-    echo '<p class="description">' . __('Bestehende Zuweisungen bleiben erhalten. Ohne diese Option werden alle bisherigen Zuweisungen der in der Datei vorkommenden Produktgruppen ersetzt.', 'lbwp') . '</p></td>';
+    echo '<td><fieldset>';
+    echo '<label><input type="radio" name="pg_assign_mode" value="' . self::MODE_REPLACE . '" checked /> ' . __('Ersetzen', 'lbwp') . '</label>';
+    echo '<p class="description">' . __('Alle bisherigen Zuweisungen der in der Datei vorkommenden Produktgruppen werden ersetzt.', 'lbwp') . '</p>';
+    echo '<label><input type="radio" name="pg_assign_mode" value="' . self::MODE_ADD . '" /> ' . __('Nur hinzufügen', 'lbwp') . '</label>';
+    echo '<p class="description">' . __('Bestehende Zuweisungen bleiben erhalten, die Zuweisungen aus der Datei werden ergänzt.', 'lbwp') . '</p>';
+    echo '<label><input type="radio" name="pg_assign_mode" value="' . self::MODE_DELETE . '" /> ' . __('Löschen', 'lbwp') . '</label>';
+    echo '<p class="description">' . __('Die in der Datei aufgeführten Zuweisungen werden entfernt, alle anderen bleiben erhalten.', 'lbwp') . '</p>';
+    echo '</fieldset></td>';
     echo '</tr></table>';
-    echo '<p><input type="submit" name="pg_assign_upload" class="button-primary" value="' . esc_attr(__('Hochladen und Zuweisungen importieren', 'lbwp')) . '" /></p>';
+    echo '<p><input type="submit" name="pg_assign_upload" class="button-primary" value="' . esc_attr(__('Hochladen und Zuweisungen verarbeiten', 'lbwp')) . '" /></p>';
     echo '</form>';
   }
 
@@ -214,13 +228,14 @@ class ProductGroupImport
   }
 
   /**
-   * Import product-to-group assignments using direct DB operations.
-   * Replaces all existing assignments for terms that appear in the CSV, unless additive mode only adds them.
+   * Process product-to-group assignments using direct DB operations.
+   * Replace mode swaps all assignments of the terms in the CSV, add mode only inserts the given ones
+   * and delete mode removes exactly the given product/group pairs.
    * @param string $csvPath path to the local semicolon-delimited UTF-8 CSV
-   * @param bool $additive keep existing assignments and only insert the new ones
+   * @param string $mode one of the MODE_* constants
    * @return string HTML feedback message
    */
-  protected function importAssignments(string $csvPath, bool $additive = false): string
+  protected function importAssignments(string $csvPath, string $mode = self::MODE_REPLACE): string
   {
     ini_set('memory_limit', '2G');
     set_time_limit(0);
@@ -232,13 +247,57 @@ class ProductGroupImport
     }
     $db->set_charset('utf8mb4');
 
-    $termTaxMap = $this->buildTermTaxonomyMap($db, $table_prefix);
-    $skuPostMap = $this->buildSkuPostMap($db, $table_prefix);
+    $assignments = $this->readAssignments(
+      $csvPath,
+      $this->buildTermTaxonomyMap($db, $table_prefix),
+      $this->buildSkuPostMap($db, $table_prefix)
+    );
 
-    $handle = fopen($csvPath, 'r');
-    if (!$handle) {
+    if ($assignments === false) {
       $db->close();
       return '<div class="notice notice-error"><p>' . __('CSV-Datei konnte nicht gelesen werden.', 'lbwp') . '</p></div>';
+    }
+
+    if (empty($assignments)) {
+      $db->close();
+      return '<div class="notice notice-warning"><p>' . __('Keine Zuweisungen verarbeitet.', 'lbwp') . '</p></div>';
+    }
+
+    $ttids = array_keys($assignments);
+    $postIds = $this->getAssignmentPostIds($assignments);
+
+    if ($mode === self::MODE_DELETE) {
+      $affected = $this->deleteAssignments($db, $table_prefix, $assignments);
+      $message = __('%d Zuweisungen gelöscht.', 'lbwp');
+    } else {
+      if ($mode === self::MODE_REPLACE) {
+        $postIds = array_merge($postIds, $this->clearTermAssignments($db, $table_prefix, $ttids));
+      }
+      $affected = $this->insertAssignments($db, $table_prefix, $assignments);
+      $message = __('%d Zuweisungen importiert.', 'lbwp');
+    }
+
+    $this->recountTerms($db, $table_prefix, $ttids);
+    $db->close();
+
+    $this->invalidateCaches($postIds, $ttids);
+
+    return '<div class="notice notice-success"><p>' . sprintf($message, $affected) . '</p></div>';
+  }
+
+  /**
+   * Read the assignment CSV (column 1: group slug, column 2: SKU) into deduplicated id pairs.
+   * Rows with unknown slugs or SKUs are skipped.
+   * @param string $csvPath path to the local semicolon-delimited UTF-8 CSV
+   * @param array $termTaxMap slug => term_taxonomy_id
+   * @param array $skuPostMap sku => post_id
+   * @return array|false term_taxonomy_id => [post_id => true], or false if the file can't be read
+   */
+  protected function readAssignments(string $csvPath, array $termTaxMap, array $skuPostMap): array|false
+  {
+    $handle = fopen($csvPath, 'r');
+    if (!$handle) {
+      return false;
     }
 
     $bom = fread($handle, 3);
@@ -248,9 +307,7 @@ class ProductGroupImport
 
     fgetcsv($handle, 0, ';'); // skip header row
 
-    // term_taxonomy_id => [post_id => true] (set semantics to deduplicate)
     $assignments = [];
-
     while (($row = fgetcsv($handle, 0, ';')) !== false) {
       $slug = trim($row[0] ?? '');
       $sku = trim($row[1] ?? '');
@@ -264,59 +321,132 @@ class ProductGroupImport
     }
     fclose($handle);
 
-    if (empty($assignments)) {
-      $db->close();
-      return '<div class="notice notice-warning"><p>' . __('Keine Zuweisungen verarbeitet.', 'lbwp') . '</p></div>';
-    }
-
-    $ttids = array_keys($assignments);
-
-    if (!$additive) {
-      foreach (array_chunk($ttids, 1000) as $chunk) {
-        $db->query(
-          "DELETE FROM `{$table_prefix}term_relationships`
-           WHERE term_taxonomy_id IN (" . implode(',', $chunk) . ")"
-        );
-      }
-    }
-
-    $inserted = 0;
-    $buffer = [];
-
-    foreach ($assignments as $ttid => $postIds) {
-      foreach (array_keys($postIds) as $postId) {
-        $buffer[] = "({$postId},{$ttid},0)";
-        if (count($buffer) >= 1000) {
-          $db->query(
-            "INSERT IGNORE INTO `{$table_prefix}term_relationships`
-             (object_id, term_taxonomy_id, term_order) VALUES " . implode(',', $buffer)
-          );
-          $inserted += count($buffer);
-          $buffer = [];
-        }
-      }
-    }
-
-    if (!empty($buffer)) {
-      $db->query(
-        "INSERT IGNORE INTO `{$table_prefix}term_relationships`
-         (object_id, term_taxonomy_id, term_order) VALUES " . implode(',', $buffer)
-      );
-      $inserted += count($buffer);
-    }
-
-    $this->recountTerms($db, $table_prefix, $ttids);
-
-    $db->close();
-
-    return '<div class="notice notice-success"><p>' . sprintf(
-        __('%d Zuweisungen importiert.', 'lbwp'),
-        $inserted
-      ) . '</p></div>';
+    return $assignments;
   }
 
   /**
-   * Recalculate the term counts from the actual relationships, in additive mode the file
+   * Remove all product assignments of the given terms.
+   * @param mysqli $db native DB connection
+   * @param string $prefix table prefix
+   * @param int[] $ttids term_taxonomy_ids to clear
+   * @return int[] ids of the posts that lost an assignment
+   */
+  protected function clearTermAssignments(mysqli $db, string $prefix, array $ttids): array
+  {
+    $postIds = [];
+    foreach (array_chunk($ttids, 1000) as $chunk) {
+      $result = $db->query(
+        "SELECT DISTINCT object_id FROM `{$prefix}term_relationships`
+         WHERE term_taxonomy_id IN (" . implode(',', $chunk) . ")"
+      );
+      if ($result) {
+        while ($row = $result->fetch_row()) {
+          $postIds[] = (int)$row[0];
+        }
+        $result->free();
+      }
+
+      $db->query(
+        "DELETE FROM `{$prefix}term_relationships`
+         WHERE term_taxonomy_id IN (" . implode(',', $chunk) . ")"
+      );
+    }
+
+    return $postIds;
+  }
+
+  /**
+   * Collect the unique post ids referenced by the assignment map.
+   * @param array $assignments term_taxonomy_id => [post_id => true]
+   * @return int[] post ids
+   */
+  protected function getAssignmentPostIds(array $assignments): array
+  {
+    $postIds = [];
+    foreach ($assignments as $postIdSet) {
+      $postIds += $postIdSet;
+    }
+
+    return array_keys($postIds);
+  }
+
+  /**
+   * Invalidate the object caches bypassed by the direct DB writes, otherwise the backend
+   * keeps showing the old assignments and counts.
+   * @param int[] $postIds posts whose relationships changed
+   * @param int[] $ttids term_taxonomy_ids whose counts changed
+   * @return void
+   */
+  protected function invalidateCaches(array $postIds, array $ttids): void
+  {
+    $postIds = array_unique($postIds);
+    foreach (array_chunk($postIds, 1000) as $chunk) {
+      clean_object_term_cache($chunk, self::POST_TYPE_SLUG);
+    }
+    clean_term_cache($ttids);
+  }
+
+  /**
+   * Insert the given assignments in batches, existing ones are ignored.
+   * @param mysqli $db native DB connection
+   * @param string $prefix table prefix
+   * @param array $assignments term_taxonomy_id => [post_id => true]
+   * @return int number of processed assignments
+   */
+  protected function insertAssignments(mysqli $db, string $prefix, array $assignments): int
+  {
+    $inserted = 0;
+    foreach (array_chunk($this->getAssignmentTuples($assignments), 1000) as $chunk) {
+      $db->query(
+        "INSERT IGNORE INTO `{$prefix}term_relationships`
+         (object_id, term_taxonomy_id, term_order) VALUES " . implode(',', array_map(fn($tuple) => '(' . $tuple . ',0)', $chunk))
+      );
+      $inserted += count($chunk);
+    }
+
+    return $inserted;
+  }
+
+  /**
+   * Delete exactly the given product/group pairs in batches.
+   * @param mysqli $db native DB connection
+   * @param string $prefix table prefix
+   * @param array $assignments term_taxonomy_id => [post_id => true]
+   * @return int number of actually deleted assignments
+   */
+  protected function deleteAssignments(mysqli $db, string $prefix, array $assignments): int
+  {
+    $deleted = 0;
+    foreach (array_chunk($this->getAssignmentTuples($assignments), 1000) as $chunk) {
+      $db->query(
+        "DELETE FROM `{$prefix}term_relationships`
+         WHERE (object_id, term_taxonomy_id) IN (" . implode(',', array_map(fn($tuple) => '(' . $tuple . ')', $chunk)) . ")"
+      );
+      $deleted += max(0, $db->affected_rows);
+    }
+
+    return $deleted;
+  }
+
+  /**
+   * Flatten the assignment map into "post_id,term_taxonomy_id" SQL tuples.
+   * @param array $assignments term_taxonomy_id => [post_id => true]
+   * @return string[] list of "post_id,term_taxonomy_id" strings
+   */
+  protected function getAssignmentTuples(array $assignments): array
+  {
+    $tuples = [];
+    foreach ($assignments as $ttid => $postIds) {
+      foreach (array_keys($postIds) as $postId) {
+        $tuples[] = (int)$postId . ',' . (int)$ttid;
+      }
+    }
+
+    return $tuples;
+  }
+
+  /**
+   * Recalculate the term counts from the actual relationships, in add and delete mode the file
    * only holds part of a term's products.
    * @param mysqli $db native DB connection
    * @param string $prefix table prefix
