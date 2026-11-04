@@ -105,7 +105,7 @@ class AutoUnpublishPost
        WHERE p.post_status = 'draft'
        AND p.post_name = %s
        AND p.post_type IN ($placeholders)
-       AND pm.meta_key = 'auto_unpublish_on'
+       AND pm.meta_key = 'auto_unpublished_at'
        AND pm.meta_value != ''
        LIMIT 1",
       array_merge([$slug], $postTypes)
@@ -322,6 +322,8 @@ class AutoUnpublishPost
         'post_status' => 'draft'
       ));
       delete_post_meta($postId, 'auto_unpublish_on');
+      // Keep a trace, as the post would otherwise look like it was unpublished by nobody
+      update_post_meta($postId, 'auto_unpublished_at', current_time('timestamp'));
 
       // Unpublish associated menu items as well (dont delete them!)
       if ($this->settings['unpublishAssociatedMenus']) {

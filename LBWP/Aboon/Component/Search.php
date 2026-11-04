@@ -16,6 +16,7 @@ use LBWP\Util\WordPress;
 use LBWP\Helper\LLM\ChromaDB;
 use LBWP\Helper\LLM\E5MultilangSmall;
 use LBWP\Core as LbwpCore;
+use WP_Query;
 
 /**
  * Provides search results and auto complete logic
@@ -191,6 +192,15 @@ class Search extends ACFBase
    */
   public static $TEXT_INDEX_TITLE_PREFIX_META = '';
   /**
+   * Adds pdf attachments (text indexed by PdfSearchIndex, needs LBWP_SEARCH_INDEX_PDFS) to the overridden wordpress search
+   * @var bool
+   */
+  public static $SEARCH_PDF_ATTACHMENTS = false;
+  /**
+   * @var int max number of pdf attachments added to the search results
+   */
+  public static $SEARCH_PDF_ATTACHMENTS_LIMIT = 50;
+  /**
    * @var string
    */
   const CHATGPT_SECRET = LBWP_AI_SEARCH_TEXT_INDEX_CHATGPT_SECRET;
@@ -269,7 +279,158 @@ class Search extends ACFBase
       } else {
         $this->overrideWordPressSeachNativeDb($term, $query, $results);
       }
+
+      if (static::$SEARCH_PDF_ATTACHMENTS) {
+        $this->addPdfAttachmentResults($term, $query);
+      }
     }
+  }
+
+  /**
+   * Appends matching pdf attachments to the search results, after the regular results
+   * @param string $term the original search term
+   * @param WP_Query $query the main search query
+   * @return void
+   */
+  protected function addPdfAttachmentResults(string $term, WP_Query $query): void
+  {
+    $pdfIds = $this->getPdfAttachmentIdsByTerm($term);
+    if (count($pdfIds) === 0) {
+      return;
+    }
+
+    $postIds = $query->get('post__in');
+    $hasResults = is_array($postIds) && count($postIds) > 0;
+    $postIds = array_values(array_unique(array_merge($hasResults ? $postIds : [], $pdfIds)));
+    $postIds = $this->filterIdsByQueryLanguage($postIds, $query);
+    if (count($postIds) === 0) {
+      return;
+    }
+
+    $query->set('s', '');
+    $query->set('s_fallback', $hasResults ? $query->get('s_fallback') : $term);
+    $query->set('found_posts_primary', count($postIds));
+    $query->set('post__in', $postIds);
+    $query->set('orderby', 'post__in');
+    $query->set('post_type', $this->getPostTypesWithAttachment($query->get('post_type')));
+    // Attachments have status inherit, which a search without explicit status never returns
+    $query->set('post_status', ['publish', 'inherit']);
+    add_filter('attachment_link', [$this, 'getPdfAttachmentLink'], 10, 2);
+  }
+
+  /**
+   * Applies the polylang language filter on the ids directly, as its tax query would drop untranslated attachments
+   * @param int[] $postIds the result ids
+   * @param WP_Query $query the main search query, its language tax query is removed
+   * @return int[] ids in the current language or without language
+   */
+  protected function filterIdsByQueryLanguage(array $postIds, WP_Query $query): array
+  {
+    if (!function_exists('pll_current_language') || !function_exists('pll_get_post_language')) {
+      return $postIds;
+    }
+
+    $hasLanguageVar = !empty($query->get('lang'));
+    $hasLanguageTaxQuery = $this->removeLanguageTaxQuery($query);
+    $language = $hasLanguageVar ? $query->get('lang') : pll_current_language();
+    if ((!$hasLanguageVar && !$hasLanguageTaxQuery) || empty($language)) {
+      return $postIds;
+    }
+
+    $query->set('lang', '');
+    return array_values(array_filter($postIds, function ($postId) use ($language) {
+      $postLanguage = pll_get_post_language($postId);
+      return $postLanguage === false || $postLanguage === $language;
+    }));
+  }
+
+  /**
+   * Removes the language clause polylang adds directly to the tax query (instead of the lang var) on some requests
+   * @param WP_Query $query the main search query
+   * @return bool true if a language clause was removed
+   */
+  protected function removeLanguageTaxQuery(WP_Query $query): bool
+  {
+    $taxQuery = $query->get('tax_query');
+    if (!is_array($taxQuery)) {
+      return false;
+    }
+
+    $remaining = array_filter($taxQuery, fn($clause) => !is_array($clause) || ($clause['taxonomy'] ?? '') !== 'language');
+    if (count($remaining) === count($taxQuery)) {
+      return false;
+    }
+
+    $query->set('tax_query', $remaining);
+    return true;
+  }
+
+  /**
+   * Finds pdf attachments whose title or indexed text contains all words of the term
+   * @param string $term the search term
+   * @return int[] attachment ids, newest first
+   */
+  protected function getPdfAttachmentIdsByTerm(string $term): array
+  {
+    $words = array_filter(preg_split('/\s+/', trim($term)), fn($word) => mb_strlen($word) >= 2);
+    if (count($words) === 0) {
+      return [];
+    }
+
+    $db = WordPress::getDb();
+    $conditions = [];
+    $params = [];
+    foreach (array_slice($words, 0, static::$MAX_SPLIT_TERMS) as $word) {
+      $like = '%' . $db->esc_like($word) . '%';
+      $conditions[] = '(post_title LIKE %s OR post_content LIKE %s)';
+      $params[] = $like;
+      $params[] = $like;
+    }
+    $params[] = static::$SEARCH_PDF_ATTACHMENTS_LIMIT;
+
+    $sql = '
+      SELECT ID FROM ' . $db->posts . '
+      WHERE post_type = "attachment" AND post_mime_type = "application/pdf" AND ' . implode(' AND ', $conditions) . '
+      ORDER BY post_date DESC
+      LIMIT %d
+    ';
+
+    return array_map('intval', $db->get_col($db->prepare($sql, $params)));
+  }
+
+  /**
+   * Makes sure attachments are part of the queried post types
+   * @param string|array $postTypes the current post_type query var
+   * @return string|array the post types including attachments
+   */
+  protected function getPostTypesWithAttachment(string|array $postTypes): string|array
+  {
+    if (empty($postTypes) || $postTypes === 'any') {
+      return 'any';
+    }
+
+    $postTypes = (array) $postTypes;
+    if (!in_array('attachment', $postTypes)) {
+      $postTypes[] = 'attachment';
+    }
+
+    return $postTypes;
+  }
+
+  /**
+   * Links pdf attachments in search results directly to the file instead of the attachment page
+   * @param string $link the attachment page link
+   * @param int $postId the attachment id
+   * @return string the file url for pdfs, the original link otherwise
+   */
+  public function getPdfAttachmentLink(string $link, int $postId): string
+  {
+    if (get_post_mime_type($postId) !== 'application/pdf') {
+      return $link;
+    }
+
+    $url = wp_get_attachment_url($postId);
+    return $url === false ? $link : $url;
   }
 
   /**

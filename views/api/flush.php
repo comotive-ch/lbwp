@@ -10,18 +10,31 @@ if (!isset($_REQUEST[CACHE_FLUSH_KEY]) || $_REQUEST[CACHE_FLUSH_KEY] != CACHE_FL
 }
 
 /**
- * Scans the object cache redis and gradually unlinks the keys to be flushed
- * @param Redis $redis connection to the object cache redis
+ * Flushes the object cache of the customer, by FLUSHDB if lazy flush is configured, else by scanning and unlinking
+ * @param Redis $redis connection to the object cache redis, expected on database 0 and left there
  * @param string $deletePrefix the key prefix to flush
+ * @param bool $isFullFlush whether the whole customer cache is flushed, not just keys matching a search
  * @param bool $debug whether to dump the flushed keys
  * @return void
  */
-function flushObjectCache(Redis $redis, string $deletePrefix, bool $debug): void
+function flushObjectCache(Redis $redis, string $deletePrefix, bool $isFullFlush, bool $debug): void
 {
-  $it = NULL;
-  while ($keys = $redis->scan($it, $deletePrefix . '*', 10000)) {
-    $redis->unlink($keys);
-    if ($debug) var_dump($keys);
+  $database = intval(LBWP_REDIS_CACHE_DATABASE);
+  $redis->select($database);
+  try {
+    // Never FLUSHDB database 0, it is shared by all customers and holds the flush locks
+    if ($isFullFlush && LBWP_REDIS_CACHE_LAZYFLUSH && $database > 0) {
+      $redis->flushDB(true);
+      if ($debug) var_dump('flushed database ' . $database);
+      return;
+    }
+    $it = NULL;
+    while ($keys = $redis->scan($it, $deletePrefix . '*', 10000)) {
+      $redis->unlink($keys);
+      if ($debug) var_dump($keys);
+    }
+  } finally {
+    $redis->select(0);
   }
 }
 
@@ -82,10 +95,8 @@ if ($debug) {
   var_dump('---------');
 }
 
-// Connection to the write redis, used for the flush lock and the object cache flush
-$redis = new Redis();
-$redis->pconnect(REDIS_HOST, REDIS_CONNECTION_PORT, 2);
-$redis->auth(REDIS_AUTH_KEY);
+// Connection to the write redis, the flush locks always live in database 0
+$redis = lbwpConnectRedisCache(0, 2);
 $redis->setOption(Redis::OPT_SCAN, Redis::SCAN_RETRY);
 
 // Identical requests share one lock. The lock key must not start with a customer key, so a flush never deletes it
@@ -129,7 +140,7 @@ try {
   do {
     // Flush the object cache, if not a sole html flush request
     if ($_REQUEST['search'] != $htmlCacheFlushKey) {
-      flushObjectCache($redis, $deletePrefix, $debug);
+      flushObjectCache($redis, $deletePrefix, strlen($_REQUEST['search'] ?? '') == 0, $debug);
     }
     // Same with the html cache node, if applicable
     if (FRONTEND_CACHE_REDIS_ENABLED && $doHtmlFlush) {

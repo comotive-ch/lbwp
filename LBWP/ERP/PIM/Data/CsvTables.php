@@ -81,6 +81,10 @@ class CsvTables extends ACFBase
    *   id_column            (bool)    Optional, for tables without primary_key. Shows and exports the internal id
    *                                  as first column "ID". On import, rows with an ID update that row, rows with
    *                                  an empty ID (or files without ID column) are added as new rows.
+   *   order_by             (array)   Optional columns (or 'id') to sort the backend table and the export by,
+   *                                  in this order, ascending. Default ['id'].
+   *   export_filename      (string)  Optional file name of the XLSX export without date and extension.
+   *                                  Default is the table name.
    *   row_actions          (array)   Optional map of key => action for additional row icons. An action opens the
    *                                  modal prefilled with the row like "Kopieren" and saves a new row. Keys:
    *                                    icon        (string)   dashicon class, e.g. 'dashicons-calendar-alt'
@@ -89,6 +93,9 @@ class CsvTables extends ACFBase
    *                                                           type ('int', 'varchar', 'checkbox'), default,
    *                                                           position ('before' or 'after' the columns, default
    *                                                           'after') and an optional description
+   *                                                           default may be a closure or array callable
+   *                                                           fn(array $row): mixed to
+   *                                                           prefill the field from the clicked row
    *                                    visible     (callable) optional, fn(array $row): bool, show the icon only
    *                                                           for some rows
    *                                    callback    (callable) optional, fn(array $config, int $sourceId, int $newId,
@@ -336,7 +343,7 @@ class CsvTables extends ACFBase
     $total = (int) $wpdb->get_var("SELECT COUNT(*) FROM `{$table}`");
     $safeCols = 'id, ' . implode(', ', array_map(fn($c) => "`{$c}`", array_keys($config['columns'])));
     $rows = $wpdb->get_results(
-      $wpdb->prepare("SELECT {$safeCols} FROM `{$table}` LIMIT %d OFFSET %d", self::ROWS_PER_PAGE, $offset),
+      $wpdb->prepare("SELECT {$safeCols} FROM `{$table}` ORDER BY {$this->getOrderBy($config)} LIMIT %d OFFSET %d", self::ROWS_PER_PAGE, $offset),
       ARRAY_A
     );
 
@@ -535,26 +542,28 @@ class CsvTables extends ACFBase
       '</div>';
   }
 
-  function buildActionFields(position) {
+  function buildActionFields(position, defaults) {
     if (!rowAction) return '';
     return rowAction.fields
       .filter(field => field.position === position)
-      .map(field => buildField('extra_' + field.name, field.label, field.type, field.default, field.description))
+      .map(field => buildField('extra_' + field.name, field.label, field.type,
+        field.name in defaults ? defaults[field.name] : field.default, field.description))
       .join('');
   }
 
-  function openModal(mode, tr, action) {
+  function openModal(mode, tr, action, defaults) {
     modalMode = mode;
     editingTr = tr;
     rowAction = action || null;
+    defaults = defaults || {};
     modalTitle.textContent = rowAction ? rowAction.title : titles[mode];
     modalMsg.innerHTML = '';
-    let html = buildActionFields('before');
+    let html = buildActionFields('before', defaults);
     cfg.colMeta.forEach(col => {
       const td = tr ? tr.querySelector('td[data-col="' + col.name + '"]') : null;
       html += buildField(col.name, col.label, col.type, td ? td.dataset.val : '', '');
     });
-    modalFields.innerHTML = html + buildActionFields('after');
+    modalFields.innerHTML = html + buildActionFields('after', defaults);
     modal.style.display = 'flex';
   }
 
@@ -568,7 +577,7 @@ class CsvTables extends ACFBase
     } else if (btn.classList.contains('pim-btn-copy')) {
       openModal('copy', tr);
     } else {
-      openModal('action', tr, cfg.rowActions[btn.dataset.action]);
+      openModal('action', tr, cfg.rowActions[btn.dataset.action], JSON.parse(btn.dataset.defaults || '{}'));
     }
   });
 
@@ -711,7 +720,7 @@ SCRIPT;
       if (is_callable($action['visible']) && !call_user_func($action['visible'], $row)) {
         continue;
       }
-      $html .= $this->renderRowButton('pim-btn-action', $action['icon'], $action['title'], $key);
+      $html .= $this->renderRowButton('pim-btn-action', $action['icon'], $action['title'], $key, $this->getRowActionDefaults($action, $row));
     }
     return $html . $this->renderRowButton('pim-btn-delete button-link-delete', 'dashicons-trash', __('Löschen', 'lbwp'));
   }
@@ -722,13 +731,58 @@ SCRIPT;
    * @param string $icon Dashicon class
    * @param string $title Tooltip
    * @param string $actionKey Key of a configured row action, empty for the built-in buttons
+   * @param array $defaults Field defaults of the row action computed from the row, by field name
    * @return string
    */
-  private function renderRowButton(string $class, string $icon, string $title, string $actionKey = ''): string
+  private function renderRowButton(string $class, string $icon, string $title, string $actionKey = '', array $defaults = []): string
   {
     $data = $actionKey === '' ? '' : ' data-action="' . esc_attr($actionKey) . '"';
+    if (!empty($defaults)) {
+      $data .= ' data-defaults="' . esc_attr(wp_json_encode($defaults)) . '"';
+    }
     return '<button type="button" class="' . esc_attr($class) . ' button-link" title="' . esc_attr($title) . '"' . $data . ' style="padding:2px 4px;">'
       . '<span class="dashicons ' . esc_attr($icon) . '"></span></button> ';
+  }
+
+  /**
+   * Field defaults of a row action that are computed from the row by a callable default.
+   * @param array $action Row action from getRowActions()
+   * @param array $row Associative row from wpdb
+   * @return array Map of field name => default
+   */
+  private function getRowActionDefaults(array $action, array $row): array
+  {
+    $defaults = [];
+    foreach ($action['fields'] as $field) {
+      if ($this->isRowDefault($field['default'])) {
+        $defaults[$field['name']] = call_user_func($field['default'], $row);
+      }
+    }
+    return $defaults;
+  }
+
+  /**
+   * Whether a field default is computed from the row, strings are always literal values even if they name a function.
+   * @param mixed $default Configured field default
+   * @return bool
+   */
+  private function isRowDefault(mixed $default): bool
+  {
+    return !is_string($default) && is_callable($default);
+  }
+
+  /**
+   * ORDER BY clause of the backend table and the export, configured columns that don't exist are ignored.
+   * @param array $config Table configuration entry from getTables()
+   * @return string
+   */
+  private function getOrderBy(array $config): string
+  {
+    $columns = array_filter(
+      $config['order_by'] ?? [],
+      fn(string $col): bool => $col !== 'id' && array_key_exists($col, $config['columns'])
+    );
+    return implode(', ', array_map(fn(string $col): string => "`{$col}`", [...$columns, 'id']));
   }
 
   /**
@@ -777,7 +831,11 @@ SCRIPT;
   {
     $actions = [];
     foreach ($this->getRowActions($config) as $key => $action) {
-      $actions[$key] = ['key' => $key, 'title' => $action['title'], 'fields' => $action['fields']];
+      $fields = array_map(fn(array $field): array => [
+        ...$field,
+        'default' => $this->isRowDefault($field['default']) ? '' : $field['default'],
+      ], $action['fields']);
+      $actions[$key] = ['key' => $key, 'title' => $action['title'], 'fields' => $fields];
     }
     return $actions;
   }
@@ -956,7 +1014,7 @@ HTML;
     $whereClause = 'WHERE ' . implode(' AND ', $where);
     $total = (int) $wpdb->get_var($wpdb->prepare("SELECT COUNT(*) FROM `{$table}` {$whereClause}", ...$params));
     $rows = $wpdb->get_results(
-      $wpdb->prepare("SELECT {$safeCols} FROM `{$table}` {$whereClause} LIMIT 200", ...$params),
+      $wpdb->prepare("SELECT {$safeCols} FROM `{$table}` {$whereClause} ORDER BY {$this->getOrderBy($config)} LIMIT 200", ...$params),
       ARRAY_A
     );
 
@@ -1254,7 +1312,7 @@ HTML;
     }
     $safeCols = implode(', ', array_map(fn($c) => "`{$c}`", $columns));
     $this->raiseExportMemoryLimit((int) $wpdb->get_var("SELECT COUNT(*) FROM `{$table}`"));
-    $rows = $wpdb->get_results("SELECT {$safeCols} FROM `{$table}` ORDER BY id", ARRAY_A);
+    $rows = $wpdb->get_results("SELECT {$safeCols} FROM `{$table}` ORDER BY {$this->getOrderBy($config)}", ARRAY_A);
 
     $spreadsheet = new \PhpOffice\PhpSpreadsheet\Spreadsheet();
     $sheet = $spreadsheet->getActiveSheet();
@@ -1272,7 +1330,7 @@ HTML;
       }
     }
 
-    $filename = $config['table'] . '_' . date('Y-m-d') . '.xlsx';
+    $filename = sanitize_file_name(($config['export_filename'] ?? $config['table']) . '_' . date('Y-m-d') . '.xlsx');
 
     header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
     header('Content-Disposition: attachment; filename="' . $filename . '"');
