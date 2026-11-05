@@ -355,7 +355,7 @@ class Search
       'url' => wp_get_attachment_url($item['ID']),
       'classes' => 'result-item result-item--pdf',
       'imageHtml' => self::$apiConf['imageFallback'],
-      'title' => $item['post_title'],
+      'title' => $item['post_title'] . ' [PDF]',
       'meta' => 'PDF',
       'description' => Strings::chopToWords($item['post_content'], 40, true),
       'target' => '_blank',
