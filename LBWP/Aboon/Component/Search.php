@@ -111,6 +111,7 @@ class Search extends ACFBase
    */
   public static $CHROMADB_OVERRIDE_WORDPRESS_SEARCH = false;
   /**
+   * true: only chroma results. false: exact phrase matches first, then chroma results (merged, no duplicates)
    * @var bool
    */
   public static $CHROMADB_WORDPRESS_SEARCH_ONLY = false;
@@ -118,6 +119,11 @@ class Search extends ACFBase
    * @var int
    */
   public static $CHROMADB_WORDPRESS_SEARCH_RESULTS = 30;
+  /**
+   * Orders the chroma results by date (newest first) instead of relevance, after retrieval
+   * @var bool
+   */
+  public static $CHROMADB_ORDER_BY_DATE = false;
   /**
    * An array of id > distance difference for search results
    */
@@ -224,11 +230,11 @@ class Search extends ACFBase
     add_action('cron_daily_1', array($this, 'updateIndexTables'));
     add_action('cron_daily_7', array($this, 'buildTextIndex'));
     add_action('cron_job_bulk_import_index_to_chromadb', array($this, 'bulkImportIndexToChromadb'));
+    add_action('cron_job_manual_update_search_index_meta', array($this, 'rebuildSearchWordIndexMeta'));
 
     $productive = defined('LBWP_ABOON_ERP_PRODUCTIVE') && LBWP_ABOON_ERP_PRODUCTIVE || defined('LOCAL_DEVELOPMENT');
     if (static::$BUILD_SEARCH_WORD_INDEX) {
       add_action('cron_daily_8', array($this, 'buildSearchWordIndex'));
-      add_action('cron_job_manual_update_search_index_meta', array($this, 'rebuildSearchWordIndexMeta'));
     }
     if ($productive && static::$BUILD_META_PROP_INDEX) {
       add_action('cron_daily_9', array($this, 'buildMetaPropIndex'));
@@ -270,11 +276,7 @@ class Search extends ACFBase
         if (static::$CHROMADB_WORDPRESS_SEARCH_ONLY) {
           $this->overrideWordPressSeachChromaDb($term, $query, $results);
         } else {
-          // If not chroma only, try normal and then chroma if not results
-          $this->overrideWordPressSeachNativeDb($term, $query, $results);
-          if ($results === 0) {
-            $this->overrideWordPressSeachChromaDb($term, $query, $results);
-          }
+          $this->overrideWordPressSearchMerged($term, $query);
         }
       } else {
         $this->overrideWordPressSeachNativeDb($term, $query, $results);
@@ -434,40 +436,129 @@ class Search extends ACFBase
   }
 
   /**
-   * @param $term
-   * @param $query
+   * Overrides the search with chroma results only, sorted by relevance or date
+   * @param string $term the search term
+   * @param WP_Query $query the main search query
+   * @param int|null $results receives the number of results
    * @return void
    */
   protected function overrideWordPressSeachChromaDb($term, &$query, &$results)
   {
-    // Get embedder and chroma db
+    $postIds = $this->getChromaDbSearchIds($term);
+    if (static::$CHROMADB_ORDER_BY_DATE) {
+      $postIds = $this->sortIdsByDate($postIds);
+    }
+
+    $results = count($postIds);
+    $this->setSearchResultIds($query, $term, $postIds);
+  }
+
+  /**
+   * Overrides the search with exact phrase matches first, followed by the chroma results not already contained
+   * @param string $term the search term
+   * @param WP_Query $query the main search query
+   * @return void
+   */
+  protected function overrideWordPressSearchMerged(string $term, WP_Query $query): void
+  {
+    $exactIds = $this->getExactPhraseSearchIds($term);
+    $chromaIds = $this->getChromaDbSearchIds($term);
+    if (static::$CHROMADB_ORDER_BY_DATE) {
+      $chromaIds = $this->sortIdsByDate($chromaIds);
+    }
+
+    $postIds = array_values(array_unique(array_merge($exactIds, $chromaIds)));
+    $this->setSearchResultIds($query, $term, $postIds);
+  }
+
+  /**
+   * Returns the post ids of the nearest chroma documents, sorted by distance (relevance)
+   * @param string $term the search term
+   * @return int[] post ids
+   */
+  protected function getChromaDbSearchIds(string $term): array
+  {
     $embedder = new E5MultilangSmall();
     $chroma = ChromaDB::getInstance();
     $chroma->setCollectionName(static::$CHROMADB_COLLECTION_NAME, true);
 
-    $embeddings = $embedder->embed($term, true);
     $raw = $chroma->searchCollection(
-      $embeddings,
+      $embedder->embed($term, true),
       static::$CHROMADB_WORDPRESS_SEARCH_RESULTS,
       true,
       null,
       static::$CHROMADB_SEARCH_RESULT_DIFF
     );
 
-    // Convert the resulting post ids
-    if (!empty($raw['ids'][0])) {
-      $postIds = array_map('intval', $raw['ids'][0]);
-      $results = count($postIds);
+    return array_map('intval', $raw['ids'][0] ?? []);
+  }
+
+  /**
+   * Returns ids of indexed posts containing the whole term literally, title matches first unless ordered by date
+   * @param string $term the search term
+   * @return int[] post ids
+   */
+  protected function getExactPhraseSearchIds(string $term): array
+  {
+    $term = trim($term);
+    if (mb_strlen($term) < 3) {
+      return [];
     }
 
-    // Add posts into the query, already sorted by distance (relevance) by chroma
-    if ($results > 0) {
-      $query->set('s', '');
-      $query->set('s_fallback', $term);
-      $query->set('found_posts_primary', $results);
-      $query->set('post__in', $postIds);
-      $query->set('orderby', 'post__in');
+    $db = WordPress::getDb();
+    $like = '%' . $db->esc_like($term) . '%';
+    $types = implode(',', array_fill(0, count(static::$TEXT_INDEX_TYPES), '%s'));
+    $order = static::$CHROMADB_ORDER_BY_DATE ? 'p.post_date DESC' : '(ti.title LIKE %s) DESC, p.post_date DESC';
+    $params = array_merge(static::$TEXT_INDEX_TYPES, [$like, $like, $like, $like]);
+    if (!static::$CHROMADB_ORDER_BY_DATE) {
+      $params[] = $like;
     }
+
+    return array_map('intval', $db->get_col($db->prepare('
+      SELECT ti.id FROM ' . $db->prefix . 'lbwp_text_index ti
+      INNER JOIN ' . $db->posts . ' p ON p.ID = ti.id
+      WHERE p.post_status = "publish" AND p.post_type IN(' . $types . ')
+      AND (ti.title LIKE %s OR ti.excerpt LIKE %s OR ti.meta LIKE %s OR ti.content LIKE %s)
+      ORDER BY ' . $order . '
+    ', $params)));
+  }
+
+  /**
+   * Sorts the given post ids by post date, newest first
+   * @param int[] $postIds the post ids
+   * @return int[] sorted post ids
+   */
+  protected function sortIdsByDate(array $postIds): array
+  {
+    if (count($postIds) === 0) {
+      return [];
+    }
+
+    $db = WordPress::getDb();
+    $placeholders = implode(',', array_fill(0, count($postIds), '%d'));
+    return array_map('intval', $db->get_col($db->prepare('
+      SELECT ID FROM ' . $db->posts . ' WHERE ID IN(' . $placeholders . ') ORDER BY post_date DESC
+    ', $postIds)));
+  }
+
+  /**
+   * Restricts the main search query to the given ids, in their given order
+   * @param WP_Query $query the main search query
+   * @param string $term the original search term
+   * @param int[] $postIds the result ids
+   * @return void
+   */
+  protected function setSearchResultIds(WP_Query $query, string $term, array $postIds): void
+  {
+    if (count($postIds) === 0) {
+      return;
+    }
+
+    $query->set('s', '');
+    $query->set('s_fallback', $term);
+    $query->set('found_posts_primary', count($postIds));
+    $query->set('post__in', $postIds);
+    $query->set('orderby', 'post__in');
   }
 
   /**
@@ -573,30 +664,7 @@ class Search extends ACFBase
     $start = microtime(true);
     $batch = array();
     foreach ($raw as $product) {
-      // Add title and one of the excerpts if given
-      $text = $product->title . PHP_EOL;
-      if (strlen($product->excerpt_ai) > 0) {
-        $text .= PHP_EOL . $product->excerpt_ai;
-      } else if (strlen($product->excerpt) > 0) {
-        $text .= PHP_EOL . $product->excerpt;
-      }
-
-      // Add the other fields with a prior title if given
-      if (strlen($product->meta) > 0)
-        $text .= PHP_EOL . $product->meta;
-      if (strlen($product->synonyms) > 0)
-        $text .= PHP_EOL . $product->synonyms;
-      if (strlen($product->plurals) > 0)
-        $text .= PHP_EOL . $product->plurals;
-
-      $embeddings = $embedder->embed($text);
-      $batch[] = array(
-        'id' => $product->id,
-        'embeddings' => $embeddings,
-        'meta' => array(
-          'title' => $product->title
-        )
-      );
+      $batch[] = $this->getChromaDbRecord((array) $product, $embedder);
     }
 
     // Sync that in batch with chromadb
@@ -802,34 +870,135 @@ class Search extends ACFBase
   }
 
   /**
-   * Warning, only for products at the moment
+   * Regenerates the meta column of the text index with getIndexableMetaContent (no AI calls) and re-embeds into
+   * chroma if enabled. New meta parts are prepended to the stored meta, so AI keywords stay and runs are idempotent.
+   * Run via cron/job.php?identifier=manual_update_search_index_meta&limit=100&page=1
    * @return void
    */
-  public function rebuildSearchWordIndexMeta()
+  public function rebuildSearchWordIndexMeta(): void
   {
     if (!current_user_can('administrator')) {
       return;
     }
 
-    // Get all IDs to be updated
+    set_time_limit(600);
+    $limit = max(1, intval($_GET['limit'] ?? 100));
+    $page = max(1, intval($_GET['page'] ?? 1));
     $db = WordPress::getDb();
-    $postIds = $db->get_col('SELECT id FROM '. $db->prefix . 'lbwp_text_index WHERE post_type = "post"');
-    $fullMapBogus = array();
-    // Just update the meta of all posts
-    foreach ($postIds as $postId) {
-      $post = array(
-        'ID' => $postId,
-        'post_type' => 'post',
-        'meta' => WordPress::getAccessiblePostMeta($postId)
-      );
-      $meta = $this->getIndexableMetaContent($post, array(), $fullMapBogus);
-      // Save to database
-      $db->update(
-        $db->prefix . 'lbwp_text_index',
-        array('meta' => $meta),
-        array('id' => $postId)
-      );
+    $rows = $db->get_results($db->prepare('
+      SELECT id, post_type, title, synonyms, plurals, excerpt_ai, excerpt, meta
+      FROM ' . $db->prefix . 'lbwp_text_index
+      WHERE title <> ""
+      ORDER BY id ASC
+      LIMIT %d, %d
+    ', ($page - 1) * $limit, $limit), ARRAY_A);
+
+    if (count($rows) === 0) {
+      echo 'no more rows, meta update finished';
+      exit;
     }
+
+    $taxonomies = $this->getTextIndexTaxonomies();
+    $fullMap = in_array('product_prop', $taxonomies) ? Filter::getPropertyTreeFull() : [];
+    $embedder = new E5MultilangSmall();
+    $useChroma = static::$CHROMADB_ENABLED && $embedder->isWorking();
+    $chromaDbBatch = [];
+
+    foreach ($rows as $row) {
+      $post = [
+        'ID' => intval($row['id']),
+        'post_type' => $row['post_type'],
+        'meta' => WordPress::getAccessiblePostMeta($row['id'])
+      ];
+      $generated = $this->getIndexableMetaContent($post, $taxonomies, $fullMap);
+      $row['meta'] = $this->mergeIndexMeta($generated, $row['meta']);
+      $db->update($db->prefix . 'lbwp_text_index', ['meta' => $row['meta']], ['id' => $row['id']]);
+
+      if ($useChroma) {
+        $chromaDbBatch[] = $this->getChromaDbRecord($row, $embedder);
+      }
+    }
+
+    if (count($chromaDbBatch) > 0) {
+      $chroma = ChromaDB::getInstance();
+      $chroma->setCollectionName(static::$CHROMADB_COLLECTION_NAME, true);
+      $chroma->syncBatch($chromaDbBatch);
+    }
+
+    echo '
+      Updated ' . count($rows) . ' rows' . ($useChroma ? ' (incl. chroma)' : '') . '
+      <a href="/wp-content/plugins/lbwp/views/cron/job.php?identifier=manual_update_search_index_meta&key=' . MASTER_CRON_API_SECRET . '&page=' . ($page + 1) . '&limit=' . $limit . '">Run next page (' . ($page + 1) . ')</a>
+    ';
+  }
+
+  /**
+   * Prepends generated meta parts that are not yet contained in the stored meta and sanitizes like the text index
+   * @param string $generated freshly generated meta content
+   * @param string $stored the meta currently stored in the index (generated + ai meta)
+   * @return string the merged meta, max 1000 chars
+   */
+  protected function mergeIndexMeta(string $generated, string $stored): string
+  {
+    $parts = array_filter(array_map('trim', explode(', ', strip_tags($generated))));
+    $missing = array_filter($parts, fn($part) => stripos($stored, $part) === false);
+    $meta = count($missing) > 0 ? implode(', ', $missing) . ', ' . $stored : $stored;
+    $meta = str_replace(["\r", "\n"], ' ', html_entity_decode($meta));
+    if (static::$TEXT_INDEX_FORCE_SWISSGERMAN) {
+      $meta = str_replace('ß', 'ss', $meta);
+    }
+
+    return trim(substr($meta, 0, 1000));
+  }
+
+  /**
+   * Returns the taxonomies whose terms are added to the generated index meta
+   * @return array list of taxonomy slugs
+   */
+  protected function getTextIndexTaxonomies(): array
+  {
+    $taxonomies = [];
+    if (in_array('product', static::$TEXT_INDEX_TYPES)) {
+      $taxonomies[] = 'product_cat';
+      if (taxonomy_exists('product_prop')) {
+        $taxonomies[] = 'product_prop';
+      }
+    }
+    if (in_array('post', static::$TEXT_INDEX_TYPES)) {
+      $taxonomies[] = 'category';
+      if (taxonomy_exists('post_tag')) {
+        $taxonomies[] = 'post_tag';
+      }
+    }
+
+    return apply_filters('lbwp_search_text_index_taxonomies', $taxonomies);
+  }
+
+  /**
+   * Builds the embedding text of a text index row and returns the record for a chroma batch sync
+   * @param array $index text index row with id, title, excerpt, excerpt_ai, meta, synonyms, plurals
+   * @param E5MultilangSmall $embedder the embedding service
+   * @return array chroma batch record
+   */
+  protected function getChromaDbRecord(array $index, E5MultilangSmall $embedder): array
+  {
+    $text = $index['title'] . PHP_EOL;
+    if (strlen($index['excerpt_ai']) > 0) {
+      $text .= PHP_EOL . $index['excerpt_ai'];
+    } else if (strlen($index['excerpt']) > 0) {
+      $text .= PHP_EOL . $index['excerpt'];
+    }
+    foreach (['meta', 'synonyms', 'plurals'] as $field) {
+      if (strlen($index[$field]) > 0) {
+        $text .= PHP_EOL . $index[$field];
+      }
+    }
+
+    return [
+      'id' => $index['id'],
+      'text' => $text,
+      'embeddings' => $embedder->embed($text),
+      'meta' => ['title' => $index['title']]
+    ];
   }
 
   /**
@@ -964,23 +1133,7 @@ class Search extends ACFBase
       $updateablePosts[$key]['post_excerpt'] = strip_tags($post['post_excerpt']);
     }
 
-    // Set taxonomies used for index
-    $taxonomies = array();
-    if (in_array('product', static::$TEXT_INDEX_TYPES)) {
-      $taxonomies[] = 'product_cat';
-      if (taxonomy_exists('product_prop')) {
-        $taxonomies[] = 'product_prop';
-      }
-    }
-    if (in_array('post', static::$TEXT_INDEX_TYPES)) {
-      $taxonomies[] = 'category';
-      if (taxonomy_exists('post_tag')) {
-        $taxonomies[] = 'post_tag';
-      }
-    }
-
-    // Let developers add their own taxonomies that should be indexed as well
-    $taxonomies = apply_filters('lbwp_search_text_index_taxonomies', $taxonomies);
+    $taxonomies = $this->getTextIndexTaxonomies();
 
     // Get property map, eventually used for meta index
     if (in_array('product', static::$TEXT_INDEX_TYPES) && in_array('product_prop', $taxonomies)) {
@@ -1030,30 +1183,7 @@ class Search extends ACFBase
 
       // Add vectors to chroma if enabled
       if (static::$CHROMADB_ENABLED && $embedder->isWorking()) {
-        // Add title and one of the excerpts if given
-        $text = $index['title'] . PHP_EOL;
-        if (strlen($index['excerpt_ai']) > 0) {
-          $text .= PHP_EOL . $index['excerpt_ai'];
-        } else if (strlen($index['excerpt']) > 0) {
-          $text .= PHP_EOL . $index['excerpt'];
-        }
-
-        // Add the other fields with a prior title if given
-        if (strlen($index['meta']) > 0)
-          $text .= PHP_EOL . $index['meta'];
-        if (strlen($index['synonyms']) > 0)
-          $text .= PHP_EOL . $index['synonyms'];
-        if (strlen($index['plurals']) > 0)
-          $text .= PHP_EOL . $index['plurals'];
-
-        $embeddings = $embedder->embed($text);
-        $chromaDbBatch[] = array(
-          'id' => $index['id'],
-          'embeddings' => $embeddings,
-          'meta' => array(
-            'title' => $index['title']
-          )
-        );
+        $chromaDbBatch[] = $this->getChromaDbRecord($index, $embedder);
       }
 
       // Save to database
