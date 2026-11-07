@@ -21,16 +21,30 @@ use LBWP\Util\Strings;
  */
 class AutoNewsletter extends ACFBase
 {
+  /**
+   * Job identifier for the one-time retry of configurations whose source was unavailable
+   */
+  const string RETRY_JOB = 'auto_newsletter_retry';
+  /**
+   * Delay in seconds until a failed configuration is retried
+   */
+  const int RETRY_DELAY = 7200;
+  /**
+   * @var string[] hashes of configurations whose source was unavailable in the current run
+   */
+  protected array $unavailableConfigs = [];
 
   /**
    * Register all needed types and filters to control access
    */
   public function init()
   {
-    add_action('cron_daily_1', array($this, 'generateAutomaticNewsletter'));
+    add_action('cron_daily_1', [$this, 'generateAutomaticNewsletter']);
+    add_action('cron_job_' . self::RETRY_JOB, [$this, 'retryUnavailableNewsletters']);
   }
 
   /**
+   * Runs all configurations due today and registers a one-time retry for those with an unavailable source
    * @return void
    */
   public function generateAutomaticNewsletter()
@@ -42,6 +56,65 @@ class AutoNewsletter extends ACFBase
         $this->generateNewsletter($newsletter);
       }
     }
+
+    $this->registerRetry();
+  }
+
+  /**
+   * Retries the configurations passed as job data, never registers another retry (once per day)
+   * @return void
+   */
+  public function retryUnavailableNewsletters(): void
+  {
+    $hashes = array_filter(explode(',', sanitize_text_field($_GET['data'] ?? '')));
+    $configs = ArrayManipulation::forceArray(get_field('lbwp-auto-newsletter', 'option'));
+
+    foreach ($configs as $config) {
+      if (in_array($this->getConfigHash($config), $hashes, true) && $this->isDueToday($config)) {
+        $this->generateNewsletter($config);
+      }
+    }
+
+    if (count($this->unavailableConfigs) > 0) {
+      SystemLog::add('AutoNewsletter', 'critical', 'Source still unavailable on retry, skipping for today', $this->unavailableConfigs);
+    }
+  }
+
+  /**
+   * Registers a one-time job to retry all configurations whose source was unavailable
+   * @return void
+   */
+  protected function registerRetry(): void
+  {
+    if (count($this->unavailableConfigs) === 0) {
+      return;
+    }
+
+    $hashes = implode(',', array_unique($this->unavailableConfigs));
+    Cronjob::register([
+      current_time('timestamp') + self::RETRY_DELAY => self::RETRY_JOB . '::' . $hashes
+    ]);
+    SystemLog::add('AutoNewsletter', 'info', 'Registered retry for unavailable sources', $this->unavailableConfigs);
+  }
+
+  /**
+   * Remembers a configuration as unavailable, so it is retried later. Call this from
+   * overridden fetchArticles() implementations as well, if their source fails.
+   * @param array $config a single auto-newsletter configuration
+   * @return void
+   */
+  protected function markSourceUnavailable(array $config): void
+  {
+    $this->unavailableConfigs[] = $this->getConfigHash($config);
+  }
+
+  /**
+   * @param array $config a single auto-newsletter configuration
+   * @return string hash identifying exactly this configuration
+   */
+  protected function getConfigHash(array $config): string
+  {
+    return md5(serialize($config));
   }
 
   /**
@@ -312,11 +385,17 @@ class AutoNewsletter extends ACFBase
     // Check if the feed is readable and have a mail sent to admin if not
     if (!$raw->is_readable()) {
       SystemLog::add('AutoNewsletter', 'critical', 'RSS Feed unreadable: ' . $config['rss-feed']);
+      $this->markSourceUnavailable($config);
       return array();
     }
 
     $raw->set_category_concat_char(' ');
     $raw->read();
+    if (empty($raw->data)) {
+      SystemLog::add('AutoNewsletter', 'critical', 'RSS Feed empty: ' . $config['rss-feed']);
+      $this->markSourceUnavailable($config);
+    }
+
     return $raw->data;
   }
 

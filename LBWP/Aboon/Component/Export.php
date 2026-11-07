@@ -68,7 +68,7 @@ class Export extends Component
     if(isset($_POST['template-save']) && current_user_can('administrator')){
       $templates = get_option('aboon-shop-export-templates');
       $templates = !is_array($templates) ? [] : $templates;
-      $_POST['template-name'] = !isset($_POST['template-name']) ? 'Volage ' . (count($templates) + 1) : $_POST['template-name'];
+      $_POST['template-name'] = !isset($_POST['template-name']) || strlen(isset($_POST['template-name'])) == 0 ? 'Vorlage ' . (count($templates) + 1) : $_POST['template-name'];
 
       unset($_POST['template-save']);
 
@@ -166,13 +166,15 @@ class Export extends Component
       echo '<h2>Vorlagen</h2>
       <form method="post"><select name="template-selected" required><option disabled selected>Vorlage wählen...</option>';
 
+      $n = 0;
       foreach ($templates as $key => $template){
-        echo '<option value="' . $key . '">' . $template['template-name'] . '</option>';
+        $name = strlen($template['template-name']) > 0 ? $template['template-name'] : 'Vorlage ' . (++$n);
+        echo '<option value="' . $key . '">' . $name . '</option>';
       }
 
       echo '</select>
         <input type="submit" class="button button-primary" name="template-load" value="Vorlage Laden">
-        <input type="submit" class="button button-secondary" name="template-delete" value="Volage Löschen" style="background: #b32d2e; color: #531111; border-color: #531111">
+        <input type="submit" class="button button-secondary" name="template-delete" value="Vorlage Löschen" style="background: #b32d2e; color: #531111; border-color: #531111">
       </form><br>';
     }
 
