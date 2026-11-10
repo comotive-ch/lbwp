@@ -256,7 +256,31 @@ class Search extends ACFBase
       foreach ($types as $type) {
         add_action('save_post_' . $type, array($this, 'buildIndizesOnSave'), 10, 2);
       }
+      if (static::$USE_SEARCH_INDEX) {
+        add_action('added_post_meta', [$this, 'syncSkuToTextIndex'], 10, 4);
+        add_action('updated_post_meta', [$this, 'syncSkuToTextIndex'], 10, 4);
+      }
     }
+  }
+
+  /**
+   * Writes a product's sku to the alt_id of its text index row as soon as it is saved, as the exact sku
+   * search only matches alt_id. buildIndizesOnSave() runs before importers add the sku, and the nightly
+   * buildTextIndex() only catches up a limited number of rows per run.
+   * @param int $_metaId meta row id
+   * @param int $postId post the meta belongs to
+   * @param string $metaKey meta key
+   * @param mixed $metaValue new meta value
+   * @return void
+   */
+  public function syncSkuToTextIndex(int $_metaId, int $postId, string $metaKey, mixed $metaValue): void
+  {
+    if ($metaKey !== '_sku' || !is_scalar($metaValue) || strlen((string)$metaValue) === 0 || get_post_type($postId) !== 'product') {
+      return;
+    }
+
+    $db = WordPress::getDb();
+    $db->update($db->prefix . 'lbwp_text_index', ['alt_id' => (string)$metaValue], ['id' => $postId]);
   }
 
   /**
@@ -1159,7 +1183,7 @@ class Search extends ACFBase
       $ai = $this->getIndexableAiContent($post, $generatedMeta);
       $index = array(
         'id' => $post['ID'],
-        'alt_id' => $post['post_type'] == 'product' && strlen($post['meta']['_sku'] > 0) ? $post['meta']['_sku'] : $post['ID'],
+        'alt_id' => $post['post_type'] == 'product' && strlen($post['meta']['_sku'] ?? '') > 0 ? $post['meta']['_sku'] : $post['ID'],
         'post_type' => $post['post_type'],
         'title' => html_entity_decode(substr($post['post_title'], 0, 500)),
         'synonyms' => html_entity_decode(trim(substr($ai['synonyms'], 0,500))),

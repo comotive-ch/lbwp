@@ -201,14 +201,9 @@ class Product
     // Let developers add their own logic after every product import took place
     do_action('aboon_after_erp_product_import', $this);
     update_post_meta($this->id, 'last-sync-hash', $this->hash);
-    clean_post_cache($this->id);
-    clean_object_term_cache($this->id, $this->propertyTaxonomy);
-    clean_object_term_cache($this->id, $this->categoryTaxonomy);
-    wp_cache_delete($this->id, $this->propertyTaxonomy . '_relationships');
-    wp_cache_delete($this->id, $this->categoryTaxonomy . '_relationships');
+    // Post, meta and term caches are already cleared by wp_update_post, update_post_meta and wp_set_post_terms,
+    // only WooCommerce's product transients are not, as the import bypasses the WC_Product CRUD
     wc_delete_product_transients($this->id);
-    // Load product newly to refresh cache
-    wc_get_product($this->id);
 
     return true;
   }

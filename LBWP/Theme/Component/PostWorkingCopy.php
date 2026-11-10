@@ -48,11 +48,31 @@ class PostWorkingCopy extends Component
    * Post fields that are written from the copy onto the original on merge
    */
   const array MERGED_FIELDS = ['post_title', 'post_excerpt', 'post_content'];
+  /**
+   * Meta keys WordPress keeps per post to redirect old permalinks, they must stay with the original
+   */
+  const array OLD_PERMALINK_META = ['_wp_old_slug', '_wp_old_date'];
+  /**
+   * Key used to lock saving of published originals in the block editor
+   */
+  const string SAVE_LOCK_KEY = 'lbwp-working-copy';
 
   /**
    * @var array post types supporting working copies
    */
   protected array $postTypes = ['post'];
+  /**
+   * @var array roles that may not change published posts directly but only through a working copy
+   */
+  protected array $workingCopyOnlyRoles = [];
+  /**
+   * @var bool regenerate the original's permalink on merge, if the copy changed the title
+   */
+  protected bool $slugFollowsTitle = true;
+  /**
+   * @var bool true while a copy is written onto its original, which bypasses the direct update protection
+   */
+  protected bool $merging = false;
 
   /**
    * Register all hooks
@@ -61,6 +81,7 @@ class PostWorkingCopy extends Component
   public function init(): void
   {
     add_filter('wp_insert_post_data', [$this, 'preventPublishing'], 100, 2);
+    add_filter('wp_insert_post_data', [$this, 'preventDirectUpdate'], 110, 2);
     add_action('wp_trash_post', [$this, 'onPostRemoval']);
     add_action('before_delete_post', [$this, 'onPostRemoval']);
     add_filter('duplicate_post_meta_key_blacklist', [$this, 'addBlacklistedMeta']);
@@ -72,6 +93,7 @@ class PostWorkingCopy extends Component
       add_action('add_meta_boxes', [$this, 'addMetabox'], 10, 2);
       add_action('admin_notices', [$this, 'printAdminNotice']);
       add_action('admin_head-post.php', [$this, 'hideClassicPublishButton']);
+      add_action('admin_footer-post.php', [$this, 'disableClassicPublishBox']);
       add_filter('redirect_post_location', [$this, 'continueAfterSave'], 10, 2);
       add_action('enqueue_block_editor_assets', [$this, 'enqueueBlockEditorAssets']);
     }
@@ -113,6 +135,21 @@ class PostWorkingCopy extends Component
   }
 
   /**
+   * Check if the current user may change a published post only through a working copy
+   * @param WP_Post $post the post to change
+   * @return bool true if direct changes are not allowed
+   */
+  public function mustUseWorkingCopy(WP_Post $post): bool
+  {
+    if ($this->merging || !$this->supportsWorkingCopy($post) || !is_user_logged_in()) {
+      return false;
+    }
+
+    $restricted = count(array_intersect($this->workingCopyOnlyRoles, wp_get_current_user()->roles)) > 0;
+    return apply_filters('lbwp_working_copy_only', $restricted, $post);
+  }
+
+  /**
    * Get the post types supporting working copies
    * @return array post type slugs
    */
@@ -127,7 +164,7 @@ class PostWorkingCopy extends Component
    */
   protected function getMetaBlacklist(): array
   {
-    return array_merge(PostCopy::getMetaBlacklist(), [self::META_COPY_OF, self::META_BASE, self::META_COPY]);
+    return array_merge(PostCopy::getMetaBlacklist(), [self::META_COPY_OF, self::META_BASE, self::META_COPY], self::OLD_PERMALINK_META);
   }
 
   /**
@@ -340,8 +377,14 @@ class PostWorkingCopy extends Component
       $data[$field] = $copy[$field];
     }
 
-    // A normal update creates a revision of the original and flushes caches through post_updated
+    if ($this->slugFollowsTitle && $copy['post_title'] !== get_post_field('post_title', $originalId, 'raw')) {
+      $data['post_name'] = sanitize_title($copy['post_title']);
+    }
+
+    // A normal update creates a revision of the original, keeps the old permalink redirecting and flushes caches through post_updated
+    $this->merging = true;
     $result = wp_update_post(wp_slash($data), true);
+    $this->merging = false;
     if (is_wp_error($result)) {
       wp_die(esc_html($result->get_error_message()), '', ['response' => 500, 'back_link' => true]);
     }
@@ -433,6 +476,27 @@ class PostWorkingCopy extends Component
   }
 
   /**
+   * Block direct changes to published originals by users who must go through a working copy.
+   * Moving the post to the trash stays possible, it deletes the copy along with it.
+   * @param array $data sanitized post data to be saved
+   * @param array $postarr raw post data including the ID
+   * @return array the unchanged post data
+   */
+  public function preventDirectUpdate(array $data, array $postarr): array
+  {
+    $post = get_post(intval($postarr['ID'] ?? 0));
+    if (!$post instanceof WP_Post || $data['post_status'] === 'trash' || !$this->mustUseWorkingCopy($post)) {
+      return $data;
+    }
+
+    wp_die(
+      __('Veröffentlichte Inhalte können nur über eine Überarbeitung geändert werden.', 'lbwp'),
+      '',
+      ['response' => 403, 'back_link' => true]
+    );
+  }
+
+  /**
    * Redirect to the merge after the classic editor saved the copy, so no unsaved changes get lost
    * @param string $location the redirect url after saving
    * @param int $postId the saved post
@@ -476,6 +540,10 @@ class PostWorkingCopy extends Component
   {
     if (!$this->supportsWorkingCopy($post) || !current_user_can('edit_post', $post->ID)) {
       return $actions;
+    }
+
+    if ($this->mustUseWorkingCopy($post)) {
+      unset($actions['inline hide-if-no-js']);
     }
 
     $label = $this->getCopyId($post->ID) > 0 ? __('Überarbeitung fortsetzen', 'lbwp') : __('Überarbeiten', 'lbwp');
@@ -535,8 +603,10 @@ class PostWorkingCopy extends Component
       ? __('Für diesen Inhalt ist eine Überarbeitung in Gange.', 'lbwp')
       : __('Änderungen in einer Kopie vorbereiten, während dieser Inhalt online bleibt.', 'lbwp');
     $label = $copyId > 0 ? __('Überarbeitung fortsetzen', 'lbwp') : __('Überarbeiten starten', 'lbwp');
+    $restriction = $this->mustUseWorkingCopy($post) ? '<p><strong>' . esc_html($this->getWorkingCopyOnlyMessage()) . '</strong></p>' : '';
 
     echo '
+      ' . $restriction . '
       <p>' . esc_html($description) . '</p>
       <p><a class="button" href="' . esc_url($this->getActionUrl('start', $post->ID)) . '">' . esc_html($label) . '</a></p>
     ';
@@ -649,7 +719,58 @@ class PostWorkingCopy extends Component
   }
 
   /**
-   * Add the status panel for copies and the result notice to the block editor
+   * Get the hint for users who may change published posts only through a working copy
+   * @return string the translated message
+   */
+  protected function getWorkingCopyOnlyMessage(): string
+  {
+    return __('Veröffentlichte Inhalte können nur über eine Überarbeitung geändert werden.', 'lbwp');
+  }
+
+  /**
+   * Grey out the classic publish box on originals that may only be changed through a working copy
+   * @return void
+   */
+  public function disableClassicPublishBox(): void
+  {
+    $post = get_post();
+    if (!$post instanceof WP_Post || use_block_editor_for_post($post) || !$this->mustUseWorkingCopy($post)) {
+      return;
+    }
+
+    echo '
+      <style>#submitdiv .inside { opacity: .5; pointer-events: none; }</style>
+      <script>
+        document.querySelectorAll("#submitdiv input, #submitdiv select, #submitdiv button").forEach((element) => element.disabled = true);
+        document.getElementById("post").addEventListener("submit", (event) => event.preventDefault());
+      </script>
+    ';
+  }
+
+  /**
+   * Lock saving of an original in the block editor and point to the working copy instead
+   * @param WP_Post $post the original post
+   * @return void
+   */
+  protected function lockBlockEditorSaving(WP_Post $post): void
+  {
+    $label = $this->getCopyId($post->ID) > 0 ? __('Überarbeitung fortsetzen', 'lbwp') : __('Überarbeiten starten', 'lbwp');
+    $notice = [
+      'isDismissible' => false,
+      'actions' => [['label' => $label, 'url' => $this->getActionUrl('start', $post->ID)]],
+    ];
+
+    wp_add_inline_script('wp-edit-post', '
+      wp.domReady(() => {
+        wp.data.dispatch("core/editor").lockPostSaving(' . wp_json_encode(self::SAVE_LOCK_KEY) . ');
+        wp.data.dispatch("core/notices").createWarningNotice(' . wp_json_encode($this->getWorkingCopyOnlyMessage()) . ', ' . wp_json_encode($notice) . ');
+      });
+    ');
+    wp_add_inline_style('wp-edit-post', '.editor-post-publish-button__button, .editor-post-publish-panel__toggle, .editor-post-switch-to-draft { opacity: .5; pointer-events: none; }');
+  }
+
+  /**
+   * Add the status panel for copies, the save lock for originals and the result notice to the block editor
    * @return void
    */
   public function enqueueBlockEditorAssets(): void
@@ -657,6 +778,11 @@ class PostWorkingCopy extends Component
     $this->addBlockEditorNotice();
 
     $post = get_post();
+    if ($post instanceof WP_Post && $this->mustUseWorkingCopy($post)) {
+      $this->lockBlockEditorSaving($post);
+      return;
+    }
+
     if (!$post instanceof WP_Post || $this->getOriginalId($post->ID) === 0) {
       return;
     }

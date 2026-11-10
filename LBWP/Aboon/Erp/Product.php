@@ -9,6 +9,7 @@ use LBWP\Theme\Base\Component;
 use LBWP\Util\LbwpData;
 use LBWP\Util\Strings;
 use LBWP\Util\WordPress;
+use Automattic\WooCommerce\Internal\Caches\ProductTransientsDeferrer;
 
 /**
  * Base class to sync product data with an ERP system
@@ -28,6 +29,10 @@ abstract class Product extends Component
    * @var int number of datasets to be imported in full sync per minutely run
    */
   protected int $importsPerRun = 10;
+  /**
+   * @var bool whether product transient deletions are already deferred to the end of this request
+   */
+  protected bool $deferringTransients = false;
   /**
    * Main starting point of the component
    */
@@ -61,12 +66,27 @@ abstract class Product extends Component
    */
   protected function updateProduct(ImportProduct $product): bool
   {
-    // Validate the product and save it
-    if ($product->validate()) {
-      return $product->save();
+    if (!$product->validate()) {
+      return false;
     }
 
-    return false;
+    $this->deferProductTransients();
+    return $product->save();
+  }
+
+  /**
+   * Lets WooCommerce collect the transient deletions of all products saved in this request and run them
+   * once at shutdown, instead of deleting the shop-wide transients again for every single product.
+   * @return void
+   */
+  protected function deferProductTransients(): void
+  {
+    if ($this->deferringTransients || !class_exists(ProductTransientsDeferrer::class)) {
+      return;
+    }
+
+    wc_get_container()->get(ProductTransientsDeferrer::class)->start_deferring();
+    $this->deferringTransients = true;
   }
 
   /**
