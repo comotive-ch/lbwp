@@ -3,6 +3,7 @@
 namespace LBWP\ERP\PIM\Data;
 
 use LBWP\Helper\XlsxHelper;
+use LBWP\Module\Backend\MemcachedAdmin;
 
 /**
  * Base for project specific XLSX/CSV imports shown on the PIMport import page below the general imports.
@@ -128,7 +129,10 @@ abstract class CustomImport
       return $this->notice('error', __('Die Datei enthält keine Datenzeilen.', 'lbwp'));
     }
 
-    return $this->importRows($this->combineWithHeaders($data));
+    $message = $this->importRows($this->combineWithHeaders($data));
+    // Do a full flush of the cache, imports may bypass the object cache
+    MemcachedAdmin::flushFullCacheHelper();
+    return $message;
   }
 
   /**

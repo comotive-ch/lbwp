@@ -3,6 +3,7 @@
 namespace LBWP\ERP\PIM\Data;
 
 use LBWP\Helper\XlsxHelper;
+use LBWP\Module\Backend\MemcachedAdmin;
 use LBWP\Util\File;
 use mysqli;
 
@@ -46,6 +47,7 @@ class ProductGroupImport
 
     $result = $this->importCategoryTree($csvPath);
     @unlink($csvPath);
+    MemcachedAdmin::flushFullCacheHelper();
     return $result;
   }
 
@@ -72,6 +74,7 @@ class ProductGroupImport
 
     $result = $this->importAssignments($csvPath, $mode);
     @unlink($csvPath);
+    MemcachedAdmin::flushFullCacheHelper();
     return $result;
   }
 

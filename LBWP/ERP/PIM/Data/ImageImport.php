@@ -4,6 +4,7 @@ namespace LBWP\ERP\PIM\Data;
 
 use LBWP\Core as LbwpCore;
 use LBWP\Helper\Cronjob;
+use LBWP\Module\Backend\MemcachedAdmin;
 use LBWP\Module\General\Cms\SystemLog;
 use LBWP\Theme\Component\ACFBase;
 use LBWP\Util\File;
@@ -346,6 +347,8 @@ class ImageImport extends ACFBase
     $current['queue'] = array();
     $current['last_updated'] = date('Y-m-d H:i:s');
     update_option(self::OPTION_KEY, $current, false);
+    // Do a full flush of the cache
+    MemcachedAdmin::flushFullCacheHelper();
   }
 
   /**

@@ -65,6 +65,8 @@ class AutoUnpublishPost
   {
     add_action('admin_init', array($this, 'addMetabox'));
     add_action('save_post', array($this, 'savePostUnpublishHook'));
+    // Show a notice in the block editor if the post has an unpublish date
+    add_action('enqueue_block_editor_assets', array($this, 'addBlockEditorNotice'));
     // Look daily, if there are unpublished posts, and add a cron task
     add_action('cron_daily', array($this, 'checkForUnpublishingPosts'));
     // Cron job task to actually check and unbplish posts and their menus
@@ -206,6 +208,61 @@ class AutoUnpublishPost
     ';
 
     echo $html;
+  }
+
+  /**
+   * Show a non dismissible notice on top of the block editor, if the post has an unpublish date.
+   * The notice is updated from the metabox fields after each save, as the editor doesn't reload.
+   * @return void
+   */
+  public function addBlockEditorNotice()
+  {
+    $post = get_post();
+    if (!$post instanceof \WP_Post || !in_array($post->post_type, $this->settings['postTypes'])) {
+      return;
+    }
+
+    $date = $time = '';
+    $timestamp = intval(get_post_meta($post->ID, 'auto_unpublish_on', true));
+    if ($timestamp > 0) {
+      $date = Date::getTime(Date::EU_DATE, $timestamp);
+      $time = Date::getTime(Date::EU_CLOCK, $timestamp);
+    }
+
+    $template = __('Dieser Artikel wird gemäss Einstellung am {date} um {time} Uhr deaktiviert', 'lbwp');
+
+    wp_add_inline_script('wp-edit-post', '
+      wp.domReady(() => {
+        const noticeId = "lbwp-auto-unpublish-notice";
+        const template = ' . wp_json_encode($template) . ';
+        const showNotice = (date, time) => {
+          const notices = wp.data.dispatch("core/notices");
+          notices.removeNotice(noticeId);
+          if (!/^\d{1,2}\.\d{1,2}\.\d{4}$/.test(date)) {
+            return;
+          }
+          time = /^\d{1,2}:\d{2}$/.test(time) ? time : "00:00";
+          const message = template.replace("{date}", date).replace("{time}", time.replace(":", "."));
+          notices.createWarningNotice(message, { id: noticeId, isDismissible: false });
+        };
+
+        showNotice(' . wp_json_encode($date) . ', ' . wp_json_encode($time) . ');
+
+        // Refresh the notice from the metabox fields, once the metaboxes have been saved
+        let wasSaving = false;
+        wp.data.subscribe(() => {
+          const isSaving = wp.data.select("core/edit-post").isSavingMetaBoxes();
+          const hasFinished = wasSaving && !isSaving;
+          // Update state before dispatching, as dispatching synchronously calls this subscriber again
+          wasSaving = isSaving;
+          if (hasFinished) {
+            const dateField = document.getElementById("auto_unpublish_on_date");
+            const timeField = document.querySelector("input[name=auto_unpublish_on_time]");
+            showNotice(dateField ? dateField.value.trim() : "", timeField ? timeField.value.trim() : "");
+          }
+        });
+      });
+    ');
   }
 
   /**
