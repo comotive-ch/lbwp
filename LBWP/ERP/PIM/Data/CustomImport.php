@@ -93,7 +93,7 @@ abstract class CustomImport
     wp_nonce_field($action, $action . '_nonce');
     echo '<table class="form-table"><tr>';
     echo '<th><label for="' . esc_attr($field) . '">' . esc_html__('XLSX / CSV Datei', 'lbwp') . '</label></th>';
-    echo '<td><input type="file" name="' . esc_attr($field) . '" id="' . esc_attr($field) . '" accept="' . esc_attr($accept) . '" /></td>';
+    echo '<td><input type="file" name="' . esc_attr($field) . '" id="' . esc_attr($field) . '" accept="' . esc_attr($accept) . '" style="width: 100%;" /></td>';
     echo '</tr>';
     $this->renderOptions();
     echo '</table>';

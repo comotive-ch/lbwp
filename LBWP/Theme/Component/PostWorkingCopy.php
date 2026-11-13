@@ -70,6 +70,10 @@ class PostWorkingCopy extends Component
    */
   protected bool $slugFollowsTitle = true;
   /**
+   * @var bool set the original's publish date to the merge time, so lists showing the post date reflect the merge
+   */
+  protected bool $mergeUpdatesPostDate = false;
+  /**
    * @var bool true while a copy is written onto its original, which bypasses the direct update protection
    */
   protected bool $merging = false;
@@ -364,12 +368,34 @@ class PostWorkingCopy extends Component
   }
 
   /**
-   * Write fields, content, meta, terms and attachments of the copy onto the original
+   * Write fields, content, meta, terms and attachments of the copy onto the original.
+   * The original's state before and after the merge are both kept as revisions, including field values.
    * @param int $copyId the working copy
    * @param int $originalId the original post
    * @return void
    */
   protected function writeCopyOntoOriginal(int $copyId, int $originalId): void
+  {
+    $this->saveRevision($originalId, false);
+    $this->updateOriginal($copyId, $originalId);
+
+    PostCopy::copyContent($copyId, $originalId);
+    PostCopy::copyMeta($copyId, $originalId, $this->getMetaBlacklist(), true);
+    PostCopy::copyTerms($copyId, $originalId);
+    $this->moveAttachments($copyId, $originalId);
+    clean_post_cache($originalId);
+
+    $this->saveRevision($originalId, true);
+  }
+
+  /**
+   * Write the post fields of the copy onto the original, without the automatic revision, as content
+   * and meta are only written afterwards and the revision would miss them
+   * @param int $copyId the working copy
+   * @param int $originalId the original post
+   * @return void
+   */
+  protected function updateOriginal(int $copyId, int $originalId): void
   {
     $copy = get_post($copyId, ARRAY_A);
     $data = ['ID' => $originalId];
@@ -377,23 +403,52 @@ class PostWorkingCopy extends Component
       $data[$field] = $copy[$field];
     }
 
+    if ($this->mergeUpdatesPostDate) {
+      $data['post_date'] = current_time('mysql');
+      $data['post_date_gmt'] = current_time('mysql', true);
+    }
+
     if ($this->slugFollowsTitle && $copy['post_title'] !== get_post_field('post_title', $originalId, 'raw')) {
       $data['post_name'] = sanitize_title($copy['post_title']);
     }
 
-    // A normal update creates a revision of the original, keeps the old permalink redirecting and flushes caches through post_updated
+    // A normal update sets the modified date, keeps the old permalink redirecting and flushes caches through post_updated
     $this->merging = true;
+    add_filter('wp_save_post_revision_post_has_changed', '__return_false', 100);
     $result = wp_update_post(wp_slash($data), true);
+    remove_filter('wp_save_post_revision_post_has_changed', '__return_false', 100);
     $this->merging = false;
+
     if (is_wp_error($result)) {
       wp_die(esc_html($result->get_error_message()), '', ['response' => 500, 'back_link' => true]);
     }
+  }
 
-    PostCopy::copyContent($copyId, $originalId);
-    PostCopy::copyMeta($copyId, $originalId, $this->getMetaBlacklist(), true);
-    PostCopy::copyTerms($copyId, $originalId);
-    $this->moveAttachments($copyId, $originalId);
-    clean_post_cache($originalId);
+  /**
+   * Store the current state of a post including its field values as revision, so it can be compared and restored
+   * @param int $postId the post
+   * @param bool $force create a new revision even if the latest one already holds the current state
+   * @return void
+   */
+  protected function saveRevision(int $postId, bool $force): void
+  {
+    $post = get_post($postId);
+    if (!$post instanceof WP_Post || !wp_revisions_enabled($post)) {
+      return;
+    }
+
+    $latest = wp_get_post_revisions($postId, ['posts_per_page' => 1]);
+    $latest = reset($latest);
+    if (!$force && $latest instanceof WP_Post && $latest->post_date_gmt === $post->post_modified_gmt) {
+      $revisionId = $latest->ID;
+    } else {
+      $revisionId = _wp_put_post_revision($post);
+      $revisionId = is_wp_error($revisionId) ? 0 : intval($revisionId);
+    }
+
+    if ($revisionId > 0 && function_exists('acf_copy_postmeta')) {
+      acf_copy_postmeta($postId, $revisionId);
+    }
   }
 
   /**

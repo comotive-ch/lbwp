@@ -894,7 +894,7 @@ HTML;
     wp_nonce_field('pim_csv_upload_' . $config['key']);
     echo '<table class="form-table"><tr>';
     echo '<th><label for="pim_csv_file">' . __('CSV/XLSX Datei', 'lbwp') . '</label></th>';
-    echo '<td><input type="file" name="pim_csv_file" id="pim_csv_file" accept=".csv,.xlsx" /></td>';
+    echo '<td><input type="file" name="pim_csv_file" id="pim_csv_file" accept=".csv,.xlsx" style="width: 100%;" /></td>';
     echo '</tr><tr>';
     echo '<th>' . __('Import-Modus', 'lbwp') . '</th>';
     $showId = $this->usesIdColumn($config);

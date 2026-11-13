@@ -148,7 +148,7 @@ class ImageImport extends ACFBase
     echo '<form method="post" enctype="multipart/form-data">';
     echo '<table class="form-table"><tr>';
     echo '<th><label for="pimport_images">Bilder / ZIP</label></th>';
-    echo '<td><input type="file" name="pimport_images[]" id="pimport_images" multiple accept=".jpg,.jpeg,.png,.gif,.webp,.zip" /></td>';
+    echo '<td><input type="file" name="pimport_images[]" id="pimport_images" multiple accept=".jpg,.jpeg,.png,.gif,.webp,.zip" style="width: 100%;" /></td>';
     echo '</tr></table>';
     echo '<p><input type="submit" name="pimport_image_upload" class="button-primary" value="Bilder importieren" /></p>';
     echo '</form>';

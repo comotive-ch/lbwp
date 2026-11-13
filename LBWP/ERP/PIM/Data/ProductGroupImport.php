@@ -88,7 +88,7 @@ class ProductGroupImport
     echo '<form method="post" enctype="multipart/form-data">';
     echo '<table class="form-table"><tr>';
     echo '<th><label for="pg_tree_file">' . __('XLSX / CSV Datei', 'lbwp') . '</label></th>';
-    echo '<td><input type="file" name="pg_tree_file" id="pg_tree_file" accept=".xlsx,.csv" /></td>';
+    echo '<td><input type="file" name="pg_tree_file" id="pg_tree_file" accept=".xlsx,.csv" style="width: 100%;" /></td>';
     echo '</tr></table>';
     echo '<p><input type="submit" name="pg_tree_upload" class="button-primary" value="' . esc_attr(__('Hochladen und Kategoriebaum importieren', 'lbwp')) . '" /></p>';
     echo '</form><hr>';
@@ -97,7 +97,7 @@ class ProductGroupImport
     echo '<form method="post" enctype="multipart/form-data">';
     echo '<table class="form-table"><tr>';
     echo '<th><label for="pg_assign_file">' . __('XLSX / CSV Datei', 'lbwp') . '</label></th>';
-    echo '<td><input type="file" name="pg_assign_file" id="pg_assign_file" accept=".xlsx,.csv" /></td>';
+    echo '<td><input type="file" name="pg_assign_file" id="pg_assign_file" accept=".xlsx,.csv" style="width: 100%;" /></td>';
     echo '</tr><tr>';
     echo '<th>' . __('Modus', 'lbwp') . '</th>';
     echo '<td><fieldset>';

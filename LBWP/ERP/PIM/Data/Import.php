@@ -144,7 +144,7 @@ class Import extends ACFBase
     echo '<form method="post" enctype="multipart/form-data">';
     echo '<table class="form-table"><tr>';
     echo '<th><label for="pimport_file">XLSX / CSV Datei</label></th>';
-    echo '<td><input type="file" name="pimport_file" id="pimport_file" accept=".xlsx,.csv" /></td>';
+    echo '<td><input type="file" name="pimport_file" id="pimport_file" accept=".xlsx,.csv" style="width: 100%;" /></td>';
     echo '</tr></table>';
     echo '<p><input type="submit" name="pimport_upload" class="button-primary" value="Hochladen und Import starten" /></p>';
     echo '</form><hr>';
