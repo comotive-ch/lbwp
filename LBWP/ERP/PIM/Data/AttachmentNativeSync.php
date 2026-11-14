@@ -38,6 +38,10 @@ class AttachmentNativeSync extends Component
    */
   public function runSync()
   {
+    if (!is_array($this->config) || !is_array($this->config['source'])) {
+      return;
+    }
+
     $source = $this->connect($this->config['source']);
     if (!$source) {
       return;

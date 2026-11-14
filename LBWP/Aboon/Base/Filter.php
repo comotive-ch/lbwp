@@ -8,8 +8,6 @@ use LBWP\Aboon\Component\Search;
 use LBWP\Aboon\Component\SimpleVariations;
 use LBWP\Aboon\Component\Watchlist;
 use LBWP\Core;
-use LBWP\Helper\LLM\ChromaDB;
-use LBWP\Helper\LLM\E5MultilangSmall;
 use LBWP\Module\Backend\MemcachedAdmin;
 use LBWP\Theme\Component\ACFBase;
 use LBWP\Theme\Feature\FocusPoint;
@@ -799,9 +797,8 @@ abstract class Filter extends ACFBase
     $showResultInfo = false;
 
     // Get embedder and chroma db
-    $embedder = new E5MultilangSmall();
-    $chroma = ChromaDB::getInstance();
-    $chroma->setCollectionName(Search::$CHROMADB_COLLECTION_NAME, true);
+    $embedder = Search::getChromaDbEmbedder();
+    $chroma = Search::getChromaDbCollection($embedder);
 
     $embeddings = $embedder->embed($search, true);
     $raw = $chroma->searchCollection($embeddings, static::$FILTER_CHROMADB_MAX_RESULTS, true);

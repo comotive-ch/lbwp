@@ -15,7 +15,10 @@ use LBWP\Util\Strings;
 use LBWP\Util\WordPress;
 use LBWP\Helper\LLM\ChromaDB;
 use LBWP\Helper\LLM\E5MultilangSmall;
+use LBWP\Helper\LLM\Embedder;
+use LBWP\Helper\LLM\QwenEmbedder4b;
 use LBWP\Core as LbwpCore;
+use RuntimeException;
 use WP_Query;
 
 /**
@@ -133,6 +136,12 @@ class Search extends ACFBase
    */
   public static $CHROMADB_COLLECTION_NAME = 'text_index';
   /**
+   * Embedder class (implementing Embedder) used to fill and query chroma. Every embedder writes to its own collection
+   * (name + suffix), so after switching, run bulk_import_index_to_chromadb once to fill the new collection
+   * @var string
+   */
+  public static $CHROMADB_EMBEDDER = E5MultilangSmall::class;
+  /**
    * @var bool
    */
   public static $HAS_SITESEARCH = false;
@@ -215,6 +224,14 @@ class Search extends ACFBase
    * @var int when version is upgraded, all indexing will be renewed over time
    */
   const TEXT_INDEX_ROW_VERSION = 1;
+  /**
+   * Embedders selectable by key, e.g. to prefill a collection with &embedder=qwen3-4b in the bulk import
+   */
+  const array CHROMADB_EMBEDDERS = [
+    'e5' => E5MultilangSmall::class,
+    'qwen3-4b' => QwenEmbedder4b::class
+  ];
+  const int CHROMADB_EMBED_CHUNK_SIZE = 32;
 
   /**
    * Registers endpoints and filters
@@ -502,17 +519,19 @@ class Search extends ACFBase
    */
   protected function getChromaDbSearchIds(string $term): array
   {
-    $embedder = new E5MultilangSmall();
-    $chroma = ChromaDB::getInstance();
-    $chroma->setCollectionName(static::$CHROMADB_COLLECTION_NAME, true);
-
-    $raw = $chroma->searchCollection(
-      $embedder->embed($term, true),
-      static::$CHROMADB_WORDPRESS_SEARCH_RESULTS,
-      true,
-      null,
-      static::$CHROMADB_SEARCH_RESULT_DIFF
-    );
+    $embedder = static::getChromaDbEmbedder();
+    try {
+      $raw = static::getChromaDbCollection($embedder)->searchCollection(
+        $embedder->embed($term, true),
+        static::$CHROMADB_WORDPRESS_SEARCH_RESULTS,
+        true,
+        null,
+        static::$CHROMADB_SEARCH_RESULT_DIFF
+      );
+    } catch (RuntimeException $e) {
+      SystemLog::add('Search', 'error', 'chroma search failed: ' . $e->getMessage());
+      return [];
+    }
 
     return array_map('intval', $raw['ids'][0] ?? []);
   }
@@ -655,9 +674,10 @@ class Search extends ACFBase
     $limit = intval($_GET['limit']);
     $offset = $limit * (intval($_GET['page']) - 1);
 
-    // Get ChromaDB and Embedding service and check if they're working
+    // Get ChromaDB and Embedding service (optionally a not yet active one to prefill its collection)
+    $embedderKey = sanitize_key($_GET['embedder'] ?? '');
     $chroma = ChromaDB::getInstance();
-    $embedder = new E5MultilangSmall();
+    $embedder = static::getChromaDbEmbedder($embedderKey);
 
     // Validity checks before importing
     if (!$chroma->isWorking() || !$embedder->isWorking()) {
@@ -669,15 +689,15 @@ class Search extends ACFBase
       exit;
     }
 
-    // Set collection to be used
-    $chroma->setCollectionName(static::$CHROMADB_COLLECTION_NAME, true);
-
+    set_time_limit(600);
+    $chroma = static::getChromaDbCollection($embedder);
     $db = WordPress::getDb();
-    $raw = $db->get_results('
+    $raw = $db->get_results($db->prepare('
       SELECT id, alt_id, title, synonyms, plurals, excerpt_ai, excerpt, meta
-      FROM '.$db->prefix.'lbwp_text_index
-      LIMIT ' . $offset . ',' . $limit . '
-    ');
+      FROM ' . $db->prefix . 'lbwp_text_index
+      ORDER BY id ASC
+      LIMIT %d, %d
+    ', $offset, $limit), ARRAY_A);
 
     // Exit if we don't have any results
     if (count($raw) == 0) {
@@ -686,20 +706,14 @@ class Search extends ACFBase
     }
 
     $start = microtime(true);
-    $batch = array();
-    foreach ($raw as $product) {
-      $batch[] = $this->getChromaDbRecord((array) $product, $embedder);
-    }
-
-    // Sync that in batch with chromadb
-    $chroma->syncBatch($batch);
+    $chroma->syncBatch($this->getChromaDbRecords($raw, $embedder));
     // Finish message and print timer
     $end = microtime(true);
     $time = $end - $start;
     $page = intval($_GET['page']) + 1;
     echo '
-      Finished in ' . number_format($time, 4) . ' seconds
-      <a href="/wp-content/plugins/lbwp/views/cron/job.php?identifier=bulk_import_index_to_chromadb&page=' . $page . '&limit=' . $limit . '">Run next page (' . $page . ')</a>  
+      Finished ' . count($raw) . ' rows into ' . esc_html($chroma->getCollectionName()) . ' in ' . number_format($time, 4) . ' seconds
+      <a href="/wp-content/plugins/lbwp/views/cron/job.php?identifier=bulk_import_index_to_chromadb&key=' . MASTER_CRON_API_SECRET . '&embedder=' . $embedderKey . '&page=' . $page . '&limit=' . $limit . '">Run next page (' . $page . ')</a>
     ';
   }
 
@@ -924,11 +938,10 @@ class Search extends ACFBase
 
     $taxonomies = $this->getTextIndexTaxonomies();
     $fullMap = in_array('product_prop', $taxonomies) ? Filter::getPropertyTreeFull() : [];
-    $embedder = new E5MultilangSmall();
+    $embedder = static::getChromaDbEmbedder();
     $useChroma = static::$CHROMADB_ENABLED && $embedder->isWorking();
-    $chromaDbBatch = [];
 
-    foreach ($rows as $row) {
+    foreach ($rows as &$row) {
       $post = [
         'ID' => intval($row['id']),
         'post_type' => $row['post_type'],
@@ -937,16 +950,11 @@ class Search extends ACFBase
       $generated = $this->getIndexableMetaContent($post, $taxonomies, $fullMap);
       $row['meta'] = $this->mergeIndexMeta($generated, $row['meta']);
       $db->update($db->prefix . 'lbwp_text_index', ['meta' => $row['meta']], ['id' => $row['id']]);
-
-      if ($useChroma) {
-        $chromaDbBatch[] = $this->getChromaDbRecord($row, $embedder);
-      }
     }
+    unset($row);
 
-    if (count($chromaDbBatch) > 0) {
-      $chroma = ChromaDB::getInstance();
-      $chroma->setCollectionName(static::$CHROMADB_COLLECTION_NAME, true);
-      $chroma->syncBatch($chromaDbBatch);
+    if ($useChroma) {
+      static::getChromaDbCollection($embedder)->syncBatch($this->getChromaDbRecords($rows, $embedder));
     }
 
     echo '
@@ -998,12 +1006,62 @@ class Search extends ACFBase
   }
 
   /**
-   * Builds the embedding text of a text index row and returns the record for a chroma batch sync
-   * @param array $index text index row with id, title, excerpt, excerpt_ai, meta, synonyms, plurals
-   * @param E5MultilangSmall $embedder the embedding service
-   * @return array chroma batch record
+   * Returns the configured embedder, or the one registered under the given key
+   * @param string $key optional key of CHROMADB_EMBEDDERS, empty for the configured embedder
+   * @return Embedder the embedding service
    */
-  protected function getChromaDbRecord(array $index, E5MultilangSmall $embedder): array
+  public static function getChromaDbEmbedder(string $key = ''): Embedder
+  {
+    $class = self::CHROMADB_EMBEDDERS[$key] ?? static::$CHROMADB_EMBEDDER;
+    return new $class();
+  }
+
+  /**
+   * Returns a chroma client set to the collection of the given embedder
+   * @param Embedder $embedder the embedder whose vectors are stored in the collection
+   * @return ChromaDB the initialized chroma client
+   */
+  public static function getChromaDbCollection(Embedder $embedder): ChromaDB
+  {
+    $chroma = ChromaDB::getInstance();
+    $chroma->setCollectionName(static::$CHROMADB_COLLECTION_NAME . $embedder->getCollectionSuffix(), true);
+    return $chroma;
+  }
+
+  /**
+   * Embeds text index rows in chunks and returns the records for a chroma batch sync
+   * @param array $rows text index rows with id, title, excerpt, excerpt_ai, meta, synonyms, plurals
+   * @param Embedder $embedder the embedding service
+   * @return array chroma batch records, rows without embedding are skipped
+   */
+  protected function getChromaDbRecords(array $rows, Embedder $embedder): array
+  {
+    $records = [];
+    foreach (array_chunk(array_values($rows), static::CHROMADB_EMBED_CHUNK_SIZE) as $chunk) {
+      $texts = array_map([$this, 'getChromaDbText'], $chunk);
+      $embeddings = $embedder->embedMultiple($texts);
+      foreach ($chunk as $i => $row) {
+        if (empty($embeddings[$i])) {
+          continue;
+        }
+        $records[] = [
+          'id' => $row['id'],
+          'text' => $texts[$i],
+          'embeddings' => $embeddings[$i],
+          'meta' => ['title' => $row['title']]
+        ];
+      }
+    }
+
+    return $records;
+  }
+
+  /**
+   * Builds the embedding text of a text index row
+   * @param array $index text index row with title, excerpt, excerpt_ai, meta, synonyms, plurals
+   * @return string the text to embed
+   */
+  protected function getChromaDbText(array $index): string
   {
     $text = $index['title'] . PHP_EOL;
     if (strlen($index['excerpt_ai']) > 0) {
@@ -1017,12 +1075,7 @@ class Search extends ACFBase
       }
     }
 
-    return [
-      'id' => $index['id'],
-      'text' => $text,
-      'embeddings' => $embedder->embed($text),
-      'meta' => ['title' => $index['title']]
-    ];
+    return $text;
   }
 
   /**
@@ -1167,8 +1220,7 @@ class Search extends ACFBase
     // Eventually AI libraries are used
     require_once ABSPATH . 'wp-content/plugins/lbwp/resources/libraries/openai-php/vendor/autoload.php';
 
-    $chromaDbBatch = [];
-    $embedder = new E5MultilangSmall();
+    $chromaDbRows = [];
     // Build index entries for each post
     foreach ($updateablePosts as $post) {
       // Add prefix data to title if needed
@@ -1205,10 +1257,7 @@ class Search extends ACFBase
         }
       }
 
-      // Add vectors to chroma if enabled
-      if (static::$CHROMADB_ENABLED && $embedder->isWorking()) {
-        $chromaDbBatch[] = $this->getChromaDbRecord($index, $embedder);
-      }
+      $chromaDbRows[] = $index;
 
       // Save to database
       $db->update(
@@ -1218,12 +1267,26 @@ class Search extends ACFBase
       );
     }
 
-    // Also batch update chroma db if array has been filled
-    if (count($chromaDbBatch) > 0) {
-      $chroma = ChromaDB::getInstance();
-      $chroma->setCollectionName(static::$CHROMADB_COLLECTION_NAME, true);
-      $chroma->syncBatch($chromaDbBatch);
+    $this->syncTextIndexToChromaDb($chromaDbRows);
+  }
+
+  /**
+   * Embeds updated text index rows with the configured embedder and upserts them into its chroma collection
+   * @param array $rows text index rows
+   * @return void
+   */
+  protected function syncTextIndexToChromaDb(array $rows): void
+  {
+    if (!static::$CHROMADB_ENABLED || count($rows) === 0) {
+      return;
     }
+
+    $embedder = static::getChromaDbEmbedder();
+    if (!$embedder->isWorking()) {
+      return;
+    }
+
+    static::getChromaDbCollection($embedder)->syncBatch($this->getChromaDbRecords($rows, $embedder));
   }
 
   /**

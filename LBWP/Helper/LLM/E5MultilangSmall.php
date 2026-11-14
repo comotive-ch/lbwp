@@ -8,7 +8,7 @@ namespace LBWP\Helper\LLM;
  * @package LBWP\Helper\LLM
  * @author Michael Sebel <michael@comotive.ch>
  */
-class E5MultilangSmall
+class E5MultilangSmall implements Embedder
 {
   private string $baseUrl;
   private int $timeout;
@@ -103,6 +103,15 @@ class E5MultilangSmall
     ]);
 
     return $response['embeddings'] ?? [];
+  }
+
+  /**
+   * The E5 collections were created before multiple embedders existed and keep their plain name
+   * @return string empty suffix
+   */
+  public function getCollectionSuffix(): string
+  {
+    return '';
   }
 
   /**

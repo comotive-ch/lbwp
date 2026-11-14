@@ -108,6 +108,9 @@ class HTMLCache extends \LBWP\Module\Base
       add_action('wp_before_admin_bar_render',array($this, 'flushCacheFromAdminBar'));
       add_filter('output_buffer',array($this, 'setSiteToCache'), 10000);
       add_filter('the_password_form', array($this, 'avoidCacheFiltered'));
+      if (defined('LBWP_HTML_CACHE_SKIP__WOOCOMMERCE')) {
+        add_action('wp', array($this, 'avoidWooCommerceUserCache'));
+      }
       // Explicitly remove timed cookies
       $this->expireTimedCacheAvoids();
 
@@ -118,6 +121,22 @@ class HTMLCache extends \LBWP\Module\Base
         // delete cache
         $this->clearHtmlCache($siteId);
       }
+    }
+  }
+
+  /**
+   * Users with a cart can write to the cache if LBWP_HTML_CACHE_SKIP__WOOCOMMERCE is set, so pages that
+   * contain their cart, checkout or account data or pending shop notices must never be cached.
+   * @return void
+   */
+  public function avoidWooCommerceUserCache(): void
+  {
+    if (!function_exists('is_woocommerce')) {
+      return;
+    }
+
+    if (is_cart() || is_checkout() || is_account_page() || is_wc_endpoint_url() || wc_notice_count() > 0) {
+      self::avoidCache();
     }
   }
 
@@ -482,8 +501,8 @@ class HTMLCache extends \LBWP\Module\Base
     if ($_SERVER['REQUEST_METHOD'] === 'POST' || isset($_GET['ApiSignature'])) {
       return false;
     }
-    // Is there a woocommerce cookie and are there items in the cart?
-    if (isset($_COOKIE['woocommerce_items_in_cart'])) {
+    // Is there a woocommerce cookie and are there items in the cart? (allowed, if the site renders carts via JS)
+    if (isset($_COOKIE['woocommerce_items_in_cart']) && !defined('LBWP_HTML_CACHE_SKIP__WOOCOMMERCE')) {
       return false;
     }
     // If the user is logged in for post passing, don't cache his results
