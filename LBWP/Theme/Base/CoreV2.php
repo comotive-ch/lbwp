@@ -1104,8 +1104,9 @@ abstract class CoreV2
       remove_filter( 'render_block', 'gutenberg_render_layout_support_flag', 10, 2 );
     }
 
-    // Remove the default block patterns
-    if($removeDefPatterns) {
+    // Remove the default block patterns, only where they are used (admin, block patterns REST route of the editor):
+    // get_all_registered() loads the content of every pattern, which costs ~30ms on every request otherwise
+    if($removeDefPatterns && (is_admin() || str_contains($_SERVER['REQUEST_URI'] ?? '', 'block-patterns'))) {
       add_action('init', function () {
         $bpClass = \WP_Block_Patterns_Registry::get_instance();
         $defaults = $bpClass->get_all_registered();
