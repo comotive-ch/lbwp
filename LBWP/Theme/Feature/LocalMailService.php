@@ -19,6 +19,7 @@ use LBWP\Util\Strings;
 use LBWP\Util\WordPress;
 use LBWP\Util\Multilang;
 use LBWP\Util\LbwpData;
+use LBWP\Util\Imap\Mime;
 use LBWP\Newsletter\Core as NLCore;
 use LBWP\Newsletter\Service\Base as ServiceImplementation;
 use LBWP\Newsletter\Service\LocalMail\Implementation as LocalMailImplementation;
@@ -300,7 +301,7 @@ class LocalMailService
     // If there are recipients, send
     if (count($mail->getBccAddresses()) > 0) {
       $mail->send();
-      SystemLog::add('LocalMailService::sendIncomingMailToList', 'debug', 'Email sent to list ' . $listId, array($data['from'], imap_utf8($data['subject'])));
+      SystemLog::add('LocalMailService::sendIncomingMailToList', 'debug', 'Email sent to list ' . $listId, array($data['from'], Mime::decodeHeader($data['subject'])));
 
       $history = ArrayManipulation::forceArray(get_post_meta($listId, 'lbwp-mail-distributor-history', true));
       $history[time()] = array(
@@ -317,7 +318,7 @@ class LocalMailService
       $confEmail = External::PhpMailer();
       $confEmail->addAddress($data['from']);
       $confEmail->Subject = get_bloginfo('name') . ' | Deine Email wurdet gesendet';
-      $confEmail->Body = 'Hallo<br>Deine Email «' . imap_utf8($data['subject']) . '» wurde an die Liste ' . get_the_title($listId) . ' gesendet';
+      $confEmail->Body = 'Hallo<br>Deine Email «' . Mime::decodeHeader($data['subject']) . '» wurde an die Liste ' . get_the_title($listId) . ' gesendet';
       $confEmail->send();
     }
   }

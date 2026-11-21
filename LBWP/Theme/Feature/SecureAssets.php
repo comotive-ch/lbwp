@@ -7,6 +7,7 @@ use LBWP\Module\Backend\S3Upload;
 use LBWP\Util\ArrayManipulation;
 use LBWP\Util\Strings;
 use LBWP\Util\WordPress;
+use WP_HTML_Tag_Processor;
 
 /**
  * This provides a setting for assets to be secured on the block storage
@@ -21,9 +22,9 @@ class SecureAssets
    */
   protected static $instance = NULL;
   /**
-   * @var array attachment url cache
+   * @var array|null md5(guid) => attachment id of all secured attachments, null until loaded
    */
-  protected $attUrlCache = array();
+  protected ?array $attUrlCache = null;
   /**
    * @var array configuration defaults
    */
@@ -67,9 +68,9 @@ class SecureAssets
       add_filter('edit_attachment', array($this, 'changeAssetSecurityState'));
     } else {
       // If not in admin, return rewrite assets to proxy urls
-      if (!defined('LOCAL_DEVELOPMENT') && !defined('LBWP_SKIP_REWRITE_PROXY_ATTACHMENT_URLS')) {
+      //if (!defined('LOCAL_DEVELOPMENT') && !defined('LBWP_SKIP_REWRITE_PROXY_ATTACHMENT_URLS')) {
         add_filter('the_content', array($this, 'rewriteProxyAttachmentUrl'));
-      }
+      //}
     }
 
     // If the attachment url is requested, rewrite to proxy path, but only if not in save mode
@@ -79,24 +80,32 @@ class SecureAssets
   }
 
   /**
-   * Load the attachment url cache
+   * Load the guid hash to id map of secured attachments, from object cache or database
+   * @return void
    */
-  protected function loadAttachmentUrlCache()
+  protected function loadAttachmentUrlCache(): void
   {
     if (is_array($this->attUrlCache)) {
-      return; // Already loaded
+      return;
     }
 
-    $this->attUrlCache = wp_cache_get('attUrlCache', 'SecureAssets');
-
-    if ($this->attUrlCache == false) {
-      $db = WordPress::getDb();
-      $sql = 'SELECT ID, guid FROM ' . $db->posts . ' WHERE post_type = "attachment" AND post_mime_type NOT LIKE "image%"';
-      foreach ($db->get_results($sql) as $result) {
-        $this->attUrlCache[md5($result->guid)] = $result->ID;
-      }
-      wp_cache_set('attUrlCache', $this->attUrlCache, 'SecureAssets', 86400);
+    $cached = wp_cache_get('securedAttUrlCache', 'SecureAssets');
+    if (is_array($cached)) {
+      $this->attUrlCache = $cached;
+      return;
     }
+
+    $this->attUrlCache = [];
+    $db = WordPress::getDb();
+    $results = $db->get_results('
+      SELECT p.ID, p.guid FROM ' . $db->posts . ' p
+      INNER JOIN ' . $db->postmeta . ' pm ON pm.post_id = p.ID AND pm.meta_key = "_wp_attachment_metadata"
+      WHERE p.post_type = "attachment" AND pm.meta_value LIKE "%\"secured_asset\";i:1;%"
+    ');
+    foreach ($results as $result) {
+      $this->attUrlCache[md5($result->guid)] = intval($result->ID);
+    }
+    wp_cache_set('securedAttUrlCache', $this->attUrlCache, 'SecureAssets', 86400);
   }
 
   /**
@@ -175,34 +184,62 @@ class SecureAssets
 
       // Save the attachment meta data with the security state
       wp_update_attachment_metadata($attachmentId, $meta);
+      wp_cache_delete('securedAttUrlCache', 'SecureAssets');
     }
   }
 
   /**
+   * Rewrites links to secured attachments in the content to their proxy path
    * @param string $html the original content
    * @return string the changed content
    */
-  public function rewriteProxyAttachmentUrl($html)
+  public function rewriteProxyAttachmentUrl($html): string
   {
+    if (!is_string($html) || stripos($html, '<a') === false) {
+      return (string) $html;
+    }
+
     $this->loadAttachmentUrlCache();
-    return Strings::replaceByXPath($html, '//a', function ($doc, $tag, $fragment) {
-      /**
-       * @var \DOMDocument $doc The document initialized with $html
-       * @var \DOMNode $tag A node of the result set
-       * @var \DOMDocumentFragment $fragment Empty fragment node, add content by $fragment->appendXML('something');
-       */
-      $href = $tag->attributes->getNamedItem('href')->nodeValue;
-      $href = str_replace('test.', 'www.', $href);
-      $guidHash = md5($href);
-      $attachmentId = isset($this->attUrlCache[$guidHash]) ? $this->attUrlCache[$guidHash] : 0;
-      // Only rewrite, if the asset is secured
-      if ($this->isSecureAsset($attachmentId)) {
-        $tag->setAttribute('href', self::getProxyPath($attachmentId));
+    if (!$this->containsCachedAttachmentLink($html)) {
+      return $html;
+    }
+
+    $processor = new WP_HTML_Tag_Processor($html);
+    while ($processor->next_tag(['tag_name' => 'a'])) {
+      $href = $processor->get_attribute('href');
+      if (!is_string($href) || $href === '') {
+        continue;
       }
 
-      $fragment->appendXML($doc->saveXML($tag));
-      return $tag;
-    });
+      $guidHash = md5(str_replace('test.', 'www.', $href));
+      $attachmentId = $this->attUrlCache[$guidHash] ?? 0;
+      if ($this->isSecureAsset($attachmentId)) {
+        $processor->set_attribute('href', self::getProxyPath($attachmentId));
+      }
+    }
+
+    return $processor->get_updated_html();
+  }
+
+  /**
+   * Cheap regex pre-check so the slower HTML parser only runs when a link may point to a known attachment
+   * @param string $html the content to check
+   * @return bool true, if at least one href matches an attachment in the url cache
+   */
+  protected function containsCachedAttachmentLink(string $html): bool
+  {
+    if (empty($this->attUrlCache) || !preg_match_all('/\shref\s*=\s*(?|"([^"]*)"|\'([^\']*)\'|([^\s>]+))/i', $html, $matches)) {
+      return false;
+    }
+
+    foreach ($matches[1] as $href) {
+      $href = str_replace('test.', 'www.', html_entity_decode($href, ENT_QUOTES | ENT_HTML5));
+      if (isset($this->attUrlCache[md5($href)])) {
+        return true;
+      }
+    }
+
+    return false;
   }
 
   /**

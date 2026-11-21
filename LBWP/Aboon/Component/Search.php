@@ -1344,7 +1344,8 @@ class Search extends ACFBase
 
     try {
       $response = $client->chat()->create([
-        'model' => 'gpt-5-mini',
+        'model' => 'gpt-6-luna',
+        'reasoning_effort' => 'low',
         'messages' => [
           ['role' => 'user', 'content' => $prompt],
         ],
@@ -1390,7 +1391,8 @@ class Search extends ACFBase
 
     try {
       $response = $client->chat()->create([
-        'model' => 'gpt-5-mini',
+        'model' => 'gpt-6-luna',
+        'reasoning_effort' => 'low',
         'messages' => [
           ['role' => 'user', 'content' => $prompt],
         ],

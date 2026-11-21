@@ -242,7 +242,8 @@ class Scraper
 
     try {
       $response = $client->chat()->create([
-        'model' => 'gpt-5-turbo',
+        'model' => 'gpt-6-luna',
+        'reasoning_effort' => 'low',
         'messages' => [
           ['role' => 'user', 'content' => $prompt],
         ],
