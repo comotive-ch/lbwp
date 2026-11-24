@@ -104,7 +104,9 @@ class CmsFeatures extends \LBWP\Module\Base
       $this->yoastTitlesOverrides = apply_filters('lbwp_yoast_seo_title_override', $this->yoastTitlesOverrides);
       // Add reusable block to main menu (if any registered)
       add_action('admin_menu', array($this, 'addReusableBlockMenu'));
-      $this->addAcfContentToYoast();
+      if ($GLOBALS['pagenow'] === 'post.php' && isset($_GET['post'])) {
+        $this->addAcfContentToYoast();
+      }
       add_action('admin_init', array($this, 'addBackendJsData'));
     } else {
       // Frontend features
@@ -700,13 +702,17 @@ class CmsFeatures extends \LBWP\Module\Base
 
   /**
    * Adds block and namespace wide render block filters
-   * @param $html
-   * @param $block
-   * @return mixed
+   * @param string $html the rendered block
+   * @param array $block the parsed block, blockName is null for freeform/whitespace blocks
+   * @return string the filtered html
    */
   public function blockRenderFilters($html, $block)
   {
-    list($namespace, $name) = explode('/', $block['blockName']);
+    if (!isset($block['blockName']) || !str_contains($block['blockName'], '/')) {
+      return $html;
+    }
+
+    [$namespace, $name] = explode('/', $block['blockName'], 2);
     $html = apply_filters('render_block_' . $namespace . '_' . $name, $html, $block);
     $html = apply_filters('render_block_' . $namespace, $html, $block);
     return $html;
@@ -1433,7 +1439,8 @@ class CmsFeatures extends \LBWP\Module\Base
   private function addAcfContentToYoast(){
     $base = File::getResourceUri();
     wp_enqueue_script('yoast-acf-content', $base . '/js/lbwp-yoast-acf-content.js');
-    wp_localize_script('yoast-acf-content', 'lbwpYoastData', array('post_id' => $_GET['post'], 'post_type' => get_post_type($_GET['post'])));
+    $postId = intval($_GET['post']);
+    wp_localize_script('yoast-acf-content', 'lbwpYoastData', ['post_id' => $postId, 'post_type' => get_post_type($postId)]);
   }
 
   /**

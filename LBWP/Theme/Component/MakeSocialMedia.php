@@ -2,6 +2,7 @@
 
 namespace LBWP\Theme\Component;
 
+use LBWP\Module\General\Cms\SystemLog;
 use LBWP\Util\WordPress;
 use WP_Error;
 use WP_Post;
@@ -24,6 +25,18 @@ class MakeSocialMedia extends ACFBase
 
   /** REST namespace */
   const string API_NAMESPACE = 'lbwp-social/v1';
+
+  /** Meta key holding the timestamp of the webhook dispatch (legacy rows contain 1) */
+  const string META_SENT = '_soc_webhook_sent';
+
+  /** Meta key holding the per-webhook dispatch results */
+  const string META_RESULTS = '_soc_webhook_results';
+
+  /** admin-post action that resets the sent flag */
+  const string RESET_ACTION = 'soc_reset_webhook_sent';
+
+  /** Component name used in the system log */
+  const string LOG_COMPONENT = 'MakeSocialMedia';
 
   /** @var array<string,string> Human-readable labels for every supported content type */
   const array CONTENT_TYPES = [
@@ -55,6 +68,9 @@ class MakeSocialMedia extends ACFBase
     add_action('transition_post_status', [$this, 'onSourcePostPublish'], 10, 3);
     add_action('admin_menu', [$this, 'registerChannelsPage']);
     add_action('admin_footer', [$this, 'adminFooterScripts']);
+    add_action('add_meta_boxes_' . self::POST_TYPE, [$this, 'registerSentMetabox']);
+    add_action('admin_post_' . self::RESET_ACTION, [$this, 'handleResetSent']);
+    add_action('admin_notices', [$this, 'showResetNotice']);
   }
 
   /**
@@ -152,72 +168,262 @@ class MakeSocialMedia extends ACFBase
 
   /**
    * Dispatches make.com webhooks when a social post is first published.
-   * Guarded by _soc_webhook_sent meta to prevent duplicate calls on re-saves.
+   * Guarded by the META_SENT flag to prevent duplicate calls on re-saves.
    *
    * @param string $new_status
-   * @param string $_old_status Unused — we rely on _soc_webhook_sent instead of old-status checks
+   * @param string $old_status
    * @param WP_Post $post
+   * @return void
    */
-  public function onSocialPostPublish(string $new_status, string $_old_status, WP_Post $post): void
+  public function onSocialPostPublish(string $new_status, string $old_status, WP_Post $post): void
   {
     if ($new_status !== 'publish' || $post->post_type !== self::POST_TYPE)
       return;
-    if (get_post_meta($post->ID, '_soc_webhook_sent', true))
-      return;
 
-    $contentType      = get_post_meta($post->ID, 'soc_content_type', true);
-    $selectedChannels = get_post_meta($post->ID, 'soc_channels', true);
-
-    if (empty($selectedChannels) || !is_array($selectedChannels))
-      return;
-
-    $isShort   = in_array($contentType, ['text-short', 'image-short']);
-    $text      = get_post_meta($post->ID, $isShort ? 'soc_text_short' : 'soc_text_long', true);
-    $linkUrl   = get_post_meta($post->ID, 'soc_link_url', true);
-    $thumbnail = $this->getThumbnailUrl($post->ID);
-
-    $webhooks = get_field('soc_webhooks', 'option');
-    if (!is_array($webhooks))
-      return;
-
-    $dispatched = 0;
-    foreach ($selectedChannels as $channelKey) {
-      foreach ($webhooks as $webhook) {
-        if ($this->webhookKey($webhook) !== $channelKey) continue;
-        if ($webhook['soc_wh_type'] !== $contentType) continue;
-        if (empty($webhook['soc_wh_url'])) continue;
-        $this->sendWebhook($webhook['soc_wh_url'], [
-          'title'     => $post->post_title,
-          'text'      => $text,
-          'type'      => $contentType,
-          'url'       => $linkUrl,
-          'thumbnail' => $thumbnail,
-          'secret'    => $webhook['soc_wh_secret'],
-        ]);
-        $dispatched++;
-        break;
+    $isFirstPublish = $old_status !== 'publish';
+    if (get_post_meta($post->ID, self::META_SENT, true)) {
+      if ($isFirstPublish) {
+        $this->log('info', 'Webhooks skipped: post #' . $post->ID . ' was already sent before', ['postId' => $post->ID]);
       }
+      return;
     }
 
-    if ($dispatched > 0) {
-      update_post_meta($post->ID, '_soc_webhook_sent', 1);
+    $targets = $this->getDispatchTargets($post->ID);
+    if (empty($targets)) {
+      if ($isFirstPublish) {
+        $this->log('info', 'Webhooks skipped: post #' . $post->ID . ' has no matching channels', ['postId' => $post->ID]);
+      }
+      return;
     }
+
+    $payload = $this->buildPostPayload($post);
+    $results = [];
+    foreach ($targets as $webhook) {
+      $results[] = $this->sendWebhook($webhook, $payload, $post->ID);
+    }
+
+    update_post_meta($post->ID, self::META_SENT, current_time('timestamp'));
+    update_post_meta($post->ID, self::META_RESULTS, $results);
   }
 
   /**
-   * Sends a non-blocking JSON POST request to a make.com webhook URL.
+   * Returns the configured webhooks that are selected on the post and match its content type.
    *
-   * @param string $url
-   * @param array $payload
+   * @param int $postId
+   * @return array[] webhook config rows
    */
-  protected function sendWebhook(string $url, array $payload): void
+  protected function getDispatchTargets(int $postId): array
   {
-    wp_remote_post($url, [
-      'body'     => wp_json_encode($payload),
-      'headers'  => ['Content-Type' => 'application/json'],
-      'timeout'  => 15,
-      'blocking' => false,
+    $contentType      = get_post_meta($postId, 'soc_content_type', true);
+    $selectedChannels = get_post_meta($postId, 'soc_channels', true);
+    $webhooks         = get_field('soc_webhooks', 'option');
+    if (empty($selectedChannels) || !is_array($selectedChannels) || !is_array($webhooks))
+      return [];
+
+    return array_values(array_filter($webhooks, fn(array $webhook) =>
+      !empty($webhook['soc_wh_url'])
+      && $webhook['soc_wh_type'] === $contentType
+      && in_array($this->webhookKey($webhook), $selectedChannels, true)
+    ));
+  }
+
+  /**
+   * Builds the webhook payload of a social post (without the per-webhook secret).
+   *
+   * @param WP_Post $post
+   * @return array
+   */
+  protected function buildPostPayload(WP_Post $post): array
+  {
+    $contentType = get_post_meta($post->ID, 'soc_content_type', true);
+    $isShort     = in_array($contentType, ['text-short', 'image-short']);
+
+    return [
+      'title'     => $post->post_title,
+      'text'      => get_post_meta($post->ID, $isShort ? 'soc_text_short' : 'soc_text_long', true),
+      'type'      => $contentType,
+      'url'       => get_post_meta($post->ID, 'soc_link_url', true),
+      'thumbnail' => $this->getThumbnailUrl($post->ID),
+    ];
+  }
+
+  /**
+   * Sends a JSON POST request to a make.com webhook and logs the outcome to the system log.
+   * Blocking, so the response can be logged and shown on the post.
+   *
+   * @param array $webhook webhook config row
+   * @param array $payload payload without secret
+   * @param int $postId related social post, 0 for test sends
+   * @return array{title: string, type: string, time: int, success: bool, code: int, message: string}
+   */
+  protected function sendWebhook(array $webhook, array $payload, int $postId = 0): array
+  {
+    $response = wp_remote_post($webhook['soc_wh_url'], [
+      'body'    => wp_json_encode($payload + ['secret' => $webhook['soc_wh_secret'] ?? '']),
+      'headers' => ['Content-Type' => 'application/json'],
+      'timeout' => 10,
     ]);
+
+    $result = [
+      'title'   => (string) $webhook['soc_wh_title'],
+      'type'    => (string) $webhook['soc_wh_type'],
+      'time'    => current_time('timestamp'),
+      'success' => false,
+      'code'    => 0,
+      'message' => '',
+    ];
+
+    if (is_wp_error($response)) {
+      $result['message'] = $response->get_error_message();
+    } else {
+      $result['code']    = (int) wp_remote_retrieve_response_code($response);
+      $result['success'] = $result['code'] >= 200 && $result['code'] < 300;
+      $result['message'] = mb_substr(trim(wp_remote_retrieve_body($response)), 0, 500);
+    }
+
+    $this->logWebhookResult($result, $postId);
+    return $result;
+  }
+
+  /**
+   * Writes a webhook dispatch result to the system log.
+   *
+   * @param array $result result from sendWebhook()
+   * @param int $postId related social post, 0 for test sends
+   * @return void
+   */
+  protected function logWebhookResult(array $result, int $postId): void
+  {
+    $context = $postId > 0 ? 'post #' . $postId : 'test send';
+    $status  = $result['code'] > 0 ? 'HTTP ' . $result['code'] : 'request failed';
+    $this->log(
+      $result['success'] ? 'info' : 'error',
+      'Webhook "' . $result['title'] . '" (' . $context . '): ' . $status,
+      [
+        'postId'   => $postId,
+        'webhook'  => $result['title'],
+        'type'     => $result['type'],
+        'code'     => $result['code'],
+        'response' => $result['message'],
+      ]
+    );
+  }
+
+  /**
+   * Adds an entry to the LBWP system log.
+   *
+   * @param string $type info | error
+   * @param string $message
+   * @param array $data additional scalar data
+   * @return void
+   */
+  protected function log(string $type, string $message, array $data = []): void
+  {
+    SystemLog::add(self::LOG_COMPONENT, $type, $message, $data);
+  }
+
+  /**
+   * Adds the sent-status metabox to the sidebar, only if the post has already been sent.
+   *
+   * @param WP_Post $post
+   * @return void
+   */
+  public function registerSentMetabox(WP_Post $post): void
+  {
+    if (!get_post_meta($post->ID, self::META_SENT, true))
+      return;
+
+    add_meta_box(
+      'soc-webhook-sent',
+      __('Versand', 'lbwp'),
+      [$this, 'renderSentMetabox'],
+      self::POST_TYPE,
+      'side',
+      'high'
+    );
+  }
+
+  /**
+   * Renders the sent-status metabox: send time, per-webhook results and the reset link.
+   *
+   * @param WP_Post $post
+   * @return void
+   */
+  public function renderSentMetabox(WP_Post $post): void
+  {
+    $sentAt   = (int) get_post_meta($post->ID, self::META_SENT, true);
+    $results  = get_post_meta($post->ID, self::META_RESULTS, true) ?: [];
+    $resetUrl = wp_nonce_url(
+      admin_url('admin-post.php?action=' . self::RESET_ACTION . '&post=' . $post->ID),
+      self::RESET_ACTION . '_' . $post->ID
+    );
+    $sentLabel = $sentAt > 1
+      ? sprintf(__('Gesendet am %s', 'lbwp'), date_i18n('d.m.Y, H:i', $sentAt))
+      : __('Gesendet (Zeitpunkt unbekannt)', 'lbwp');
+    ?>
+    <p><strong><?php echo esc_html($sentLabel); ?></strong></p>
+    <?php if (!empty($results)): ?>
+      <ul style="margin:0 0 1em">
+        <?php foreach ($results as $result): ?>
+          <li>
+            <span class="dashicons dashicons-<?php echo $result['success'] ? 'yes' : 'warning'; ?>"
+                  style="color:<?php echo $result['success'] ? '#008a20' : '#d63638'; ?>"></span>
+            <?php echo esc_html($result['title']); ?>
+            <span style="color:#646970">(<?php echo esc_html($result['code'] > 0 ? 'HTTP ' . $result['code'] : __('Fehler', 'lbwp')); ?>)</span>
+          </li>
+        <?php endforeach; ?>
+      </ul>
+    <?php endif; ?>
+    <p class="description">
+      <?php echo esc_html(__('Dieser Post wird nicht erneut gesendet. Beim Zurücksetzen wird der Post auf Entwurf gesetzt und beim nächsten Veröffentlichen erneut an die Kanäle gesendet.', 'lbwp')); ?>
+    </p>
+    <p>
+      <a href="<?php echo esc_url($resetUrl); ?>" class="button"
+         onclick="return confirm(<?php echo esc_attr(wp_json_encode(__('Versandstatus zurücksetzen und Post auf Entwurf setzen?', 'lbwp'))); ?>)">
+        <?php echo esc_html(__('Versand zurücksetzen', 'lbwp')); ?>
+      </a>
+    </p>
+    <?php
+  }
+
+  /**
+   * Removes the sent flag of a social post and sets it back to draft, so it can be republished.
+   *
+   * @return void
+   */
+  public function handleResetSent(): void
+  {
+    $postId = intval($_GET['post'] ?? 0);
+    check_admin_referer(self::RESET_ACTION . '_' . $postId);
+
+    if (get_post_type($postId) !== self::POST_TYPE || !current_user_can('edit_post', $postId)) {
+      wp_die(esc_html(__('Keine Berechtigung.', 'lbwp')), 403);
+    }
+
+    delete_post_meta($postId, self::META_SENT);
+    delete_post_meta($postId, self::META_RESULTS);
+    wp_update_post(['ID' => $postId, 'post_status' => 'draft']);
+    $this->log('info', 'Sent flag of post #' . $postId . ' reset by user #' . get_current_user_id(), ['postId' => $postId]);
+
+    wp_safe_redirect(add_query_arg('soc_reset', 1, get_edit_post_link($postId, 'raw')));
+    exit;
+  }
+
+  /**
+   * Shows a confirmation notice on the edit screen after the sent flag was reset.
+   *
+   * @return void
+   */
+  public function showResetNotice(): void
+  {
+    $screen = get_current_screen();
+    if (empty($_GET['soc_reset']) || !$screen || $screen->post_type !== self::POST_TYPE)
+      return;
+
+    printf(
+      '<div class="notice notice-success is-dismissible"><p>%s</p></div>',
+      esc_html(__('Versandstatus zurückgesetzt. Der Post ist nun ein Entwurf und wird beim nächsten Veröffentlichen erneut gesendet.', 'lbwp'))
+    );
   }
 
   /**
@@ -289,11 +495,7 @@ class MakeSocialMedia extends ACFBase
           filterChannels();
         });
 
-        acf.addAction('change', function($el) {
-          if ($el && $el.data('key') === 'field_soc_content_type') {
-            setTimeout(filterChannels, 50);
-          }
-        });
+        $(document).on('change', '[data-key="field_soc_content_type"] select', filterChannels);
 
         acf.addAction('show', function($el) {
           if ($el.data('key') === 'field_soc_text_short') addCharCounter('field_soc_text_short', 500);
@@ -466,29 +668,21 @@ class MakeSocialMedia extends ACFBase
       return ['success' => false, 'message' => __('Webhook nicht gefunden.', 'lbwp')];
     }
 
-    $response = wp_remote_post($target['soc_wh_url'], [
-      'body'     => wp_json_encode([
-        'title'     => 'Webhook Test',
-        'text'      => $text,
-        'type'      => $target['soc_wh_type'],
-        'url'       => $url,
-        'thumbnail' => '',
-        'secret'    => $target['soc_wh_secret'],
-      ]),
-      'headers'  => ['Content-Type' => 'application/json'],
-      'timeout'  => 15,
-      'blocking' => true,
+    $result = $this->sendWebhook($target, [
+      'title'     => 'Webhook Test',
+      'text'      => $text,
+      'type'      => $target['soc_wh_type'],
+      'url'       => $url,
+      'thumbnail' => '',
     ]);
 
-    if (is_wp_error($response)) {
-      return ['success' => false, 'message' => $response->get_error_message()];
+    if ($result['code'] === 0) {
+      return ['success' => false, 'message' => $result['message']];
     }
-
-    $code = wp_remote_retrieve_response_code($response);
-    if ($code >= 200 && $code < 300) {
-      return ['success' => true, 'message' => sprintf(__('Webhook erfolgreich gesendet (HTTP %d).', 'lbwp'), $code)];
+    if ($result['success']) {
+      return ['success' => true, 'message' => sprintf(__('Webhook erfolgreich gesendet (HTTP %d).', 'lbwp'), $result['code'])];
     }
-    return ['success' => false, 'message' => sprintf(__('Webhook fehlgeschlagen (HTTP %d).', 'lbwp'), $code)];
+    return ['success' => false, 'message' => sprintf(__('Webhook fehlgeschlagen (HTTP %d).', 'lbwp'), $result['code'])];
   }
 
   /**
@@ -574,29 +768,27 @@ class MakeSocialMedia extends ACFBase
   }
 
   /**
-   * Summarises all configured webhooks as unique channels with their supported content types.
-   * Used by the agent to know which channels and types it can target when creating posts.
+   * Summarises all usable webhooks, one entry per webhook, so multiple accounts on the same
+   * platform (e.g. two LinkedIn pages) stay distinguishable. `key` can be passed back as channel.
    *
-   * @return array<int, array{slug: string, name: string, types: string[]}>
+   * @return array<int, array{key: string, title: string, slug: string, name: string, types: string[]}>
    */
   protected function getChannelSummary(): array
   {
     $webhooks = get_field('soc_webhooks', 'option') ?: [];
     $channels = [];
     foreach ($webhooks as $webhook) {
+      if (empty($webhook['soc_wh_url'])) continue;
       $slug = $webhook['soc_wh_channel'];
-      if (!isset($channels[$slug])) {
-        $channels[$slug] = [
-          'slug'  => $slug,
-          'name'  => self::CHANNELS[$slug] ?? $slug,
-          'types' => [],
-        ];
-      }
-      if (!in_array($webhook['soc_wh_type'], $channels[$slug]['types'])) {
-        $channels[$slug]['types'][] = $webhook['soc_wh_type'];
-      }
+      $channels[] = [
+        'key'   => $this->webhookKey($webhook),
+        'title' => $webhook['soc_wh_title'],
+        'slug'  => $slug,
+        'name'  => self::CHANNELS[$slug] ?? $slug,
+        'types' => [$webhook['soc_wh_type']],
+      ];
     }
-    return array_values($channels);
+    return $channels;
   }
 
   /**
@@ -668,14 +860,15 @@ class MakeSocialMedia extends ACFBase
   }
 
   /**
-   * Resolves a list of channel slugs + content type to matching webhook keys.
-   * If $channelSlugs is empty, all webhooks matching the type are returned.
+   * Resolves a list of channels + content type to matching webhook keys.
+   * A channel can be a platform slug (selects all webhooks of that platform), a webhook title or key.
+   * If $channels is empty, all webhooks matching the type are returned.
    *
-   * @param string[] $channelSlugs e.g. ['threads', 'instagram']
+   * @param string[] $channels e.g. ['threads', 'Linkedin Text Company']
    * @param string $contentType
    * @return string[]
    */
-  protected function resolveChannels(array $channelSlugs, string $contentType): array
+  protected function resolveChannels(array $channels, string $contentType): array
   {
     $webhooks = get_field('soc_webhooks', 'option');
     if (!is_array($webhooks)) return [];
@@ -684,8 +877,12 @@ class MakeSocialMedia extends ACFBase
     foreach ($webhooks as $webhook) {
       if (empty($webhook['soc_wh_url'])) continue;
       if ($webhook['soc_wh_type'] !== $contentType) continue;
-      if (!empty($channelSlugs) && !in_array($webhook['soc_wh_channel'], $channelSlugs)) continue;
-      $keys[] = $this->webhookKey($webhook);
+      $key = $this->webhookKey($webhook);
+      $matches = in_array($webhook['soc_wh_channel'], $channels, true)
+        || in_array($webhook['soc_wh_title'], $channels, true)
+        || in_array($key, $channels, true);
+      if (!empty($channels) && !$matches) continue;
+      $keys[] = $key;
     }
     return $keys;
   }

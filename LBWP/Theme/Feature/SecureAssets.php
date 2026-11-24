@@ -26,6 +26,10 @@ class SecureAssets
    */
   protected ?array $attUrlCache = null;
   /**
+   * @var array|null attachment id => true of all secured attachments, null until loaded
+   */
+  protected ?array $securedIds = null;
+  /**
    * @var array configuration defaults
    */
   protected $config = array(
@@ -68,15 +72,37 @@ class SecureAssets
       add_filter('edit_attachment', array($this, 'changeAssetSecurityState'));
     } else {
       // If not in admin, return rewrite assets to proxy urls
-      //if (!defined('LOCAL_DEVELOPMENT') && !defined('LBWP_SKIP_REWRITE_PROXY_ATTACHMENT_URLS')) {
+      if (!defined('LOCAL_DEVELOPMENT') && !defined('LBWP_SKIP_REWRITE_PROXY_ATTACHMENT_URLS')) {
         add_filter('the_content', array($this, 'rewriteProxyAttachmentUrl'));
-      //}
+      }
     }
 
     // If the attachment url is requested, rewrite to proxy path, but only if not in save mode
     if (!isset($_REQUEST['action']) || $_REQUEST['action'] != 'save-attachment') {
       add_filter('wp_get_attachment_url', array($this, 'rewriteAttachmentUrl'), 20, 2);
     }
+
+    add_action('added_post_meta', [$this, 'invalidateOnSecuredMetadata'], 10, 4);
+    add_action('updated_post_meta', [$this, 'invalidateOnSecuredMetadata'], 10, 4);
+  }
+
+  /**
+   * Flushes the secured attachment cache when code other than the media modal secures an attachment
+   * @param int $_metaId the meta id
+   * @param int $_objectId the attachment id
+   * @param string $metaKey the meta key
+   * @param mixed $metaValue the new meta value
+   * @return void
+   */
+  public function invalidateOnSecuredMetadata($_metaId, $_objectId, $metaKey, $metaValue): void
+  {
+    if ($metaKey !== '_wp_attachment_metadata' || !is_array($metaValue) || ($metaValue['secured_asset'] ?? 0) != 1) {
+      return;
+    }
+
+    wp_cache_delete('securedAttUrlCache', 'SecureAssets');
+    $this->attUrlCache = null;
+    $this->securedIds = null;
   }
 
   /**
@@ -115,7 +141,11 @@ class SecureAssets
    */
   public function rewriteAttachmentUrl($url, $id)
   {
-    if ($this->isSecureAsset($id) && $_POST['action'] != 'save-attachment-compat') {
+    if (!$this->isKnownSecuredAttachment(intval($id))) {
+      return $url;
+    }
+
+    if ($this->isSecureAsset($id) && ($_POST['action'] ?? '') != 'save-attachment-compat') {
       return self::getProxyPath($id);
     }
 
@@ -185,6 +215,8 @@ class SecureAssets
       // Save the attachment meta data with the security state
       wp_update_attachment_metadata($attachmentId, $meta);
       wp_cache_delete('securedAttUrlCache', 'SecureAssets');
+      $this->attUrlCache = null;
+      $this->securedIds = null;
     }
   }
 
@@ -240,6 +272,21 @@ class SecureAssets
     }
 
     return false;
+  }
+
+  /**
+   * Cheap pre-check against the cached list of secured attachments, avoids loading metadata for every attachment url
+   * @param int $id the attachment id
+   * @return bool true, if the attachment is in the secured attachment cache
+   */
+  protected function isKnownSecuredAttachment(int $id): bool
+  {
+    if ($this->securedIds === null) {
+      $this->loadAttachmentUrlCache();
+      $this->securedIds = array_fill_keys($this->attUrlCache, true);
+    }
+
+    return isset($this->securedIds[$id]);
   }
 
   /**

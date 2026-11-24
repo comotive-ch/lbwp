@@ -800,3 +800,90 @@ msgstr "Nous avons terminé de traiter votre commande, qui est désormais prête
 #: wp-content/themes/flatsome-child/woocommerce/emails/pp_customer-completed-order.php
 msgid "Vielen Dank nochmals für Ihre Bestellung."
 msgstr "Vous en trouverez un récapitulatif ci-dessous :"
+#: wp-content/plugins/lbwp/LBWP/Theme/Component/StockAlert.php
+msgid "Bitte geben Sie eine gültige E-Mail-Adresse ein."
+msgstr "Veuillez saisir une adresse e-mail valide."
+
+#: wp-content/plugins/lbwp/LBWP/Theme/Component/StockAlert.php
+msgid "Für diesen Artikel ist keine Benachrichtigung möglich."
+msgstr "Aucune notification n'est possible pour cet article."
+
+#: wp-content/plugins/lbwp/LBWP/Theme/Component/StockAlert.php
+msgid "Dieser Abmeldelink ist ungültig."
+msgstr "Ce lien de désinscription n'est pas valide."
+
+#: wp-content/plugins/lbwp/LBWP/Theme/Component/StockAlert.php
+msgid "Abmelden"
+msgstr "Se désinscrire"
+
+#: wp-content/plugins/lbwp/LBWP/Theme/Component/StockAlert.php
+msgid "Senden Sie mir eine E-Mail, sobald dieser Artikel wieder an Lager ist."
+msgstr "Envoyez-moi un e-mail dès que cet article sera à nouveau en stock."
+
+#: wp-content/plugins/lbwp/LBWP/Theme/Component/StockAlert.php
+msgid "Ihre E-Mail-Adresse"
+msgstr "Votre adresse e-mail"
+
+#: wp-content/plugins/lbwp/LBWP/Theme/Component/StockAlert.php
+msgid "Benachrichtigen"
+msgstr "M'avertir"
+
+#: wp-content/plugins/lbwp/LBWP/Theme/Component/StockAlert.php
+msgid "Vielen Dank, wir benachrichtigen Sie, sobald der Artikel wieder an Lager ist."
+msgstr "Merci, nous vous avertirons dès que l'article sera à nouveau en stock."
+
+#: wp-content/plugins/lbwp/LBWP/Theme/Component/StockAlert.php
+msgid "Sie sind für diesen Artikel bereits angemeldet."
+msgstr "Vous êtes déjà inscrit pour cet article."
+
+#: wp-content/plugins/lbwp/LBWP/Theme/Component/StockAlert.php
+msgid "Sie haben sich erfolgreich abgemeldet."
+msgstr "Vous vous êtes désinscrit avec succès."
+
+#: wp-content/plugins/lbwp/LBWP/Theme/Component/StockAlert.php
+msgid "Ihre Anmeldung für {product_name}"
+msgstr "Votre inscription pour {product_name}"
+
+#: wp-content/plugins/lbwp/LBWP/Theme/Component/StockAlert.php
+msgid "Anmeldung erfolgreich"
+msgstr "Inscription réussie"
+
+#: wp-content/plugins/lbwp/LBWP/Theme/Component/StockAlert.php
+msgid ""
+"Hallo {user_name}\n"
+"\n"
+"Wir senden Ihnen eine Nachricht, sobald der folgende Artikel wieder an Lager ist:\n"
+"\n"
+"{product_name}\n"
+"\n"
+"Zum Abmelden klicken Sie hier: {unsubscribe_url}"
+msgstr ""
+"Bonjour {user_name}\n"
+"\n"
+"Nous vous enverrons un message dès que l'article suivant sera à nouveau en stock :\n"
+"\n"
+"{product_name}\n"
+"\n"
+"Pour vous désinscrire, cliquez ici : {unsubscribe_url}"
+
+#: wp-content/plugins/lbwp/LBWP/Theme/Component/StockAlert.php
+msgid "Wieder an Lager: {product_name}"
+msgstr "À nouveau en stock : {product_name}"
+
+#: wp-content/plugins/lbwp/LBWP/Theme/Component/StockAlert.php
+msgid "Wieder an Lager"
+msgstr "À nouveau en stock"
+
+#: wp-content/plugins/lbwp/LBWP/Theme/Component/StockAlert.php
+msgid ""
+"Hallo {user_name}\n"
+"\n"
+"Der folgende Artikel ist wieder an Lager:\n"
+"\n"
+"<a href=\"{product_url}\">{product_name}</a>"
+msgstr ""
+"Bonjour {user_name}\n"
+"\n"
+"L'article suivant est à nouveau en stock :\n"
+"\n"
+"<a href=\"{product_url}\">{product_name}</a>"

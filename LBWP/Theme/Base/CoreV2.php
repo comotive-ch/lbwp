@@ -686,7 +686,7 @@ abstract class CoreV2
   public function registerView($slug, $view)
   {
     $this->viewsBySlug[$slug] = $view;
-    list($templateType, $objectType) = explode(':', $slug);
+    [$templateType, $objectType] = array_pad(explode(':', $slug, 2), 2, null);
 
     // lolwhut? wordpress filter mangling
     $filterTypeName = preg_replace('|[^a-z0-9-]+|', '', $templateType);
