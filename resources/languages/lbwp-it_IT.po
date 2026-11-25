@@ -797,3 +797,43 @@ msgstr "Abbiamo completato il Suo ordine. È ora pronto per il ritiro o è stato
 #: wp-content/themes/flatsome-child/woocommerce/emails/pp_customer-completed-order.php
 msgid "Vielen Dank nochmals für Ihre Bestellung."
 msgstr "Grazie ancora per il Suo ordine."
+
+#: wp-content/themes/mobilesport/src/Mobilesport/Component/UxSurvey.php
+msgid "Für eine begrenzte Zeit"
+msgstr "Per un periodo limitato"
+
+#: wp-content/themes/mobilesport/src/Mobilesport/Component/UxSurvey.php
+msgid "Bis am %s"
+msgstr "Fino al %s"
+
+#: wp-content/themes/mobilesport/src/Mobilesport/Component/UxSurvey.php
+msgid "Helfen Sie uns, mobilesport.ch zu verbessern"
+msgstr "Aiutateci a migliorare mobilesport.ch"
+
+#: wp-content/themes/mobilesport/src/Mobilesport/Component/UxSurvey.php
+msgid "%s stellen wir auf einzelnen Seiten eine kurze Frage zur Nutzung von mobilesport.ch. Mit Ihrer Einwilligung zeichnen wir zusätzlich anonymisiert auf, wie Sie die Seiten nutzen (Klicks, Scrollen, Mausbewegungen). Dafür verwenden wir das Analyse-Tool Contentsquare. Login, Merkliste und Lektionsplaner werden nicht aufgezeichnet."
+msgstr "%s, su alcune pagine vi porremo una breve domanda sull'utilizzo di mobilesport.ch. Con il vostro consenso, registriamo inoltre in forma anonima come utilizzate le pagine (clic, scorrimento, movimenti del mouse). A tale scopo utilizziamo lo strumento di analisi Contentsquare. Il login, la lista dei preferiti e il pianificatore di lezioni non vengono registrati."
+
+#: wp-content/themes/mobilesport/src/Mobilesport/Component/UxSurvey.php
+msgid "Ihre Wahl können Sie jederzeit über den Link «UX-Umfrage» in der Fusszeile ändern."
+msgstr "Potete modificare la vostra scelta in qualsiasi momento tramite il link «Sondaggio UX» a piè di pagina."
+
+#: wp-content/themes/mobilesport/src/Mobilesport/Component/UxSurvey.php
+msgid "Mehr zum Datenschutz"
+msgstr "Maggiori informazioni sulla protezione dei dati"
+
+#: wp-content/themes/mobilesport/src/Mobilesport/Component/UxSurvey.php
+msgid "Ja, inklusive Aufnahme des Nutzerverhaltens"
+msgstr "Sì, inclusa la registrazione dell'utilizzo"
+
+#: wp-content/themes/mobilesport/src/Mobilesport/Component/UxSurvey.php
+msgid "Ja, nur Fragen"
+msgstr "Sì, solo le domande"
+
+#: wp-content/themes/mobilesport/src/Mobilesport/Component/UxSurvey.php
+msgid "Nein"
+msgstr "No"
+
+#: wp-content/themes/mobilesport/src/Mobilesport/Component/UxSurvey.php
+msgid "UX-Umfrage"
+msgstr "Sondaggio UX"

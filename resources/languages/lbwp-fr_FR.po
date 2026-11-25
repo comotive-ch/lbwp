@@ -887,3 +887,43 @@ msgstr ""
 "L'article suivant est à nouveau en stock :\n"
 "\n"
 "<a href=\"{product_url}\">{product_name}</a>"
+
+#: wp-content/themes/mobilesport/src/Mobilesport/Component/UxSurvey.php
+msgid "Für eine begrenzte Zeit"
+msgstr "Pendant une durée limitée"
+
+#: wp-content/themes/mobilesport/src/Mobilesport/Component/UxSurvey.php
+msgid "Bis am %s"
+msgstr "Jusqu'au %s"
+
+#: wp-content/themes/mobilesport/src/Mobilesport/Component/UxSurvey.php
+msgid "Helfen Sie uns, mobilesport.ch zu verbessern"
+msgstr "Aidez-nous à améliorer mobilesport.ch"
+
+#: wp-content/themes/mobilesport/src/Mobilesport/Component/UxSurvey.php
+msgid "%s stellen wir auf einzelnen Seiten eine kurze Frage zur Nutzung von mobilesport.ch. Mit Ihrer Einwilligung zeichnen wir zusätzlich anonymisiert auf, wie Sie die Seiten nutzen (Klicks, Scrollen, Mausbewegungen). Dafür verwenden wir das Analyse-Tool Contentsquare. Login, Merkliste und Lektionsplaner werden nicht aufgezeichnet."
+msgstr "%s, nous vous poserons sur certaines pages une brève question sur votre utilisation de mobilesport.ch. Avec votre consentement, nous enregistrons en plus de manière anonymisée la façon dont vous utilisez les pages (clics, défilement, mouvements de la souris). Nous utilisons pour cela l'outil d'analyse Contentsquare. La connexion, la liste de favoris et le planificateur de leçons ne sont pas enregistrés."
+
+#: wp-content/themes/mobilesport/src/Mobilesport/Component/UxSurvey.php
+msgid "Ihre Wahl können Sie jederzeit über den Link «UX-Umfrage» in der Fusszeile ändern."
+msgstr "Vous pouvez modifier votre choix à tout moment via le lien «Sondage UX» en bas de page."
+
+#: wp-content/themes/mobilesport/src/Mobilesport/Component/UxSurvey.php
+msgid "Mehr zum Datenschutz"
+msgstr "En savoir plus sur la protection des données"
+
+#: wp-content/themes/mobilesport/src/Mobilesport/Component/UxSurvey.php
+msgid "Ja, inklusive Aufnahme des Nutzerverhaltens"
+msgstr "Oui, y compris l'enregistrement de l'utilisation"
+
+#: wp-content/themes/mobilesport/src/Mobilesport/Component/UxSurvey.php
+msgid "Ja, nur Fragen"
+msgstr "Oui, seulement les questions"
+
+#: wp-content/themes/mobilesport/src/Mobilesport/Component/UxSurvey.php
+msgid "Nein"
+msgstr "Non"
+
+#: wp-content/themes/mobilesport/src/Mobilesport/Component/UxSurvey.php
+msgid "UX-Umfrage"
+msgstr "Sondage UX"

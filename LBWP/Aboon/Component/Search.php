@@ -1597,8 +1597,7 @@ class Search extends ACFBase
       PRIMARY KEY  (wid),
       KEY occurences (occurences),
       KEY results (results),
-      KEY clicks (clicks),
-      KEY results (results)
+      KEY clicks (clicks)
     ) $charset;";
     dbDelta($sql);
 
