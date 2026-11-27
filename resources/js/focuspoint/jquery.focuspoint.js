@@ -18,6 +18,14 @@
 		var imageSrc = $el.find('img').attr('src');
 		$el.data('imageSrc', imageSrc);
 
+		//Prefer the dimensions from the markup, so lazy loaded images aren't fetched upfront
+		const knownW = parseInt($el.data('focusW'), 10);
+		const knownH = parseInt($el.data('focusH'), 10);
+		if (knownW > 0 && knownH > 0) {
+			$el.data({imageW: knownW, imageH: knownH});
+			return adjustFocus($el);
+		}
+
 		resolveImageSize(imageSrc, function(err, dim) {
 			$el.data({
 				imageW: dim.width,

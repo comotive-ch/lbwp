@@ -3,7 +3,6 @@
 namespace LBWP\Module\General\Cms;
 
 use LBWP\Module\BaseSingleton;
-use LBWP\Util\File;
 use LBWP\Helper\Brunsli;
 use LBWP\Core as LbwpCore;
 
@@ -18,8 +17,6 @@ class PageSpeed extends BaseSingleton
    * @var array config for which modules to load
    */
   protected $settings = array(
-    'image_auto_lazyload' => false,
-    'lazyload_runtime_disable' => false,
     'brunslify_images' => false,
     'brunslify_original' => false,
     // The sizes of images being converted (latter three are wp internal sizes used for responsive images)
@@ -50,14 +47,6 @@ class PageSpeed extends BaseSingleton
   }
 
   /**
-   * Allows to disable lazy loaded images during runtime of the page
-   */
-  public static function disableLazyImages()
-  {
-    self::$instance[__CLASS__]->changeSetting('lazyload_runtime_disable', true);
-  }
-
-  /**
    * @param $key
    * @param $value
    */
@@ -72,14 +61,6 @@ class PageSpeed extends BaseSingleton
   public function addOutputFilters()
   {
     $admin = is_admin();
-    if ($this->settings['image_auto_lazyload']) {
-      if (!$admin && !isset($_GET['wc-ajax'])) {
-        wp_enqueue_script('lazysizes', File::getResourceUri() . '/js/lazysizes.min.js', array(), '1.0', false);
-        add_filter('output_buffer', array($this, 'rewriteLazyLoadImages'), 8530);
-      }
-      add_action('wp_footer', array($this, 'prepareLazyImages'));
-    }
-
     if (defined('LOCAL_DEVELOPMENT') && !$this->settings['force_local_development']) {
       return;
     }
@@ -134,45 +115,6 @@ class PageSpeed extends BaseSingleton
   {
     $pattern = '~(?<=[a-z]://)' . preg_quote(LBWP_HOST, '~') . '(?=/(?:' . $pathPrefixes . ')[^\s"\'<>]*\.)~';
     return preg_replace($pattern, $this->settings['cookieless_domain'], $html) ?? $html;
-  }
-
-  /**
-   * @param $html
-   * @return mixed
-   */
-  public function rewriteLazyLoadImages($html)
-  {
-    // Do this with some simple replaces
-    if (!$this->settings['lazyload_runtime_disable']) {
-      $html = str_replace('<img src=', '<img data-lazyload="1" data-src=', $html);
-      $html = str_replace(' srcset=', ' data-srcset=', $html);
-      $html = str_replace(' sizes="(', ' data-sizes="(', $html);
-    }
-    return $html;
-  }
-
-  /**
-   * Add the lazyload class to all lazyloaded images, thus preserving images with existing classes
-   */
-  public function prepareLazyImages()
-  {
-    echo '
-      <script type="text/javascript">
-        jQuery(function() {
-          // Switch sources immediately for images that should skip 
-          jQuery(".disable-lazy-loading img[data-lazyload=1]").each(function() {
-            var img = jQuery(this);
-            img
-              .attr("src", img.data("src"))
-              .attr("srcset", img.data("srcset"))
-              .attr("sizes", img.data("sizes"))
-              .removeAttr("data-lazyload");
-          });
-          // Set actual lazy load class for every image left
-          jQuery("[data-lazyload=1]").addClass("lazyload").removeAttr("data-lazyload");
-        });
-      </script>
-    ';
   }
 
   /**

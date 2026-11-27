@@ -126,7 +126,8 @@ class CleanUp extends \LBWP\Module\Base
     add_filter('plugins_auto_update_enabled', '__return_false');
     add_filter('themes_auto_update_enabled', '__return_false');
     add_filter('wp_sitemaps_enabled', '__return_false');
-    add_filter('wp_lazy_loading_enabled', '__return_false');
+    // sizes="auto" puts unloaded lazy images into size containment (3000x1500), breaking themes that size images by width/height auto
+    add_filter('wp_img_tag_add_auto_sizes', '__return_false');
     add_filter('wpseo_disable_adjacent_rel_links', '__return_true');
     add_action('wp', array($this, 'generalRegisterCleanup'), 10);
     remove_action('wp_head', 'wp_generator');

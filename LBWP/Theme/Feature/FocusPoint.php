@@ -28,6 +28,10 @@ class FocusPoint
    */
   protected static $initialized = false;
   /**
+   * Number of focus point images per request that are never lazy loaded, as they are likely above the fold
+   */
+  const int EAGER_IMAGES = 3;
+  /**
    * @var array configuration defaults
    */
   protected $config = array(
@@ -245,9 +249,6 @@ class FocusPoint
             });
           }, 350);
 	      }
-	      document.addEventListener("lazybeforeunveil", function(e){
-          lbwpReRunFocusPoint();
-        });
       </script>
     ';
   }
@@ -591,6 +592,7 @@ class FocusPoint
       $hwstring = ' width="' . $imgsize['width'] . '" height="' . $imgsize['height'] . '"';
       $image = str_replace($hwstring, '', $image);
       $image = str_replace(' />', $hwstring . ' />', $image);
+      $image = self::addLazyLoading($image);
 
       $html = '
         <div class="lbwp-focuspoint-container ' . $containerClasses . '">
@@ -610,6 +612,27 @@ class FocusPoint
     }
 
     return $html;
+  }
+
+  /**
+   * Adds native lazy loading to focus point images, except for the first ones after the header (likely LCP).
+   * Images that already carry a loading strategy from core or the caller and images rendered within
+   * the header (heroes as well as hidden menus) are left untouched and don't count towards the eager ones
+   * @param string $image the img tag
+   * @return string the img tag, eventually with loading="lazy"
+   */
+  protected static function addLazyLoading(string $image): string
+  {
+    static $count = 0;
+
+    if (str_contains($image, ' loading=') || str_contains($image, 'fetchpriority="high"') || doing_action('get_header')) {
+      return $image;
+    }
+    if (++$count <= (int) apply_filters('lbwp_focuspoint_eager_images', self::EAGER_IMAGES)) {
+      return $image;
+    }
+
+    return preg_replace('/^<img /', '<img loading="lazy" ', $image, 1);
   }
 }
 
