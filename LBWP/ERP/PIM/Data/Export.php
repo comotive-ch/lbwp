@@ -19,6 +19,10 @@ class Export extends ACFBase
    */
   protected ProductGroupExport $productGroupExport;
   /**
+   * @var FieldExport
+   */
+  protected FieldExport $fieldExport;
+  /**
    * @var CustomExport[]
    */
   protected array $defaultExports = [];
@@ -35,6 +39,8 @@ class Export extends ACFBase
   {
     $this->productGroupExport = new ProductGroupExport();
     $this->productGroupExport->registerHandlers();
+    $this->fieldExport = new FieldExport();
+    $this->fieldExport->registerHandler();
     $this->defaultExports = $this->getDefaultExports();
     foreach ($this->defaultExports as $export) {
       $export->registerHandler();
@@ -84,7 +90,7 @@ class Export extends ACFBase
    */
   public function registerMenu(): void
   {
-    add_submenu_page(
+    $hook = add_submenu_page(
       'pimport',
       'Export',
       'Export',
@@ -92,6 +98,10 @@ class Export extends ACFBase
       'pexport',
       [$this, 'renderExportPage']
     );
+
+    if ($hook) {
+      add_action('admin_print_scripts-' . $hook, [$this->fieldExport, 'enqueueAssets']);
+    }
   }
 
   /**
@@ -103,6 +113,8 @@ class Export extends ACFBase
     echo '<div class="wrap">';
     echo '<h1>' . esc_html__('PIMport Export', 'lbwp') . '</h1>';
     echo '<p>' . esc_html__('Die exportierten Dateien können bearbeitet und unter PIMport > Import wieder importiert werden.', 'lbwp') . '</p>';
+    $this->fieldExport->renderForm();
+    echo '<hr>';
     $this->productGroupExport->renderForms();
     foreach ($this->defaultExports as $export) {
       echo '<hr>';

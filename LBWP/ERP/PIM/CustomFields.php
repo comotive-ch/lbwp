@@ -13,6 +13,10 @@ use LBWP\Theme\Component\ACFBase;
 class CustomFields extends ACFBase
 {
   const OPTIONS_PAGE_SLUG = 'pim-custom-fields';
+  /**
+   * Key prefix of all product field groups generated from the settings (sections and relationships)
+   */
+  const string GROUP_KEY_PREFIX = 'group_pim_dyn_';
 
   /**
    * ACF field type mapping from our simplified types to ACF types
@@ -295,7 +299,7 @@ class CustomFields extends ACFBase
       }
 
       acf_add_local_field_group(array(
-        'key' => 'group_pim_dyn_section_' . $i,
+        'key' => self::GROUP_KEY_PREFIX . 'section_' . $i,
         'title' => $sectionName,
         'fields' => $fields,
         'location' => array(
@@ -360,7 +364,7 @@ class CustomFields extends ACFBase
     }
 
     acf_add_local_field_group(array(
-      'key' => 'group_pim_dyn_relationships',
+      'key' => self::GROUP_KEY_PREFIX . 'relationships',
       'title' => 'Verknüpfungen',
       'fields' => $fields,
       'location' => array(

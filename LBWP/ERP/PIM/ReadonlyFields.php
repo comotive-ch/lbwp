@@ -212,11 +212,20 @@ class ReadonlyFields extends ACFBase
   public function getWhitelist()
   {
     if ($this->whitelist === null) {
-      $saved = get_option('options_' . self::SETTING_NAME);
-      $this->whitelist = apply_filters('lbwp_pim_readonly_fields', is_array($saved) ? $saved : []);
+      $this->whitelist = self::getLockedIdentifiers();
     }
 
     return $this->whitelist;
+  }
+
+  /**
+   * Read the locked identifiers from the setting, usable without a component instance (e.g. by exports)
+   * @return array list of field paths, the thumbnail id and taxonomy ids
+   */
+  public static function getLockedIdentifiers(): array
+  {
+    $saved = get_option('options_' . self::SETTING_NAME);
+    return apply_filters('lbwp_pim_readonly_fields', is_array($saved) ? $saved : []);
   }
 
   /**
